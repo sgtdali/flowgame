@@ -43,9 +43,18 @@ enum Status { RUNNING, STARVED, BLOCKED }
 var status: Status = Status.STARVED
 
 
+## Port sayıları. Kurulumda bir kez hesaplanır: `input_labels()` her
+## çağrıldığında yeni dizi ayırıyor, bunlar ise her karede sorulacak.
+var input_port_count: int = 0
+var output_port_count: int = 0
+
+
 func _init(p_id: int = -1, p_type: BlockType = null) -> void:
 	id = p_id
 	type = p_type
+	if type != null:
+		input_port_count = type.input_labels().size()
+		output_port_count = type.output_labels().size()
 
 
 ## Girdi tamponundaki toplam adet. Jenerik istasyonlar (tampon, sevkiyat)

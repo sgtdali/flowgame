@@ -24,6 +24,19 @@ sorularını sayıyla göremiyordu. Eklendi:
 - Alt çubuktaki tıkalı/aç sayımı da node'larda gösterilen duruma bağlandı;
   iki ayrı kaynaktan okuyup çelişiyorlardı.
 
+**2. tur (yapıldı) — durum yazısı gereksizdi.** Node'daki "Durum: ÇALIŞIYOR"
+satırı hem yer kaplıyordu hem de renk zaten okunuyordu. Yazı kaldırıldı,
+durum **çerçeve rengine** taşındı:
+
+- **Yeşil** — çalışıyor
+- **Turuncu** — boşta (ya malzeme bekliyor ya çıktısını boşaltamıyor;
+  ikisi de "duruyor" demek, oyuncu için ayrımı hız/kuyruk sayıları veriyor)
+- **Kırmızı** — bir portu boşta, akışa katılamıyor
+
+Kırmızı yeni bir şey söylüyor: akış durumu değil **kurulum hatası**. Bu
+sayede aşağıdaki 2. madde (bağlanmamış Ret portu uyarısı) da kapandı.
+Rengin ne anlama geldiği düğümün üstüne gelince ipucunda yazıyor.
+
 ---
 
 ## Sıradaki tur: yine oyna
@@ -51,14 +64,10 @@ Azaltma: Montaj açılınca örnek düzen ipucu göster."
 Montaj araştırması alındığında bir kerelik ipucu: Pres çıkışının hem Hadde'ye
 hem Montaj'a gitmesi gerektiğini anlatan küçük bir şema.
 
-### 2. Bağlanmamış Ret portu uyarısı  ·  *kilitlenme düzeltildi ama sessiz*
+### ~~2. Bağlanmamış Ret portu uyarısı~~  ·  **YAPILDI**
 
-Faz 4'te ölümcül bir kilitlenme bulunup düzeltildi (karar D21): hurda kutusu
-dolunca istasyon artık kilitlenmiyor, parçayı sağlam geçiriyor.
-
-Ama oyuncu hâlâ **sessizce** fire kaybediyor — Ret portunu bağlamadığını
-fark etmesinin bir yolu yok. Kalite Kontrol'ün Ret portu boştayken görsel bir
-uyarı gerekiyor (port kırmızı yanıp sönsün, ya da bildirim çıksın).
+Boşta portu olan istasyonun çerçevesi kırmızı yanıyor, alt çubuk da
+"N istasyonun portu boşta" diyor. Kalite Kontrol'ün Ret portu dahil.
 
 ### 3. Çıkış oranı kontrolü  ·  *ertelenmiş karar, Faz 2'den*
 

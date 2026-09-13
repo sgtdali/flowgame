@@ -14,6 +14,20 @@ extends GraphNode
 ## Port tipi — GraphEdit yalnızca aynı tipteki portların bağlanmasına izin verir.
 const PORT_TYPE_MATERIAL: int = 0
 
+## Düğümün çerçevesinin anlattığı şey.
+##
+## Durum artık YAZIYLA değil RENKLE anlatılıyor: tuvale bakan oyuncu her
+## düğümü tek tek okumak zorunda kalmadan sorunun nerede olduğunu görmeli.
+enum Display {
+	RUNNING,   ## yeşil — üretiyor
+	IDLE,      ## turuncu — malzeme veya yer bekliyor
+	UNWIRED,   ## kırmızı — bir portu boşta, akışa katılamıyor
+}
+
+const COLOR_RUNNING := Color(0.33, 0.80, 0.50)
+const COLOR_IDLE := Color(0.93, 0.65, 0.25)
+const COLOR_UNWIRED := Color(0.91, 0.34, 0.34)
+
 signal params_changed(block: FlowBlock)
 
 var block_type: BlockType = null
@@ -34,7 +48,8 @@ var _panel_style: StyleBoxFlat = null
 ## 4 satır × 60 kare = saniyede 19.200 gereksiz shaping demek. Değişmediyse
 ## yazmıyoruz.
 var _last_text: Dictionary = {}
-var _last_status: int = -1
+var _last_display: int = -1
+var _last_unwired: int = -1
 
 ## Bu istasyonun üretim hızı. Sunum verisi — simülasyonda yeri yok.
 var _rate := RateMeter.new()
@@ -42,9 +57,9 @@ var _rate := RateMeter.new()
 ## Son ÇALIŞIYOR görülen tick. Durum rozetini yumuşatmak için.
 var _last_running_tick: int = -999999
 
-## Ekranda GÖSTERİLEN durum (yumuşatılmış). Alt çubuktaki sayım da buna
-## bakar — yoksa node "ÇALIŞIYOR" derken alt çubuk "2 aç" der ve çelişirler.
-var shown_status: SimStation.Status = SimStation.Status.STARVED
+## Çerçevenin gösterdiği durum. Alt çubuktaki sayım da buna bakar — yoksa
+## düğüm yeşilken alt çubuk "2 boşta" der ve çelişirler.
+var shown_display: Display = Display.UNWIRED
 
 
 ## Bloğu bir arketipten kurar. `add_child` ÖNCESİNDE çağrılmalıdır.
@@ -169,7 +184,6 @@ func _build_stats_grid() -> GridContainer:
 	# Canlı durum. Statik bilgi (süre, fire oranı) denetçi panelinde —
 	# düğümün üstünde her kare değişen şeyler dursun.
 	var specs: Array = [
-		[&"status", "Durum"],
 		[&"rate", "Hız"],
 		[&"in", "Giriş"],
 		[&"out", "Çıkış"],
@@ -212,7 +226,6 @@ func _refresh_stats() -> void:
 	# Kaynağın girişi, bitişin çıkışı yoktur — olmayan satırı hiç göstermeyiz.
 	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
 	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK)
-	_write(&"status", "—")
 	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
@@ -222,16 +235,22 @@ func _refresh_stats() -> void:
 ##
 ## GameController her karede bunu çağırır. Blok simülasyonu kendisi
 ## SORGULAMAZ — durumu ona verilir.
-func render_state(station: SimStation, tick: int) -> void:
+func render_state(station: SimStation, tick: int, unwired_ports: int) -> void:
 	_progress.value = station.progress_ratio()
 	_rate.sample(tick, station.throughput_total())
 
-	shown_status = _smoothed_status(station, tick)
-	_write(&"status", SimStation.status_name(shown_status).to_upper())
 	_write(&"rate", _rate_text())
 	_write(&"in", "%d / %d" % [station.total_input(), block_type.input_capacity])
 	_write(&"out", "%d / %d" % [station.total_output(), block_type.output_capacity])
-	_apply_status_color(shown_status)
+
+	# Kurulum hatası akış sorununu bastırır: bir portu boştaysa oyuncunun
+	# önce onu düzeltmesi gerekir, "aç kaldı" bilgisi o hâlde yanıltıcıdır.
+	if unwired_ports > 0:
+		_apply_display(Display.UNWIRED, unwired_ports)
+	elif _smoothed_status(station, tick) == SimStation.Status.RUNNING:
+		_apply_display(Display.RUNNING, 0)
+	else:
+		_apply_display(Display.IDLE, 0)
 
 
 ## Ham durum her tick değişir ve rozet okunmaz hâle gelir: %75 verimle
@@ -269,27 +288,40 @@ func _ceiling_per_minute() -> float:
 	return float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(recipe.duration_ticks)
 
 
-## Durum rengi kenarlığa vurur: oyuncu tuvale bakınca nerede sorun olduğunu
-## metin okumadan görmeli.
-func _apply_status_color(status: SimStation.Status) -> void:
-	if status == _last_status:
+## Çerçeve rengini ve açıklayıcı ipucunu günceller.
+##
+## Renk yazıdan hızlı okunur ama kendi kendini açıklamaz; ne anlama geldiğini
+## düğümün üstüne gelince ipucu söyler.
+func _apply_display(display: Display, unwired_ports: int) -> void:
+	if display == _last_display and unwired_ports == _last_unwired:
 		return
-	_last_status = status
+	_last_display = display
+	_last_unwired = unwired_ports
+	shown_display = display
 
 	var tint: Color
-	match status:
-		SimStation.Status.BLOCKED:
-			tint = Color(0.90, 0.36, 0.33)    # tıkalı — kırmızı
-		SimStation.Status.STARVED:
-			tint = Color(0.87, 0.68, 0.28)    # aç — sarı
+	var explanation: String
+	match display:
+		Display.UNWIRED:
+			tint = COLOR_UNWIRED
+			explanation = "%d port boşta — bağlanmayan port üretim kaybettirir." % unwired_ports
+		Display.RUNNING:
+			tint = COLOR_RUNNING
+			explanation = "Çalışıyor."
 		_:
-			tint = block_type.accent_color.darkened(0.25)
+			tint = COLOR_IDLE
+			explanation = "Boşta — ya malzeme bekliyor ya da çıktısını boşaltamıyor."
 
 	if _panel_style != null:
 		_panel_style.border_color = tint
-	var value_label: Label = _stat_values[&"status"]
-	value_label.add_theme_color_override(&"font_color",
-		tint if status != SimStation.Status.RUNNING else Color(0.76, 0.81, 0.87))
+		_panel_style.set_border_width_all(2)
+	tooltip_text = "%s — %s
+%s
+
+%s" % [
+		block_type.display_name, block_type.category_label(),
+		block_type.description, explanation
+	]
 
 
 ## Değişmediyse yazma — bkz. _last_text.

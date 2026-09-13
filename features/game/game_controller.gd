@@ -119,7 +119,7 @@ func _sync_visuals() -> void:
 	for block: FlowBlock in _canvas.get_blocks():
 		var station: SimStation = _sim.get_station(block.sim_id)
 		if station != null:
-			block.render_state(station, _sim.tick_count)
+			block.render_state(station, _sim.tick_count, _sim.unwired_port_count(block.sim_id))
 
 
 func _balance() -> int:
@@ -292,21 +292,22 @@ func _refresh_availability() -> void:
 
 
 func _refresh_status() -> void:
-	# Sayım ham simülasyon durumundan değil, node'larda GÖSTERİLEN durumdan
-	# yapılır. Ham durum her tick değişiyor; ikisi ayrı kaynaktan okursa
-	# node "ÇALIŞIYOR" derken alt çubuk "2 aç" der ve oyuncu hangisine
-	# inanacağını bilemez.
-	var blocked: int = 0
-	var starved: int = 0
+	# Sayım, düğümlerin ÇERÇEVESİNDE gösterilen durumdan yapılır. Ham
+	# simülasyon durumu her tick değişiyor; iki ayrı kaynaktan okursak
+	# düğüm yeşilken alt çubuk "boşta" der ve oyuncu hangisine inanacağını
+	# bilemez.
+	var idle: int = 0
+	var unwired: int = 0
 	for block: FlowBlock in _canvas.get_blocks():
-		match block.shown_status:
-			SimStation.Status.BLOCKED: blocked += 1
-			SimStation.Status.STARVED: starved += 1
+		match block.shown_display:
+			FlowBlock.Display.IDLE: idle += 1
+			FlowBlock.Display.UNWIRED: unwired += 1
 
-	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d tıkalı  ·  %d aç  ·  sevkiyat %.1f/dk" % [
-		_sim.station_count(), _sim.link_count(), blocked, starved,
-		_output_rate.per_minute(),
+	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d boşta  ·  sevkiyat %.1f/dk" % [
+		_sim.station_count(), _sim.link_count(), idle, _output_rate.per_minute(),
 	]
+	if unwired > 0:
+		text += "  ·  %d istasyonun portu boşta" % unwired
 	if text == _last_status:
 		return
 	_last_status = text

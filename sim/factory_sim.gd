@@ -32,6 +32,11 @@ var _stations: Dictionary = {}        # id -> SimStation
 var _ordered_ids: Array[int] = []     # her zaman artan sırada
 var _links: Array[SimLink] = []
 var _links_by_port: Dictionary = {}   # "from_id:port" -> Array[SimLink]
+
+## Bağlı portlar: "id:port" -> true. Her karede sorulduğu için önbellekte
+## tutulur, bağlantı değişince yeniden kurulur.
+var _wired_in: Dictionary = {}
+var _wired_out: Dictionary = {}
 var _next_id: int = 1
 
 
@@ -144,6 +149,8 @@ func clear() -> void:
 	_ordered_ids.clear()
 	_links.clear()
 	_links_by_port.clear()
+	_wired_in.clear()
+	_wired_out.clear()
 	_next_id = 1
 	tick_count = 0
 	revenue = 0
@@ -153,11 +160,38 @@ func clear() -> void:
 
 func _rebuild_link_index() -> void:
 	_links_by_port.clear()
+	_wired_in.clear()
+	_wired_out.clear()
 	for link: SimLink in _links:
 		var key: String = "%d:%d" % [link.from_id, link.from_port]
 		if not _links_by_port.has(key):
 			_links_by_port[key] = []
 		_links_by_port[key].append(link)
+		_wired_out[key] = true
+		_wired_in["%d:%d" % [link.to_id, link.to_port]] = true
+
+
+## Bu istasyonun kaç portu boşta?
+##
+## Boşta port = kurulum hatası, akış sorunu değil. Girişi olan her port bir
+## yerden beslenmeli, çıkışı olan her port bir yere gitmeli. Bağlamayı
+## unutulan bir port sessizce üretim kaybettirir — özellikle Kalite
+## Kontrol'ün Ret portu.
+##
+## Yanlış TİPTE bağlantı burada aranmaz; `connection_problem` onu zaten
+## en baştan engelliyor, yani kurulmuş bir bağlantı her zaman geçerlidir.
+func unwired_port_count(id: int) -> int:
+	var station: SimStation = get_station(id)
+	if station == null:
+		return 0
+	var missing: int = 0
+	for port in station.input_port_count:
+		if not _wired_in.has("%d:%d" % [id, port]):
+			missing += 1
+	for port in station.output_port_count:
+		if not _wired_out.has("%d:%d" % [id, port]):
+			missing += 1
+	return missing
 
 
 ## --- Tick -------------------------------------------------------------------
