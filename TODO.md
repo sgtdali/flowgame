@@ -8,7 +8,25 @@
 
 ---
 
-## Önce bu: oyna
+## Oynanıştan gelenler
+
+**1. tur (yapıldı) — metrikler eksikti.** Node'larda üretim hızı, üst barda
+gelir hızı yoktu; oyuncu "hangi istasyon yavaş" ve "ne kazanıyorum"
+sorularını sayıyla göremiyordu. Eklendi:
+
+- Node: `Hız  32.0/dk  %75` — gerçekleşen hız ve teorik tavana göre verim.
+  **%100 = darboğaz** (daha fazlası gerekiyor), düşük yüzde = bekliyor,
+  suç başka yerde.
+- Üst bar: `+320 ₺/dk`
+- Alt çubuk: `sevkiyat 32.0/dk`
+- Durum rozeti yumuşatıldı: %75 verimle çalışan istasyon ÇALIŞIYOR ile AÇ
+  arasında titriyordu. Son bir saniye içinde çalıştıysa ÇALIŞIYOR gösterilir.
+- Alt çubuktaki tıkalı/aç sayımı da node'larda gösterilen duruma bağlandı;
+  iki ayrı kaynaktan okuyup çelişiyorlardı.
+
+---
+
+## Sıradaki tur: yine oyna
 
 Kod yazmadan önce **10-15 dakika gerçekten oynanmalı.** Ölçüm tempoyu
 doğruluyor ama şunları ölçemiyor:

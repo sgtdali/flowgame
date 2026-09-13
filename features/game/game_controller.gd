@@ -22,6 +22,7 @@ const SPEEDS: Array[int] = [0, 1, 2, 4]
 @onready var _status: Label = %Status
 @onready var _clock: Label = %Clock
 @onready var _money: Label = %Money
+@onready var _money_rate: Label = %MoneyRate
 @onready var _slots: Label = %Slots
 @onready var _save_dialog: FileDialog = %SaveDialog
 @onready var _load_dialog: FileDialog = %LoadDialog
@@ -44,6 +45,12 @@ var _last_slots: String = ""
 var _last_status: String = ""
 var _last_balance: int = -1
 var _last_research_total: int = -1
+var _last_money_rate: String = ""
+
+## Gelir ve sevkiyat hızı. Sunum verisi — kayıtta yer almaz, yükledikten
+## birkaç saniye sonra kendi kendine dolar.
+var _income_rate := RateMeter.new()
+var _output_rate := RateMeter.new()
 
 
 func _ready() -> void:
@@ -112,7 +119,7 @@ func _sync_visuals() -> void:
 	for block: FlowBlock in _canvas.get_blocks():
 		var station: SimStation = _sim.get_station(block.sim_id)
 		if station != null:
-			block.render_state(station)
+			block.render_state(station, _sim.tick_count)
 
 
 func _balance() -> int:
@@ -197,6 +204,8 @@ func _on_clear_pressed() -> void:
 	_canvas.clear_all()
 	_progression.reset()
 	_accumulator = 0.0
+	_income_rate.reset()
+	_output_rate.reset()
 	_refresh_availability()
 
 
@@ -239,6 +248,13 @@ func _refresh_hud() -> void:
 		_last_money = money
 		_money.text = money
 
+	_income_rate.sample(_sim.tick_count, _sim.revenue)
+	_output_rate.sample(_sim.tick_count, _sim.total_sold())
+	var rate: String = "+%s ₺/dk" % GameConfig.format_money(roundi(_income_rate.per_minute()))
+	if rate != _last_money_rate:
+		_last_money_rate = rate
+		_money_rate.text = rate
+
 	var slots: String = "%d / %d" % [_sim.station_count(), _progression.slot_limit()]
 	if slots != _last_slots:
 		_last_slots = slots
@@ -276,10 +292,20 @@ func _refresh_availability() -> void:
 
 
 func _refresh_status() -> void:
-	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d tıkalı  ·  %d aç" % [
-		_sim.station_count(), _sim.link_count(),
-		_sim.count_with_status(SimStation.Status.BLOCKED),
-		_sim.count_with_status(SimStation.Status.STARVED),
+	# Sayım ham simülasyon durumundan değil, node'larda GÖSTERİLEN durumdan
+	# yapılır. Ham durum her tick değişiyor; ikisi ayrı kaynaktan okursa
+	# node "ÇALIŞIYOR" derken alt çubuk "2 aç" der ve oyuncu hangisine
+	# inanacağını bilemez.
+	var blocked: int = 0
+	var starved: int = 0
+	for block: FlowBlock in _canvas.get_blocks():
+		match block.shown_status:
+			SimStation.Status.BLOCKED: blocked += 1
+			SimStation.Status.STARVED: starved += 1
+
+	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d tıkalı  ·  %d aç  ·  sevkiyat %.1f/dk" % [
+		_sim.station_count(), _sim.link_count(), blocked, starved,
+		_output_rate.per_minute(),
 	]
 	if text == _last_status:
 		return
@@ -350,6 +376,10 @@ func _on_load_path_selected(path: String) -> void:
 	_progression.from_dict(data.get("progression", {}))
 	_canvas.clear_all()
 	_accumulator = 0.0
+	# Hız ölçerler kümülatif sayaçlara bakıyor; yükleme sonrası eski örnekler
+	# yanlış bir sıçrama gösterirdi.
+	_income_rate.reset()
+	_output_rate.reset()
 
 	var layout: Dictionary = data.get("layout", {})
 	for station: SimStation in _sim.stations():

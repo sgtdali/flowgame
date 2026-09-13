@@ -36,6 +36,16 @@ var _panel_style: StyleBoxFlat = null
 var _last_text: Dictionary = {}
 var _last_status: int = -1
 
+## Bu istasyonun üretim hızı. Sunum verisi — simülasyonda yeri yok.
+var _rate := RateMeter.new()
+
+## Son ÇALIŞIYOR görülen tick. Durum rozetini yumuşatmak için.
+var _last_running_tick: int = -999999
+
+## Ekranda GÖSTERİLEN durum (yumuşatılmış). Alt çubuktaki sayım da buna
+## bakar — yoksa node "ÇALIŞIYOR" derken alt çubuk "2 aç" der ve çelişirler.
+var shown_status: SimStation.Status = SimStation.Status.STARVED
+
 
 ## Bloğu bir arketipten kurar. `add_child` ÖNCESİNDE çağrılmalıdır.
 func setup(type: BlockType) -> void:
@@ -160,6 +170,7 @@ func _build_stats_grid() -> GridContainer:
 	# düğümün üstünde her kare değişen şeyler dursun.
 	var specs: Array = [
 		[&"status", "Durum"],
+		[&"rate", "Hız"],
 		[&"in", "Giriş"],
 		[&"out", "Çıkış"],
 	]
@@ -202,6 +213,7 @@ func _refresh_stats() -> void:
 	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
 	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK)
 	_write(&"status", "—")
+	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
 
@@ -210,12 +222,51 @@ func _refresh_stats() -> void:
 ##
 ## GameController her karede bunu çağırır. Blok simülasyonu kendisi
 ## SORGULAMAZ — durumu ona verilir.
-func render_state(station: SimStation) -> void:
+func render_state(station: SimStation, tick: int) -> void:
 	_progress.value = station.progress_ratio()
-	_write(&"status", station.status_label().to_upper())
+	_rate.sample(tick, station.throughput_total())
+
+	shown_status = _smoothed_status(station, tick)
+	_write(&"status", SimStation.status_name(shown_status).to_upper())
+	_write(&"rate", _rate_text())
 	_write(&"in", "%d / %d" % [station.total_input(), block_type.input_capacity])
 	_write(&"out", "%d / %d" % [station.total_output(), block_type.output_capacity])
-	_apply_status_color(station.status)
+	_apply_status_color(shown_status)
+
+
+## Ham durum her tick değişir ve rozet okunmaz hâle gelir: %75 verimle
+## çalışan bir istasyon ÇALIŞIYOR ile AÇ arasında titrer, çünkü zamanın
+## dörtte birinde gerçekten bekliyordur. Son bir saniye içinde çalıştıysa
+## ÇALIŞIYOR gösteririz; AÇ veya TIKALI ancak gerçekten takıldıysa çıkar.
+func _smoothed_status(station: SimStation, tick: int) -> SimStation.Status:
+	if station.status == SimStation.Status.RUNNING:
+		_last_running_tick = tick
+		return SimStation.Status.RUNNING
+	if tick - _last_running_tick < GameConfig.TICKS_PER_SECOND:
+		return SimStation.Status.RUNNING
+	return station.status
+
+
+## "12.4/dk · %52" — gerçekleşen hız ve teorik tavana göre verim.
+##
+## Verim, oyuncunun asıl teşhis aracı: %100 çalışan bir istasyon darboğazdır
+## (daha fazlası gerekiyor), %40 çalışan ise bekliyor demektir ve suç başka
+## yerdedir. Durum rozeti nedenini, verim ise ne kadarını söyler.
+func _rate_text() -> String:
+	var actual: float = _rate.per_minute()
+	var text: String = "%.1f/dk" % actual
+	var ceiling: float = _ceiling_per_minute()
+	if ceiling > 0.0:
+		text += "  %%%d" % roundi(clampf(actual / ceiling, 0.0, 1.0) * 100.0)
+	return text
+
+
+## Bu istasyonun hiç beklemeden çalışsa dakikada kaç üretebileceği.
+func _ceiling_per_minute() -> float:
+	var recipe: Recipe = block_type.recipe
+	if recipe == null or recipe.duration_ticks <= 0:
+		return 0.0
+	return float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(recipe.duration_ticks)
 
 
 ## Durum rengi kenarlığa vurur: oyuncu tuvale bakınca nerede sorun olduğunu

@@ -22,6 +22,11 @@ var progress_ticks: int = 0
 ## rastgelelik yok, "her N üründen biri" deterministik olarak belirlenir.
 var produced_total: int = 0
 
+## Bu istasyonun YUTTUĞU toplam parça. Yalnızca Sevkiyat ve Ar-Ge
+## Laboratuvarı için anlamlı — onlar üretmediği için `produced_total` hep
+## sıfır kalır ve hız göstergesi boş görünürdü.
+var consumed_total: int = 0
+
 ## Çıkış portu başına round-robin sayacı: port -> sıradaki bağlantı indeksi.
 var next_link: Dictionary = {}
 
@@ -83,8 +88,21 @@ func take_item(buffer: Dictionary, item_id: StringName, count: int) -> bool:
 	return true
 
 
+## Hız göstergesinin baktığı sayaç. Üreten istasyonlarda üretim, yutan
+## istasyonlarda tüketim.
+func throughput_total() -> int:
+	match type.category:
+		BlockType.Category.SINK, BlockType.Category.RESEARCH:
+			return consumed_total
+	return produced_total
+
+
 func status_label() -> String:
-	match status:
+	return status_name(status)
+
+
+static func status_name(value: Status) -> String:
+	match value:
 		Status.RUNNING: return "çalışıyor"
 		Status.STARVED: return "aç"
 		Status.BLOCKED: return "tıkalı"

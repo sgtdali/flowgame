@@ -76,6 +76,14 @@ func link_count() -> int:
 	return _links.size()
 
 
+## Sevkiyattan çıkan toplam ürün adedi. Üst çubuğun hız göstergesi için.
+func total_sold() -> int:
+	var total: int = 0
+	for count: int in sold_counts.values():
+		total += count
+	return total
+
+
 func links() -> Array[SimLink]:
 	var out: Array[SimLink] = []
 	out.assign(_links)
@@ -312,6 +320,7 @@ func _run_sink(station: SimStation) -> void:
 	station.status = SimStation.Status.RUNNING
 	for item_id: StringName in station.input.keys():
 		var count: int = int(station.input[item_id])
+		station.consumed_total += count
 		var item: ItemType = ItemCatalog.find_by_id(item_id)
 		if item != null:
 			revenue += item.base_price * count
@@ -328,6 +337,7 @@ func _run_research(station: SimStation) -> void:
 	station.status = SimStation.Status.RUNNING
 	for item_id: StringName in station.input.keys():
 		var count: int = int(station.input[item_id])
+		station.consumed_total += count
 		research_counts[item_id] = int(research_counts.get(item_id, 0)) + count
 	station.input.clear()
 
@@ -424,6 +434,7 @@ func to_dict() -> Dictionary:
 			"producing": st.producing,
 			"progress": st.progress_ticks,
 			"produced_total": st.produced_total,
+			"consumed_total": st.consumed_total,
 			"next_link": st.next_link.duplicate(),
 		})
 
@@ -466,6 +477,7 @@ func from_dict(data: Dictionary) -> bool:
 		st.producing = bool(entry.get("producing", false))
 		st.progress_ticks = int(entry.get("progress", 0))
 		st.produced_total = int(entry.get("produced_total", 0))
+		st.consumed_total = int(entry.get("consumed_total", 0))
 		for port_key: String in entry.get("next_link", {}):
 			st.next_link[int(port_key)] = int(entry["next_link"][port_key])
 		_stations[st.id] = st
@@ -492,8 +504,8 @@ func state_hash() -> String:
 	parts.append("t%d|r%d|g%s" % [tick_count, revenue, _stable_buffer(research_counts)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
-		parts.append("#%d:%s:%d:%s:p%d%s:i%s:o%s" % [
-			st.id, st.type.id, st.produced_total,
+		parts.append("#%d:%s:%d/%d:%s:p%d%s:i%s:o%s" % [
+			st.id, st.type.id, st.produced_total, st.consumed_total,
 			"1" if st.producing else "0", st.progress_ticks,
 			str(st.status),
 			_stable_buffer(st.input), _stable_buffer(st.output),
