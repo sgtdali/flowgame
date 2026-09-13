@@ -67,6 +67,7 @@ ses · çoklu dil desteği.
 | D17 | Önceki savunma sanayi içeriği **silindi** | Saklamak / "gerçekçi mod" olarak tutmak | Kullanıcı talebi; kamuya açık paylaşımın hukuki riski. |
 | D18 | MVP'de **bitiş koşulu yok** | Kazanma ekranı | Sonraya bırakıldı, henüz netleşmedi. |
 | D19 | Başarısızlık yok, **sadece yavaşlama** | İflas / oyun sonu | Kurcalama hissini korur. |
+| D20 | İstasyon durumu **üç hâlli**: ÇALIŞIYOR / AÇ / TIKALI | Tek bir `blocked` bayrağı | Faz 2 denge koşumunda çıktı: AÇ ve TIKALI birbirinin **tersi** problem — aç kalan istasyonun suçlusu ÖNCEKİ, tıkananınki SONRAKİ istasyondur. Tek bayrakta birleştirmek oyunun asıl teşhis aracını kör ediyordu. |
 
 ---
 
@@ -207,9 +208,19 @@ Konumlar `Vector2` yerine ayrı `x`/`y` float olarak yazılmaya devam eder.
 ### 4.8 Test stratejisi
 
 - **Denge koşumu:** bir hat kur, 36.000 tick (≈1 saat) koştur, gelir/dk ve ürün/dk ölç.
-  "Oyuncu Montaj'a kaç dakikada ulaşır?" sorusunu elle oynamadan bir script cevaplar.
-- **Determinizm testi:** aynı kayıt + 10.000 tick → aynı durum hash'i.
-- **Kaydet/yükle turu:** mevcut testin sim durumunu da kapsayacak şekilde genişletilmesi.
+- **Determinizm testi:** iki özdeş koşum → aynı durum parmak izi.
+- **Kaydet/yükle turu:** kayıttan devam eden koşum, kesintisiz koşumla aynı sonucu vermeli.
+- **Tıkanma ve açlık testleri:** zincirin geriye doğru dolduğu, ve açlığın tıkanmayla
+  karışmadığı doğrulanır.
+
+Hepsi `tools/sim_test.gd` içinde:
+
+```bash
+godot --headless --path . --script res://tools/sim_test.gd
+```
+
+Test koşumu, hiç kontrol çalışmadıysa yanlışlıkla "geçti" demesin diye beklenen
+kontrol sayısını da doğrular — bu bir kez başımıza geldi.
 
 Bu koşumların mümkün olması, D8'i (ayrı simülasyon modeli) seçmemizin asıl getirisidir.
 

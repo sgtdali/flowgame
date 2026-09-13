@@ -5,7 +5,8 @@ araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` ü
 
 Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)
 
-> Durum: **Faz 1 tamam** (veri katmanı). Simülasyon henüz yok — hat çizilir ama akmaz.
+> Durum: **Faz 2 tamam** (simülasyon çekirdeği). Simülasyon çalışıyor ve test
+> ediliyor, ama henüz ekrana bağlı değil — tuvalde hâlâ hiçbir şey akmıyor (Faz 3).
 
 ## Çalıştırma
 
@@ -48,8 +49,19 @@ features/
   flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
   block_palette/       Sol panel: eklenebilir istasyonlar
   block_inspector/     Sağ panel: seçili istasyonun bilgileri
+sim/
+  factory_sim.gd       Tick döngüsü, tıkanma, kayıt. Sahne ağacının dışında.
+  sim_station.gd       Bir istasyonun durumu: tamponlar, ilerleme, AÇ/TIKALI
+  sim_link.gd          İki istasyon arasındaki bağlantı
 tools/
   gen_content.gd       İçerik .tres'lerini üreten önyükleme aracı
+  sim_test.gd          Determinizm, kaydet/yükle, tıkanma ve denge koşumu
+```
+
+## Testler
+
+```bash
+godot --headless --path . --script res://tools/sim_test.gd
 ```
 
 ### Mimari kuralı
