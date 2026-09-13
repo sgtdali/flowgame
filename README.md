@@ -5,9 +5,8 @@ araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` ü
 
 Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)
 
-> Durum: **Faz 3 tamam.** Hat gerçek zamanlı çalışıyor: ilerleme çubukları,
-> kuyruk sayaçları, AÇ/TIKALI rozetleri, duraklat ve hız kontrolü.
-> Henüz yok: para ile istasyon satın alma, araştırma ağacı, slot limiti (Faz 4).
+> Durum: **MVP oynanabilir** (Faz 1-4). Boş bir sahayla başlarsın, hat kurar,
+> satar, araştırma ağacından yeni istasyon açarsın. Ölçülen tur süresi: ~63 dakika.
 
 ## Çalıştırma
 
@@ -60,12 +59,17 @@ sim/
 tools/
   gen_content.gd       İçerik .tres'lerini üreten önyükleme aracı
   sim_test.gd          Determinizm, kaydet/yükle, tıkanma ve denge koşumu
+  progression_test.gd  60 dakikalık turu baştan sona oynayıp tempoyu ölçer
 ```
 
 ## Testler
 
 ```bash
 godot --headless --path . --script res://tools/sim_test.gd
+```
+
+```bash
+godot --headless --path . --script res://tools/progression_test.gd
 ```
 
 ### Mimari kuralı

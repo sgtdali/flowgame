@@ -8,5 +8,5 @@ id = &"levha"
 display_name = "Levha"
 color = Color(0.55, 0.68, 0.8, 1)
 icon_char = "LV"
-base_price = 28
+base_price = 32
 tier = 2

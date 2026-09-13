@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_m0cq8"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_elrpc"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_2bxqr"]
+[ext_resource type="Resource" path="res://data/block_types/montaj.tres" id="4_w05ve"]
+
+[resource]
+script = ExtResource("2_elrpc")
+id = &"montaj_hatti"
+display_name = "Montaj Hattı"
+description = "İki levha ve üç vidayı birleştirip gövde üretir. İlk kez iki ayrı hattı beslemen gerekecek."
+requires = PackedStringArray("kesim_hatti")
+cost_money = 12000
+unlocks_blocks = Array[ExtResource("3_2bxqr")]([ExtResource("4_w05ve")])

@@ -20,7 +20,9 @@ func setup(type: BlockType) -> void:
 
 ## Godot sürükleme başlatınca çağırır. Taşınan yük: hangi arketip sürükleniyor.
 func _get_drag_data(_at_position: Vector2) -> Variant:
-	if block_type == null:
+	# Devre dışı düğme hâlâ fare olayı alır; sürüklemeyi de burada kesmezsek
+	# parası yetmeyen oyuncu istasyonu tuvale sürükleyebilir.
+	if block_type == null or disabled:
 		return null
 	set_drag_preview(_build_preview())
 	return {"block_type": block_type}

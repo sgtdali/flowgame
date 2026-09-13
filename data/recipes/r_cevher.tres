@@ -12,4 +12,3 @@ item = ExtResource("2_ni8as")
 script = ExtResource("3_to45w")
 id = &"r_cevher"
 outputs = Array[ExtResource("1_k3lka")]([SubResource("Resource_lp6oq")])
-duration_ticks = 20

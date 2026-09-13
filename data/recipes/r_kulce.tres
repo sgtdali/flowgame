@@ -19,4 +19,4 @@ script = ExtResource("4_uvual")
 id = &"r_kulce"
 inputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_aowef")])
 outputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_4g7l2")])
-duration_ticks = 20
+duration_ticks = 14

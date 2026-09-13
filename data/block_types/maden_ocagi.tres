@@ -14,3 +14,5 @@ description = "Durmadan cevher üretir. Girdi istemez, akışın başlangıcıd�
 recipe = ExtResource("1_oxrox")
 input_capacity = 0
 output_capacity = 8
+build_cost = 250
+unlocked_at_start = true

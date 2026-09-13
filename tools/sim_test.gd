@@ -22,7 +22,7 @@ var _checks: int = 0
 ## Beklenen kontrol sayisi. Bir derleme hatasi yuzunden testler hic
 ## calismazsa _failures 0 kalir ve kosum yanlislikla "gecti" der.
 ## Bu tam olarak bir kez basimiza geldi; sayac o yuzden var.
-const EXPECTED_CHECKS: int = 6
+const EXPECTED_CHECKS: int = 8
 
 
 func _initialize() -> void:
@@ -32,6 +32,7 @@ func _initialize() -> void:
 	_test_blocking()
 	_test_backpressure_chain()
 	_test_starved()
+	_test_scrap_does_not_deadlock()
 	_balance_report()
 
 	print("")
@@ -169,6 +170,35 @@ func _test_starved() -> void:
 		station.status == SimStation.Status.STARVED,
 		"durum=%s giris=%d cikis=%d" % [
 			station.status_label(), station.total_input(), station.total_output()])
+
+
+## Ret portu bagli degilken Kalite Kontrol hatti KILITLEMEMELI.
+##
+## Gerileme testi: bu tam olarak yasandi. Hurda cikis tamponunu doldurunca
+## istasyon elindeki hurdaya takilip kaliyor, takildigi icin saglam uretimi
+## de duruyordu. Geri donusum hatti bir dongu olusturdugu icin hurda hic
+## bosalmiyor ve fabrikanin TAMAMI kalici olarak kilitleniyordu.
+func _test_scrap_does_not_deadlock() -> void:
+	var sim := FactorySim.new()
+	var kalite: int = sim.add_station(BlockCatalog.KALITE)
+	var sevkiyat: int = sim.add_station(BlockCatalog.SEVKIYAT)
+	sim.connect_stations(kalite, 0, sevkiyat, 0)   # uygun -> sat
+	# Ret portu BILEREK bagli degil.
+
+	var station: SimStation = sim.get_station(kalite)
+	for i in 600:
+		# Montaj kurmadan beslemek icin govdeyi dogrudan girdiye koyuyoruz.
+		if station.total_input() < BlockCatalog.KALITE.input_capacity:
+			station.add_item(station.input, &"govde", 1)
+		sim.tick()
+
+	var scrap_cap: int = BlockCatalog.KALITE.output_capacity
+	_check("Fire kilitlenmesi: Ret portu bos olsa da hat akiyor",
+		sim.revenue > 0 and station.status != SimStation.Status.BLOCKED,
+		"gelir=%d durum=%s uretim=%d" % [sim.revenue, station.status_label(), station.produced_total])
+	_check("Fire kilitlenmesi: hurda kutusu kapasitede duruyor, tasmiyor",
+		int(station.output.get(&"hurda", 0)) <= scrap_cap,
+		"hurda=%d kapasite=%d" % [int(station.output.get(&"hurda", 0)), scrap_cap])
 
 
 ## --- Denge raporu -----------------------------------------------------------

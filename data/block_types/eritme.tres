@@ -13,3 +13,4 @@ description = "İki cevheri eritip bir külçe döker."
 recipe = ExtResource("1_1iy1f")
 input_capacity = 8
 build_cost = 400
+unlocked_at_start = true

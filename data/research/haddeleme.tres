@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_b7p3s"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_j35rw"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_6pwui"]
+[ext_resource type="Resource" path="res://data/block_types/hadde.tres" id="4_ldsco"]
+
+[resource]
+script = ExtResource("2_j35rw")
+id = &"haddeleme"
+display_name = "Haddeleme"
+description = "Levhayı inceltip çubuk çeker. Vida hattının ilk adımı."
+requires = PackedStringArray("presleme")
+cost_money = 4200
+unlocks_blocks = Array[ExtResource("3_6pwui")]([ExtResource("4_ldsco")])

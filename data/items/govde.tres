@@ -8,5 +8,5 @@ id = &"govde"
 display_name = "Gövde"
 color = Color(0.42, 0.78, 0.55, 1)
 icon_char = "GV"
-base_price = 150
+base_price = 220
 tier = 4

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_a8iil"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_ty4wp"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_oac00"]
+
+[resource]
+script = ExtResource("2_ty4wp")
+id = &"genisleme_1"
+display_name = "Fabrika Genişlemesi I"
+description = "Sahaya dört istasyon daha sığar."
+requires = PackedStringArray("presleme")
+cost_money = 2400
+slot_bonus = 4

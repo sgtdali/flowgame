@@ -23,6 +23,11 @@ var tick_count: int = 0
 var revenue: int = 0
 var sold_counts: Dictionary = {}
 
+## Ar-Ge Laboratuvarı'na akıtılan toplam ürün (kümülatif).
+## Araştırma ilerlemesi buradan okunur — simülasyon araştırma DURUMUNU
+## bilmez, sadece ne aktığını sayar. Böylece sim saf ve deterministik kalır.
+var research_counts: Dictionary = {}
+
 var _stations: Dictionary = {}        # id -> SimStation
 var _ordered_ids: Array[int] = []     # her zaman artan sırada
 var _links: Array[SimLink] = []
@@ -135,6 +140,7 @@ func clear() -> void:
 	tick_count = 0
 	revenue = 0
 	sold_counts.clear()
+	research_counts.clear()
 
 
 func _rebuild_link_index() -> void:
@@ -163,6 +169,8 @@ func _phase_produce() -> void:
 				_run_buffer(station)
 			BlockType.Category.SINK:
 				_run_sink(station)
+			BlockType.Category.RESEARCH:
+				_run_research(station)
 			_:
 				_run_producer(station)
 
@@ -232,14 +240,39 @@ func _try_start(station: SimStation, recipe: Recipe) -> bool:
 ## Çıktıyı tampona koyar. Yer yoksa hiçbir şey yapmaz ve false döner.
 func _try_emit(station: SimStation, recipe: Recipe) -> bool:
 	var planned: Dictionary = _planned_output(station, recipe)
-	var capacity: int = station.type.output_capacity
-	for item_id: StringName in planned:
-		if int(station.output.get(item_id, 0)) + int(planned[item_id]) > capacity:
-			return false
+
+	# Hurda kutusu doluysa kontrol istasyonu KİLİTLENMEZ, parçayı sağlam
+	# olarak geçirir.
+	#
+	# Neden: Ret portu tıkandığında istasyon elindeki hurdaya takılıp kalıyor,
+	# takıldığı için sağlam üretimi de duruyordu. Geri dönüşüm hattı bir
+	# döngü oluşturduğu için hurda hiç boşalmıyor ve fabrikanın TAMAMI kalıcı
+	# olarak kilitleniyordu — gelir sıfıra düşüyor ve oyuncunun çıkışı
+	# kalmıyordu. Zarif bozulma: fire oranı tıkanma altında düşer, hat ölmez.
+	if not _fits(station, planned) and station.type.category == BlockType.Category.INSPECT:
+		planned = _recipe_output(recipe)
+
+	if not _fits(station, planned):
+		return false
 	for item_id: StringName in planned:
 		station.add_item(station.output, item_id, planned[item_id])
 	station.produced_total += 1
 	return true
+
+
+func _fits(station: SimStation, planned: Dictionary) -> bool:
+	var capacity: int = station.type.output_capacity
+	for item_id: StringName in planned:
+		if int(station.output.get(item_id, 0)) + int(planned[item_id]) > capacity:
+			return false
+	return true
+
+
+static func _recipe_output(recipe: Recipe) -> Dictionary:
+	var out: Dictionary = {}
+	for slot: RecipeSlot in recipe.outputs:
+		out[slot.item.id] = int(out.get(slot.item.id, 0)) + slot.count
+	return out
 
 
 ## Bu üretimin ne çıkaracağı. Kontrol istasyonunda fire sayacı burada işler.
@@ -253,9 +286,7 @@ func _planned_output(station: SimStation, recipe: Recipe) -> Dictionary:
 	if is_scrap and station.type.reject_item != null:
 		out[station.type.reject_item.id] = 1
 		return out
-	for slot: RecipeSlot in recipe.outputs:
-		out[slot.item.id] = int(out.get(slot.item.id, 0)) + slot.count
-	return out
+	return _recipe_output(recipe)
 
 
 ## Tampon üretmez: girdisini çıktısına geçirir.
@@ -286,6 +317,18 @@ func _run_sink(station: SimStation) -> void:
 			revenue += item.base_price * count
 			sold_counts[item_id] = int(sold_counts.get(item_id, 0)) + count
 			item_sold.emit(item, count)
+	station.input.clear()
+
+
+## Ar-Ge Laboratuvarı yutar ama satmaz — gelen ürün araştırmaya sayılır.
+func _run_research(station: SimStation) -> void:
+	if station.input.is_empty():
+		station.status = SimStation.Status.STARVED
+		return
+	station.status = SimStation.Status.RUNNING
+	for item_id: StringName in station.input.keys():
+		var count: int = int(station.input[item_id])
+		research_counts[item_id] = int(research_counts.get(item_id, 0)) + count
 	station.input.clear()
 
 
@@ -396,6 +439,7 @@ func to_dict() -> Dictionary:
 		"next_id": _next_id,
 		"revenue": revenue,
 		"sold": _ids_to_strings(sold_counts),
+		"research": _ids_to_strings(research_counts),
 		"stations": station_data,
 		"links": link_data,
 	}
@@ -408,6 +452,8 @@ func from_dict(data: Dictionary) -> bool:
 	revenue = int(data.get("revenue", 0))
 	for key: String in data.get("sold", {}):
 		sold_counts[StringName(key)] = int(data["sold"][key])
+	for key: String in data.get("research", {}):
+		research_counts[StringName(key)] = int(data["research"][key])
 
 	for entry: Dictionary in data.get("stations", []):
 		var type := BlockCatalog.find_by_id(StringName(entry.get("type_id", "")))
@@ -443,7 +489,7 @@ func from_dict(data: Dictionary) -> bool:
 ## hâle gelir. Bu yüzden testte her koşumda kontrol edilir.
 func state_hash() -> String:
 	var parts: PackedStringArray = PackedStringArray()
-	parts.append("t%d|r%d" % [tick_count, revenue])
+	parts.append("t%d|r%d|g%s" % [tick_count, revenue, _stable_buffer(research_counts)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
 		parts.append("#%d:%s:%d:%s:p%d%s:i%s:o%s" % [

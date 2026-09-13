@@ -17,11 +17,13 @@ const KALITE := preload("res://data/block_types/kalite.tres")
 const DEPO := preload("res://data/block_types/depo.tres")
 const GERI_DONUSUM := preload("res://data/block_types/geri_donusum.tres")
 const SEVKIYAT := preload("res://data/block_types/sevkiyat.tres")
+const ARGE_LAB := preload("res://data/block_types/arge_lab.tres")
+const MADEN_OCAGI_DERIN := preload("res://data/block_types/maden_ocagi_derin.tres")
 
 ## Paletteki gösterim sırası — akışın doğal sırasını izler.
 const _ORDER: Array = [
-	MADEN_OCAGI, ERITME, PRES, HADDE, KESIM, MONTAJ,
-	KALITE, DEPO, GERI_DONUSUM, SEVKIYAT,
+	MADEN_OCAGI, MADEN_OCAGI_DERIN, ERITME, PRES, HADDE, KESIM, MONTAJ,
+	KALITE, DEPO, GERI_DONUSUM, ARGE_LAB, SEVKIYAT,
 ]
 
 

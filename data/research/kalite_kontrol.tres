@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_7gdhx"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_gxnpr"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_n7pv5"]
+[ext_resource type="Resource" path="res://data/block_types/kalite.tres" id="4_a6xsn"]
+
+[resource]
+script = ExtResource("2_gxnpr")
+id = &"kalite_kontrol"
+display_name = "Kalite Kontrol"
+description = "Gövdeleri ayırır. Her sekiz üründen biri hurdaya düşer."
+requires = PackedStringArray("montaj_hatti")
+cost_money = 20000
+unlocks_blocks = Array[ExtResource("3_n7pv5")]([ExtResource("4_a6xsn")])

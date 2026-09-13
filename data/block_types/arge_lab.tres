@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_br1gq"]
+
+[resource]
+script = ExtResource("1_br1gq")
+id = &"arge_lab"
+display_name = "Ar-Ge Laboratuvarı"
+category = 5
+accent_color = Color(0.42, 0.72, 0.86, 1)
+icon_char = "AR"
+description = "Buraya akıtılan ürün satılmaz, araştırmaya sayılır. Üretimini satış ile araştırma arasında bölmen gerekir."
+input_capacity = 20
+output_capacity = 0
+build_cost = 8000

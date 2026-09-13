@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_rnht3"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_cy7bs"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_bx6sk"]
+[ext_resource type="Resource" path="res://data/block_types/geri_donusum.tres" id="4_pafrk"]
+[ext_resource type="Resource" path="res://data/block_types/arge_lab.tres" id="5_5vdi2"]
+
+[resource]
+script = ExtResource("2_cy7bs")
+id = &"arge"
+display_name = "Ar-Ge Laboratuvarı"
+description = "Hurdayı külçeye çeviren geri dönüşüm, ve Ar-Ge Laboratuvarı. Bundan sonrası parayla açılmıyor."
+requires = PackedStringArray("kalite_kontrol")
+cost_money = 26000
+unlocks_blocks = Array[ExtResource("3_bx6sk")]([ExtResource("4_pafrk"), ExtResource("5_5vdi2")])
+slot_bonus = 3

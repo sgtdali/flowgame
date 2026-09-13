@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_gyt7s"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_fjk2y"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_p64hp"]
+[ext_resource type="Resource" path="res://data/block_types/pres.tres" id="4_5fqlk"]
+
+[resource]
+script = ExtResource("2_fjk2y")
+id = &"presleme"
+display_name = "Presleme"
+description = "Külçeyi levhaya dönüştüren pres. Levha, külçeden neredeyse üç kat değerli."
+requires = PackedStringArray()
+cost_money = 1500
+unlocks_blocks = Array[ExtResource("3_p64hp")]([ExtResource("4_5fqlk")])

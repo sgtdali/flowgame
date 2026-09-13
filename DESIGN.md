@@ -1,6 +1,6 @@
 # Fabrika Oyunu — Tasarım Belgesi
 
-> Durum: **onaylandı**, uygulamaya hazır.
+> Durum: **Faz 1-4 uygulandı.** MVP oynanabilir.
 > Motor: Godot 4.6.1 · Hedef: Windows masaüstü, tek oyuncu
 
 ---
@@ -67,6 +67,7 @@ ses · çoklu dil desteği.
 | D17 | Önceki savunma sanayi içeriği **silindi** | Saklamak / "gerçekçi mod" olarak tutmak | Kullanıcı talebi; kamuya açık paylaşımın hukuki riski. |
 | D18 | MVP'de **bitiş koşulu yok** | Kazanma ekranı | Sonraya bırakıldı, henüz netleşmedi. |
 | D19 | Başarısızlık yok, **sadece yavaşlama** | İflas / oyun sonu | Kurcalama hissini korur. |
+| D21 | Fire, hurda kutusu doluysa **zarif bozulur** — parça sağlam geçer | İstasyonun kilitlenmesi (ilk davranış) | Faz 4 tempo koşumunda çıktı: Ret portu tıkanınca Kalite Kontrol elindeki hurdaya takılıp kalıyor, takıldığı için sağlam üretimi de duruyordu. Geri dönüşüm hattı bir döngü oluşturduğundan hurda hiç boşalmıyor ve fabrikanın TAMAMI kalıcı kilitleniyordu — gelir sıfıra düşüyor, oyuncunun çıkışı kalmıyordu. Artık tıkanma altında fire oranı düşer, hat ölmez. |
 | D20 | İstasyon durumu **üç hâlli**: ÇALIŞIYOR / AÇ / TIKALI | Tek bir `blocked` bayrağı | Faz 2 denge koşumunda çıktı: AÇ ve TIKALI birbirinin **tersi** problem — aç kalan istasyonun suçlusu ÖNCEKİ, tıkananınki SONRAKİ istasyondur. Tek bayrakta birleştirmek oyunun asıl teşhis aracını kör ediyordu. |
 
 ---
@@ -184,8 +185,23 @@ Ara Depo → **Montaj** → Kalite Kontrol → Geri Dönüşüm + Ar-Ge Lab →
 
 Slotlar: başlangıç **5** → Genişleme I **9** → Genişleme II **14**
 
-> Bu sayılar başlangıç tahminidir. Nihai değerler §4.8'deki denge koşumuyla ölçülerek
-> belirlenecek — elle tahmin edilmeyecek.
+> Bu sayılar `tools/progression_test.gd` ile ÖLÇÜLEREK ayarlandı, tahmin edilmedi.
+> İlk koşum 231 dakika verdi (hedef 60) ve son aşamaya hiç ulaşılamadı. Üç turda
+> maden ocağı hızı iki katına çıkarıldı, gövde fiyatı 150 → 220 yapıldı ve
+> araştırma maliyetleri yaklaşık yarıya indirildi. Son ölçüm: **63.3 dakika.**
+
+**Ölçülen tempo (son hâli)**
+
+| Aşama | Süre |
+|---|---|
+| Başlangıç hattı | 0.0 dk |
+| Pres | 6.9 dk |
+| İkinci ön hat | 10.1 dk |
+| Vida hattı | 18.0 dk |
+| Montaj hattı | 33.0 dk |
+| Kalite Kontrol | 39.4 dk |
+| Ar-Ge Laboratuvarı | 50.9 dk |
+| Derin Maden (final) | 63.3 dk |
 
 ### 4.6 Sunum katmanı
 

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Resource" path="res://data/recipes/r_cevher_derin.tres" id="1_7qvlj"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="2_38xr4"]
+
+[resource]
+script = ExtResource("2_38xr4")
+id = &"maden_ocagi_derin"
+display_name = "Derin Maden Ocağı"
+category = 0
+accent_color = Color(0.24, 0.63, 0.54, 1)
+icon_char = "MO+"
+description = "Sıradan ocağın iki buçuk katı hızda cevher çıkarır. Hattın en eski darboğazını açar."
+recipe = ExtResource("1_7qvlj")
+input_capacity = 0
+output_capacity = 10
+build_cost = 3500

@@ -12,3 +12,4 @@ icon_char = "SV"
 description = "Gelen her ürünü satar. Akışın sonu — çıkışı yoktur."
 input_capacity = 8
 output_capacity = 0
+unlocked_at_start = true

@@ -15,6 +15,7 @@ enum Category {
 	INSPECT,  ## Ayırma noktası — fazladan bir Ret portu taşır
 	BUFFER,   ## Tampon kuyruk — üretmez, sadece tutar ve geçirir
 	SINK,     ## Akışın sonu — yutar ve satar, çıkışı yok
+	RESEARCH, ## Ar-Ge Laboratuvarı — yutar ama satmaz, araştırmaya sayar
 }
 
 @export var id: StringName = &""
@@ -47,6 +48,8 @@ enum Category {
 @export_group("Ekonomi")
 ## Satın alma maliyeti.
 @export var build_cost: int = 0
+## Araştırma gerektirmeden, oyunun başında kullanılabilir mi?
+@export var unlocked_at_start: bool = false
 
 
 func category_label() -> String:
@@ -56,6 +59,7 @@ func category_label() -> String:
 		Category.INSPECT: return "Kontrol"
 		Category.BUFFER: return "Tampon"
 		Category.SINK: return "Bitiş"
+		Category.RESEARCH: return "Ar-Ge"
 	return "Bilinmiyor"
 
 
@@ -100,7 +104,7 @@ func input_labels() -> PackedStringArray:
 
 func output_labels() -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray()
-	if category == Category.SINK:
+	if category == Category.SINK or category == Category.RESEARCH:
 		return out  # bitiş noktasının çıkışı yok
 	if recipe == null:
 		out.append("Çıkış")
