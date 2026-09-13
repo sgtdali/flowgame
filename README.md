@@ -3,7 +3,7 @@
 Düğüm tabanlı bir fabrika oyunu: üretim hattını graf olarak kur, çalıştır, sat,
 araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` üzerine kurulu.
 
-Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)
+Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)  ·  Kalan işler: [TODO.md](TODO.md)
 
 > Durum: **MVP oynanabilir** (Faz 1-4). Boş bir sahayla başlarsın, hat kurar,
 > satar, araştırma ağacından yeni istasyon açarsın. Ölçülen tur süresi: ~63 dakika.

@@ -271,3 +271,15 @@ Bu koşumların mümkün olması, D8'i (ayrı simülasyon modeli) seçmemizin as
 GraphEdit tuvali, sürükle-bırak palet, `BlockType` resource sistemi, parametre denetçisi,
 JSON kaydet/yükle, darboğaz özeti. Mimari zaten "sinyal yukarı / çağrı aşağı" kuralına
 uygun — simülasyon katmanı bunun **altına** girecek, üstüne değil.
+
+---
+
+## 8. Sırada ne var
+
+Faz 1-4 uygulandı. Kalan işler, ertelenmiş kararlar ve devam ederken
+hatırlanması gerekenler: **[TODO.md](TODO.md)**
+
+Kısaca: Montaj ipucu, bağlanmamış Ret portu uyarısı, çıkış oranı kontrolü
+kararı, denge ince ayarı ve kablolarda akan noktalar. Hepsinin önceliği
+gerçek oynanış geri bildirimine bağlı — o yüzden ilk adım kod yazmak değil,
+oyunu 10-15 dakika oynamak.
