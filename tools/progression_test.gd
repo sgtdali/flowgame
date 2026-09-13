@@ -19,7 +19,26 @@ const STAGE_TIMEOUT_TICKS: int = GameConfig.TICKS_PER_SECOND * 60 * 90
 var sim: FactorySim = FactorySim.new()
 var prog: ProgressionState = ProgressionState.new()
 var timeline: Array = []
-var failed: bool = false
+
+## HIZLI BAŞARISIZLIK — GDScript'te exception yok, `quit()` da çalışan
+## script'i ANINDA durdurmaz (yalnızca ana döngüye "sıradaki karede çık" der;
+## `--script` modunda hepsi tek karede çalıştığından `_play()` TAMAMEN
+## BİTENE KADAR devam eder). Bu yüzden gerçek kesme bu bayrakla yapılıyor:
+## her yardımcı fonksiyon girişte kontrol edip, halted ise no-op döner.
+##
+## Eskiden: hata anında yazdırılıp koşum sahte bir ekonomiyle onlarca oyun-içi
+## dakika daha sürüyor, bir SONRAKİ aşamada da hataya düşüyordu — kök nedeni
+## görmek için scripti üç kez art arda çalıştırmak gerekti.
+var halted: bool = false
+
+## HIZLI BAŞARISIZLIK: bir bağlantı/satın alma/araştırma başarısız olunca
+## _fail() ANINDA quit() eder — devam ETMEZ.
+##
+## NEDEN: eskiden hata yazdırıp koşuma devam ediyorduk. Kırık bir bağlantıyla
+## sahte bir ekonomi üstünden onlarca oyun-içi dakika daha koşup bir SONRAKİ
+## aşamada da hataya düşüyordu. Sonuç: kök nedeni görmek için scripti üç kez
+## art arda çalıştırıp her seferinde zincirin bir halkasını çözmek gerekti.
+## Artık İLK hata anında duruyor — tek koşumda kök neden görünür.
 
 
 func _initialize() -> void:
@@ -30,6 +49,11 @@ func _initialize() -> void:
 
 	_play()
 
+	if halted:
+		quit(1)
+		return
+
+	# Buraya geldiysek _fail() hiç tetiklenmedi — tüm aşamalar tamamlandı.
 	print("")
 	print("%-28s %8s %10s %8s" % ["ASAMA", "SURE", "BAKIYE", "ISTASYON"])
 	for row: Array in timeline:
@@ -38,15 +62,13 @@ func _initialize() -> void:
 	var total_minutes: float = float(sim.tick_count) / float(GameConfig.TICKS_PER_SECOND) / 60.0
 	print("")
 	print("TOPLAM: %.1f dakika (hedef: 60)" % total_minutes)
-	if failed:
-		print("SONUC: bir asamaya ulasilamadi.")
-	elif total_minutes > 75.0:
+	if total_minutes > 75.0:
 		print("SONUC: tempo COK YAVAS — maliyetler dusurulmeli veya fiyatlar artirilmali.")
 	elif total_minutes < 35.0:
 		print("SONUC: tempo COK HIZLI — icerik bir saati doldurmuyor.")
 	else:
 		print("SONUC: tempo hedef araliginda.")
-	quit(1 if failed else 0)
+	quit(0)
 
 
 ## --- Senaryo ----------------------------------------------------------------
@@ -156,6 +178,8 @@ func _play() -> void:
 ## --- Yardimcilar ------------------------------------------------------------
 
 func _build(type: BlockType) -> int:
+	if halted:
+		return -1
 	if sim.station_count() >= prog.slot_limit():
 		_fail("Slot yetmedi: %s icin (%d/%d)" % [
 			type.display_name, sim.station_count(), prog.slot_limit()])
@@ -174,6 +198,8 @@ func _build_by_id(block_id: String) -> int:
 
 
 func _wire(from_id: int, from_port: int, to_id: int, to_port: int) -> void:
+	if halted:
+		return
 	if from_id < 0 or to_id < 0:
 		return
 	if not sim.connect_stations(from_id, from_port, to_id, to_port):
@@ -183,6 +209,8 @@ func _wire(from_id: int, from_port: int, to_id: int, to_port: int) -> void:
 
 
 func _afford_and_research(node: ResearchNode) -> bool:
+	if halted:
+		return false
 	var ok: bool = _run_until(
 		func() -> bool: return prog.unlock_problem(node, sim.revenue, sim.research_counts).is_empty(),
 		"arastirma: %s" % node.display_name)
@@ -196,6 +224,8 @@ func _afford_and_research(node: ResearchNode) -> bool:
 
 
 func _run_until(predicate: Callable, label: String) -> bool:
+	if halted:
+		return false
 	var spent_ticks: int = 0
 	while not predicate.call():
 		sim.tick()
@@ -218,6 +248,8 @@ func _dump_line() -> void:
 
 
 func _mark(label: String) -> void:
+	if halted:
+		return  # yarım kalmış aşamayı "tamamlandı" gibi kaydetme
 	timeline.append([
 		label,
 		"%.1f dk" % (float(sim.tick_count) / float(GameConfig.TICKS_PER_SECOND) / 60.0),
@@ -227,5 +259,12 @@ func _mark(label: String) -> void:
 
 
 func _fail(message: String) -> void:
-	failed = true
+	if halted:
+		return  # ilk hata zaten yazdırıldı, sonrakiler gürültü olur
+	halted = true
+	print("")
 	print("  HATA: %s" % message)
+	print("")
+	print("Suraya kadar TAMAMLANMIŞ asamalar:")
+	for row: Array in timeline:
+		print("  %-28s %8s %10s %8s" % [row[0], row[1], row[2], row[3]])

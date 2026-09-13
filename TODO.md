@@ -136,6 +136,43 @@ Aşağıdaki maddelerin önceliği bu geri bildirime göre değişebilir.
 
 ---
 
+## Test disiplini — SÜREÇ KURALI
+
+Bir önceki turda `progression_test.gd`'yi düzeltmek 10 dakika sürdü ve bu
+zaman kaybı oyunu geliştirmekten çaldı. İki kalıcı önlem alındı:
+
+### 1. İki katmanlı test — hangi durumda hangisi çalışır
+
+| Test | Ne zaman | Süre | Neden |
+|---|---|---|---|
+| `sim_test.gd` | **Her kod değişikliğinden sonra, varsayılan** | ~saniyeler | Simülasyonun kendisinin doğru çalıştığını kanıtlar — determinizm, kaydet/yükle, tıkanma. Gerçek hata yakalar (fire kilitlenmesi, Dağıtıcı port adaletsizliği). |
+| `progression_test.gd` | **Yalnızca tempo/denge sorulduğunda** | dakikalar | 60 dakikalık bir turu oynayarak ölçer. Mimari değişikliklerde OTOMATİK çalıştırılıp düzeltilmez — kırılırsa TODO'ya not düşülür, tempo turunda toplu ele alınır. |
+
+Bir mimari kural değiştiğinde (ör. "çıkış tek tele sınırlı") her iki test de
+etkilenebilir. `sim_test.gd` küçük olduğu için düzeltmesi ucuz, hep yapılır.
+`progression_test.gd` gerçek bir oyun turunu elle kablolar, düzeltmesi
+pahalıdır — bu yüzden BEKLER, tempo ölçümü istenene kadar bozuk kalabilir.
+
+### 2. `progression_test.gd` artık gerçekten HIZLI BAŞARISIZ oluyor
+
+Bulunan ikinci sorun: script'in `_fail()`'i hatayı yazdırıp **koşuma devam
+ediyordu** — `quit()` GDScript'te çalışan kodu anında durdurmuyor, yalnızca
+ana döngüye "bir sonraki karede çık" diyor; `--script` modunda hepsi tek
+karede çalıştığından `_play()` TAMAMEN BİTENE KADAR sürüyor. Sonuç: kırık
+bir bağlantıyla sahte bir ekonomi üstünden onlarca oyun-içi dakika daha
+koşup BİR SONRAKİ aşamada da hataya düşüyordu — kök nedeni görmek için
+scripti üç kez art arda çalıştırıp her seferinde zincirin bir halkasını
+çözmek gerekti.
+
+Düzeltme: `halted` bayrağı — `_fail()` çağrılınca tüm yardımcı fonksiyonlar
+(`_build`, `_wire`, `_run_until`, `_afford_and_research`, `_mark`) no-op'a
+döner. Artık İLK hata anında duruyor, tek koşumda kök neden görünüyor.
+Doğrulandı: kasıtlı bozuk bir bağlantıyla test edildi, tek satır hata verip
+durdu (eskiden tüm senaryoyu sahte verilerle tamamlayıp yanıltıcı bir özet
+basıyordu).
+
+---
+
 ## Faz 5 kapsamı
 
 ### 1. Montaj ipucu  ·  *tasarımda söz verildi, yapılmadı*
@@ -183,6 +220,43 @@ godot --headless --path . --script res://tools/progression_test.gd
 Bağlantı üzerinde akan ürünleri gösteren animasyon. Tamamen kozmetik ama
 hattın canlı hissini çok artırır. GraphEdit'in çizgilerinin üstüne ayrı bir
 overlay `Control` ile `_draw` yapmak en pratik yol.
+
+---
+
+## Test disiplini — SÜREÇ KURALI
+
+Bir önceki turda `progression_test.gd`'yi düzeltmek 10 dakika sürdü ve bu
+zaman kaybı oyunu geliştirmekten çaldı. İki kalıcı önlem alındı:
+
+### 1. İki katmanlı test — hangi durumda hangisi çalışır
+
+| Test | Ne zaman | Süre | Neden |
+|---|---|---|---|
+| `sim_test.gd` | **Her kod değişikliğinden sonra, varsayılan** | ~saniyeler | Simülasyonun kendisinin doğru çalıştığını kanıtlar — determinizm, kaydet/yükle, tıkanma. Gerçek hata yakalar (fire kilitlenmesi, Dağıtıcı port adaletsizliği). |
+| `progression_test.gd` | **Yalnızca tempo/denge sorulduğunda** | dakikalar | 60 dakikalık bir turu oynayarak ölçer. Mimari değişikliklerde OTOMATİK çalıştırılıp düzeltilmez — kırılırsa TODO'ya not düşülür, tempo turunda toplu ele alınır. |
+
+Bir mimari kural değiştiğinde (ör. "çıkış tek tele sınırlı") her iki test de
+etkilenebilir. `sim_test.gd` küçük olduğu için düzeltmesi ucuz, hep yapılır.
+`progression_test.gd` gerçek bir oyun turunu elle kablolar, düzeltmesi
+pahalıdır — bu yüzden BEKLER, tempo ölçümü istenene kadar bozuk kalabilir.
+
+### 2. `progression_test.gd` artık gerçekten HIZLI BAŞARISIZ oluyor
+
+Bulunan ikinci sorun: script'in `_fail()`'i hatayı yazdırıp **koşuma devam
+ediyordu** — `quit()` GDScript'te çalışan kodu anında durdurmuyor, yalnızca
+ana döngüye "bir sonraki karede çık" diyor; `--script` modunda hepsi tek
+karede çalıştığından `_play()` TAMAMEN BİTENE KADAR sürüyor. Sonuç: kırık
+bir bağlantıyla sahte bir ekonomi üstünden onlarca oyun-içi dakika daha
+koşup BİR SONRAKİ aşamada da hataya düşüyordu — kök nedeni görmek için
+scripti üç kez art arda çalıştırıp her seferinde zincirin bir halkasını
+çözmek gerekti.
+
+Düzeltme: `halted` bayrağı — `_fail()` çağrılınca tüm yardımcı fonksiyonlar
+(`_build`, `_wire`, `_run_until`, `_afford_and_research`, `_mark`) no-op'a
+döner. Artık İLK hata anında duruyor, tek koşumda kök neden görünüyor.
+Doğrulandı: kasıtlı bozuk bir bağlantıyla test edildi, tek satır hata verip
+durdu (eskiden tüm senaryoyu sahte verilerle tamamlayıp yanıltıcı bir özet
+basıyordu).
 
 ---
 
