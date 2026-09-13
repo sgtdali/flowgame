@@ -4,47 +4,92 @@ extends RefCounted
 ## Kayan pencere üzerinden "dakikada kaç" ölçer.
 ##
 ## Kümülatif bir sayacın (üretilen toplam parça, toplam gelir) artış hızını
-## verir. Anlık değil, son ~15 saniyelik pencere üzerinden: anlık ölçüm
-## tick tick zıplar ve okunmaz olur.
+## verir. Anlık değil, üretim OLAYLARI ARASINDAKİ SÜRENİN ortalamasından —
+## anlık türev tick tick zıplar ve okunmaz olur.
 ##
 ## MİMARİ: Bu bir SUNUM aracıdır, simülasyonun parçası değil. Simülasyon
 ## kümülatif sayaçları tutar; hıza çevirmek ekranın işi. Bu yüzden kayıtta
 ## yer almaz — yükledikten birkaç saniye sonra kendi kendine dolar.
+##
+## NEDEN OLAY ARALIĞI, SÜREKLİ TÜREV DEĞİL: İlk iki deneme başarısız oldu.
+## (1) Sabit pencere (son N tick, boxcar filtre): üretim düzenli olsa bile —
+##     ör. 14 tick'te bir — pencere üretim periyoduna tam bölünmezse, kenar
+##     her bir üretim anını geçtiğinde sayaç sert bir basamak atlıyordu.
+##     Ölçüldü: gerçek ortalama 42.86/dk iken görüntü sürekli 40-44 arası
+##     zıplıyordu.
+## (2) Üstel yumuşatılmış türev: kenar sıçraması kayboldu ama üretim ayrık
+##     olduğu için (çoğu tick'te değişim sıfır, üretim anında ani sıçrama)
+##     yumuşatılmış değer HER KAREDE sürekli sürünüyordu — "zıplama" yerine
+##     "durmadan kayma" oldu, ki şikayet edilen şey buydu.
+##
+## Doğru model: üretim bir OLAY DİZİSİ (nokta süreci). Hız, ardışık olaylar
+## arasındaki SÜRENİN ortalamasından hesaplanır — konumun türevinden değil.
+## Düzenli üretimde iki olay arası süre hep aynıdır, bu yüzden gösterilen
+## değer olaylar arasında TAMAMEN SABİT kalır; yalnızca her üretim anında
+## bir sonraki olaya göre hafifçe güncellenir. Bir hız ölçer tekerlek
+## dönüşleri arasındaki süreden hız kestirir; konumu sürekli türevleyip
+## gürültüyü yumuşatmaya çalışmaz.
 
-## Pencere uzunluğu. Kısa olursa değer zıplar, uzun olursa değişime geç tepki
-## verir; 15 saniye ikisi arasında makul bir yer.
-const WINDOW_TICKS: int = GameConfig.TICKS_PER_SECOND * 15
+## Ardışık olay aralıklarının üstel ortalaması ne kadar hızlı güncellensin.
+## Küçük değer = çok sayıda geçmiş olayın ortalaması (sakin, geç tepki).
+const EVENT_ALPHA: float = 0.3
 
-var _ticks: PackedInt64Array = PackedInt64Array()
-var _values: PackedInt64Array = PackedInt64Array()
+var _has_total: bool = false
+var _last_total: int = 0
+
+## Son üretim OLAYININ görüldüğü tick (total'ın gerçekten arttığı an).
+var _last_event_tick: int = 0
+
+## En son sample() çağrısındaki tick — "şu an" için. Üretim olmasa da her
+## karede güncellenir; uzun süredir olay yoksa hızın sıfıra sönmesini sağlar.
+var _last_seen_tick: int = 0
+
+## Ardışık olaylar arası sürenin (tick, birim başına) üstel ortalaması.
+## -1 = henüz hiç olay görülmedi.
+var _avg_interval: float = -1.0
 
 
-## Her karede çağrılabilir — aynı tick tekrar gelirse örnek çoğaltmaz.
+## Her karede çağrılabilir.
 func sample(tick: int, total: int) -> void:
-	var count: int = _ticks.size()
-	if count > 0 and _ticks[count - 1] == tick:
-		_values[count - 1] = total
+	if not _has_total:
+		_has_total = true
+		_last_total = total
+		_last_event_tick = tick
+		_last_seen_tick = tick
 		return
 
-	_ticks.append(tick)
-	_values.append(total)
+	_last_seen_tick = tick
 
-	while _ticks.size() > 2 and tick - _ticks[0] > WINDOW_TICKS:
-		_ticks.remove_at(0)
-		_values.remove_at(0)
+	var delta: int = total - _last_total
+	if delta <= 0:
+		return  # bu karede yeni üretim yok — ortalama aralık değişmez
+
+	# Birden fazla birim aynı tick'te gelmiş olabilir (toplu boşaltma);
+	# aralığı birim başına düşürüyoruz ki hız hesabı bozulmasın.
+	var interval_per_unit: float = float(tick - _last_event_tick) / float(delta)
+	if _avg_interval < 0.0:
+		_avg_interval = interval_per_unit
+	else:
+		_avg_interval += (interval_per_unit - _avg_interval) * EVENT_ALPHA
+
+	_last_event_tick = tick
+	_last_total = total
 
 
 func per_minute() -> float:
-	var count: int = _ticks.size()
-	if count < 2:
+	if _avg_interval <= 0.0:
 		return 0.0
-	var elapsed: int = _ticks[count - 1] - _ticks[0]
-	if elapsed <= 0:
-		return 0.0
-	var gained: int = _values[count - 1] - _values[0]
-	return float(gained) * float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(elapsed)
+	# Son olaydan bu yana geçen süre ortalama aralığı aşıyorsa, hız o
+	# oranda düşük gösterilir — istasyon durduğunda gösterge sıfıra söner,
+	# eski hızda donup kalmaz.
+	var since_last_event: float = float(_last_seen_tick - _last_event_tick)
+	var effective_interval: float = maxf(_avg_interval, since_last_event)
+	return 1.0 / effective_interval * float(GameConfig.TICKS_PER_SECOND) * 60.0
 
 
 func reset() -> void:
-	_ticks.clear()
-	_values.clear()
+	_has_total = false
+	_last_total = 0
+	_last_event_tick = 0
+	_last_seen_tick = 0
+	_avg_interval = -1.0

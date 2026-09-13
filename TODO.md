@@ -37,6 +37,27 @@ Kırmızı yeni bir şey söylüyor: akış durumu değil **kurulum hatası**. B
 sayede aşağıdaki 2. madde (bağlanmamış Ret portu uyarısı) da kapandı.
 Rengin ne anlama geldiği düğümün üstüne gelince ipucunda yazıyor.
 
+**3. tur (yapıldı) — hız göstergesi dalgalanıyordu.** Node'daki `Hız` ve
+`%verim` düzenli üretimde bile sürekli değişiyordu, ilerleme çubuğu dolarken
+göz rahatsız edici şekilde titriyordu. Kök sebep iki yanlış tasarımdan geçti:
+
+1. **İlk sürüm** (sabit 15 sn'lik pencere): üretim periyodu pencereye tam
+   bölünmezse (14 tick'te 1 gibi), pencere kenarı her üretim anını
+   geçtiğinde sayaç 40↔44 arası sert sıçrıyordu. Ölçüldü.
+2. **İkinci deneme** (üstel yumuşatılmış türev): kenar sıçraması gitti ama
+   üretim ayrık olduğu için (çoğu tick'te değişim sıfır, üretim anında ani
+   sıçrama) yumuşatılmış değer HER KAREDE sürekli sürünmeye başladı —
+   "zıplama" yerine "durmadan kayma" oldu, ki asıl şikayet buydu.
+
+**Doğru model:** üretim bir olay dizisi. Hız, konumun türevinden değil,
+**ardışık olaylar arasındaki sürenin ortalamasından** hesaplanır — tıpkı bir
+hız göstergesinin tekerlek dönüşleri arasındaki süreden hız kestirmesi gibi.
+Düzenli üretimde iki olay arası süre hep aynı olduğundan gösterilen değer
+olaylar arasında TAMAMEN SABİT kalır. Doğrulandı: 3 saniye gerçek oyun
+koşumunda `30.0/dk %70` metni bir kez yazıldı, hiç değişmedi (eskiden her
+karede değişiyordu). İstasyon durunca da hız donup kalmıyor, kademeli sıfıra
+sönüyor (60→10→5.5→2.9→1.9/dk), donuk/yanlış bir sayı göstermiyor.
+
 ---
 
 ## Sıradaki tur: yine oyna
