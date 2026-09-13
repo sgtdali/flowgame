@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+
+[resource]
+script = ExtResource("1_bt")
+id = &"kalite"
+display_name = "Kalite Kontrol"
+category = 2
+accent_color = Color(0.91, 0.706, 0.29, 1)
+icon_char = "QC"
+description = "Ürünü ayırır; uygun olmayanlar Ret hattına gider."
+input_labels = PackedStringArray("Giriş")
+output_labels = PackedStringArray("Uygun", "Ret")
+cycle_time_s = 6.0
+capacity = 1
+operators = 1
+scrap_rate = 0.0

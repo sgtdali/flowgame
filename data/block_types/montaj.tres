@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+
+[resource]
+script = ExtResource("1_bt")
+id = &"montaj"
+display_name = "Montaj"
+category = 1
+accent_color = Color(0.29, 0.624, 0.878, 1)
+icon_char = "MT"
+description = "İki farklı malzemeyi birleştirir."
+input_labels = PackedStringArray("Levha", "Vida")
+output_labels = PackedStringArray("Gövde")
+cycle_time_s = 25.0
+capacity = 1
+operators = 2
+scrap_rate = 0.0

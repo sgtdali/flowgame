@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+
+[resource]
+script = ExtResource("1_bt")
+id = &"depo"
+display_name = "Ara Depo"
+category = 3
+accent_color = Color(0.643, 0.482, 0.831, 1)
+icon_char = "AD"
+description = "İstasyonlar arası tampon. Hat dengesizliğini emer."
+input_labels = PackedStringArray("Giriş")
+output_labels = PackedStringArray("Çıkış")
+cycle_time_s = 0.0
+capacity = 100
+operators = 0
+scrap_rate = 0.0

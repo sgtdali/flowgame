@@ -1,0 +1,140 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/block_inspector/block_inspector.gd" id="1_insp"]
+
+[node name="BlockInspector" type="PanelContainer"]
+custom_minimum_size = Vector2(268, 0)
+offset_right = 268.0
+offset_bottom = 720.0
+script = ExtResource("1_insp")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Scroll" type="ScrollContainer" parent="Margin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "İSTASYON DETAYI"
+
+[node name="Sep" type="HSeparator" parent="Margin/Scroll/VBox"]
+layout_mode = 2
+
+[node name="Empty" type="Label" parent="Margin/Scroll/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.52, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Parametreleri görmek için tuvalden bir istasyon seç."
+autowrap_mode = 2
+
+[node name="Form" type="VBoxContainer" parent="Margin/Scroll/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TypeName" type="Label" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "—"
+autowrap_mode = 2
+
+[node name="Category" type="Label" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.52, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="Desc" type="Label" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.61, 0.68, 1)
+theme_override_font_sizes/font_size = 11
+text = ""
+autowrap_mode = 2
+
+[node name="Sep2" type="HSeparator" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Ad"
+
+[node name="NameEdit" type="LineEdit" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "İstasyon adı"
+select_all_on_focus = true
+
+[node name="CycleLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Çevrim süresi"
+
+[node name="CycleEdit" type="SpinBox" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100000.0
+step = 1.0
+suffix = "sn"
+select_all_on_focus = true
+
+[node name="CapacityLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Kapasite (eşzamanlı parça)"
+
+[node name="CapacityEdit" type="SpinBox" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 9999.0
+step = 1.0
+value = 1.0
+select_all_on_focus = true
+
+[node name="OperatorsLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Operatör sayısı"
+
+[node name="OperatorsEdit" type="SpinBox" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 99.0
+step = 1.0
+select_all_on_focus = true
+
+[node name="ScrapLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Fire oranı"
+
+[node name="ScrapEdit" type="SpinBox" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+step = 0.1
+suffix = "%"
+select_all_on_focus = true
