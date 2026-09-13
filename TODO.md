@@ -58,6 +58,30 @@ koşumunda `30.0/dk %70` metni bir kez yazıldı, hiç değişmedi (eskiden her
 karede değişiyordu). İstasyon durunca da hız donup kalmıyor, kademeli sıfıra
 sönüyor (60→10→5.5→2.9→1.9/dk), donuk/yanlış bir sayı göstermiyor.
 
+**4. tur (yapıldı) — gelir hızı testere dişi gibiydi.** 3. turdaki düzeltme
+tek üretimli node'larda işe yaradı ama üst bardaki gelir hızı (birden fazla
+istasyonun, farklı fiyatlı ürünlerin toplamı) hâlâ bozuktu: bir satışta
+sıçrıyor, sıradaki satışa kadar sürekli düşüyor, sonra tekrar sıçrıyordu.
+
+Kök sebep, 3. turdaki düzeltmenin İÇİNDE gizli bir birim uyuşmazlığıydı.
+Algoritma "olaylar arası ortalama süreyi" **birim başına** tutuyordu (ör.
+"1₺ üretmek kaç tick sürer"). Bir satışta 10₺ birden gelince bu değer 2.0
+tick'e düşüyordu — çünkü 10₺, 20 tick'lik aralığa değil, teknik olarak "tek
+bir ₺" ölçeğine bölünüyordu. Bunu son olaydan bu yana geçen HAM tick
+sayısıyla (0-20 arası) karşılaştırınca sistem satıştan birkaç tick sonra
+"normalden çok beklendi" sanıp sönmeye başlıyordu; asıl olaylar arası süre
+tam 20 tick olduğu hâlde.
+
+**Doğru düzeltme:** olaylar arası HAM süreyi ve olay başına düşen MİKTARI
+AYRI AYRI ortalamak, ikisini ancak son anda bölmek. Böylece "ne kadar
+beklendiği" ile "normalde ne kadar beklenmesi gerektiği" aynı birimde (ham
+tick) kıyaslanıyor. Doğrulandı: aynı senaryoda yön değişimi 551'den 0'a
+düştü, üst bar 3 saniye boyunca "+300 ₺/dk" yazıp hiç kıpırdamadı.
+
+Bu, RateMeter'ın üçüncü ve son tasarımı. Dosyanın başındaki yorum üç
+denemeyi de (neden başarısız olduklarıyla) kayıtlı tutuyor — aynı hataya
+düşmemek için oraya bakılabilir.
+
 ---
 
 ## Sıradaki tur: yine oyna

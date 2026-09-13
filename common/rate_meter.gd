@@ -12,25 +12,27 @@ extends RefCounted
 ## yer almaz — yükledikten birkaç saniye sonra kendi kendine dolar.
 ##
 ## NEDEN OLAY ARALIĞI, SÜREKLİ TÜREV DEĞİL: İlk iki deneme başarısız oldu.
-## (1) Sabit pencere (son N tick, boxcar filtre): üretim düzenli olsa bile —
-##     ör. 14 tick'te bir — pencere üretim periyoduna tam bölünmezse, kenar
-##     her bir üretim anını geçtiğinde sayaç sert bir basamak atlıyordu.
-##     Ölçüldü: gerçek ortalama 42.86/dk iken görüntü sürekli 40-44 arası
-##     zıplıyordu.
-## (2) Üstel yumuşatılmış türev: kenar sıçraması kayboldu ama üretim ayrık
-##     olduğu için (çoğu tick'te değişim sıfır, üretim anında ani sıçrama)
-##     yumuşatılmış değer HER KAREDE sürekli sürünüyordu — "zıplama" yerine
-##     "durmadan kayma" oldu, ki şikayet edilen şey buydu.
+## (1) Sabit pencere (boxcar filtre): üretim periyodu pencereye tam
+##     bölünmezse, kenar her üretim anını geçtiğinde sayaç sert basamak
+##     atlıyordu (42.86/dk gerçek ortalama, görüntü 40↔44 zıplıyordu).
+## (2) Üstel yumuşatılmış türev: kenar sıçraması gitti ama üretim ayrık
+##     olduğundan yumuşatılmış değer her karede sürekli sürünüyordu.
+## (3) Olay aralığı ortalaması — ama aralığı BİRİM BAŞINA (ticks/delta)
+##     tutmuştuk. Bir satışta 10₺ birden gelince "birim başına aralık" 2.0
+##     tick'e düşüyordu; bunu son olaydan bu yana geçen HAM tick sayısıyla
+##     (0-20 arası) karşılaştırınca an be an "çok beklendi" sanıp sönmeye
+##     başlıyordu — satıştan hemen sonra 300₺/dk, sonraki satışa dek sürekli
+##     düşüp 31₺/dk'ya iniyor, sonra tekrar sıçrıyordu. Birim uyuşmazlığıydı:
+##     "1₺ üretmek kaç tick sürer" ile "son olaydan bu yana kaç tick geçti"
+##     karşılaştırılamaz — biri normalize, diğeri ham.
 ##
-## Doğru model: üretim bir OLAY DİZİSİ (nokta süreci). Hız, ardışık olaylar
-## arasındaki SÜRENİN ortalamasından hesaplanır — konumun türevinden değil.
-## Düzenli üretimde iki olay arası süre hep aynıdır, bu yüzden gösterilen
-## değer olaylar arasında TAMAMEN SABİT kalır; yalnızca her üretim anında
-## bir sonraki olaya göre hafifçe güncellenir. Bir hız ölçer tekerlek
-## dönüşleri arasındaki süreden hız kestirir; konumu sürekli türevleyip
-## gürültüyü yumuşatmaya çalışmaz.
+## Doğru model: OLAYLAR ARASI HAM SÜREYİ ve olay başına düşen MİKTARI ayrı
+## ayrı ortalamak, sonra ikisini bölmek. Böylece "ne kadar beklendiği" ile
+## "normalde ne kadar beklenmesi gerektiği" aynı birimde (ham tick)
+## karşılaştırılır. Bir hız göstergesi tekerlek dönüşleri arasındaki süreden
+## hız kestirir; konumu sürekli türevleyip gürültüyü yumuşatmaya çalışmaz.
 
-## Ardışık olay aralıklarının üstel ortalaması ne kadar hızlı güncellensin.
+## Ardışık olay ölçümlerinin üstel ortalaması ne kadar hızlı güncellensin.
 ## Küçük değer = çok sayıda geçmiş olayın ortalaması (sakin, geç tepki).
 const EVENT_ALPHA: float = 0.3
 
@@ -44,9 +46,13 @@ var _last_event_tick: int = 0
 ## karede güncellenir; uzun süredir olay yoksa hızın sıfıra sönmesini sağlar.
 var _last_seen_tick: int = 0
 
-## Ardışık olaylar arası sürenin (tick, birim başına) üstel ortalaması.
+## Ardışık olaylar arasındaki HAM sürenin (tick) üstel ortalaması.
 ## -1 = henüz hiç olay görülmedi.
 var _avg_interval: float = -1.0
+
+## Bir olayda tipik olarak ne kadar artış olduğunun üstel ortalaması
+## (ör. tek satışta kaç ₺, tek üretimde kaç adet).
+var _avg_delta: float = 0.0
 
 
 ## Her karede çağrılabilir.
@@ -62,15 +68,15 @@ func sample(tick: int, total: int) -> void:
 
 	var delta: int = total - _last_total
 	if delta <= 0:
-		return  # bu karede yeni üretim yok — ortalama aralık değişmez
+		return  # bu karede yeni üretim yok — ortalamalar değişmez
 
-	# Birden fazla birim aynı tick'te gelmiş olabilir (toplu boşaltma);
-	# aralığı birim başına düşürüyoruz ki hız hesabı bozulmasın.
-	var interval_per_unit: float = float(tick - _last_event_tick) / float(delta)
+	var interval: float = float(tick - _last_event_tick)
 	if _avg_interval < 0.0:
-		_avg_interval = interval_per_unit
+		_avg_interval = interval
+		_avg_delta = float(delta)
 	else:
-		_avg_interval += (interval_per_unit - _avg_interval) * EVENT_ALPHA
+		_avg_interval += (interval - _avg_interval) * EVENT_ALPHA
+		_avg_delta += (float(delta) - _avg_delta) * EVENT_ALPHA
 
 	_last_event_tick = tick
 	_last_total = total
@@ -79,12 +85,12 @@ func sample(tick: int, total: int) -> void:
 func per_minute() -> float:
 	if _avg_interval <= 0.0:
 		return 0.0
-	# Son olaydan bu yana geçen süre ortalama aralığı aşıyorsa, hız o
-	# oranda düşük gösterilir — istasyon durduğunda gösterge sıfıra söner,
-	# eski hızda donup kalmaz.
+	# Son olaydan bu yana geçen süre normal aralığı aşıyorsa, hız o oranda
+	# düşük gösterilir — istasyon durduğunda gösterge sıfıra söner, eski
+	# hızda donup kalmaz. İkisi de HAM tick cinsinden — birim uyuşuyor.
 	var since_last_event: float = float(_last_seen_tick - _last_event_tick)
 	var effective_interval: float = maxf(_avg_interval, since_last_event)
-	return 1.0 / effective_interval * float(GameConfig.TICKS_PER_SECOND) * 60.0
+	return _avg_delta / effective_interval * float(GameConfig.TICKS_PER_SECOND) * 60.0
 
 
 func reset() -> void:
@@ -93,3 +99,4 @@ func reset() -> void:
 	_last_event_tick = 0
 	_last_seen_tick = 0
 	_avg_interval = -1.0
+	_avg_delta = 0.0
