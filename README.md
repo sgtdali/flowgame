@@ -5,8 +5,9 @@ araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` ü
 
 Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)
 
-> Durum: **Faz 2 tamam** (simülasyon çekirdeği). Simülasyon çalışıyor ve test
-> ediliyor, ama henüz ekrana bağlı değil — tuvalde hâlâ hiçbir şey akmıyor (Faz 3).
+> Durum: **Faz 3 tamam.** Hat gerçek zamanlı çalışıyor: ilerleme çubukları,
+> kuyruk sayaçları, AÇ/TIKALI rozetleri, duraklat ve hız kontrolü.
+> Henüz yok: para ile istasyon satın alma, araştırma ağacı, slot limiti (Faz 4).
 
 ## Çalıştırma
 
@@ -24,8 +25,11 @@ Godot 4.6 ile `project.godot` dosyasını aç, **F5**.
 | Otomatik hizala | Üst bardaki **Otomatik Diz** |
 | Kaydet / Yükle | Üst bar — `.json` olarak |
 
-Alt çubuk istasyon/bağlantı sayısını ve **darboğazı** gösterir
-(en yüksek etkin çevrim süresi = süre / kapasite).
+Alt çubuk kaç istasyonun **tıkalı** ve kaç tanesinin **aç** olduğunu gösterir.
+Bu ikisi birbirinin tersi problemdir:
+
+- **AÇ** — girdisi gelmiyor, suç **önceki** istasyonda (kenarlık sarı)
+- **TIKALI** — çıktısını boşaltamıyor, suç **sonraki** istasyonda (kenarlık kırmızı)
 
 ## Yapı
 
@@ -45,7 +49,7 @@ data/
   recipes/*.tres       8 reçete
   block_types/*.tres   10 istasyon
 features/
-  flow_editor/         ORKESTRATÖR — bileşenleri birbirine bağlar
+  game/                ORKESTRATÖR — simülasyonu sahiplenir, tick'i sürer
   flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
   block_palette/       Sol panel: eklenebilir istasyonlar
   block_inspector/     Sağ panel: seçili istasyonun bilgileri

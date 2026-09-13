@@ -27,6 +27,14 @@ var block_label: String = ""
 
 var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
+var _progress: ProgressBar = null
+var _panel_style: StyleBoxFlat = null
+
+## Son yazılan değerler. Label.text atamak font shaping tetikler; 80 düğüm ×
+## 4 satır × 60 kare = saniyede 19.200 gereksiz shaping demek. Değişmediyse
+## yazmıyoruz.
+var _last_text: Dictionary = {}
+var _last_status: int = -1
 
 
 ## Bloğu bir arketipten kurar. `add_child` ÖNCESİNDE çağrılmalıdır.
@@ -77,6 +85,8 @@ func _apply_style() -> void:
 	panel.content_margin_bottom = 7.0
 	add_theme_stylebox_override(&"panel", panel)
 
+	_panel_style = panel
+
 	var panel_sel: StyleBoxFlat = panel.duplicate()
 	panel_sel.border_color = accent.lightened(0.35)
 	panel_sel.set_border_width_all(2)
@@ -123,6 +133,14 @@ func _build_rows() -> void:
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(sep)
 
+	_progress = ProgressBar.new()
+	_progress.max_value = 1.0
+	_progress.step = 0.001
+	_progress.show_percentage = false
+	_progress.custom_minimum_size = Vector2(0.0, 6.0)
+	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_progress)
+
 	add_child(_build_stats_grid())
 
 
@@ -138,10 +156,12 @@ func _build_stats_grid() -> GridContainer:
 	grid.add_theme_constant_override(&"v_separation", 1)
 	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	# Canlı durum. Statik bilgi (süre, fire oranı) denetçi panelinde —
+	# düğümün üstünde her kare değişen şeyler dursun.
 	var specs: Array = [
-		[&"duration", "Süre"],
-		[&"queue", "Kuyruk"],
-		[&"scrap", "Fire"],
+		[&"status", "Durum"],
+		[&"in", "Giriş"],
+		[&"out", "Çıkış"],
 	]
 	for spec: Array in specs:
 		var key: StringName = spec[0]
@@ -174,35 +194,66 @@ func _refresh_header() -> void:
 	]
 
 
+## Simülasyon bağlanmadan önceki boş görünüm.
 func _refresh_stats() -> void:
 	if _stat_values.is_empty():
 		return
-	var recipe: Recipe = block_type.recipe
-	_set_stat(&"duration", recipe != null,
-		recipe.duration_text(GameConfig.TICKS_PER_SECOND) if recipe != null else "")
-	_set_stat(&"queue", true, _queue_text())
-	_set_stat(&"scrap", block_type.scrap_every_n > 0, "1 / %d" % block_type.scrap_every_n)
+	# Kaynağın girişi, bitişin çıkışı yoktur — olmayan satırı hiç göstermeyiz.
+	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
+	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK)
+	_write(&"status", "—")
+	_write(&"in", "0 / %d" % block_type.input_capacity)
+	_write(&"out", "0 / %d" % block_type.output_capacity)
 
 
-## Kaynağın girişi, bitişin çıkışı yoktur — olmayan tarafı göstermeyiz.
-func _queue_text() -> String:
-	match block_type.category:
-		BlockType.Category.SOURCE:
-			return "çıkış %d" % block_type.output_capacity
-		BlockType.Category.SINK:
-			return "giriş %d" % block_type.input_capacity
-	return "%d / %d" % [block_type.input_capacity, block_type.output_capacity]
+## SİMÜLASYONDAN GÖRÜNTÜYE TEK YAZMA NOKTASI.
+##
+## GameController her karede bunu çağırır. Blok simülasyonu kendisi
+## SORGULAMAZ — durumu ona verilir.
+func render_state(station: SimStation) -> void:
+	_progress.value = station.progress_ratio()
+	_write(&"status", station.status_label().to_upper())
+	_write(&"in", "%d / %d" % [station.total_input(), block_type.input_capacity])
+	_write(&"out", "%d / %d" % [station.total_output(), block_type.output_capacity])
+	_apply_status_color(station.status)
+
+
+## Durum rengi kenarlığa vurur: oyuncu tuvale bakınca nerede sorun olduğunu
+## metin okumadan görmeli.
+func _apply_status_color(status: SimStation.Status) -> void:
+	if status == _last_status:
+		return
+	_last_status = status
+
+	var tint: Color
+	match status:
+		SimStation.Status.BLOCKED:
+			tint = Color(0.90, 0.36, 0.33)    # tıkalı — kırmızı
+		SimStation.Status.STARVED:
+			tint = Color(0.87, 0.68, 0.28)    # aç — sarı
+		_:
+			tint = block_type.accent_color.darkened(0.25)
+
+	if _panel_style != null:
+		_panel_style.border_color = tint
+	var value_label: Label = _stat_values[&"status"]
+	value_label.add_theme_color_override(&"font_color",
+		tint if status != SimStation.Status.RUNNING else Color(0.76, 0.81, 0.87))
+
+
+## Değişmediyse yazma — bkz. _last_text.
+func _write(key: StringName, text: String) -> void:
+	if _last_text.get(key, "") == text:
+		return
+	_last_text[key] = text
+	(_stat_values[key] as Label).text = text
 
 
 ## Bir satırı gösterir/gizler. GridContainer gizli çocukları atladığı için
 ## etiket ve değer BİRLİKTE gizlenmeli, yoksa sütunlar kayar.
-func _set_stat(key: StringName, shown: bool, value: String) -> void:
-	var name_label: Label = _stat_keys[key]
-	var value_label: Label = _stat_values[key]
-	name_label.visible = shown
-	value_label.visible = shown
-	if shown:
-		value_label.text = value
+func _set_row_visible(key: StringName, shown: bool) -> void:
+	(_stat_keys[key] as Label).visible = shown
+	(_stat_values[key] as Label).visible = shown
 
 
 ## --- Veri ------------------------------------------------------------------

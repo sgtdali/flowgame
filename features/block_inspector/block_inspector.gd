@@ -74,7 +74,7 @@ func _rebuild_info(type: BlockType) -> void:
 		_info.add_child(_make_row("Çıkış kuyruğu", "%d" % type.output_capacity))
 	if type.scrap_every_n > 0:
 		_info.add_child(_make_row("Fire", "her %d üründe 1" % type.scrap_every_n))
-	_info.add_child(_make_row("Kurulum", "%s ₺" % _money(type.build_cost)))
+	_info.add_child(_make_row("Kurulum", "%s ₺" % GameConfig.format_money(type.build_cost)))
 
 
 func _make_caption(text: String) -> Label:
@@ -116,19 +116,6 @@ func _make_row(name_text: String, value_text: String) -> HBoxContainer:
 	row.add_child(value_label)
 
 	return row
-
-
-## Binlik ayracı. Para int tutulduğu için biçimlendirme sunumda yapılır.
-static func _money(amount: int) -> String:
-	var text: String = str(absi(amount))
-	var out: String = ""
-	var count: int = 0
-	for i in range(text.length() - 1, -1, -1):
-		out = text[i] + out
-		count += 1
-		if count % 3 == 0 and i > 0:
-			out = "." + out
-	return ("-" if amount < 0 else "") + out
 
 
 func _on_name_changed(text: String) -> void:

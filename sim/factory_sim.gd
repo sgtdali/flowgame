@@ -71,36 +71,49 @@ func link_count() -> int:
 	return _links.size()
 
 
-## Bağlantı kurulabilir mi? Portlardaki ürünlerin uyuşmasını kontrol eder.
-## Faz 3'te arayüz bunu kullanarak geçersiz bağlantıyı en baştan engelleyecek.
-func can_connect(from_id: int, from_port: int, to_id: int, to_port: int) -> bool:
+func links() -> Array[SimLink]:
+	var out: Array[SimLink] = []
+	out.assign(_links)
+	return out
+
+
+## Bağlantı neden kurulamıyor? Boş string = sorun yok.
+##
+## Kural ve mesaj TEK yerde. Arayüz kendi kopyasını tutsaydı er geç ayrışırdı.
+func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) -> String:
 	if from_id == to_id:
-		return false
+		return "Bir istasyon kendine bağlanamaz."
 	var src: SimStation = get_station(from_id)
 	var dst: SimStation = get_station(to_id)
 	if src == null or dst == null:
-		return false
+		return "İstasyon bulunamadı."
+	for link: SimLink in _links:
+		if link.matches(from_id, from_port, to_id, to_port):
+			return "Bu bağlantı zaten var."
+
 	var out_items: Array[ItemType] = src.type.output_items()
-	# Jenerik çıkışlı istasyon (tampon) her şeyi verebilir.
-	if not out_items.is_empty():
-		if from_port >= out_items.size():
-			return false
 	var in_items: Array[ItemType] = dst.type.input_items()
+	if not out_items.is_empty() and from_port >= out_items.size():
+		return "Geçersiz çıkış portu."
 	if in_items.is_empty():
-		return true  # jenerik giriş: tampon ve sevkiyat her ürünü kabul eder
+		return ""  # jenerik giriş: tampon ve sevkiyat her ürünü kabul eder
 	if to_port >= in_items.size():
-		return false
+		return "Geçersiz giriş portu."
 	if out_items.is_empty():
-		return true  # tamponun çıkışı: tip bilinmiyor, taşıma anında bakılır
-	return out_items[from_port] == in_items[to_port]
+		return ""  # tamponun çıkışı: tip belli değil, taşıma anında bakılır
+	if out_items[from_port] != in_items[to_port]:
+		return "%s buraya giremez — bu giriş %s bekliyor." % [
+			out_items[from_port].display_name, in_items[to_port].display_name]
+	return ""
+
+
+func can_connect(from_id: int, from_port: int, to_id: int, to_port: int) -> bool:
+	return connection_problem(from_id, from_port, to_id, to_port).is_empty()
 
 
 func connect_stations(from_id: int, from_port: int, to_id: int, to_port: int) -> bool:
 	if not can_connect(from_id, from_port, to_id, to_port):
 		return false
-	for link: SimLink in _links:
-		if link.matches(from_id, from_port, to_id, to_port):
-			return false
 	_links.append(SimLink.new(from_id, from_port, to_id, to_port))
 	_rebuild_link_index()
 	return true
@@ -337,6 +350,15 @@ func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
 ## Belirli durumdaki istasyonların id listesi.
 ## Sunum katmanı bunları farklı rozetlerle gösterecek — aç ve tıkalı
 ## birbirinden ayırt edilebilmeli.
+## Sayım için. Her karede çağrıldığından dizi ayırmaz.
+func count_with_status(status: SimStation.Status) -> int:
+	var total: int = 0
+	for id: int in _ordered_ids:
+		if _stations[id].status == status:
+			total += 1
+	return total
+
+
 func ids_with_status(status: SimStation.Status) -> Array[int]:
 	var out: Array[int] = []
 	for id: int in _ordered_ids:

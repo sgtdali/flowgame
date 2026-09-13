@@ -1,6 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://features/flow_editor/flow_editor.gd" id="1_editor"]
+[ext_resource type="Script" path="res://features/game/game_controller.gd" id="1_editor"]
 [ext_resource type="PackedScene" path="res://features/block_palette/block_palette.tscn" id="2_palette"]
 [ext_resource type="Script" path="res://features/flow_canvas/flow_canvas.gd" id="3_canvas"]
 [ext_resource type="PackedScene" path="res://features/block_inspector/block_inspector.tscn" id="4_inspector"]
@@ -15,7 +15,9 @@ bg_color = Color(0.086, 0.102, 0.125, 1)
 border_width_top = 1
 border_color = Color(0.2, 0.235, 0.278, 1)
 
-[node name="FlowEditor" type="Control"]
+[sub_resource type="ButtonGroup" id="ButtonGroup_speed"]
+
+[node name="Game" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,9 +42,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
 [node name="TopMargin" type="MarginContainer" parent="Root/TopBar"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 7
+theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 7
+theme_override_constants/margin_bottom = 6
 
 [node name="TopBox" type="HBoxContainer" parent="Root/TopBar/TopMargin"]
 layout_mode = 2
@@ -51,12 +53,68 @@ theme_override_constants/separation = 8
 [node name="AppTitle" type="Label" parent="Root/TopBar/TopMargin/TopBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
-text = "Üretim Akışı Editörü"
+text = "Fabrika"
+
+[node name="Sep1" type="VSeparator" parent="Root/TopBar/TopMargin/TopBox"]
+layout_mode = 2
+
+[node name="Clock" type="Label" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.67, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "00:00"
+
+[node name="Money" type="Label" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.82, 0.58, 1)
+theme_override_font_sizes/font_size = 15
+text = "0 ₺"
 
 [node name="Spacer" type="Control" parent="Root/TopBar/TopMargin/TopBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+
+[node name="PauseButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_speed")
+tooltip_text = "Duraklat"
+text = "Dur"
+
+[node name="Speed1Button" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_speed")
+text = "1×"
+
+[node name="Speed2Button" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_speed")
+text = "2×"
+
+[node name="Speed4Button" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_speed")
+text = "4×"
+
+[node name="Sep2" type="VSeparator" parent="Root/TopBar/TopMargin/TopBox"]
+layout_mode = 2
 
 [node name="ArrangeButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
 unique_name_in_owner = true
@@ -67,7 +125,7 @@ text = "Otomatik Diz"
 [node name="ClearButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
 unique_name_in_owner = true
 layout_mode = 2
-tooltip_text = "Tuvaldeki her şeyi siler"
+tooltip_text = "Fabrikadaki her şeyi siler"
 text = "Temizle"
 
 [node name="SaveButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
@@ -122,23 +180,23 @@ text = "Hazır"
 
 [node name="SaveDialog" type="FileDialog" parent="."]
 unique_name_in_owner = true
-title = "Akışı Kaydet"
+title = "Fabrikayı Kaydet"
 initial_position = 2
 size = Vector2i(780, 520)
 ok_button_text = "Kaydet"
 file_mode = 4
 access = 2
-filters = PackedStringArray("*.json ; Üretim Akışı")
+filters = PackedStringArray("*.json ; Fabrika Kaydı")
 
 [node name="LoadDialog" type="FileDialog" parent="."]
 unique_name_in_owner = true
-title = "Akış Yükle"
+title = "Fabrika Yükle"
 initial_position = 2
 size = Vector2i(780, 520)
 ok_button_text = "Yükle"
 file_mode = 0
 access = 2
-filters = PackedStringArray("*.json ; Üretim Akışı")
+filters = PackedStringArray("*.json ; Fabrika Kaydı")
 
 [node name="NoticeTimer" type="Timer" parent="."]
 unique_name_in_owner = true
