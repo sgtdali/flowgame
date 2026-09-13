@@ -26,6 +26,7 @@ const INSPECT := BlockType.Category.INSPECT
 const BUFFER := BlockType.Category.BUFFER
 const SINK := BlockType.Category.SINK
 const RESEARCH := BlockType.Category.RESEARCH
+const SPLITTER := BlockType.Category.SPLITTER
 
 
 func _initialize() -> void:
@@ -145,6 +146,8 @@ func _build_blocks(recipes: Dictionary, items: Dictionary) -> Dictionary:
 		["maden_ocagi_derin", "Derin Maden Ocağı", SOURCE, Color(0.24, 0.63, 0.54), "MO+",
 			"r_cevher_derin", 0, 10, 3500, false,
 			"Sıradan ocağın iki buçuk katı hızda cevher çıkarır. Hattın en eski darboğazını açar."],
+		["dagitici", "Dağıtıcı", SPLITTER, Color(0.55, 0.60, 0.66), "SP", "", 6, 6, 1400, false,
+			"Gelen ürünü iki ayrı çıkışa dağıtır. Diğer istasyonların çıkışı tek tele sınırlıdır — bir hattı ikiye ayırmanın tek yolu budur."],
 	]
 
 	var out: Dictionary = {}
@@ -164,6 +167,8 @@ func _build_blocks(recipes: Dictionary, items: Dictionary) -> Dictionary:
 		if block.category == INSPECT:
 			block.scrap_every_n = 8
 			block.reject_item = items["hurda"]
+		if block.category == SPLITTER:
+			block.output_port_count = 2
 		out[row[0]] = _persist(block, BLOCKS_DIR + row[0] + ".tres")
 	return out
 
@@ -181,8 +186,8 @@ func _build_research(blocks: Dictionary, items: Dictionary) -> Dictionary:
 			"Levhayı inceltip çubuk çeker. Vida hattının ilk adımı."],
 		["kesim_hatti", "Kesim Hattı", ["haddeleme"], 7200, [], ["kesim"], 0,
 			"Bir çubuktan iki vida. Montaj için vida şart."],
-		["depolama", "Ara Depolama", ["genisleme_1"], 9000, [], ["depo"], 0,
-			"İstasyonlar arası tampon. Dengesiz hattın tıkanmasını geciktirir."],
+		["depolama", "Ara Depolama", ["genisleme_1"], 9000, [], ["depo", "dagitici"], 0,
+			"İstasyonlar arası tampon ve tek girişi iki çıkışa bölen Dağıtıcı."],
 		["genisleme_2", "Fabrika Genişlemesi II", ["genisleme_1"], 7000, [], [], 5,
 			"Beş istasyon daha."],
 		["montaj_hatti", "Montaj Hattı", ["kesim_hatti"], 12000, [], ["montaj"], 0,

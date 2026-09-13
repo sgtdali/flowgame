@@ -109,6 +109,13 @@ func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) 
 		if link.matches(from_id, from_port, to_id, to_port):
 			return "Bu bağlantı zaten var."
 
+	# Her çıkış portu TEK tele sınırlıdır. Bir hattı birden fazla yere
+	# dağıtmanın tek yolu Dağıtıcı'dır — o, aynı işi ayrı PORTLARLA yapar
+	# (her portu yine tek tel), tek portun kendisini çoğaltarak değil.
+	for link: SimLink in _links:
+		if link.from_id == from_id and link.from_port == from_port:
+			return "Bu çıkış zaten bağlı. Birden fazla hatta dağıtmak için Dağıtıcı kullan."
+
 	var out_items: Array[ItemType] = src.type.output_items()
 	var in_items: Array[ItemType] = dst.type.input_items()
 	if not out_items.is_empty() and from_port >= out_items.size():
@@ -207,7 +214,7 @@ func _phase_produce() -> void:
 	for id: int in _ordered_ids:
 		var station: SimStation = _stations[id]
 		match station.type.category:
-			BlockType.Category.BUFFER:
+			BlockType.Category.BUFFER, BlockType.Category.SPLITTER:
 				_run_buffer(station)
 			BlockType.Category.SINK:
 				_run_sink(station)
@@ -229,8 +236,25 @@ func _phase_transfer() -> void:
 		if station.output.is_empty():
 			continue
 		var port_count: int = maxi(1, station.type.output_labels().size())
-		for port in port_count:
-			_transfer_from_port(station, port)
+
+		if port_count <= 1:
+			_transfer_from_port(station, 0)
+			continue
+
+		# Dağıtıcı gibi birden fazla ÇIKIŞ PORTU olan istasyonlarda, hangi
+		# portun bu tick ÖNCE denendiğini döndürüyoruz. Sabit sırayla
+		# (0, sonra 1) denenseydi tek bir parça birikince port 0 HER
+		# SEFERİNDE kazanır, port 1 hiç beslenmezdi — ölçüldü. Başlangıç
+		# noktasını bir gönderim başarılı olduğunda kaydırınca, seyrek gelen
+		# parçalar bile portlar arasında adil dönüşümlü dağılıyor.
+		var start_port: int = station.next_output_port
+		var sent: bool = false
+		for offset in port_count:
+			var port: int = (start_port + offset) % port_count
+			if _transfer_from_port(station, port):
+				sent = true
+		if sent:
+			station.next_output_port = (start_port + 1) % port_count
 
 
 ## --- Üretim -----------------------------------------------------------------
@@ -344,6 +368,8 @@ func _run_buffer(station: SimStation) -> void:
 	var item_id: StringName = station.input.keys()[0]
 	station.take_item(station.input, item_id, 1)
 	station.add_item(station.output, item_id, 1)
+	# throughput_total() bu sayaca bakıyor — yoksa Hız göstergesi hep 0 kalır.
+	station.produced_total += 1
 
 
 ## Sevkiyat gelen her ürünü yutar ve satar.
@@ -378,20 +404,24 @@ func _run_research(station: SimStation) -> void:
 
 ## --- Taşıma -----------------------------------------------------------------
 
-func _transfer_from_port(station: SimStation, port: int) -> void:
+## Bir birim taşımayı dener; taşıdıysa true döner. Çağıran (`_phase_transfer`)
+## bunu, çok portlu istasyonlarda hangi portun bir sonraki tick önce
+## deneneceğine karar vermek için kullanır.
+func _transfer_from_port(station: SimStation, port: int) -> bool:
 	var key: String = "%d:%d" % [station.id, port]
 	var links: Array = _links_by_port.get(key, [])
 	if links.is_empty():
-		return
+		return false
 
 	var item_id: StringName = _port_item_id(station, port)
 	if item_id == &"":
-		return
+		return false
 	if int(station.output.get(item_id, 0)) <= 0:
-		return
+		return false
 
-	# Round-robin: aynı porttan çıkan birden fazla bağlantı varsa yük
-	# kendiliğinden dengelenir ve sonuç deterministik kalır.
+	# Her çıkış portu artık en fazla 1 bağlantı taşıyor (bkz.
+	# connection_problem) — bu döngü pratikte hep tek turda biter. Round-robin
+	# yapısı yine de duruyor: gelecekte gevşetilirse kod yolu bozulmaz.
 	var start: int = int(station.next_link.get(port, 0))
 	for offset in links.size():
 		var index: int = (start + offset) % links.size()
@@ -404,7 +434,8 @@ func _transfer_from_port(station: SimStation, port: int) -> void:
 		station.take_item(station.output, item_id, 1)
 		dst.add_item(dst.input, item_id, 1)
 		station.next_link[port] = (index + 1) % links.size()
-		return
+		return true
+	return false
 
 
 ## Bu çıkış portundan hangi ürün akar?
@@ -470,6 +501,7 @@ func to_dict() -> Dictionary:
 			"produced_total": st.produced_total,
 			"consumed_total": st.consumed_total,
 			"next_link": st.next_link.duplicate(),
+			"next_output_port": st.next_output_port,
 		})
 
 	var link_data: Array = []
@@ -514,6 +546,7 @@ func from_dict(data: Dictionary) -> bool:
 		st.consumed_total = int(entry.get("consumed_total", 0))
 		for port_key: String in entry.get("next_link", {}):
 			st.next_link[int(port_key)] = int(entry["next_link"][port_key])
+		st.next_output_port = int(entry.get("next_output_port", 0))
 		_stations[st.id] = st
 		_ordered_ids.append(st.id)
 
@@ -538,10 +571,10 @@ func state_hash() -> String:
 	parts.append("t%d|r%d|g%s" % [tick_count, revenue, _stable_buffer(research_counts)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
-		parts.append("#%d:%s:%d/%d:%s:p%d%s:i%s:o%s" % [
+		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:i%s:o%s" % [
 			st.id, st.type.id, st.produced_total, st.consumed_total,
 			"1" if st.producing else "0", st.progress_ticks,
-			str(st.status),
+			str(st.status), st.next_output_port,
 			_stable_buffer(st.input), _stable_buffer(st.output),
 		])
 	return "|".join(parts).sha256_text()

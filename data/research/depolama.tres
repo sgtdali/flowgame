@@ -1,15 +1,16 @@
 [gd_resource type="Resource" script_class="ResearchNode" format=3]
 
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_xb6pq"]
-[ext_resource type="Script" path="res://data/research_node.gd" id="2_2e5cr"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="3_ydsqj"]
-[ext_resource type="Resource" path="res://data/block_types/depo.tres" id="4_6jmo7"]
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_2e5cr"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_ydsqj"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_6jmo7"]
+[ext_resource type="Resource" path="res://data/block_types/depo.tres" id="4_o8pfw"]
+[ext_resource type="Resource" path="res://data/block_types/dagitici.tres" id="5_5lboj"]
 
 [resource]
-script = ExtResource("2_2e5cr")
+script = ExtResource("2_ydsqj")
 id = &"depolama"
 display_name = "Ara Depolama"
-description = "İstasyonlar arası tampon. Dengesiz hattın tıkanmasını geciktirir."
+description = "İstasyonlar arası tampon ve tek girişi iki çıkışa bölen Dağıtıcı."
 requires = PackedStringArray("genisleme_1")
 cost_money = 9000
-unlocks_blocks = Array[ExtResource("3_ydsqj")]([ExtResource("4_6jmo7")])
+unlocks_blocks = Array[ExtResource("3_6jmo7")]([ExtResource("4_o8pfw"), ExtResource("5_5lboj")])

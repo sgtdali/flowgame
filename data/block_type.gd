@@ -16,6 +16,8 @@ enum Category {
 	BUFFER,   ## Tampon kuyruk — üretmez, sadece tutar ve geçirir
 	SINK,     ## Akışın sonu — yutar ve satar, çıkışı yok
 	RESEARCH, ## Ar-Ge Laboratuvarı — yutar ama satmaz, araştırmaya sayar
+	SPLITTER, ## Tek girişi birden fazla çıkışa dağıtır — BUFFER ile aynı
+	          ## simülasyon mantığını kullanır, yalnızca çıkış port sayısı farklı
 }
 
 @export var id: StringName = &""
@@ -33,6 +35,10 @@ enum Category {
 @export_group("Kuyruk")
 ## Girdi tamponunda ürün başına tutulabilecek en fazla adet.
 @export var input_capacity: int = 4
+## Reçetesi olmayan istasyonların (BUFFER, SPLITTER) kaç çıkış portu olduğu.
+## Yalnızca SPLITTER birden fazla kullanır — diğer her istasyonun çıkışı
+## tek tele sınırlıdır, birden fazlaya dağıtmak için Dağıtıcı gerekir.
+@export var output_port_count: int = 1
 ## Çıktı tamponu. DOLU ÇIKTI ÜRETİMİ DURDURUR — tıkanma mekaniğinin kaynağı.
 @export var output_capacity: int = 4
 
@@ -60,6 +66,7 @@ func category_label() -> String:
 		Category.BUFFER: return "Tampon"
 		Category.SINK: return "Bitiş"
 		Category.RESEARCH: return "Ar-Ge"
+		Category.SPLITTER: return "Dağıtıcı"
 	return "Bilinmiyor"
 
 
@@ -107,7 +114,11 @@ func output_labels() -> PackedStringArray:
 	if category == Category.SINK or category == Category.RESEARCH:
 		return out  # bitiş noktasının çıkışı yok
 	if recipe == null:
-		out.append("Çıkış")
+		if output_port_count <= 1:
+			out.append("Çıkış")
+		else:
+			for i in output_port_count:
+				out.append("Çıkış %s" % char(65 + i))  # Çıkış A, B, C...
 		return out
 	if category == Category.INSPECT:
 		# Ürün adı yerine karar adı daha okunur: hangi dal "uygun", hangisi "ret".

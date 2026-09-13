@@ -82,6 +82,43 @@ Bu, RateMeter'ın üçüncü ve son tasarımı. Dosyanın başındaki yorum üç
 denemeyi de (neden başarısız olduklarıyla) kayıtlı tutuyor — aynı hataya
 düşmemek için oraya bakılabilir.
 
+**5. tur (yapıldı) — üç ayrı konu.**
+
+**(a) Araştırma paneli açıkken bakiye canlanmıyordu.** Panel yalnızca
+Ar-Ge Lab'a akıtılan ürün değişince yenileniyordu, bakiye değişince değil —
+para maliyetli bir araştırma erişilebilir hâle gelse bile "Araştır" düğmesi
+etkinleşmiyordu, paneli kapatıp açmak gerekiyordu. Artık bakiye değişimi de
+yenilemeyi tetikliyor.
+
+**(b) Gelir hızı yüksek meblağlarda hâlâ oynaktı (1600-3000 gibi).** 4. turda
+düzeltilen model TEK bir olay akışı varsayıyordu; gerçekte külçe (10₺) ve
+gövde (220₺) gibi 22 kat farklı büyüklükte satışlar AYNI ölçere karışınca,
+nadir gelen büyük satış ortalamayı bir anda fırlatıyordu. Ölçüldü: karışık
+ekonomide gösterge 481-3330 TL/dk arası geziniyordu. Çözüm: her ÜRÜN TÜRÜ
+için ayrı bir hız ölçer tutup (`SalesRateTracker`), sonucu toplamak — aynı
+ürün içinde miktar sabit olduğundan her biri kusursuz durağan kalıyor,
+sabitlerin toplamı da durağan kalıyor.
+
+**(c) Yeni node: Dağıtıcı (Splitter).** Bir istasyonun çıkışı yetişemeyen
+ikinci bir istasyona yönlendirilebilsin istendi (ör. Pres 1sn'de 1 veriyor,
+Hadde 1.5sn'de tüketiyor). Bunun yanında **kural değişikliği**: artık her
+çıkış portu TEK tele sınırlı — birden fazla hatta dağıtmanın tek yolu
+Dağıtıcı (2 ayrı çıkış portu olan tek istasyon türü). Bu, önceki "aynı
+porttan birden fazla tel" örtük mekaniğinin yerini aldı; oyuncu artık
+dallanmayı görmeden/anlamadan kuramaz.
+
+Uygulama sırasında BULUNAN VE DÜZELTİLEN bir hata: Dağıtıcı'nın iki çıkış
+portu sabit sırayla (0, sonra 1) denenince, tek bir parça birikmişken port 0
+HER SEFERİNDE kazanıyor, port 1 HİÇ beslenmiyordu — ölçüldü, 3000 tick'te
+ikinci Hadde 0 üretti. Düzeltme: hangi portun önce deneneceği, bir gönderim
+başarılı olduğunda bir sonraki porta kaydırılıyor. Doğrulandı: 74/74 üretim,
+%0 fark.
+
+Not: bu turda tempo YENİDEN ÖLÇÜLMEDİ (kullanıcı talebiyle ertelendi).
+`tools/sim_test.gd`'nin 8 kontrolü ve `tools/progression_test.gd`'nin
+bağlantı/satın alma adımları hatasız tamamlanıyor; tempo sayısı bir dahaki
+turda değerlendirilecek.
+
 ---
 
 ## Sıradaki tur: yine oyna

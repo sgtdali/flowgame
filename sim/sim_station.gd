@@ -28,7 +28,21 @@ var produced_total: int = 0
 var consumed_total: int = 0
 
 ## Çıkış portu başına round-robin sayacı: port -> sıradaki bağlantı indeksi.
+## Her port artık en fazla 1 bağlantı taşıyabildiği için pratikte hep 0'da
+## kalır; birden fazla bağlantıya izin verilen tek yer buradaki kod yolu
+## değil, Dağıtıcı'nın AYRI portlarıdır (bkz. next_output_port).
 var next_link: Dictionary = {}
+
+## Dağıtıcı gibi birden fazla ÇIKIŞ PORTU olan istasyonlarda, bir sonraki
+## tick'te hangi portun ÖNCE denenecebeğini tutar.
+##
+## NEDEN GEREKLİ: tek bir parça birikmişken portlar sabit sırayla (0, 1, 2…)
+## denenirse port 0 HER SEFERİNDE kazanır ve port 1 hiç beslenmez — ölçüldü,
+## iki Hadde'ye bağlı bir Dağıtıcı'da ikincisi 3000 tick boyunca 0 üretti.
+## Başlangıç portu her tick bir sonraki porta kaydırılınca (yalnızca bir
+## gönderim başarılı olduğunda), az sayıda parça bile portlar arasında adil
+## dönüşümlü dağılıyor.
+var next_output_port: int = 0
 
 ## İstasyonun bu tick'teki durumu.
 ##

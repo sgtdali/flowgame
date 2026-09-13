@@ -49,8 +49,7 @@ var _last_money_rate: String = ""
 
 ## Gelir ve sevkiyat hızı. Sunum verisi — kayıtta yer almaz, yükledikten
 ## birkaç saniye sonra kendi kendine dolar.
-var _income_rate := RateMeter.new()
-var _output_rate := RateMeter.new()
+var _sales_rate := SalesRateTracker.new()
 
 
 func _ready() -> void:
@@ -204,8 +203,7 @@ func _on_clear_pressed() -> void:
 	_canvas.clear_all()
 	_progression.reset()
 	_accumulator = 0.0
-	_income_rate.reset()
-	_output_rate.reset()
+	_sales_rate.reset()
 	_refresh_availability()
 
 
@@ -248,9 +246,8 @@ func _refresh_hud() -> void:
 		_last_money = money
 		_money.text = money
 
-	_income_rate.sample(_sim.tick_count, _sim.revenue)
-	_output_rate.sample(_sim.tick_count, _sim.total_sold())
-	var rate: String = "+%s ₺/dk" % GameConfig.format_money(roundi(_income_rate.per_minute()))
+	_sales_rate.sample(_sim.tick_count, _sim.sold_counts)
+	var rate: String = "+%s ₺/dk" % GameConfig.format_money(roundi(_sales_rate.money_per_minute()))
 	if rate != _last_money_rate:
 		_last_money_rate = rate
 		_money_rate.text = rate
@@ -261,12 +258,18 @@ func _refresh_hud() -> void:
 		_slots.text = slots
 
 	# Bakiye değişince paletin "karşılanabilir" durumu da değişir.
-	if balance != _last_balance:
+	var balance_changed: bool = balance != _last_balance
+	if balance_changed:
 		_refresh_availability()
 
-	# Araştırma paneli açıkken ürün ilerlemesi canlı görünmeli.
+	# Araştırma paneli açıkken ürün ilerlemesi VE bakiye canlı görünmeli.
+	#
+	# Önceden yalnızca research_total değişince yenileniyordu — panel açıkken
+	# para birikip bir araştırmayı karşılar hâle gelse bile "Araştır" düğmesi
+	# etkinleşmiyordu, oyuncu paneli kapatıp açmak zorunda kalıyordu.
 	var research_total: int = _research_total()
-	if _research_panel.visible and research_total != _last_research_total:
+	var research_changed: bool = research_total != _last_research_total
+	if _research_panel.visible and (balance_changed or research_changed):
 		_last_research_total = research_total
 		_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
 
@@ -304,7 +307,7 @@ func _refresh_status() -> void:
 			FlowBlock.Display.UNWIRED: unwired += 1
 
 	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d boşta  ·  sevkiyat %.1f/dk" % [
-		_sim.station_count(), _sim.link_count(), idle, _output_rate.per_minute(),
+		_sim.station_count(), _sim.link_count(), idle, _sales_rate.units_per_minute(),
 	]
 	if unwired > 0:
 		text += "  ·  %d istasyonun portu boşta" % unwired
@@ -379,8 +382,7 @@ func _on_load_path_selected(path: String) -> void:
 	_accumulator = 0.0
 	# Hız ölçerler kümülatif sayaçlara bakıyor; yükleme sonrası eski örnekler
 	# yanlış bir sıçrama gösterirdi.
-	_income_rate.reset()
-	_output_rate.reset()
+	_sales_rate.reset()
 
 	var layout: Dictionary = data.get("layout", {})
 	for station: SimStation in _sim.stations():

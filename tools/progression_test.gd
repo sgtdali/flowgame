@@ -85,8 +85,19 @@ func _play() -> void:
 	if not _afford_and_research(ResearchCatalog.KESIM_HATTI):
 		return
 	var kesim: int = _build(BlockCatalog.KESIM)
+	# Pres'in çıkışı tek tele sınırlı — Montaj'a ihtiyaç doğunca da levha
+	# lazım olacağından, dallanma noktasını baştan bir Dağıtıcı ile kuruyoruz.
+	# Dağıtıcı, Ara Depolama araştırmasıyla birlikte açılıyor. Pres henüz
+	# Sevkiyat'a bağlıyken (gelir kesilmeden) parayı bekliyoruz, SONRA
+	# koparıp Dağıtıcı'ya yönlendiriyoruz.
+	if not _afford_and_research(ResearchCatalog.DEPOLAMA):
+		return
+	# Dağıtıcı'yı da Pres hâlâ Sevkiyat'a bağlıyken (gelir kesilmeden) satın
+	# alıyoruz, ancak SONRA koparıp yönlendiriyoruz.
+	var dagitici: int = _build(BlockCatalog.DAGITICI)
 	sim.disconnect_stations(pres, 0, sevkiyat, 0)
-	_wire(pres, 0, hadde, 0)
+	_wire(pres, 0, dagitici, 0)
+	_wire(dagitici, 0, hadde, 0)
 	_wire(hadde, 0, kesim, 0)
 	_wire(kesim, 0, sevkiyat, 0)
 	_mark("Vida hatti")
@@ -98,7 +109,7 @@ func _play() -> void:
 		return
 	var montaj: int = _build(BlockCatalog.MONTAJ)
 	sim.disconnect_stations(kesim, 0, sevkiyat, 0)
-	_wire(pres, 0, montaj, 0)      # levha, pres cikisini hadde ile paylasir
+	_wire(dagitici, 1, montaj, 0)  # levha, Dağıtıcı'nın ikinci portundan
 	_wire(kesim, 0, montaj, 1)     # vida
 	_wire(montaj, 0, sevkiyat, 0)
 	_mark("Montaj hatti")
@@ -125,7 +136,14 @@ func _play() -> void:
 	sim.disconnect_stations(kalite, 1, sevkiyat, 0)
 	_wire(kalite, 1, geri, 0)      # ret -> geri donusum (hurdayi satmak yerine)
 	_wire(geri, 0, pres, 0)        # kulce -> pres
-	_wire(kalite, 0, lab, 0)       # uygun govdenin yarisi laboratuvara
+	# Uygun gövdenin yarısı laboratuvara gitsin: kalite:0 tek tele sınırlı,
+	# ikinci bir Dağıtıcı ile bölüyoruz. Yine SATIN ALMAYI, en değerli akışı
+	# (gövde) kesmeden önce yapıyoruz.
+	var dagitici2: int = _build(BlockCatalog.DAGITICI)
+	sim.disconnect_stations(kalite, 0, sevkiyat, 0)
+	_wire(kalite, 0, dagitici2, 0)
+	_wire(dagitici2, 0, sevkiyat, 0)
+	_wire(dagitici2, 1, lab, 0)
 	_mark("Ar-Ge laboratuvari")
 
 	# 8) Son arastirma: 150 govde laboratuvara

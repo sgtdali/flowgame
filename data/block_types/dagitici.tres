@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_fbcfr"]
+
+[resource]
+script = ExtResource("1_fbcfr")
+id = &"dagitici"
+display_name = "Dağıtıcı"
+category = 6
+accent_color = Color(0.55, 0.6, 0.66, 1)
+icon_char = "SP"
+description = "Gelen ürünü iki ayrı çıkışa dağıtır. Diğer istasyonların çıkışı tek tele sınırlıdır — bir hattı ikiye ayırmanın tek yolu budur."
+input_capacity = 6
+output_port_count = 2
+output_capacity = 6
+build_cost = 1400

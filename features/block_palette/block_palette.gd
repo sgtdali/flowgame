@@ -15,6 +15,7 @@ const _CATEGORY_ORDER: Array[BlockType.Category] = [
 	BlockType.Category.PROCESS,
 	BlockType.Category.INSPECT,
 	BlockType.Category.BUFFER,
+	BlockType.Category.SPLITTER,
 	BlockType.Category.RESEARCH,
 	BlockType.Category.SINK,
 ]

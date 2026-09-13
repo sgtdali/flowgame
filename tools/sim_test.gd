@@ -56,6 +56,7 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 		"maden": sim.add_station(BlockCatalog.MADEN_OCAGI),
 		"eritme": sim.add_station(BlockCatalog.ERITME),
 		"pres": sim.add_station(BlockCatalog.PRES),
+		"dagitici": sim.add_station(BlockCatalog.DAGITICI),
 		"hadde": sim.add_station(BlockCatalog.HADDE),
 		"kesim": sim.add_station(BlockCatalog.KESIM),
 		"montaj": sim.add_station(BlockCatalog.MONTAJ),
@@ -66,9 +67,10 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 	var wires: Array = [
 		[ids.maden, 0, ids.eritme, 0],
 		[ids.eritme, 0, ids.pres, 0],
-		[ids.pres, 0, ids.hadde, 0],
+		[ids.pres, 0, ids.dagitici, 0],
+		[ids.dagitici, 0, ids.hadde, 0],
 		[ids.hadde, 0, ids.kesim, 0],
-		[ids.pres, 0, ids.montaj, 0],     # Levha -> Montaj girdi 1
+		[ids.dagitici, 1, ids.montaj, 0], # Levha -> Montaj girdi 1
 		[ids.kesim, 0, ids.montaj, 1],    # Vida  -> Montaj girdi 2
 		[ids.montaj, 0, ids.kalite, 0],
 		[ids.kalite, 0, ids.sevkiyat, 0], # Uygun
