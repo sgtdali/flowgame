@@ -1,18 +1,14 @@
-[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3]
 
-[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_5aqb4"]
 
 [resource]
-script = ExtResource("1_bt")
+script = ExtResource("1_5aqb4")
 id = &"sevkiyat"
 display_name = "Sevkiyat"
 category = 4
 accent_color = Color(0.878, 0.447, 0.361, 1)
 icon_char = "SV"
-description = "Ürünün satıldığı nokta. Çıkışı yoktur."
-input_labels = PackedStringArray("Ürün")
-output_labels = PackedStringArray()
-cycle_time_s = 0.0
-capacity = 999
-operators = 1
-scrap_rate = 0.0
+description = "Gelen her ürünü satar. Akışın sonu — çıkışı yoktur."
+input_capacity = 8
+output_capacity = 0

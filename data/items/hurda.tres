@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemType" format=3]
+
+[ext_resource type="Script" path="res://data/item_type.gd" id="1_8n0m1"]
+
+[resource]
+script = ExtResource("1_8n0m1")
+id = &"hurda"
+display_name = "Hurda"
+color = Color(0.52, 0.42, 0.45, 1)
+icon_char = "HR"
+base_price = 3

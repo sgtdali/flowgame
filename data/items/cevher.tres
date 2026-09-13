@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemType" format=3]
+
+[ext_resource type="Script" path="res://data/item_type.gd" id="1_v7wh1"]
+
+[resource]
+script = ExtResource("1_v7wh1")
+id = &"cevher"
+display_name = "Cevher"
+color = Color(0.55, 0.47, 0.38, 1)
+icon_char = "CV"
+base_price = 2

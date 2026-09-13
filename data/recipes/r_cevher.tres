@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Recipe" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_k3lka"]
+[ext_resource type="Resource" path="res://data/items/cevher.tres" id="2_ni8as"]
+[ext_resource type="Script" path="res://data/recipe.gd" id="3_to45w"]
+
+[sub_resource type="Resource" id="Resource_lp6oq"]
+script = ExtResource("1_k3lka")
+item = ExtResource("2_ni8as")
+
+[resource]
+script = ExtResource("3_to45w")
+id = &"r_cevher"
+outputs = Array[ExtResource("1_k3lka")]([SubResource("Resource_lp6oq")])
+duration_ticks = 20

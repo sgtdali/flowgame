@@ -111,8 +111,8 @@ func _refresh_status() -> void:
 	var text: String = "%d istasyon  ·  %d bağlantı" % [summary["blocks"], summary["connections"]]
 	var bottleneck: String = String(summary["bottleneck_name"])
 	if not bottleneck.is_empty():
-		text += "  ·  Darboğaz: %s (%s / parça)" % [
-			bottleneck, FlowBlock.format_duration(float(summary["bottleneck_s"]))
+		text += "  ·  En yavaş: %s (%s / parça)" % [
+			bottleneck, GameConfig.format_ticks(int(summary["bottleneck_ticks"]))
 		]
 	_status.text = text
 

@@ -187,23 +187,26 @@ func _on_block_params_changed(_block: FlowBlock) -> void:
 ## --- Özet -------------------------------------------------------------------
 
 ## Durum çubuğu için akışın anlık özeti.
-## Darboğaz = en yüksek etkin çevrim süresi (süre / kapasite).
+##
+## Darboğaz şimdilik STATİK bir tahmin: en uzun reçete süresi. Faz 2'den
+## sonra gerçek darboğaz simülasyondan gelecek (hangi istasyon fiilen tıkalı),
+## çünkü asıl darboğazı belirleyen şey süre değil, hattın dengesizliğidir.
 func get_summary() -> Dictionary:
 	var blocks: Array[FlowBlock] = get_blocks()
 	var worst_name: String = ""
-	var worst_rate: float = 0.0
+	var worst_ticks: int = 0
 	for block: FlowBlock in blocks:
-		if block.cycle_time_s <= 0.0:
+		var recipe: Recipe = block.block_type.recipe
+		if recipe == null:
 			continue
-		var effective: float = block.cycle_time_s / float(maxi(1, block.capacity))
-		if effective > worst_rate:
-			worst_rate = effective
+		if recipe.duration_ticks > worst_ticks:
+			worst_ticks = recipe.duration_ticks
 			worst_name = block.block_label
 	return {
 		"blocks": blocks.size(),
 		"connections": get_connection_list().size(),
 		"bottleneck_name": worst_name,
-		"bottleneck_s": worst_rate,
+		"bottleneck_ticks": worst_ticks,
 	}
 
 

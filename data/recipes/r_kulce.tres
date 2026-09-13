@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Recipe" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_5h6pk"]
+[ext_resource type="Resource" path="res://data/items/cevher.tres" id="2_bitfw"]
+[ext_resource type="Resource" path="res://data/items/kulce.tres" id="3_brkmw"]
+[ext_resource type="Script" path="res://data/recipe.gd" id="4_uvual"]
+
+[sub_resource type="Resource" id="Resource_aowef"]
+script = ExtResource("1_5h6pk")
+item = ExtResource("2_bitfw")
+count = 2
+
+[sub_resource type="Resource" id="Resource_4g7l2"]
+script = ExtResource("1_5h6pk")
+item = ExtResource("3_brkmw")
+
+[resource]
+script = ExtResource("4_uvual")
+id = &"r_kulce"
+inputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_aowef")])
+outputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_4g7l2")])
+duration_ticks = 20

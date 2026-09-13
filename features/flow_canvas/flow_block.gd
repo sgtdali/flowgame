@@ -1,31 +1,30 @@
 class_name FlowBlock
 extends GraphNode
 
-## Akıştaki tek bir üretim istasyonu.
+## Akıştaki tek bir istasyonun GÖRÜNTÜSÜ.
 ##
-## Görseli tamamen `block_type` arketipinden türetilir; bu yüzden sabit bir
-## .tscn yoktur — port sayısı istasyona göre değişir (ör. Kalite Kontrol'ün
-## iki çıkışı, Montaj'ın iki girişi vardır).
+## Görseli tamamen `block_type` arketipinden türer; sabit bir .tscn yoktur
+## çünkü port sayısı reçeteye göre değişir (Montaj'ın iki girişi, Kalite
+## Kontrol'ün iki çıkışı vardır).
 ##
-## MİMARİ: Bu düğüm bir "bileşen"dir. Kendi verisini tutar, değişince YUKARI
-## sinyal gönderir. Canvas'a, panellere veya editöre asla doğrudan erişmez.
+## MİMARİ: Bu düğüm hiçbir şeye SAHİP DEĞİL. Faz 2'den itibaren kuyruklar ve
+## ilerleme simülasyonda yaşayacak, burası sadece onu yansıtacak. Şimdilik
+## tuttuğu tek kendi verisi kullanıcının verdiği ad.
 
 ## Port tipi — GraphEdit yalnızca aynı tipteki portların bağlanmasına izin verir.
 const PORT_TYPE_MATERIAL: int = 0
 
-## Bu bloğun herhangi bir parametresi değiştiğinde yayılır.
 signal params_changed(block: FlowBlock)
 
 var block_type: BlockType = null
 
+## Simülasyondaki istasyonun kimliği. Faz 3'te atanacak.
+## GraphEdit düğüm adı KİMLİK DEĞİLDİR — ad değişebilir, id değişmez.
+var sim_id: int = -1
+
 ## Kullanıcının verdiği ad (varsayılan: arketipin adı).
 var block_label: String = ""
-var cycle_time_s: float = 0.0
-var capacity: int = 1
-var operators: int = 1
-var scrap_rate: float = 0.0
 
-## Alt bilgi ızgarasındaki etiket/değer çiftleri (anahtar -> Label).
 var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
 
@@ -34,10 +33,6 @@ var _stat_values: Dictionary = {}
 func setup(type: BlockType) -> void:
 	block_type = type
 	block_label = type.display_name
-	cycle_time_s = type.cycle_time_s
-	capacity = type.capacity
-	operators = type.operators
-	scrap_rate = type.scrap_rate
 
 
 func _ready() -> void:
@@ -88,10 +83,10 @@ func _apply_style() -> void:
 	add_theme_stylebox_override(&"panel_selected", panel_sel)
 
 
-## Port satırlarını ve istatistik satırını oluşturur.
+## Port satırlarını ve bilgi ızgarasını oluşturur.
 func _build_rows() -> void:
-	var inputs: PackedStringArray = block_type.input_labels
-	var outputs: PackedStringArray = block_type.output_labels
+	var inputs: PackedStringArray = block_type.input_labels()
+	var outputs: PackedStringArray = block_type.output_labels()
 	var row_count: int = maxi(inputs.size(), outputs.size())
 	var accent: Color = block_type.accent_color
 
@@ -124,7 +119,6 @@ func _build_rows() -> void:
 		add_child(row)
 		set_slot(i, has_in, PORT_TYPE_MATERIAL, accent, has_out, PORT_TYPE_MATERIAL, accent)
 
-	# Portsuz bilgi satırı.
 	var sep := HSeparator.new()
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(sep)
@@ -132,7 +126,7 @@ func _build_rows() -> void:
 	add_child(_build_stats_grid())
 
 
-## Parametre özeti: iki sütunlu ızgara.
+## Bilgi özeti: iki sütunlu ızgara.
 ##
 ## Tek satırlık `autowrap` Label KULLANILMAZ: genişliği henüz belli değilken
 ## Godot minimum yüksekliği "her karakter ayrı satıra düşerse" varsayımıyla
@@ -145,9 +139,8 @@ func _build_stats_grid() -> GridContainer:
 	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var specs: Array = [
-		[&"cycle", "Süre"],
-		[&"capacity", "Kapasite"],
-		[&"operators", "Operatör"],
+		[&"duration", "Süre"],
+		[&"queue", "Kuyruk"],
 		[&"scrap", "Fire"],
 	]
 	for spec: Array in specs:
@@ -184,10 +177,21 @@ func _refresh_header() -> void:
 func _refresh_stats() -> void:
 	if _stat_values.is_empty():
 		return
-	_set_stat(&"cycle", cycle_time_s > 0.0, format_duration(cycle_time_s))
-	_set_stat(&"capacity", true, "%d parça" % capacity)
-	_set_stat(&"operators", operators > 0, "%d kişi" % operators)
-	_set_stat(&"scrap", scrap_rate > 0.0, "%%%.1f" % (scrap_rate * 100.0))
+	var recipe: Recipe = block_type.recipe
+	_set_stat(&"duration", recipe != null,
+		recipe.duration_text(GameConfig.TICKS_PER_SECOND) if recipe != null else "")
+	_set_stat(&"queue", true, _queue_text())
+	_set_stat(&"scrap", block_type.scrap_every_n > 0, "1 / %d" % block_type.scrap_every_n)
+
+
+## Kaynağın girişi, bitişin çıkışı yoktur — olmayan tarafı göstermeyiz.
+func _queue_text() -> String:
+	match block_type.category:
+		BlockType.Category.SOURCE:
+			return "çıkış %d" % block_type.output_capacity
+		BlockType.Category.SINK:
+			return "giriş %d" % block_type.input_capacity
+	return "%d / %d" % [block_type.input_capacity, block_type.output_capacity]
 
 
 ## Bir satırı gösterir/gizler. GridContainer gizli çocukları atladığı için
@@ -201,35 +205,21 @@ func _set_stat(key: StringName, shown: bool, value: String) -> void:
 		value_label.text = value
 
 
-static func format_duration(seconds: float) -> String:
-	if seconds >= 3600.0:
-		return "%.1f sa" % (seconds / 3600.0)
-	if seconds >= 60.0:
-		return "%.1f dk" % (seconds / 60.0)
-	return "%.0f sn" % seconds
-
-
 ## --- Veri ------------------------------------------------------------------
 
-## Denetçi panelinin çağırdığı tek giriş noktası. Sahibi bu düğümdür;
-## dışarıdan doğrudan alan ataması YAPILMAZ.
+## Denetçi panelinin çağırdığı tek giriş noktası.
+##
+## Artık yalnızca ad düzenlenebilir: süre, kapasite ve fire istasyon TÜRÜNÜN
+## özellikleridir, tek bir kopyanın değil. Oyuncu bunları araştırmayla
+## değiştirir, elle değil.
 func set_param(key: StringName, value: Variant) -> void:
 	match key:
 		&"label":
 			block_label = String(value)
 			_refresh_header()
-		&"cycle_time_s":
-			cycle_time_s = maxf(0.0, float(value))
-		&"capacity":
-			capacity = maxi(1, int(value))
-		&"operators":
-			operators = maxi(0, int(value))
-		&"scrap_rate":
-			scrap_rate = clampf(float(value), 0.0, 1.0)
 		_:
 			push_warning("FlowBlock: bilinmeyen parametre '%s'" % key)
 			return
-	_refresh_stats()
 	params_changed.emit(self)
 
 
@@ -241,20 +231,12 @@ func to_dict() -> Dictionary:
 		"label": block_label,
 		"x": position_offset.x,
 		"y": position_offset.y,
-		"cycle_time_s": cycle_time_s,
-		"capacity": capacity,
-		"operators": operators,
-		"scrap_rate": scrap_rate,
 	}
 
 
 ## Kayıttan geri yükler. `setup()` sonrasında, ağaca eklendikten sonra çağrılır.
 func apply_dict(data: Dictionary) -> void:
 	block_label = String(data.get("label", block_label))
-	cycle_time_s = float(data.get("cycle_time_s", cycle_time_s))
-	capacity = int(data.get("capacity", capacity))
-	operators = int(data.get("operators", operators))
-	scrap_rate = float(data.get("scrap_rate", scrap_rate))
 	position_offset = Vector2(float(data.get("x", 0.0)), float(data.get("y", 0.0)))
 	_refresh_header()
 	_refresh_stats()

@@ -1,7 +1,11 @@
-# Üretim Akışı Editörü
+# Fabrika Oyunu
 
-ReactFlow benzeri, düğüm tabanlı bir üretim akışı editörü. Godot 4.6 `GraphEdit`
-üzerine kurulu.
+Düğüm tabanlı bir fabrika oyunu: üretim hattını graf olarak kur, çalıştır, sat,
+araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` üzerine kurulu.
+
+Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)
+
+> Durum: **Faz 1 tamam** (veri katmanı). Simülasyon henüz yok — hat çizilir ama akmaz.
 
 ## Çalıştırma
 
@@ -27,15 +31,25 @@ Alt çubuk istasyon/bağlantı sayısını ve **darboğazı** gösterir
 Klasörler dosya türüne göre değil, **özelliğe göre** ayrılmıştır.
 
 ```
+common/
+  game_config.gd       Denge sayılarının TEK yeri (tick hızı, slot, para)
 data/
-  block_type.gd        İstasyon arketipi (Resource)
-  block_catalog.gd     Tüm arketiplerin tek kayıt noktası (preload)
-  block_types/*.tres   10 istasyon tanımı — yeni tür eklemek için buraya bak
+  item_type.gd         Ürün türü (Resource)
+  recipe.gd            Girdi -> çıktı + süre (tick)
+  recipe_slot.gd       "Levha × 2"
+  block_type.gd        İstasyon arketipi; portları reçetesinden türetir
+  research_node.gd     Araştırma kilidi (içeriği Faz 4'te)
+  block_catalog.gd     Arketiplerin tek kayıt noktası (preload)
+  items/*.tres         7 ürün
+  recipes/*.tres       8 reçete
+  block_types/*.tres   10 istasyon
 features/
   flow_editor/         ORKESTRATÖR — bileşenleri birbirine bağlar
   flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
   block_palette/       Sol panel: eklenebilir istasyonlar
-  block_inspector/     Sağ panel: seçili istasyonun parametreleri
+  block_inspector/     Sağ panel: seçili istasyonun bilgileri
+tools/
+  gen_content.gd       İçerik .tres'lerini üreten önyükleme aracı
 ```
 
 ### Mimari kuralı
@@ -47,10 +61,20 @@ geçer.
 
 ## Yeni istasyon türü eklemek
 
-1. `data/block_types/` içine yeni bir `.tres` kopyala, alanları doldur.
-2. `data/block_catalog.gd` içine `preload` satırını ve `_ORDER` listesine ekle.
+1. Gerekiyorsa `data/items/` altına yeni ürün, `data/recipes/` altına reçete ekle
+   (Godot editöründe sağ tık -> New Resource).
+2. `data/block_types/` altına yeni istasyon `.tres`'i ekle, reçetesini bağla.
+3. `data/block_catalog.gd` içine `preload` satırını ve `_ORDER` listesine ekle.
 
-Palet ve denetçi kendiliğinden günceller.
+Palet, portlar ve denetçi kendiliğinden güncellenir — port etiketleri reçeteden
+türetilir, elle yazılmaz.
+
+Toplu değişiklik için `tools/gen_content.gd` kullanılabilir, ama **dikkat:**
+o araç mevcut dosyaların üzerine yazar ve Inspector'da elle yapılan ayarları siler.
+
+```bash
+godot --headless --path . --script res://tools/gen_content.gd
+```
 
 ## Kayıt biçimi
 

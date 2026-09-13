@@ -1,18 +1,15 @@
-[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3]
 
-[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+[ext_resource type="Resource" path="res://data/recipes/r_vida.tres" id="1_t6ul8"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="2_r0w2j"]
 
 [resource]
-script = ExtResource("1_bt")
+script = ExtResource("2_r0w2j")
 id = &"kesim"
 display_name = "Kesim"
-category = 1
 accent_color = Color(0.29, 0.624, 0.878, 1)
 icon_char = "KS"
-description = "Çubuğu keserek vida üretir."
-input_labels = PackedStringArray("Çubuk")
-output_labels = PackedStringArray("Vida")
-cycle_time_s = 8.0
-capacity = 1
-operators = 1
-scrap_rate = 0.0
+description = "Bir çubuktan iki vida keser."
+recipe = ExtResource("1_t6ul8")
+output_capacity = 6
+build_cost = 2200

@@ -1,18 +1,16 @@
-[gd_resource type="Resource" script_class="BlockType" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3]
 
-[ext_resource type="Script" path="res://data/block_type.gd" id="1_bt"]
+[ext_resource type="Resource" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="2_htaww"]
 
 [resource]
-script = ExtResource("1_bt")
+script = ExtResource("2_htaww")
 id = &"maden_ocagi"
 display_name = "Maden Ocağı"
 category = 0
 accent_color = Color(0.31, 0.757, 0.651, 1)
 icon_char = "MO"
-description = "Cevherin akışa girdiği nokta. Girişi yoktur."
-input_labels = PackedStringArray()
-output_labels = PackedStringArray("Cevher")
-cycle_time_s = 0.0
-capacity = 999
-operators = 0
-scrap_rate = 0.0
+description = "Durmadan cevher üretir. Girdi istemez, akışın başlangıcıdır."
+recipe = ExtResource("1_oxrox")
+input_capacity = 0
+output_capacity = 8
