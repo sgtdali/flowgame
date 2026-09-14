@@ -22,10 +22,8 @@ extends Resource
 ## ürünle açılır. MVP'de yalnızca son araştırma bunu kullanır.
 @export var cost_items: Array[RecipeSlot] = []
 
-@export_group("Ödül")
+@export_group("Reward")
 @export var unlocks_blocks: Array[BlockType] = []
-## Fabrika istasyon slotu limitine eklenen miktar.
-@export var slot_bonus: int = 0
 
 
 func is_item_cost() -> bool:

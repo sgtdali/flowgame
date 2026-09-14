@@ -8,8 +8,8 @@
 [resource]
 script = ExtResource("2_j35rw")
 id = &"haddeleme"
-display_name = "Haddeleme"
-description = "Levhayı inceltip çubuk çeker. Vida hattının ilk adımı."
+display_name = "Rod Drawing"
+description = "Draw plates into rods at the drawbench."
 requires = PackedStringArray("presleme")
 cost_money = 4200
 unlocks_blocks = Array[ExtResource("3_6pwui")]([ExtResource("4_ldsco")])

@@ -6,11 +6,11 @@
 [resource]
 script = ExtResource("2_38xr4")
 id = &"maden_ocagi_derin"
-display_name = "Derin Maden Ocağı"
+display_name = "Deep Iron Mine"
 category = 0
-accent_color = Color(0.24, 0.63, 0.54, 1)
-icon_char = "MO+"
-description = "Sıradan ocağın iki buçuk katı hızda cevher çıkarır. Hattın en eski darboğazını açar."
+accent_color = Color(0.37, 0.50, 0.33, 1)
+icon_char = "DM"
+description = "Extracts ore two and a half times faster than a common mine."
 recipe = ExtResource("1_7qvlj")
 input_capacity = 0
 output_capacity = 10

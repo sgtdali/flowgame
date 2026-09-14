@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_5aqb4")
 id = &"sevkiyat"
-display_name = "Sevkiyat"
+display_name = "Market Stall"
 category = 4
-accent_color = Color(0.878, 0.447, 0.361, 1)
-icon_char = "SV"
-description = "Gelen her ürünü satar. Akışın sonu — çıkışı yoktur."
+accent_color = Color(0.58, 0.39, 0.25, 1)
+icon_char = "MK"
+description = "Sells every incoming good for coin. The end of a trade route."
 input_capacity = 8
 output_capacity = 0
 unlocked_at_start = true

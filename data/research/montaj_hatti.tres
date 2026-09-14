@@ -8,8 +8,8 @@
 [resource]
 script = ExtResource("2_elrpc")
 id = &"montaj_hatti"
-display_name = "Montaj Hattı"
-description = "İki levha ve üç vidayı birleştirip gövde üretir. İlk kez iki ayrı hattı beslemen gerekecek."
+display_name = "Armor Craft"
+description = "Join two plates and three rivets into armor. Two supply routes meet here."
 requires = PackedStringArray("kesim_hatti")
 cost_money = 12000
 unlocks_blocks = Array[ExtResource("3_2bxqr")]([ExtResource("4_w05ve")])

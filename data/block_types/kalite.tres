@@ -7,11 +7,11 @@
 [resource]
 script = ExtResource("3_uim5t")
 id = &"kalite"
-display_name = "Kalite Kontrol"
+display_name = "Guild Examiner"
 category = 2
-accent_color = Color(0.91, 0.706, 0.29, 1)
-icon_char = "QC"
-description = "Gövdeleri ayırır. Her 8 üründen biri Ret portundan hurda olarak çıkar."
+accent_color = Color(0.69, 0.56, 0.29, 1)
+icon_char = "GE"
+description = "Inspects armor. Every eighth piece leaves the Reject port as scrap."
 recipe = ExtResource("1_e61dg")
 scrap_every_n = 8
 reject_item = ExtResource("2_8h6dy")

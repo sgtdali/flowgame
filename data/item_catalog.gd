@@ -13,8 +13,11 @@ const CUBUK := preload("res://data/items/cubuk.tres")
 const VIDA := preload("res://data/items/vida.tres")
 const GOVDE := preload("res://data/items/govde.tres")
 const HURDA := preload("res://data/items/hurda.tres")
+const WHEAT := preload("res://data/items/wheat.tres")
+const FLOUR := preload("res://data/items/flour.tres")
+const BREAD := preload("res://data/items/bread.tres")
 
-const _ALL: Array = [CEVHER, KULCE, LEVHA, CUBUK, VIDA, GOVDE, HURDA]
+const _ALL: Array = [CEVHER, KULCE, LEVHA, CUBUK, VIDA, GOVDE, HURDA, WHEAT, FLOUR, BREAD]
 
 ## id -> ItemType. İlk erişimde kurulur; O(1) arama.
 static var _by_id: Dictionary = {}

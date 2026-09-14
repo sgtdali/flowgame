@@ -21,8 +21,8 @@ extends Resource
 func duration_text(ticks_per_second: int) -> String:
 	var seconds: float = float(duration_ticks) / float(maxi(1, ticks_per_second))
 	if seconds >= 60.0:
-		return "%.1f dk" % (seconds / 60.0)
-	return "%.1f sn" % seconds
+		return "%.1f min" % (seconds / 60.0)
+	return "%.1f sec" % seconds
 
 
 func input_text() -> String:

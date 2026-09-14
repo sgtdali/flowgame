@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_v7wh1")
 id = &"cevher"
-display_name = "Cevher"
-color = Color(0.55, 0.47, 0.38, 1)
-icon_char = "CV"
+display_name = "Iron Ore"
+color = Color(0.55, 0.43, 0.30, 1)
+icon_char = "IO"
 base_price = 2

@@ -6,9 +6,9 @@
 [resource]
 script = ExtResource("2_efh0x")
 id = &"hadde"
-display_name = "Hadde"
-accent_color = Color(0.29, 0.624, 0.878, 1)
-icon_char = "HD"
-description = "Levhayı inceltip çubuk çeker."
+display_name = "Drawbench"
+accent_color = Color(0.54, 0.52, 0.35, 1)
+icon_char = "DB"
+description = "Draws an iron plate into a rod."
 recipe = ExtResource("1_n02bl")
 build_cost = 1500

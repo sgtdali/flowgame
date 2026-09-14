@@ -22,13 +22,13 @@ theme_override_constants/separation = 6
 [node name="Title" type="Label" parent="Margin/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "İSTASYONLAR"
+text = "WORKSHOPS"
 
 [node name="Hint" type="Label" parent="Margin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 0.52, 0.6, 1)
+theme_override_colors/font_color = Color(0.69, 0.58, 0.43, 1)
 theme_override_font_sizes/font_size = 11
-text = "Tıkla veya tuvale sürükle"
+text = "Click or drag onto the map"
 autowrap_mode = 2
 
 [node name="Sep" type="HSeparator" parent="Margin/VBox"]

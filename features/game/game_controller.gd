@@ -1,6 +1,9 @@
 class_name GameController
 extends Control
 
+const MedievalTheme = preload("res://common/medieval_theme.gd")
+const DeliveryRateMeter = preload("res://common/delivery_rate_meter.gd")
+
 ## ORKESTRATÖR. Simülasyonu ve ilerlemeyi sahiplenir, tick'i sürer,
 ## görselleri besler.
 ##
@@ -10,7 +13,7 @@ extends Control
 ## AŞAĞI komutla görsellere yazmak.
 
 ## Kayıt biçimi. v2'de ilerleme durumu yoktu.
-const SAVE_VERSION: int = 3
+const SAVE_VERSION: int = 4
 
 ## Hız seçenekleri. 0 = duraklatıldı.
 const SPEEDS: Array[int] = [0, 1, 2, 4]
@@ -23,7 +26,10 @@ const SPEEDS: Array[int] = [0, 1, 2, 4]
 @onready var _clock: Label = %Clock
 @onready var _money: Label = %Money
 @onready var _money_rate: Label = %MoneyRate
-@onready var _slots: Label = %Slots
+@onready var _workforce: Label = %Workforce
+@onready var _food: Label = %Food
+@onready var _food_rate_label: Label = %FoodRate
+@onready var _recruit_button: Button = %RecruitButton
 @onready var _save_dialog: FileDialog = %SaveDialog
 @onready var _load_dialog: FileDialog = %LoadDialog
 @onready var _notice_timer: Timer = %NoticeTimer
@@ -41,7 +47,9 @@ var _speed_buttons: Array[Button] = []
 ## olur. Bakiye ayrıca paletin yenilenmesini tetiklediği için takip ediliyor.
 var _last_clock: String = ""
 var _last_money: String = ""
-var _last_slots: String = ""
+var _last_workforce: String = ""
+var _last_food: String = ""
+var _last_food_rate: String = ""
 var _last_status: String = ""
 var _last_balance: int = -1
 var _last_research_total: int = -1
@@ -50,9 +58,11 @@ var _last_money_rate: String = ""
 ## Gelir ve sevkiyat hızı. Sunum verisi — kayıtta yer almaz, yükledikten
 ## birkaç saniye sonra kendi kendine dolar.
 var _sales_rate := SalesRateTracker.new()
+var _food_rate := DeliveryRateMeter.new()
 
 
 func _ready() -> void:
+	theme = MedievalTheme.build()
 	_palette.block_requested.connect(_on_palette_request)
 	_inspector.param_changed.connect(_on_param_changed)
 
@@ -67,6 +77,7 @@ func _ready() -> void:
 	_research_panel.close_requested.connect(_on_research_closed)
 
 	%ResearchButton.pressed.connect(_on_research_pressed)
+	_recruit_button.pressed.connect(_on_recruit_pressed)
 	%ArrangeButton.pressed.connect(_canvas.arrange_nodes)
 	%ClearButton.pressed.connect(_on_clear_pressed)
 	# Lambda DEĞİL adlandırılmış metot: Godot, yerel değişken yakalayan
@@ -82,7 +93,7 @@ func _ready() -> void:
 		_speed_buttons[index].pressed.connect(_on_speed_pressed.bind(index))
 
 	_refresh_availability()
-	_notice("Maden Ocağı → Eritme Fırını → Sevkiyat kurarak başla.")
+	_notice("Assign workers to the Mine and Hearth. Build Farm → Windmill → Bakery → Granary for food.")
 
 
 ## --- Oyun döngüsü -----------------------------------------------------------
@@ -142,28 +153,32 @@ func _on_palette_request(type: BlockType) -> void:
 
 func _on_param_changed(key: StringName, value: Variant) -> void:
 	var block: FlowBlock = _canvas.selected_block()
-	if block != null:
-		block.set_param(key, value)
+	if block == null:
+		return
+	if key == &"worker":
+		if not _sim.set_worker(block.sim_id, bool(value)):
+			_notice("No free workers. Recruit one with food.")
+		block.worker_assigned = _sim.get_station(block.sim_id).assigned_worker
+		_inspector.show_block(block)
+		return
+	block.set_param(key, value)
 
 
 ## --- Tuvalden gelen niyetler ------------------------------------------------
 
 func _on_add_requested(type: BlockType, at: Vector2) -> void:
 	if not _progression.is_block_available(type):
-		_notice("%s henüz araştırılmadı." % type.display_name)
-		return
-
-	var limit: int = _progression.slot_limit()
-	if _sim.station_count() >= limit:
-		_notice("Slot dolu (%d/%d) — Fabrika Genişlemesi araştır." % [limit, limit])
+		_notice("%s has not been discovered yet." % type.display_name)
 		return
 
 	if not _progression.try_pay(type.build_cost, _sim.revenue):
-		_notice("Yetersiz bakiye — %s ₺ gerekiyor." % GameConfig.format_money(type.build_cost))
+		_notice("Not enough gold. You need %s." % GameConfig.format_money(type.build_cost))
 		return
 
 	var sim_id: int = _sim.add_station(type)
 	_canvas.spawn_block(sim_id, type, at)
+	if type.requires_worker() and _sim.workers_assigned() >= _sim.workers_total:
+		_notice("Workshop built. Recruit a worker with food, then assign them in the details panel.")
 	_refresh_availability()
 
 
@@ -195,7 +210,7 @@ func _on_delete_requested(sim_ids: Array[int]) -> void:
 		_canvas.remove_block(sim_id)
 	_refresh_availability()
 	if refunded > 0:
-		_notice("Söküldü — %s ₺ iade edildi (yarısı)." % GameConfig.format_money(refunded))
+		_notice("Dismantled. %s gold returned (half the cost)." % GameConfig.format_money(refunded))
 
 
 func _on_clear_pressed() -> void:
@@ -204,10 +219,18 @@ func _on_clear_pressed() -> void:
 	_progression.reset()
 	_accumulator = 0.0
 	_sales_rate.reset()
+	_food_rate.reset()
 	_refresh_availability()
 
 
 ## --- Araştırma --------------------------------------------------------------
+
+func _on_recruit_pressed() -> void:
+	if _sim.recruit_worker():
+		_notice("A worker joined the realm. Assign them to a workshop.")
+	else:
+		_notice("Recruiting needs %d food." % GameConfig.RECRUIT_FOOD_COST)
+
 
 func _on_research_pressed() -> void:
 	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
@@ -226,7 +249,7 @@ func _on_unlock_requested(node_id: StringName) -> void:
 	if not problem.is_empty():
 		_notice(problem)
 	else:
-		_notice("Araştırıldı: %s" % node.display_name)
+		_notice("Discovered: %s" % node.display_name)
 	_refresh_availability()
 	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
 
@@ -241,21 +264,32 @@ func _refresh_hud() -> void:
 		_clock.text = clock
 
 	var balance: int = _balance()
-	var money: String = "%s ₺" % GameConfig.format_money(balance)
+	var money: String = "%s gold" % GameConfig.format_money(balance)
 	if money != _last_money:
 		_last_money = money
 		_money.text = money
 
 	_sales_rate.sample(_sim.tick_count, _sim.sold_counts)
-	var rate: String = "+%s ₺/dk" % GameConfig.format_money(roundi(_sales_rate.money_per_minute()))
+	var rate: String = "+%s gold/min" % GameConfig.format_money(roundi(_sales_rate.money_per_minute()))
 	if rate != _last_money_rate:
 		_last_money_rate = rate
 		_money_rate.text = rate
 
-	var slots: String = "%d / %d" % [_sim.station_count(), _progression.slot_limit()]
-	if slots != _last_slots:
-		_last_slots = slots
-		_slots.text = slots
+	var workforce: String = "%d / %d" % [_sim.workers_assigned(), _sim.workers_total]
+	if workforce != _last_workforce:
+		_last_workforce = workforce
+		_workforce.text = workforce
+	var food_text: String = GameConfig.format_money(_sim.food)
+	if food_text != _last_food:
+		_last_food = food_text
+		_food.text = food_text
+	_food_rate.sample(_sim.tick_count, _sim.food_produced_total)
+	var upkeep: int = _sim.workers_total * GameConfig.FOOD_PER_WORKER_PER_MINUTE
+	var food_rate_text: String = "+%.1f / -%d min" % [_food_rate.per_minute(), upkeep]
+	if food_rate_text != _last_food_rate:
+		_last_food_rate = food_rate_text
+		_food_rate_label.text = food_rate_text
+	_recruit_button.disabled = _sim.food < GameConfig.RECRUIT_FOOD_COST
 
 	# Bakiye değişince paletin "karşılanabilir" durumu da değişir.
 	var balance_changed: bool = balance != _last_balance
@@ -306,11 +340,13 @@ func _refresh_status() -> void:
 			FlowBlock.Display.IDLE: idle += 1
 			FlowBlock.Display.UNWIRED: unwired += 1
 
-	var text: String = "%d istasyon  ·  %d bağlantı  ·  %d boşta  ·  sevkiyat %.1f/dk" % [
+	var text: String = "%d workshops  ·  %d routes  ·  %d idle  ·  sales %.1f/min" % [
 		_sim.station_count(), _sim.link_count(), idle, _sales_rate.units_per_minute(),
 	]
 	if unwired > 0:
-		text += "  ·  %d istasyonun portu boşta" % unwired
+		text += "  ·  %d workshops have unlinked ports" % unwired
+	if _sim.food_shortage:
+		text += "  ·  NO FOOD: industry paused"
 	if text == _last_status:
 		return
 	_last_status = text
@@ -354,26 +390,26 @@ func _snapshot() -> Dictionary:
 func _on_save_path_selected(path: String) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
-		_notice("Kaydedilemedi: %s" % error_string(FileAccess.get_open_error()))
+		_notice("Could not save: %s" % error_string(FileAccess.get_open_error()))
 		return
 	file.store_string(JSON.stringify(_snapshot(), "\t"))
 	file.close()
-	_notice("Kaydedildi: %s" % path.get_file())
+	_notice("Saved: %s" % path.get_file())
 
 
 func _on_load_path_selected(path: String) -> void:
 	if not FileAccess.file_exists(path):
-		_notice("Dosya bulunamadı.")
+		_notice("File not found.")
 		return
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is not Dictionary:
-		_notice("Dosya okunamadı veya biçimi geçersiz.")
+		_notice("The file is unreadable or invalid.")
 		return
 
 	var data: Dictionary = parsed
 	var version: int = int(data.get("version", 0))
-	if version != SAVE_VERSION:
-		_notice("Bu kayıt eski bir sürümden (v%d), açılamıyor." % version)
+	if version != SAVE_VERSION and version != 3:
+		_notice("This older save (v%d) cannot be opened." % version)
 		return
 
 	_sim.from_dict(data.get("sim", {}))
@@ -383,6 +419,7 @@ func _on_load_path_selected(path: String) -> void:
 	# Hız ölçerler kümülatif sayaçlara bakıyor; yükleme sonrası eski örnekler
 	# yanlış bir sıçrama gösterirdi.
 	_sales_rate.reset()
+	_food_rate.reset()
 
 	var layout: Dictionary = data.get("layout", {})
 	for station: SimStation in _sim.stations():
@@ -396,4 +433,4 @@ func _on_load_path_selected(path: String) -> void:
 		_canvas.apply_connection(link.from_id, link.from_port, link.to_id, link.to_port)
 
 	_refresh_availability()
-	_notice("Yüklendi: %s" % path.get_file())
+	_notice("Loaded: %s" % path.get_file())

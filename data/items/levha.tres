@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_f2sd3")
 id = &"levha"
-display_name = "Levha"
-color = Color(0.55, 0.68, 0.8, 1)
-icon_char = "LV"
+display_name = "Iron Plate"
+color = Color(0.68, 0.68, 0.61, 1)
+icon_char = "IP"
 base_price = 32
 tier = 2

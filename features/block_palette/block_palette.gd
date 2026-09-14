@@ -18,6 +18,7 @@ const _CATEGORY_ORDER: Array[BlockType.Category] = [
 	BlockType.Category.SPLITTER,
 	BlockType.Category.RESEARCH,
 	BlockType.Category.SINK,
+	BlockType.Category.FOOD,
 ]
 
 @onready var _list: VBoxContainer = %List
@@ -65,9 +66,9 @@ func set_availability(available_ids: Dictionary, balance: int) -> void:
 		(row["root"] as Control).visible = unlocked
 		(row["item"] as PaletteItem).disabled = not affordable
 		var cost_label: Label = row["cost_label"]
-		cost_label.text = "%s ₺" % GameConfig.format_money(type.build_cost)
+		cost_label.text = "%s gold" % GameConfig.format_money(type.build_cost)
 		cost_label.add_theme_color_override(&"font_color",
-			Color(0.45, 0.82, 0.58) if affordable else Color(0.55, 0.38, 0.38))
+			Color(0.90, 0.72, 0.39) if affordable else Color(0.61, 0.43, 0.36))
 
 	# Tamamı kilitli kategorinin başlığını da gizle.
 	for section: Dictionary in _sections:
@@ -83,7 +84,7 @@ func _build_header(text: String) -> Control:
 	var label := Label.new()
 	label.text = text.to_upper()
 	label.add_theme_font_size_override(&"font_size", 10)
-	label.add_theme_color_override(&"font_color", Color(0.45, 0.52, 0.60))
+	label.add_theme_color_override(&"font_color", Color(0.71, 0.59, 0.43))
 	label.custom_minimum_size = Vector2(0.0, 22.0)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	return label

@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="Uretim Akisi Editoru"
-config/description="ReactFlow benzeri, uretim akisini temsil eden dugum tabanli editor."
+config/name="Iron & Ember"
+config/description="Build a medieval craft and trade network."
 run/main_scene="res://features/game/game.tscn"
 config/features=PackedStringArray("4.6")
 config/icon="res://icon.svg"

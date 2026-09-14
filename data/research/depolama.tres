@@ -9,8 +9,8 @@
 [resource]
 script = ExtResource("2_ydsqj")
 id = &"depolama"
-display_name = "Ara Depolama"
-description = "İstasyonlar arası tampon ve tek girişi iki çıkışa bölen Dağıtıcı."
-requires = PackedStringArray("genisleme_1")
+display_name = "Trade Routes"
+description = "Unlock a storehouse and a crossroads to manage supplies."
+requires = PackedStringArray("presleme")
 cost_money = 9000
 unlocks_blocks = Array[ExtResource("3_6jmo7")]([ExtResource("4_o8pfw"), ExtResource("5_5lboj")])

@@ -18,16 +18,19 @@ enum Category {
 	RESEARCH, ## Ar-Ge Laboratuvarı — yutar ama satmaz, araştırmaya sayar
 	SPLITTER, ## Tek girişi birden fazla çıkışa dağıtır — BUFFER ile aynı
 	          ## simülasyon mantığını kullanır, yalnızca çıkış port sayısı farklı
+	FOOD,     ## Bread is deposited in the shared food ledger
 }
 
 @export var id: StringName = &""
-@export var display_name: String = "Yeni İstasyon"
+@export var display_name: String = "New Workshop"
 @export var category: Category = Category.PROCESS
 @export var accent_color: Color = Color(0.29, 0.64, 0.87)
 @export var icon_char: String = "??"
+@export var food_chain: bool = false
+@export var food_item: ItemType = null
 @export_multiline var description: String = ""
 
-@export_group("Üretim")
+@export_group("Crafting")
 ## Bu istasyonun işlediği reçete.
 ## BUFFER ve SINK için boştur — onlar üretmez, taşır veya yutar.
 @export var recipe: Recipe = null
@@ -60,14 +63,19 @@ enum Category {
 
 func category_label() -> String:
 	match category:
-		Category.SOURCE: return "Kaynak"
-		Category.PROCESS: return "İşlem"
-		Category.INSPECT: return "Kontrol"
-		Category.BUFFER: return "Tampon"
-		Category.SINK: return "Bitiş"
-		Category.RESEARCH: return "Ar-Ge"
-		Category.SPLITTER: return "Dağıtıcı"
-	return "Bilinmiyor"
+		Category.SOURCE: return "Gathering"
+		Category.PROCESS: return "Crafting"
+		Category.INSPECT: return "Inspection"
+		Category.BUFFER: return "Storage"
+		Category.SINK: return "Trade"
+		Category.RESEARCH: return "Knowledge"
+		Category.SPLITTER: return "Routing"
+		Category.FOOD: return "Provisioning"
+	return "Unknown"
+
+
+func requires_worker() -> bool:
+	return category == Category.SOURCE or category == Category.PROCESS or category == Category.INSPECT
 
 
 ## --- Portlar ---------------------------------------------------------------
@@ -79,6 +87,9 @@ func category_label() -> String:
 
 func input_items() -> Array[ItemType]:
 	var out: Array[ItemType] = []
+	if category == Category.FOOD and food_item != null:
+		out.append(food_item)
+		return out
 	if recipe == null:
 		return out  # jenerik giriş — tip kısıtı yok
 	for slot: RecipeSlot in recipe.inputs:
@@ -101,8 +112,11 @@ func input_labels() -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray()
 	if category == Category.SOURCE:
 		return out  # kaynak girdi istemez
+	if category == Category.FOOD and food_item != null:
+		out.append(food_item.display_name)
+		return out
 	if recipe == null:
-		out.append("Giriş")
+		out.append("Input")
 		return out
 	for slot: RecipeSlot in recipe.inputs:
 		out.append(slot.label())
@@ -111,19 +125,19 @@ func input_labels() -> PackedStringArray:
 
 func output_labels() -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray()
-	if category == Category.SINK or category == Category.RESEARCH:
+	if category == Category.SINK or category == Category.RESEARCH or category == Category.FOOD:
 		return out  # bitiş noktasının çıkışı yok
 	if recipe == null:
 		if output_port_count <= 1:
-			out.append("Çıkış")
+			out.append("Output")
 		else:
 			for i in output_port_count:
-				out.append("Çıkış %s" % char(65 + i))  # Çıkış A, B, C...
+				out.append("Output %s" % char(65 + i))  # Çıkış A, B, C...
 		return out
 	if category == Category.INSPECT:
 		# Ürün adı yerine karar adı daha okunur: hangi dal "uygun", hangisi "ret".
-		out.append("Uygun")
-		out.append("Ret")
+		out.append("Approved")
+		out.append("Reject")
 		return out
 	for slot: RecipeSlot in recipe.outputs:
 		out.append(slot.label())

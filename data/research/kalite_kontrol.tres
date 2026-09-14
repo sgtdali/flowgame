@@ -8,8 +8,8 @@
 [resource]
 script = ExtResource("2_gxnpr")
 id = &"kalite_kontrol"
-display_name = "Kalite Kontrol"
-description = "Gövdeleri ayırır. Her sekiz üründen biri hurdaya düşer."
+display_name = "Guild Standards"
+description = "Inspect armor. Every eighth piece becomes scrap metal."
 requires = PackedStringArray("montaj_hatti")
 cost_money = 20000
 unlocks_blocks = Array[ExtResource("3_n7pv5")]([ExtResource("4_a6xsn")])

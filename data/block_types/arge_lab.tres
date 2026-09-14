@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_br1gq")
 id = &"arge_lab"
-display_name = "Ar-Ge Laboratuvarı"
+display_name = "Scholars' Hall"
 category = 5
-accent_color = Color(0.42, 0.72, 0.86, 1)
-icon_char = "AR"
-description = "Buraya akıtılan ürün satılmaz, araştırmaya sayılır. Üretimini satış ile araştırma arasında bölmen gerekir."
+accent_color = Color(0.44, 0.48, 0.57, 1)
+icon_char = "SC"
+description = "Accepts goods for research instead of selling them at market."
 input_capacity = 20
 output_capacity = 0
 build_cost = 8000

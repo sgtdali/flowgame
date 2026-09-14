@@ -27,7 +27,7 @@ theme_override_constants/separation = 6
 [node name="Title" type="Label" parent="Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "İSTASYON DETAYI"
+text = "WORKSHOP DETAILS"
 
 [node name="Sep" type="HSeparator" parent="Margin/Scroll/VBox"]
 layout_mode = 2
@@ -35,9 +35,9 @@ layout_mode = 2
 [node name="Empty" type="Label" parent="Margin/Scroll/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 0.52, 0.6, 1)
+theme_override_colors/font_color = Color(0.69, 0.58, 0.43, 1)
 theme_override_font_sizes/font_size = 12
-text = "Bilgileri görmek için tuvalden bir istasyon seç."
+text = "Select a workshop on the map to see its details."
 autowrap_mode = 2
 
 [node name="Form" type="VBoxContainer" parent="Margin/Scroll/VBox"]
@@ -56,14 +56,14 @@ autowrap_mode = 2
 [node name="Category" type="Label" parent="Margin/Scroll/VBox/Form"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 0.52, 0.6, 1)
+theme_override_colors/font_color = Color(0.69, 0.58, 0.43, 1)
 theme_override_font_sizes/font_size = 11
 text = "—"
 
 [node name="Desc" type="Label" parent="Margin/Scroll/VBox/Form"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.61, 0.68, 1)
+theme_override_colors/font_color = Color(0.76, 0.66, 0.51, 1)
 theme_override_font_sizes/font_size = 11
 text = ""
 autowrap_mode = 2
@@ -73,15 +73,21 @@ layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="Margin/Scroll/VBox/Form"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_colors/font_color = Color(0.80, 0.70, 0.52, 1)
 theme_override_font_sizes/font_size = 11
-text = "Ad"
+text = "Name"
 
 [node name="NameEdit" type="LineEdit" parent="Margin/Scroll/VBox/Form"]
 unique_name_in_owner = true
 layout_mode = 2
-placeholder_text = "İstasyon adı"
+placeholder_text = "Workshop name"
 select_all_on_focus = true
+
+[node name="WorkerButton" type="Button" parent="Margin/Scroll/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Assign worker"
 
 [node name="Sep3" type="HSeparator" parent="Margin/Scroll/VBox/Form"]
 layout_mode = 2

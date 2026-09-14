@@ -1,12 +1,12 @@
-# Fabrika Oyunu
+# Iron & Ember
 
-Düğüm tabanlı bir fabrika oyunu: üretim hattını graf olarak kur, çalıştır, sat,
-araştırma ağacından yeni istasyon ve ürünler aç. Godot 4.6 `GraphEdit` üzerine kurulu.
+Orta çağ temalı bir zanaat ve ticaret oyunu: maden, döküm ocağı, demirci ve pazarı
+birbirine bağla; yeni ustalıkları keşfet. Godot 4.6 GraphEdit üzerine kurulu.
 
 Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)  ·  Kalan işler: [TODO.md](TODO.md)
 
-> Durum: **MVP oynanabilir** (Faz 1-4). Boş bir sahayla başlarsın, hat kurar,
-> satar, araştırma ağacından yeni istasyon açarsın. Ölçülen tur süresi: ~63 dakika.
+> Durum: **mekanik prototip**. Atölye sayısı sınırsız; üretim için işçi,
+> işçiler için düzenli gıda gerekir. Yeni ekonomi henüz tempo açısından dengelenmedi.
 
 ## Çalıştırma
 
@@ -16,10 +16,13 @@ Godot 4.6 ile `project.godot` dosyasını aç, **F5**.
 
 | İşlem | Nasıl |
 |---|---|
-| İstasyon ekle | Sol paletten tıkla **veya** tuvale sürükle-bırak |
+| İstasyon ekle | Sol paletten tıkla **veya** tuvale sürükle-bırak; sayı sınırı yok |
 | Bağla | Bir istasyonun sağ portundan diğerinin sol portuna sürükle |
 | Bağlantıyı kaldır | Bağlantıya **sağ tık** |
 | Sil | İstasyonu seç, **Delete** |
+| İşçi ata / geri al | Üretim düğümünü seç, sağ panelde **Assign worker** düğmesini kullan |
+| İşçi al | Üst bardaki **Recruit**; 15 gıda harcar. Her işçi dakikada 1 gıda tüketir |
+| Gıda üret | **Farm → Windmill → Bakery → Granary** zincirini kur; ilk üçüne işçi ata |
 | Parametre düzenle | İstasyonu seç, sağ panelden değiştir |
 | Otomatik hizala | Üst bardaki **Otomatik Diz** |
 | Kaydet / Yükle | Üst bar — `.json` olarak |
@@ -36,7 +39,7 @@ Klasörler dosya türüne göre değil, **özelliğe göre** ayrılmıştır.
 
 ```
 common/
-  game_config.gd       Denge sayılarının TEK yeri (tick hızı, slot, para)
+  game_config.gd       Denge sayılarının TEK yeri (tick hızı, işçi, gıda, para)
 data/
   item_type.gd         Ürün türü (Resource)
   recipe.gd            Girdi -> çıktı + süre (tick)
@@ -44,9 +47,9 @@ data/
   block_type.gd        İstasyon arketipi; portları reçetesinden türetir
   research_node.gd     Araştırma kilidi (içeriği Faz 4'te)
   block_catalog.gd     Arketiplerin tek kayıt noktası (preload)
-  items/*.tres         7 ürün
-  recipes/*.tres       8 reçete
-  block_types/*.tres   10 istasyon
+  items/*.tres         Demir ve gıda ürünleri
+  recipes/*.tres       Demir ve gıda reçeteleri
+  block_types/*.tres   Zanaat, gıda ve ticaret düğümleri
 features/
   game/                ORKESTRATÖR — simülasyonu sahiplenir, tick'i sürer
   flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
@@ -58,8 +61,9 @@ sim/
   sim_link.gd          İki istasyon arasındaki bağlantı
 tools/
   gen_content.gd       İçerik .tres'lerini üreten önyükleme aracı
-  sim_test.gd          Determinizm, kaydet/yükle, tıkanma ve denge koşumu
-  progression_test.gd  60 dakikalık turu baştan sona oynayıp tempoyu ölçer
+  sim_test.gd          Determinizm, kaydet/yükle ve tıkanma kontrolleri
+  workforce_test.gd    İşçi ve gıda mekaniği kontrolleri
+  progression_test.gd  Eski tempo testi; yeni mekanik dengelenene kadar çalıştırılmıyor
 ```
 
 ## Testler
@@ -69,7 +73,7 @@ godot --headless --path . --script res://tools/sim_test.gd
 ```
 
 ```bash
-godot --headless --path . --script res://tools/progression_test.gd
+godot --headless --path . --script res://tools/workforce_test.gd
 ```
 
 ### Mimari kuralı

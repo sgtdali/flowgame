@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_juylw")
 id = &"depo"
-display_name = "Ara Depo"
+display_name = "Storehouse"
 category = 3
-accent_color = Color(0.643, 0.482, 0.831, 1)
-icon_char = "AD"
-description = "Üretmez, tutar. İstasyonlar arası dengesizliği emer ve tıkanmayı geciktirir."
+accent_color = Color(0.47, 0.46, 0.34, 1)
+icon_char = "ST"
+description = "Holds goods between workshops and eases bottlenecks."
 input_capacity = 50
 output_capacity = 50
 build_cost = 800

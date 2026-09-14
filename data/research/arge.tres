@@ -9,9 +9,8 @@
 [resource]
 script = ExtResource("2_cy7bs")
 id = &"arge"
-display_name = "Ar-Ge Laboratuvarı"
-description = "Hurdayı külçeye çeviren geri dönüşüm, ve Ar-Ge Laboratuvarı. Bundan sonrası parayla açılmıyor."
+display_name = "Scholars' Hall"
+description = "Unlock salvage and the scholars' hall. Further knowledge requires crafted goods."
 requires = PackedStringArray("kalite_kontrol")
 cost_money = 26000
 unlocks_blocks = Array[ExtResource("3_bx6sk")]([ExtResource("4_pafrk"), ExtResource("5_5vdi2")])
-slot_bonus = 3

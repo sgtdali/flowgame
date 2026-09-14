@@ -8,8 +8,8 @@
 [resource]
 script = ExtResource("2_xiasb")
 id = &"kesim_hatti"
-display_name = "Kesim Hattı"
-description = "Bir çubuktan iki vida. Montaj için vida şart."
+display_name = "Rivet Craft"
+description = "Forge two rivets from one rod for the armorer."
 requires = PackedStringArray("haddeleme")
 cost_money = 7200
 unlocks_blocks = Array[ExtResource("3_qov1w")]([ExtResource("4_hyudb")])

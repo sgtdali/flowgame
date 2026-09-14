@@ -42,6 +42,6 @@ func _build_preview() -> Control:
 	var label := Label.new()
 	label.text = "%s  %s" % [block_type.icon_char, block_type.display_name]
 	label.add_theme_font_size_override(&"font_size", 12)
-	label.add_theme_color_override(&"font_color", Color(0.08, 0.09, 0.11))
+	label.add_theme_color_override(&"font_color", Color(0.16, 0.11, 0.07))
 	panel.add_child(label)
 	return panel

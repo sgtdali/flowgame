@@ -14,9 +14,8 @@ count = 100
 [resource]
 script = ExtResource("3_gcmx1")
 id = &"derin_sondaj"
-display_name = "Derin Maden Sondajı"
-description = "Laboratuvara 150 gövde akıt. Karşılığında hattın en eski darboğazı açılır."
+display_name = "Deep Mining"
+description = "Send 100 suits of armor to the scholars' hall to unlock a deeper mine."
 requires = PackedStringArray("arge")
 cost_items = Array[ExtResource("1_dv6xk")]([SubResource("Resource_1xsj3")])
 unlocks_blocks = Array[ExtResource("4_8yv62")]([ExtResource("5_hy1aj")])
-slot_bonus = 6

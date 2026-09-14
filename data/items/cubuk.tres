@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_n4iug")
 id = &"cubuk"
-display_name = "Çubuk"
-color = Color(0.68, 0.72, 0.78, 1)
-icon_char = "CB"
+display_name = "Iron Rod"
+color = Color(0.66, 0.59, 0.43, 1)
+icon_char = "IR"
 base_price = 26
 tier = 2

@@ -8,8 +8,8 @@
 [resource]
 script = ExtResource("2_fjk2y")
 id = &"presleme"
-display_name = "Presleme"
-description = "Külçeyi levhaya dönüştüren pres. Levha, külçeden neredeyse üç kat değerli."
+display_name = "Hammer Craft"
+description = "Unlock the hammer forge. Iron plates command nearly three times an ingot's price."
 requires = PackedStringArray()
 cost_money = 1500
 unlocks_blocks = Array[ExtResource("3_p64hp")]([ExtResource("4_5fqlk")])

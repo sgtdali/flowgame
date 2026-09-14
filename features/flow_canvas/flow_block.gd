@@ -22,11 +22,15 @@ enum Display {
 	RUNNING,   ## yeşil — üretiyor
 	IDLE,      ## turuncu — malzeme veya yer bekliyor
 	UNWIRED,   ## kırmızı — bir portu boşta, akışa katılamıyor
+	UNSTAFFED,
+	HUNGRY,
 }
 
-const COLOR_RUNNING := Color(0.33, 0.80, 0.50)
-const COLOR_IDLE := Color(0.93, 0.65, 0.25)
-const COLOR_UNWIRED := Color(0.91, 0.34, 0.34)
+const COLOR_RUNNING := Color(0.55, 0.73, 0.43)
+const COLOR_IDLE := Color(0.86, 0.64, 0.32)
+const COLOR_UNWIRED := Color(0.78, 0.38, 0.31)
+const COLOR_UNSTAFFED := Color(0.50, 0.49, 0.44)
+const COLOR_HUNGRY := Color(0.73, 0.43, 0.24)
 
 signal params_changed(block: FlowBlock)
 
@@ -38,6 +42,7 @@ var sim_id: int = -1
 
 ## Kullanıcının verdiği ad (varsayılan: arketipin adı).
 var block_label: String = ""
+var worker_assigned: bool = false
 
 var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
@@ -70,7 +75,7 @@ func setup(type: BlockType) -> void:
 
 func _ready() -> void:
 	if block_type == null:
-		push_error("FlowBlock: setup() çağrılmadan ağaca eklendi.")
+		push_error("FlowBlock: added before setup() was called.")
 		return
 	custom_minimum_size = Vector2(210.0, 0.0)
 	_apply_style()
@@ -99,7 +104,7 @@ func _apply_style() -> void:
 	add_theme_stylebox_override(&"titlebar_selected", titlebar_sel)
 
 	var panel := StyleBoxFlat.new()
-	panel.bg_color = Color(0.13, 0.15, 0.18, 0.97)
+	panel.bg_color = Color(0.24, 0.18, 0.12, 0.98)
 	panel.border_color = accent.darkened(0.25)
 	panel.set_border_width_all(1)
 	panel.corner_radius_bottom_left = 5
@@ -136,7 +141,7 @@ func _build_rows() -> void:
 		var left := Label.new()
 		left.text = inputs[i] if has_in else ""
 		left.add_theme_font_size_override(&"font_size", 12)
-		left.add_theme_color_override(&"font_color", Color(0.72, 0.78, 0.85))
+		left.add_theme_color_override(&"font_color", Color(0.88, 0.79, 0.61))
 		row.add_child(left)
 
 		var spacer := Control.new()
@@ -148,7 +153,7 @@ func _build_rows() -> void:
 		right.text = outputs[i] if has_out else ""
 		right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		right.add_theme_font_size_override(&"font_size", 12)
-		right.add_theme_color_override(&"font_color", Color(0.72, 0.78, 0.85))
+		right.add_theme_color_override(&"font_color", Color(0.88, 0.79, 0.61))
 		row.add_child(right)
 
 		add_child(row)
@@ -184,9 +189,10 @@ func _build_stats_grid() -> GridContainer:
 	# Canlı durum. Statik bilgi (süre, fire oranı) denetçi panelinde —
 	# düğümün üstünde her kare değişen şeyler dursun.
 	var specs: Array = [
-		[&"rate", "Hız"],
-		[&"in", "Giriş"],
-		[&"out", "Çıkış"],
+		[&"rate", "Rate"],
+		[&"in", "Input"],
+		[&"out", "Output"],
+		[&"worker", "Worker"],
 	]
 	for spec: Array in specs:
 		var key: StringName = spec[0]
@@ -194,14 +200,14 @@ func _build_stats_grid() -> GridContainer:
 		var name_label := Label.new()
 		name_label.text = spec[1]
 		name_label.add_theme_font_size_override(&"font_size", 11)
-		name_label.add_theme_color_override(&"font_color", Color(0.47, 0.53, 0.60))
+		name_label.add_theme_color_override(&"font_color", Color(0.72, 0.59, 0.42))
 		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		var value_label := Label.new()
 		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		value_label.add_theme_font_size_override(&"font_size", 11)
-		value_label.add_theme_color_override(&"font_color", Color(0.76, 0.81, 0.87))
+		value_label.add_theme_color_override(&"font_color", Color(0.94, 0.85, 0.67))
 		value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		grid.add_child(name_label)
@@ -225,7 +231,9 @@ func _refresh_stats() -> void:
 		return
 	# Kaynağın girişi, bitişin çıkışı yoktur — olmayan satırı hiç göstermeyiz.
 	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
-	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK)
+	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK and block_type.category != BlockType.Category.RESEARCH and block_type.category != BlockType.Category.FOOD)
+	_set_row_visible(&"worker", block_type.requires_worker())
+	_write(&"worker", "No")
 	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
@@ -237,6 +245,8 @@ func _refresh_stats() -> void:
 ## SORGULAMAZ — durumu ona verilir.
 func render_state(station: SimStation, tick: int, unwired_ports: int) -> void:
 	_progress.value = station.progress_ratio()
+	worker_assigned = station.assigned_worker
+	_write(&"worker", "Yes" if worker_assigned else "No")
 	_rate.sample(tick, station.throughput_total())
 
 	_write(&"rate", _rate_text())
@@ -245,7 +255,11 @@ func render_state(station: SimStation, tick: int, unwired_ports: int) -> void:
 
 	# Kurulum hatası akış sorununu bastırır: bir portu boştaysa oyuncunun
 	# önce onu düzeltmesi gerekir, "aç kaldı" bilgisi o hâlde yanıltıcıdır.
-	if unwired_ports > 0:
+	if station.status == SimStation.Status.UNSTAFFED:
+		_apply_display(Display.UNSTAFFED, unwired_ports)
+	elif station.status == SimStation.Status.HUNGRY:
+		_apply_display(Display.HUNGRY, unwired_ports)
+	elif unwired_ports > 0:
 		_apply_display(Display.UNWIRED, unwired_ports)
 	elif _smoothed_status(station, tick) == SimStation.Status.RUNNING:
 		_apply_display(Display.RUNNING, 0)
@@ -273,7 +287,7 @@ func _smoothed_status(station: SimStation, tick: int) -> SimStation.Status:
 ## yerdedir. Durum rozeti nedenini, verim ise ne kadarını söyler.
 func _rate_text() -> String:
 	var actual: float = _rate.per_minute()
-	var text: String = "%.1f/dk" % actual
+	var text: String = "%.1f/min" % actual
 	var ceiling: float = _ceiling_per_minute()
 	if ceiling > 0.0:
 		text += "  %%%d" % roundi(clampf(actual / ceiling, 0.0, 1.0) * 100.0)
@@ -304,13 +318,19 @@ func _apply_display(display: Display, unwired_ports: int) -> void:
 	match display:
 		Display.UNWIRED:
 			tint = COLOR_UNWIRED
-			explanation = "%d port boşta — bağlanmayan port üretim kaybettirir." % unwired_ports
+			explanation = "%d unlinked ports. Connect them to keep goods moving." % unwired_ports
+		Display.UNSTAFFED:
+			tint = COLOR_UNSTAFFED
+			explanation = "Assign a worker to start this workshop."
+		Display.HUNGRY:
+			tint = COLOR_HUNGRY
+			explanation = "No food for the workforce. Keep the food route running."
 		Display.RUNNING:
 			tint = COLOR_RUNNING
-			explanation = "Çalışıyor."
+			explanation = "Working."
 		_:
 			tint = COLOR_IDLE
-			explanation = "Boşta — ya malzeme bekliyor ya da çıktısını boşaltamıyor."
+			explanation = "Idle. Waiting for materials or room to send goods."
 
 	if _panel_style != null:
 		_panel_style.border_color = tint
@@ -352,7 +372,7 @@ func set_param(key: StringName, value: Variant) -> void:
 			block_label = String(value)
 			_refresh_header()
 		_:
-			push_warning("FlowBlock: bilinmeyen parametre '%s'" % key)
+			push_warning("FlowBlock: unknown parameter '%s'" % key)
 			return
 	params_changed.emit(self)
 

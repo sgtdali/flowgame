@@ -33,7 +33,6 @@ func _initialize() -> void:
 	_test_backpressure_chain()
 	_test_starved()
 	_test_scrap_does_not_deadlock()
-	_balance_report()
 
 	print("")
 	if _checks < EXPECTED_CHECKS:
@@ -84,8 +83,19 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 
 
 func _run(sim: FactorySim, ticks: int) -> void:
+	if sim.workers_assigned() == 0:
+		_staff_all(sim)
 	for i in ticks:
 		sim.tick()
+
+
+func _staff_all(sim: FactorySim) -> void:
+	# These checks isolate the original material-flow rules from food upkeep.
+	sim.workers_total = 100
+	sim.food = 10000
+	for station: SimStation in sim.stations():
+		if station.type.requires_worker():
+			sim.set_worker(station.id, true)
 
 
 ## --- Testler ----------------------------------------------------------------
@@ -188,6 +198,7 @@ func _test_scrap_does_not_deadlock() -> void:
 	# Ret portu BILEREK bagli degil.
 
 	var station: SimStation = sim.get_station(kalite)
+	_staff_all(sim)
 	for i in 600:
 		# Montaj kurmadan beslemek icin govdeyi dogrudan girdiye koyuyoruz.
 		if station.total_input() < BlockCatalog.KALITE.input_capacity:

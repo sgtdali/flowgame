@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_r0w2j")
 id = &"kesim"
-display_name = "Kesim"
-accent_color = Color(0.29, 0.624, 0.878, 1)
-icon_char = "KS"
-description = "Bir çubuktan iki vida keser."
+display_name = "Rivet Smith"
+accent_color = Color(0.60, 0.44, 0.27, 1)
+icon_char = "RS"
+description = "Forges two iron rivets from one rod."
 recipe = ExtResource("1_t6ul8")
 output_capacity = 6
 build_cost = 2200

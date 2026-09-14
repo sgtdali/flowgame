@@ -35,6 +35,8 @@ func _ready() -> void:
 	minimap_enabled = true
 	minimap_size = Vector2(180.0, 120.0)
 	minimap_opacity = 0.6
+	add_theme_color_override(&"grid_major", Color(0.37, 0.29, 0.19, 0.56))
+	add_theme_color_override(&"grid_minor", Color(0.26, 0.21, 0.15, 0.42))
 	connection_lines_curvature = 0.45
 	connection_lines_thickness = 2.5
 	connection_lines_antialiased = true

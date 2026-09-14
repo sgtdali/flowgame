@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_fbcfr")
 id = &"dagitici"
-display_name = "Dağıtıcı"
+display_name = "Crossroads"
 category = 6
-accent_color = Color(0.55, 0.6, 0.66, 1)
-icon_char = "SP"
-description = "Gelen ürünü iki ayrı çıkışa dağıtır. Diğer istasyonların çıkışı tek tele sınırlıdır — bir hattı ikiye ayırmanın tek yolu budur."
+accent_color = Color(0.51, 0.48, 0.38, 1)
+icon_char = "CR"
+description = "Divides one supply route between two destinations."
 input_capacity = 6
 output_port_count = 2
 output_capacity = 6

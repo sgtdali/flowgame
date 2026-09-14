@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_nae17")
 id = &"eritme"
-display_name = "Eritme Fırını"
-accent_color = Color(0.902, 0.494, 0.266, 1)
-icon_char = "ER"
-description = "İki cevheri eritip bir külçe döker."
+display_name = "Smelting Hearth"
+accent_color = Color(0.72, 0.39, 0.22, 1)
+icon_char = "SH"
+description = "Smelts two iron ores into one ingot."
 recipe = ExtResource("1_1iy1f")
 input_capacity = 8
 build_cost = 400

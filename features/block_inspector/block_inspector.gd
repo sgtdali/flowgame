@@ -18,6 +18,7 @@ signal param_changed(key: StringName, value: Variant)
 @onready var _category: Label = %Category
 @onready var _desc: Label = %Desc
 @onready var _name_edit: LineEdit = %NameEdit
+@onready var _worker_button: Button = %WorkerButton
 @onready var _info: VBoxContainer = %Info
 
 ## Formu koddan doldururken alan sinyallerinin geri tetiklenmesini engeller.
@@ -26,6 +27,7 @@ var _syncing: bool = false
 
 func _ready() -> void:
 	_name_edit.text_changed.connect(_on_name_changed)
+	_worker_button.toggled.connect(_on_worker_toggled)
 	clear()
 
 
@@ -38,6 +40,9 @@ func show_block(block: FlowBlock) -> void:
 	_category.text = type.category_label()
 	_desc.text = type.description
 	_name_edit.text = block.block_label
+	_worker_button.visible = type.requires_worker()
+	_worker_button.button_pressed = block.worker_assigned
+	_worker_button.text = "Worker assigned" if block.worker_assigned else "Assign worker"
 	_syncing = false
 
 	_rebuild_info(type)
@@ -61,39 +66,45 @@ func _rebuild_info(type: BlockType) -> void:
 
 	var recipe: Recipe = type.recipe
 	if recipe != null:
-		_info.add_child(_make_caption("Reçete"))
-		_info.add_child(_make_recipe_line(recipe))
-		_info.add_child(_make_row("Süre", recipe.duration_text(GameConfig.TICKS_PER_SECOND)))
+		_info.add_child(_make_caption("Crafting"))
+		_info.add_child(_make_recipe_line(type))
+		_info.add_child(_make_row("Time", recipe.duration_text(GameConfig.TICKS_PER_SECOND)))
 	else:
-		_info.add_child(_make_caption("Reçete"))
-		_info.add_child(_make_recipe_line(null))
+		_info.add_child(_make_caption("Crafting"))
+		_info.add_child(_make_recipe_line(type))
 
 	if type.category != BlockType.Category.SOURCE:
-		_info.add_child(_make_row("Giriş kuyruğu", "%d" % type.input_capacity))
-	if type.category != BlockType.Category.SINK:
-		_info.add_child(_make_row("Çıkış kuyruğu", "%d" % type.output_capacity))
+		_info.add_child(_make_row("Input storage", "%d" % type.input_capacity))
+	if type.category != BlockType.Category.SINK and type.category != BlockType.Category.FOOD:
+		_info.add_child(_make_row("Output storage", "%d" % type.output_capacity))
 	if type.scrap_every_n > 0:
-		_info.add_child(_make_row("Fire", "her %d üründe 1" % type.scrap_every_n))
-	_info.add_child(_make_row("Kurulum", "%s ₺" % GameConfig.format_money(type.build_cost)))
+		_info.add_child(_make_row("Scrap", "1 in every %d" % type.scrap_every_n))
+	_info.add_child(_make_row("Build cost", "%s gold" % GameConfig.format_money(type.build_cost)))
 
 
 func _make_caption(text: String) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override(&"font_size", 11)
-	label.add_theme_color_override(&"font_color", Color(0.62, 0.68, 0.75))
+	label.add_theme_color_override(&"font_color", Color(0.78, 0.68, 0.51))
 	return label
 
 
-func _make_recipe_line(recipe: Recipe) -> Label:
+func _make_recipe_line(type: BlockType) -> Label:
 	var label := Label.new()
-	if recipe == null:
-		label.text = "Üretim yapmaz — yalnızca taşır."
+	if type.category == BlockType.Category.FOOD:
+		label.text = "Deposits bread as food for the workforce."
+	elif type.category == BlockType.Category.SINK:
+		label.text = "Sells incoming goods for gold."
+	elif type.category == BlockType.Category.RESEARCH:
+		label.text = "Accepts goods toward knowledge discoveries."
+	elif type.recipe == null:
+		label.text = "Stores or routes goods between workshops."
 	else:
-		label.text = "%s  →  %s" % [recipe.input_text(), recipe.output_text()]
+		label.text = "%s  →  %s" % [type.recipe.input_text(), type.recipe.output_text()]
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override(&"font_size", 12)
-	label.add_theme_color_override(&"font_color", Color(0.82, 0.87, 0.92))
+	label.add_theme_color_override(&"font_color", Color(0.94, 0.85, 0.68))
 	return label
 
 
@@ -104,7 +115,7 @@ func _make_row(name_text: String, value_text: String) -> HBoxContainer:
 	var name_label := Label.new()
 	name_label.text = name_text
 	name_label.add_theme_font_size_override(&"font_size", 11)
-	name_label.add_theme_color_override(&"font_color", Color(0.55, 0.61, 0.68))
+	name_label.add_theme_color_override(&"font_color", Color(0.73, 0.62, 0.47))
 	row.add_child(name_label)
 
 	var value_label := Label.new()
@@ -112,10 +123,15 @@ func _make_row(name_text: String, value_text: String) -> HBoxContainer:
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value_label.add_theme_font_size_override(&"font_size", 11)
-	value_label.add_theme_color_override(&"font_color", Color(0.80, 0.85, 0.90))
+	value_label.add_theme_color_override(&"font_color", Color(0.91, 0.82, 0.64))
 	row.add_child(value_label)
 
 	return row
+
+
+func _on_worker_toggled(assigned: bool) -> void:
+	if not _syncing:
+		param_changed.emit(&"worker", assigned)
 
 
 func _on_name_changed(text: String) -> void:

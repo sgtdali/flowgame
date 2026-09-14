@@ -6,11 +6,11 @@
 [resource]
 script = ExtResource("2_htaww")
 id = &"maden_ocagi"
-display_name = "Maden Ocağı"
+display_name = "Iron Mine"
 category = 0
-accent_color = Color(0.31, 0.757, 0.651, 1)
-icon_char = "MO"
-description = "Durmadan cevher üretir. Girdi istemez, akışın başlangıcıdır."
+accent_color = Color(0.45, 0.56, 0.34, 1)
+icon_char = "MI"
+description = "Extracts iron ore continuously. The beginning of every crafting route."
 recipe = ExtResource("1_oxrox")
 input_capacity = 0
 output_capacity = 8

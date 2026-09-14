@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_b2npc")
 id = &"vida"
-display_name = "Vida"
-color = Color(0.88, 0.78, 0.42, 1)
-icon_char = "VD"
+display_name = "Iron Rivet"
+color = Color(0.81, 0.70, 0.43, 1)
+icon_char = "RV"
 base_price = 20
 tier = 3

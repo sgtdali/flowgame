@@ -6,7 +6,7 @@ extends Resource
 ## Her ürün için bir .tres -> res://data/items/
 
 @export var id: StringName = &""
-@export var display_name: String = "Yeni Ürün"
+@export var display_name: String = "New Good"
 @export var color: Color = Color(0.6, 0.64, 0.68)
 ## Kısa kod. Emoji yerine iki harf: varsayılan font her glifi taşımıyor.
 @export var icon_char: String = "??"

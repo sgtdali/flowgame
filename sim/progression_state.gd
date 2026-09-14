@@ -26,13 +26,6 @@ func balance(gross_revenue: int) -> int:
 	return GameConfig.START_MONEY + gross_revenue - spent
 
 
-func slot_limit() -> int:
-	var total: int = GameConfig.START_SLOTS
-	for node: ResearchNode in ResearchCatalog.all():
-		if unlocked.has(node.id):
-			total += node.slot_bonus
-	return total
-
 
 func is_unlocked(node_id: StringName) -> bool:
 	return unlocked.has(node_id)
@@ -99,16 +92,16 @@ func item_progress(node: ResearchNode, research_counts: Dictionary) -> Array:
 ## Neden alınamıyor? Boş string = alınabilir.
 func unlock_problem(node: ResearchNode, gross_revenue: int, research_counts: Dictionary) -> String:
 	if unlocked.has(node.id):
-		return "Bu araştırma zaten alınmış."
+		return "This knowledge is already discovered."
 	if not requirements_met(node):
-		return "Önce önceki araştırmayı tamamla."
+		return "Discover the earlier knowledge first."
 	if node.is_item_cost():
 		var progress: Array = item_progress(node, research_counts)
 		if progress[0] < progress[1]:
-			return "Ar-Ge Laboratuvarına %d / %d akıtıldı." % [progress[0], progress[1]]
+			return "Goods delivered to the Scholars Hall: %d / %d." % [progress[0], progress[1]]
 		return ""
 	if balance(gross_revenue) < node.cost_money:
-		return "Yetersiz bakiye — %s ₺ gerekiyor." % GameConfig.format_money(node.cost_money)
+		return "Not enough gold. You need %s." % GameConfig.format_money(node.cost_money)
 	return ""
 
 

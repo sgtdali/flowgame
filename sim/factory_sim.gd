@@ -28,6 +28,11 @@ var sold_counts: Dictionary = {}
 ## bilmez, sadece ne aktığını sayar. Böylece sim saf ve deterministik kalır.
 var research_counts: Dictionary = {}
 
+var food: int = GameConfig.START_FOOD
+var food_produced_total: int = 0
+var workers_total: int = GameConfig.START_WORKERS
+var food_shortage: bool = false
+
 var _stations: Dictionary = {}        # id -> SimStation
 var _ordered_ids: Array[int] = []     # her zaman artan sırada
 var _links: Array[SimLink] = []
@@ -77,6 +82,32 @@ func station_count() -> int:
 	return _ordered_ids.size()
 
 
+func workers_assigned() -> int:
+	var total: int = 0
+	for id: int in _ordered_ids:
+		if (_stations[id] as SimStation).assigned_worker:
+			total += 1
+	return total
+
+
+func set_worker(id: int, assigned: bool) -> bool:
+	var station: SimStation = get_station(id)
+	if station == null or not station.type.requires_worker():
+		return false
+	if assigned and not station.assigned_worker and workers_assigned() >= workers_total:
+		return false
+	station.assigned_worker = assigned
+	return true
+
+
+func recruit_worker() -> bool:
+	if food < GameConfig.RECRUIT_FOOD_COST:
+		return false
+	food -= GameConfig.RECRUIT_FOOD_COST
+	workers_total += 1
+	return true
+
+
 func link_count() -> int:
 	return _links.size()
 
@@ -100,34 +131,34 @@ func links() -> Array[SimLink]:
 ## Kural ve mesaj TEK yerde. Arayüz kendi kopyasını tutsaydı er geç ayrışırdı.
 func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) -> String:
 	if from_id == to_id:
-		return "Bir istasyon kendine bağlanamaz."
+		return "A workshop cannot connect to itself."
 	var src: SimStation = get_station(from_id)
 	var dst: SimStation = get_station(to_id)
 	if src == null or dst == null:
-		return "İstasyon bulunamadı."
+		return "Workshop not found."
 	for link: SimLink in _links:
 		if link.matches(from_id, from_port, to_id, to_port):
-			return "Bu bağlantı zaten var."
+			return "This route already exists."
 
 	# Her çıkış portu TEK tele sınırlıdır. Bir hattı birden fazla yere
 	# dağıtmanın tek yolu Dağıtıcı'dır — o, aynı işi ayrı PORTLARLA yapar
 	# (her portu yine tek tel), tek portun kendisini çoğaltarak değil.
 	for link: SimLink in _links:
 		if link.from_id == from_id and link.from_port == from_port:
-			return "Bu çıkış zaten bağlı. Birden fazla hatta dağıtmak için Dağıtıcı kullan."
+			return "This output is already linked. Use a Crossroads to split a route."
 
 	var out_items: Array[ItemType] = src.type.output_items()
 	var in_items: Array[ItemType] = dst.type.input_items()
 	if not out_items.is_empty() and from_port >= out_items.size():
-		return "Geçersiz çıkış portu."
+		return "Invalid output port."
 	if in_items.is_empty():
 		return ""  # jenerik giriş: tampon ve sevkiyat her ürünü kabul eder
 	if to_port >= in_items.size():
-		return "Geçersiz giriş portu."
+		return "Invalid input port."
 	if out_items.is_empty():
 		return ""  # tamponun çıkışı: tip belli değil, taşıma anında bakılır
 	if out_items[from_port] != in_items[to_port]:
-		return "%s buraya giremez — bu giriş %s bekliyor." % [
+		return "%s cannot enter here. This input expects %s." % [
 			out_items[from_port].display_name, in_items[to_port].display_name]
 	return ""
 
@@ -163,6 +194,10 @@ func clear() -> void:
 	revenue = 0
 	sold_counts.clear()
 	research_counts.clear()
+	food = GameConfig.START_FOOD
+	food_produced_total = 0
+	workers_total = GameConfig.START_WORKERS
+	food_shortage = false
 
 
 func _rebuild_link_index() -> void:
@@ -205,6 +240,10 @@ func unwired_port_count(id: int) -> int:
 
 func tick() -> void:
 	tick_count += 1
+	if tick_count % (GameConfig.TICKS_PER_SECOND * 60) == 0:
+		var upkeep: int = workers_total * GameConfig.FOOD_PER_WORKER_PER_MINUTE
+		food_shortage = food < upkeep
+		food = maxi(0, food - upkeep)
 	_phase_produce()
 	_phase_transfer()
 
@@ -213,11 +252,20 @@ func tick() -> void:
 func _phase_produce() -> void:
 	for id: int in _ordered_ids:
 		var station: SimStation = _stations[id]
+		if station.type.requires_worker():
+			if not station.assigned_worker:
+				station.status = SimStation.Status.UNSTAFFED
+				continue
+			if food_shortage and not station.type.food_chain:
+				station.status = SimStation.Status.HUNGRY
+				continue
 		match station.type.category:
 			BlockType.Category.BUFFER, BlockType.Category.SPLITTER:
 				_run_buffer(station)
 			BlockType.Category.SINK:
 				_run_sink(station)
+			BlockType.Category.FOOD:
+				_run_food(station)
 			BlockType.Category.RESEARCH:
 				_run_research(station)
 			_:
@@ -402,6 +450,19 @@ func _run_research(station: SimStation) -> void:
 	station.input.clear()
 
 
+func _run_food(station: SimStation) -> void:
+	if station.input.is_empty():
+		station.status = SimStation.Status.STARVED
+		return
+	station.status = SimStation.Status.RUNNING
+	for item_id: StringName in station.input.keys():
+		var count: int = int(station.input[item_id])
+		station.consumed_total += count
+		food += count
+		food_produced_total += count
+	station.input.clear()
+
+
 ## --- Taşıma -----------------------------------------------------------------
 
 ## Bir birim taşımayı dener; taşıdıysa true döner. Çağıran (`_phase_transfer`)
@@ -502,6 +563,7 @@ func to_dict() -> Dictionary:
 			"consumed_total": st.consumed_total,
 			"next_link": st.next_link.duplicate(),
 			"next_output_port": st.next_output_port,
+			"assigned_worker": st.assigned_worker,
 		})
 
 	var link_data: Array = []
@@ -517,6 +579,10 @@ func to_dict() -> Dictionary:
 		"revenue": revenue,
 		"sold": _ids_to_strings(sold_counts),
 		"research": _ids_to_strings(research_counts),
+		"food": food,
+		"food_produced_total": food_produced_total,
+		"workers_total": workers_total,
+		"food_shortage": food_shortage,
 		"stations": station_data,
 		"links": link_data,
 	}
@@ -527,6 +593,10 @@ func from_dict(data: Dictionary) -> bool:
 	tick_count = int(data.get("tick", 0))
 	_next_id = int(data.get("next_id", 1))
 	revenue = int(data.get("revenue", 0))
+	food = int(data.get("food", GameConfig.START_FOOD))
+	food_produced_total = int(data.get("food_produced_total", 0))
+	workers_total = int(data.get("workers_total", GameConfig.START_WORKERS))
+	food_shortage = bool(data.get("food_shortage", false))
 	for key: String in data.get("sold", {}):
 		sold_counts[StringName(key)] = int(data["sold"][key])
 	for key: String in data.get("research", {}):
@@ -535,7 +605,7 @@ func from_dict(data: Dictionary) -> bool:
 	for entry: Dictionary in data.get("stations", []):
 		var type := BlockCatalog.find_by_id(StringName(entry.get("type_id", "")))
 		if type == null:
-			push_warning("Bilinmeyen istasyon türü: %s" % entry.get("type_id", ""))
+			push_warning("Unknown workshop type: %s" % entry.get("type_id", ""))
 			continue
 		var st := SimStation.new(int(entry.get("id", 0)), type)
 		st.input = _strings_to_ids(entry.get("input", {}))
@@ -544,13 +614,16 @@ func from_dict(data: Dictionary) -> bool:
 		st.progress_ticks = int(entry.get("progress", 0))
 		st.produced_total = int(entry.get("produced_total", 0))
 		st.consumed_total = int(entry.get("consumed_total", 0))
-		for port_key: String in entry.get("next_link", {}):
+		for port_key: Variant in entry.get("next_link", {}):
 			st.next_link[int(port_key)] = int(entry["next_link"][port_key])
 		st.next_output_port = int(entry.get("next_output_port", 0))
+		st.assigned_worker = bool(entry.get("assigned_worker", not data.has("workers_total") and type.requires_worker()))
 		_stations[st.id] = st
 		_ordered_ids.append(st.id)
 
 	_ordered_ids.sort()
+	if not data.has("workers_total"):
+		workers_total = maxi(workers_total, workers_assigned())
 
 	for entry: Dictionary in data.get("links", []):
 		_links.append(SimLink.new(
@@ -568,13 +641,13 @@ func from_dict(data: Dictionary) -> bool:
 ## hâle gelir. Bu yüzden testte her koşumda kontrol edilir.
 func state_hash() -> String:
 	var parts: PackedStringArray = PackedStringArray()
-	parts.append("t%d|r%d|g%s" % [tick_count, revenue, _stable_buffer(research_counts)])
+	parts.append("t%d|r%d|g%s|f%d|p%d|w%d|h%d" % [tick_count, revenue, _stable_buffer(research_counts), food, food_produced_total, workers_total, int(food_shortage)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
-		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:i%s:o%s" % [
+		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:a%d:i%s:o%s" % [
 			st.id, st.type.id, st.produced_total, st.consumed_total,
 			"1" if st.producing else "0", st.progress_ticks,
-			str(st.status), st.next_output_port,
+			str(st.status), st.next_output_port, int(st.assigned_worker),
 			_stable_buffer(st.input), _stable_buffer(st.output),
 		])
 	return "|".join(parts).sha256_text()

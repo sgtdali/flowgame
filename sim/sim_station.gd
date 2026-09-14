@@ -17,6 +17,7 @@ var output: Dictionary = {}
 ## Üretim durumu.
 var producing: bool = false
 var progress_ticks: int = 0
+var assigned_worker: bool = false
 
 ## Bu istasyonun ürettiği toplam parça. Fire sayacı buna bakar —
 ## rastgelelik yok, "her N üründen biri" deterministik olarak belirlenir.
@@ -52,7 +53,7 @@ var next_output_port: int = 0
 ##   TIKANDI (BLOCKED)  → çıktısını boşaltamıyor, SONRAKİ istasyon yavaş
 ## İkisini tek bir "blocked" bayrağında birleştirmek, oyunun asıl teşhis
 ## aracını kör eder.
-enum Status { RUNNING, STARVED, BLOCKED }
+enum Status { RUNNING, STARVED, BLOCKED, UNSTAFFED, HUNGRY }
 
 var status: Status = Status.STARVED
 
@@ -115,7 +116,7 @@ func take_item(buffer: Dictionary, item_id: StringName, count: int) -> bool:
 ## istasyonlarda tüketim.
 func throughput_total() -> int:
 	match type.category:
-		BlockType.Category.SINK, BlockType.Category.RESEARCH:
+		BlockType.Category.SINK, BlockType.Category.RESEARCH, BlockType.Category.FOOD:
 			return consumed_total
 	return produced_total
 
@@ -126,9 +127,11 @@ func status_label() -> String:
 
 static func status_name(value: Status) -> String:
 	match value:
-		Status.RUNNING: return "çalışıyor"
-		Status.STARVED: return "aç"
-		Status.BLOCKED: return "tıkalı"
+		Status.RUNNING: return "working"
+		Status.STARVED: return "starved"
+		Status.BLOCKED: return "blocked"
+		Status.UNSTAFFED: return "unstaffed"
+		Status.HUNGRY: return "no food"
 	return "?"
 
 

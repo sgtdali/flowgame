@@ -10,8 +10,11 @@ extends RefCounted
 ## Simülasyonun temel hızı. Tüm süreler tick cinsinden sayılır.
 const TICKS_PER_SECOND: int = 10
 
-## Oyuncunun başlangıçtaki istasyon slotu sayısı.
-const START_SLOTS: int = 5
+## The first workers and food reserve let both craft and food routes start.
+const START_WORKERS: int = 5
+const START_FOOD: int = 30
+const RECRUIT_FOOD_COST: int = 15
+const FOOD_PER_WORKER_PER_MINUTE: int = 1
 
 ## Başlangıç parası — ilk hattı kurmaya yetmeli, fazlası olmamalı.
 const START_MONEY: int = 1000
@@ -27,10 +30,10 @@ const MAX_TICKS_PER_FRAME: int = 100
 static func format_ticks(ticks: int) -> String:
 	var seconds: float = float(ticks) / float(TICKS_PER_SECOND)
 	if seconds >= 3600.0:
-		return "%.1f sa" % (seconds / 3600.0)
+		return "%.1f hr" % (seconds / 3600.0)
 	if seconds >= 60.0:
-		return "%.1f dk" % (seconds / 60.0)
-	return "%.1f sn" % seconds
+		return "%.1f min" % (seconds / 60.0)
+	return "%.1f sec" % seconds
 
 
 ## Binlik ayraçlı para metni. Para int tutulur, biçimlendirme sunumda yapılır.

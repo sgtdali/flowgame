@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_pxdle")
 id = &"montaj"
-display_name = "Montaj"
-accent_color = Color(0.29, 0.624, 0.878, 1)
-icon_char = "MT"
-description = "İki levha ve üç vidayı birleştirip gövde üretir. İki ayrı hattın buluştuğu yer."
+display_name = "Armorer"
+accent_color = Color(0.43, 0.55, 0.45, 1)
+icon_char = "AM"
+description = "Assembles armor from two plates and three rivets."
 recipe = ExtResource("1_cp1fq")
 input_capacity = 6
 build_cost = 5000
