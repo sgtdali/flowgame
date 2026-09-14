@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="BlockType" format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://d0iyu6gge40gi"]
 
-[ext_resource type="Resource" path="res://data/recipes/r_kalite.tres" id="1_e61dg"]
-[ext_resource type="Resource" path="res://data/items/hurda.tres" id="2_8h6dy"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="3_uim5t"]
+[ext_resource type="Resource" uid="uid://q61ucwaiabs6" path="res://data/recipes/r_kalite.tres" id="1_e61dg"]
+[ext_resource type="Resource" uid="uid://0mflesncslnk" path="res://data/items/hurda.tres" id="2_8h6dy"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="3_uim5t"]
 
 [resource]
 script = ExtResource("3_uim5t")

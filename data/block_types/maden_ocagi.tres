@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BlockType" format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://cxm3nf1bo7whf"]
 
-[ext_resource type="Resource" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="2_htaww"]
+[ext_resource type="Resource" uid="uid://wsqwksxvt4ya" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_htaww"]
 
 [resource]
 script = ExtResource("2_htaww")

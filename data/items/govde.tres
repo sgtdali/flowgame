@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="ItemType" format=3]
+[gd_resource type="Resource" script_class="ItemType" format=3 uid="uid://bdbocem7pq0ia"]
 
-[ext_resource type="Script" path="res://data/item_type.gd" id="1_3jhd6"]
+[ext_resource type="Script" uid="uid://b7scwc68n5sr5" path="res://data/item_type.gd" id="1_3jhd6"]
 
 [resource]
 script = ExtResource("1_3jhd6")
 id = &"govde"
 display_name = "Armor"
-color = Color(0.49, 0.65, 0.50, 1)
+color = Color(0.49, 0.65, 0.5, 1)
 icon_char = "AR"
 base_price = 220
 tier = 4

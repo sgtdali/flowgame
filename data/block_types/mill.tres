@@ -1,18 +1,17 @@
-[gd_resource type="Resource" script_class="BlockType" format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://chx552d76l7st"]
 
-[ext_resource type="Script" path="res://data/block_type.gd" id="1_block"]
-[ext_resource type="Resource" path="res://data/recipes/r_flour.tres" id="2_recipe"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="1_block"]
+[ext_resource type="Resource" uid="uid://blp2wn1grwfl7" path="res://data/recipes/r_flour.tres" id="2_recipe"]
 
 [resource]
 script = ExtResource("1_block")
 id = &"mill"
 display_name = "Windmill"
-category = 1
 accent_color = Color(0.64, 0.61, 0.43, 1)
 icon_char = "WM"
+food_chain = true
 description = "Grinds wheat into flour."
 recipe = ExtResource("2_recipe")
-food_chain = true
 input_capacity = 8
 output_capacity = 8
 build_cost = 80

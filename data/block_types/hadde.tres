@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BlockType" format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://b5uextjpasxu8"]
 
-[ext_resource type="Resource" path="res://data/recipes/r_cubuk.tres" id="1_n02bl"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="2_efh0x"]
+[ext_resource type="Resource" uid="uid://crgncc84wrrpt" path="res://data/recipes/r_cubuk.tres" id="1_n02bl"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_efh0x"]
 
 [resource]
 script = ExtResource("2_efh0x")

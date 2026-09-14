@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="ResearchNode" format=3]
+[gd_resource type="Resource" script_class="ResearchNode" format=3 uid="uid://3gse51td6l0i"]
 
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_dv6xk"]
-[ext_resource type="Resource" path="res://data/items/govde.tres" id="2_ehan8"]
-[ext_resource type="Script" path="res://data/research_node.gd" id="3_gcmx1"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="4_8yv62"]
-[ext_resource type="Resource" path="res://data/block_types/maden_ocagi_derin.tres" id="5_hy1aj"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="1_dv6xk"]
+[ext_resource type="Resource" uid="uid://bdbocem7pq0ia" path="res://data/items/govde.tres" id="2_ehan8"]
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="3_gcmx1"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="4_8yv62"]
+[ext_resource type="Resource" uid="uid://rypr5v2cxda8" path="res://data/block_types/maden_ocagi_derin.tres" id="5_hy1aj"]
 
 [sub_resource type="Resource" id="Resource_1xsj3"]
 script = ExtResource("1_dv6xk")

@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="ResearchNode" format=3]
+[gd_resource type="Resource" script_class="ResearchNode" format=3 uid="uid://dcgl3e78q2hdi"]
 
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_7gdhx"]
-[ext_resource type="Script" path="res://data/research_node.gd" id="2_gxnpr"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="3_n7pv5"]
-[ext_resource type="Resource" path="res://data/block_types/kalite.tres" id="4_a6xsn"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="1_7gdhx"]
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="2_gxnpr"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="3_n7pv5"]
+[ext_resource type="Resource" uid="uid://d0iyu6gge40gi" path="res://data/block_types/kalite.tres" id="4_a6xsn"]
 
 [resource]
 script = ExtResource("2_gxnpr")

@@ -1,25 +1,22 @@
-[gd_resource type="Resource" script_class="Recipe" format=3]
+[gd_resource type="Resource" script_class="Recipe" format=3 uid="uid://bhubvj3vflkp2"]
 
-[ext_resource type="Script" path="res://data/recipe.gd" id="1_recipe"]
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="2_slot"]
+[ext_resource type="Script" uid="uid://d2qfnouru338u" path="res://data/recipe.gd" id="1_recipe"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="2_slot"]
 [ext_resource type="Resource" path="res://data/items/kask.tres" id="3_kask"]
-[ext_resource type="Resource" path="res://data/items/kulce.tres" id="4_kulce"]
+[ext_resource type="Resource" uid="uid://80lwk81l7tk3" path="res://data/items/kulce.tres" id="4_kulce"]
 [ext_resource type="Resource" path="res://data/items/bantli_kask.tres" id="5_bantli_kask"]
 
 [sub_resource type="Resource" id="Slot_0"]
 script = ExtResource("2_slot")
 item = ExtResource("3_kask")
-count = 1
 
 [sub_resource type="Resource" id="Slot_1"]
 script = ExtResource("2_slot")
 item = ExtResource("4_kulce")
-count = 1
 
 [sub_resource type="Resource" id="Slot_2"]
 script = ExtResource("2_slot")
 item = ExtResource("5_bantli_kask")
-count = 1
 
 [resource]
 script = ExtResource("1_recipe")

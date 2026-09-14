@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="ResearchNode" format=3]
+[gd_resource type="Resource" script_class="ResearchNode" format=3 uid="uid://csm3v5fjjqxyh"]
 
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_slot"]
-[ext_resource type="Script" path="res://data/research_node.gd" id="2_node"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="3_block"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="1_slot"]
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="2_node"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="3_block"]
 [ext_resource type="Resource" path="res://data/block_types/kask_ustasi.tres" id="4_kask_ustasi"]
 [ext_resource type="Resource" path="res://data/items/kalkan.tres" id="5_kalkan"]
 

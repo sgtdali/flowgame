@@ -1,25 +1,22 @@
-[gd_resource type="Resource" script_class="Recipe" format=3]
+[gd_resource type="Resource" script_class="Recipe" format=3 uid="uid://b8ionh5kn4ce6"]
 
-[ext_resource type="Script" path="res://data/recipe.gd" id="1_recipe"]
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="2_slot"]
-[ext_resource type="Resource" path="res://data/items/kulce.tres" id="3_kulce"]
-[ext_resource type="Resource" path="res://data/items/levha.tres" id="4_levha"]
+[ext_resource type="Script" uid="uid://d2qfnouru338u" path="res://data/recipe.gd" id="1_recipe"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="2_slot"]
+[ext_resource type="Resource" uid="uid://80lwk81l7tk3" path="res://data/items/kulce.tres" id="3_kulce"]
+[ext_resource type="Resource" uid="uid://cw372uot14bja" path="res://data/items/levha.tres" id="4_levha"]
 [ext_resource type="Resource" path="res://data/items/kalkan.tres" id="5_kalkan"]
 
 [sub_resource type="Resource" id="Slot_0"]
 script = ExtResource("2_slot")
 item = ExtResource("3_kulce")
-count = 1
 
 [sub_resource type="Resource" id="Slot_1"]
 script = ExtResource("2_slot")
 item = ExtResource("4_levha")
-count = 1
 
 [sub_resource type="Resource" id="Slot_2"]
 script = ExtResource("2_slot")
 item = ExtResource("5_kalkan")
-count = 1
 
 [resource]
 script = ExtResource("1_recipe")

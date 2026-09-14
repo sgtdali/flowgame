@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="BlockType" format=3]
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://rypr5v2cxda8"]
 
-[ext_resource type="Resource" path="res://data/recipes/r_cevher_derin.tres" id="1_7qvlj"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="2_38xr4"]
+[ext_resource type="Resource" uid="uid://dqqk7di6m5do5" path="res://data/recipes/r_cevher_derin.tres" id="1_7qvlj"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_38xr4"]
 
 [resource]
 script = ExtResource("2_38xr4")
 id = &"maden_ocagi_derin"
 display_name = "Deep Iron Mine"
 category = 0
-accent_color = Color(0.37, 0.50, 0.33, 1)
+accent_color = Color(0.37, 0.5, 0.33, 1)
 icon_char = "DM"
 description = "Extracts ore two and a half times faster than a common mine."
 recipe = ExtResource("1_7qvlj")

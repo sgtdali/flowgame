@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="ResearchNode" format=3]
+[gd_resource type="Resource" script_class="ResearchNode" format=3 uid="uid://bldi37odqfhju"]
 
-[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_b2m82"]
-[ext_resource type="Script" path="res://data/research_node.gd" id="2_xiasb"]
-[ext_resource type="Script" path="res://data/block_type.gd" id="3_qov1w"]
-[ext_resource type="Resource" path="res://data/block_types/kesim.tres" id="4_hyudb"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="1_b2m82"]
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="2_xiasb"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="3_qov1w"]
+[ext_resource type="Resource" uid="uid://cbd6t485oavsu" path="res://data/block_types/kesim.tres" id="4_hyudb"]
 
 [resource]
 script = ExtResource("2_xiasb")
