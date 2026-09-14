@@ -12,12 +12,32 @@ const TICKS_PER_SECOND: int = 10
 
 ## The first workers and food reserve let both craft and food routes start.
 const START_WORKERS: int = 5
-const START_FOOD: int = 30
+## Erken oyun hat denemesi (bkz. DESIGN.md D29): Maden+Eritme hattı tek
+## başına, gıda zincirini hiç kurmadan birkaç DAKİKA (bazı stratejilerde
+## ~10 dk'ya kadar — araştırma erişiminin zamanlayıcı güvenlik ağı, D27)
+## çalışabilmeli; eskiden 30 idi ve 5 işçi * 1 gıda/dk upkeep ile 6 dakikada
+## tükenip istasyonları AÇ (HUNGRY) durdururdu — görünmeyen bir darboğazdı.
+## 300, ~60 dakikalık bir tampon verir: kalıcı olarak SINIRSIZ değil, ama bu
+## kısa deneyin süresini rahatça kapsar.
+const START_FOOD: int = 300
 const RECRUIT_FOOD_COST: int = 15
 const FOOD_PER_WORKER_PER_MINUTE: int = 1
 
 ## Başlangıç parası — ilk hattı kurmaya yetmeli, fazlası olmamalı.
 const START_MONEY: int = 1000
+
+## Erken oyun deneyi: kaynak/kapasite döngüsü (bkz. DESIGN.md D27).
+##
+## Araştırmaya gecikmeden ÖNCE oyuncu en az bu kadar geliştirme satın almalı.
+## Yalnızca bunu şart koşmak, hiç geliştirme almayan bir oyuncuyu SONSUZA DEK
+## kilitlerdi — bu yüzden RESEARCH_FALLBACK_TICKS ikinci bir (uzun, tek
+## başına yeterli olmayan) yol sunar.
+const MIN_UPGRADES_FOR_RESEARCH: int = 1
+
+## Yukarıdaki şart hiç karşılanmazsa araştırmanın en geç açılacağı tick
+## sayısı — "yalnızca uzun bir zamanlayıcıyla geciktirme" kuralının GÜVENLİK
+## AĞI, birincil yol değil.
+const RESEARCH_FALLBACK_TICKS: int = TICKS_PER_SECOND * 60 * 10
 
 ## Bir karede işlenebilecek en fazla tick.
 ##

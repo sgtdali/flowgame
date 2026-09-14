@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_block"]
+[ext_resource type="Resource" path="res://data/recipes/r_kask.tres" id="2_recipe"]
+
+[resource]
+script = ExtResource("1_block")
+id = &"kask_ustasi"
+display_name = "Helm Forge"
+category = 1
+accent_color = Color(0.56, 0.53, 0.46, 1)
+icon_char = "HL"
+description = "Hammers an iron plate into a helm. Draws on the same plates the shield line wants."
+recipe = ExtResource("2_recipe")
+input_capacity = 6
+output_capacity = 6
+build_cost = 1200

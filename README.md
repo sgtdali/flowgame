@@ -54,7 +54,7 @@ features/
   game/                ORKESTRATÖR — simülasyonu sahiplenir, tick'i sürer
   flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
   block_palette/       Sol panel: eklenebilir istasyonlar
-  block_inspector/     Sağ panel: seçili istasyonun bilgileri
+  research_panel/      Sağ panel: araştırma ağacı — sabit değil, sağ alttaki yüzen düğmeyle açılır/kapanır
 sim/
   factory_sim.gd       Tick döngüsü, tıkanma, kayıt. Sahne ağacının dışında.
   sim_station.gd       Bir istasyonun durumu: tamponlar, ilerleme, AÇ/TIKALI

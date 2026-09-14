@@ -4,13 +4,12 @@
 [ext_resource type="Script" path="res://data/research_node.gd" id="2_cy7bs"]
 [ext_resource type="Script" path="res://data/block_type.gd" id="3_bx6sk"]
 [ext_resource type="Resource" path="res://data/block_types/geri_donusum.tres" id="4_pafrk"]
-[ext_resource type="Resource" path="res://data/block_types/arge_lab.tres" id="5_5vdi2"]
 
 [resource]
 script = ExtResource("2_cy7bs")
 id = &"arge"
-display_name = "Scholars' Hall"
-description = "Unlock salvage and the scholars' hall. Further knowledge requires crafted goods."
+display_name = "Salvage Craft"
+description = "Unlock the salvage hearth, smelting scrap metal back into ingots."
 requires = PackedStringArray("kalite_kontrol")
 cost_money = 26000
-unlocks_blocks = Array[ExtResource("3_bx6sk")]([ExtResource("4_pafrk"), ExtResource("5_5vdi2")])
+unlocks_blocks = Array[ExtResource("3_bx6sk")]([ExtResource("4_pafrk")])

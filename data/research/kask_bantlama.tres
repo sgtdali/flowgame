@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" path="res://data/recipe_slot.gd" id="1_slot"]
+[ext_resource type="Script" path="res://data/research_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://data/block_type.gd" id="3_block"]
+[ext_resource type="Resource" path="res://data/block_types/kask_bantcisi.tres" id="4_kask_bantcisi"]
+[ext_resource type="Resource" path="res://data/items/kask.tres" id="5_kask"]
+
+[sub_resource type="Resource" id="Resource_cost0"]
+script = ExtResource("1_slot")
+item = ExtResource("5_kask")
+count = 20
+
+[resource]
+script = ExtResource("2_node")
+id = &"kask_bantlama"
+display_name = "Helm Banding"
+description = "Send helms to the Scholars' Hall. Learn to band a helm with an ingot rim — the same ingots the hearth's other routes still want."
+requires = PackedStringArray("kask_zanaati")
+cost_items = Array[ExtResource("1_slot")]([SubResource("Resource_cost0")])
+unlocks_blocks = Array[ExtResource("3_block")]([ExtResource("4_kask_bantcisi")])

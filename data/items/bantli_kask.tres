@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemType" format=3]
+
+[ext_resource type="Script" path="res://data/item_type.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"bantli_kask"
+display_name = "Banded Helm"
+color = Color(0.46, 0.44, 0.40, 1)
+icon_char = "BH"
+base_price = 150
+tier = 4

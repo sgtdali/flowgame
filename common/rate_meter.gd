@@ -54,6 +54,11 @@ var _avg_interval: float = -1.0
 ## (ör. tek satışta kaç ₺, tek üretimde kaç adet).
 var _avg_delta: float = 0.0
 
+## Şimdiye kadar görülen OLAY sayısı (delta>0 olan sample çağrıları).
+## Araştırma takip panelinin "ölçülüyor" / "kararlı" ayrımı için —
+## yalnızca 1-2 olayla hesaplanan bir hız/ETA yanıltıcı kesinlik verir.
+var _event_count: int = 0
+
 
 ## Her karede çağrılabilir.
 func sample(tick: int, total: int) -> void:
@@ -70,6 +75,7 @@ func sample(tick: int, total: int) -> void:
 	if delta <= 0:
 		return  # bu karede yeni üretim yok — ortalamalar değişmez
 
+	_event_count += 1
 	var interval: float = float(tick - _last_event_tick)
 	if _avg_interval < 0.0:
 		_avg_interval = interval
@@ -100,3 +106,23 @@ func reset() -> void:
 	_last_seen_tick = 0
 	_avg_interval = -1.0
 	_avg_delta = 0.0
+	_event_count = 0
+
+
+## --- Sunum katmanı için salt okunur erişim (bkz. ResearchDeliveryTracker) --
+
+func event_count() -> int:
+	return _event_count
+
+
+func has_measurement() -> bool:
+	return _avg_interval >= 0.0
+
+
+## Ardışık olaylar arası ortalama HAM tick. `has_measurement()` false ise anlamsız.
+func avg_interval_ticks() -> float:
+	return _avg_interval
+
+
+func ticks_since_last_event() -> int:
+	return _last_seen_tick - _last_event_tick

@@ -13,4 +13,5 @@ description = "Divides one supply route between two destinations."
 input_capacity = 6
 output_port_count = 2
 output_capacity = 6
-build_cost = 1400
+build_cost = 350
+unlocked_at_start = true

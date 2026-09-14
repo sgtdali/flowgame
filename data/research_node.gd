@@ -24,6 +24,10 @@ extends Resource
 
 @export_group("Reward")
 @export var unlocks_blocks: Array[BlockType] = []
+## Doluysa, bu araştırma açılınca Sevkiyat gelirleri artık istasyonda
+## BİRİKMEZ, doğrudan harcanabilir kasaya akar (bkz. FactorySim.auto_collect,
+## DESIGN.md D27). Erken oyun deneyinde ilk ödüllerden biri.
+@export var unlocks_auto_collect: bool = false
 
 
 func is_item_cost() -> bool:

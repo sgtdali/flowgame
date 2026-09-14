@@ -20,12 +20,13 @@ const SPEEDS: Array[int] = [0, 1, 2, 4]
 
 @onready var _canvas: FlowCanvas = %Canvas
 @onready var _palette: BlockPalette = %Palette
-@onready var _inspector: BlockInspector = %Inspector
 @onready var _research_panel: ResearchPanel = %ResearchPanel
+@onready var _research_toggle: Button = %ResearchToggle
 @onready var _status: Label = %Status
 @onready var _clock: Label = %Clock
 @onready var _money: Label = %Money
 @onready var _money_rate: Label = %MoneyRate
+@onready var _market_accrued: Label = %MarketAccrued
 @onready var _workforce: Label = %Workforce
 @onready var _food: Label = %Food
 @onready var _food_rate_label: Label = %FoodRate
@@ -54,29 +55,39 @@ var _last_status: String = ""
 var _last_balance: int = -1
 var _last_research_total: int = -1
 var _last_money_rate: String = ""
+var _last_market_accrued: String = ""
 
 ## Gelir ve sevkiyat hızı. Sunum verisi — kayıtta yer almaz, yükledikten
 ## birkaç saniye sonra kendi kendine dolar.
 var _sales_rate := SalesRateTracker.new()
 var _food_rate := DeliveryRateMeter.new()
 
+## Ar-Ge Sarayı'na akan ürünlerin ürün-başına hızı. Aynı sebeple sunum
+## verisi — bkz. yukarısı.
+var _research_rate := ResearchDeliveryTracker.new()
+
+## Araştırma paneli açıkken bile her kare tam yeniden kurmamak için:
+## yalnızca bu kadar sim-tick geçince canlı hız/ETA'yı tazele.
+const _RESEARCH_PANEL_REFRESH_TICKS: int = GameConfig.TICKS_PER_SECOND
+var _last_research_panel_refresh_tick: int = -999999
+
 
 func _ready() -> void:
 	theme = MedievalTheme.build()
 	_palette.block_requested.connect(_on_palette_request)
-	_inspector.param_changed.connect(_on_param_changed)
 
 	_canvas.add_requested.connect(_on_add_requested)
 	_canvas.connect_requested.connect(_on_connect_requested)
 	_canvas.disconnect_requested.connect(_on_disconnect_requested)
 	_canvas.delete_requested.connect(_on_delete_requested)
-	_canvas.block_selected.connect(_inspector.show_block)
-	_canvas.selection_cleared.connect(_inspector.clear)
+	_canvas.action_requested.connect(_on_canvas_action_requested)
+	_canvas.interacted.connect(_on_canvas_interacted)
 
 	_research_panel.unlock_requested.connect(_on_unlock_requested)
+	_research_panel.locate_requested.connect(_on_locate_requested)
 	_research_panel.close_requested.connect(_on_research_closed)
 
-	%ResearchButton.pressed.connect(_on_research_pressed)
+	_research_toggle.pressed.connect(_on_research_toggle_pressed)
 	_recruit_button.pressed.connect(_on_recruit_pressed)
 	%ArrangeButton.pressed.connect(_canvas.arrange_nodes)
 	%ClearButton.pressed.connect(_on_clear_pressed)
@@ -93,7 +104,7 @@ func _ready() -> void:
 		_speed_buttons[index].pressed.connect(_on_speed_pressed.bind(index))
 
 	_refresh_availability()
-	_notice("Assign workers to the Mine and Hearth. Build Farm → Windmill → Bakery → Granary for food.")
+	_notice("Assign workers to the Mine and Hearth. Build Farm → Windmill → Bakery → Granary for food. Sales wait at the Market — click a workshop and press its Collect button.")
 
 
 ## --- Oyun döngüsü -----------------------------------------------------------
@@ -129,7 +140,7 @@ func _sync_visuals() -> void:
 	for block: FlowBlock in _canvas.get_blocks():
 		var station: SimStation = _sim.get_station(block.sim_id)
 		if station != null:
-			block.render_state(station, _sim.tick_count, _sim.unwired_port_count(block.sim_id))
+			block.render_state(station, _sim.tick_count, _sim.unwired_port_count(block.sim_id), _sim.auto_collect)
 
 
 func _balance() -> int:
@@ -145,30 +156,62 @@ func _on_speed_pressed(index: int) -> void:
 	_accumulator = 0.0
 
 
-## --- Paletten ve denetçiden ------------------------------------------------
+## --- Paletten ve düğümlerin kendi eylem düğmelerinden ------------------------
 
 func _on_palette_request(type: BlockType) -> void:
 	_on_add_requested(type, _canvas.viewport_center())
 
 
-func _on_param_changed(key: StringName, value: Variant) -> void:
-	var block: FlowBlock = _canvas.selected_block()
-	if block == null:
+## Düğümün kendi üstündeki İşçi Ata/Yükselt/Tahsil Et düğmelerinden gelir —
+## bkz. DESIGN.md D28. Sağ panel artık bir denetçi değil, bu yüzden burada
+## paneli tazeleyecek bir şey yok; sonucu doğrudan bloğun kendisine yazarız.
+func _on_canvas_action_requested(block: FlowBlock, action: StringName) -> void:
+	match action:
+		&"worker":
+			_on_worker_requested(block)
+		&"upgrade":
+			_on_upgrade_requested(block)
+		&"collect":
+			_on_collect_one_requested(block)
+
+
+func _on_worker_requested(block: FlowBlock) -> void:
+	var station: SimStation = _sim.get_station(block.sim_id)
+	if station == null:
 		return
-	if key == &"worker":
-		if not _sim.set_worker(block.sim_id, bool(value)):
-			_notice("No free workers. Recruit one with food.")
-		block.worker_assigned = _sim.get_station(block.sim_id).assigned_worker
-		_inspector.show_block(block)
+	if not _sim.set_worker(block.sim_id, not station.assigned_worker):
+		_notice("No free workers. Recruit one with food.")
+	block.worker_assigned = station.assigned_worker
+
+
+func _on_upgrade_requested(block: FlowBlock) -> void:
+	var station: SimStation = _sim.get_station(block.sim_id)
+	if station == null:
 		return
-	block.set_param(key, value)
+	var problem: String = _progression.try_upgrade(station, _sim.revenue)
+	if not problem.is_empty():
+		_notice(problem)
+	else:
+		_notice("%s upgraded to level %d." % [block.block_type.display_name, station.level])
+	_refresh_availability()
+
+
+func _on_collect_one_requested(block: FlowBlock) -> void:
+	var amount: int = _sim.collect(block.sim_id)
+	if amount > 0:
+		_notice("Collected %s gold." % GameConfig.format_money(amount))
 
 
 ## --- Tuvalden gelen niyetler ------------------------------------------------
 
 func _on_add_requested(type: BlockType, at: Vector2) -> void:
-	if not _progression.is_block_available(type):
+	if not _progression.is_block_available(type, _sim.tick_count):
 		_notice("%s has not been discovered yet." % type.display_name)
+		return
+
+	if type.max_instances > 0 and _count_of_type(type.id) >= type.max_instances:
+		_notice("%s is capped at %d for this experiment. Upgrade the existing one instead." % [
+			type.display_name, type.max_instances])
 		return
 
 	if not _progression.try_pay(type.build_cost, _sim.revenue):
@@ -178,8 +221,19 @@ func _on_add_requested(type: BlockType, at: Vector2) -> void:
 	var sim_id: int = _sim.add_station(type)
 	_canvas.spawn_block(sim_id, type, at)
 	if type.requires_worker() and _sim.workers_assigned() >= _sim.workers_total:
-		_notice("Workshop built. Recruit a worker with food, then assign them in the details panel.")
+		_notice("Workshop built. Recruit a worker with food, then click Assign worker on the workshop.")
 	_refresh_availability()
+
+
+## Bu türden şu an kurulu kaç örnek var. `max_instances` denetimi bunu
+## okur — ayrı bir sayaç TUTULMAZ (bkz. DESIGN.md D27): silme/yükleme yolları
+## bu yüzden yanlışlıkla sınırı aşamaz, her zaman gerçek durumdan sayılır.
+func _count_of_type(type_id: StringName) -> int:
+	var count: int = 0
+	for station: SimStation in _sim.stations():
+		if station.type.id == type_id:
+			count += 1
+	return count
 
 
 func _on_connect_requested(from_sim: int, from_port: int, to_sim: int, to_port: int) -> void:
@@ -220,6 +274,8 @@ func _on_clear_pressed() -> void:
 	_accumulator = 0.0
 	_sales_rate.reset()
 	_food_rate.reset()
+	_research_rate.reset()
+	_last_research_panel_refresh_tick = -999999
 	_refresh_availability()
 
 
@@ -232,12 +288,24 @@ func _on_recruit_pressed() -> void:
 		_notice("Recruiting needs %d food." % GameConfig.RECRUIT_FOOD_COST)
 
 
-func _on_research_pressed() -> void:
-	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
+## Sağdaki araştırma paneli sabit DOCKED değil — yüzen düğmeyle açılıp
+## kapanır (bkz. DESIGN.md D28). İkinci basış veya tuvale tıklama kapatır.
+func _on_research_toggle_pressed() -> void:
+	if _research_panel.visible:
+		_research_panel.visible = false
+		return
+	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts, _research_rate)
 	_research_panel.visible = true
 
 
 func _on_research_closed() -> void:
+	_research_panel.visible = false
+
+
+## Tuval içinde bir yere (boş alan veya bir düğüm) tıklanınca araştırma
+## panelini kapatır — düğümün kendi İşçi/Yükselt/Tahsil Et düğmeleri bunu
+## TETİKLEMEZ (Button kendi input'unu tüketir, yukarı sızdırmaz).
+func _on_canvas_interacted() -> void:
 	_research_panel.visible = false
 
 
@@ -249,9 +317,43 @@ func _on_unlock_requested(node_id: StringName) -> void:
 	if not problem.is_empty():
 		_notice(problem)
 	else:
-		_notice("Discovered: %s" % node.display_name)
+		if node.unlocks_auto_collect:
+			_sim.auto_collect = true
+			# Bekleyen para KAYBOLMASIN: otomasyon anindan itibaren yeni
+			# satislar zaten dogrudan kasaya gidecek, ama o ana kadar
+			# BIRIKMIS olan bakiye bu supurme olmasa oyuncunun bir kez daha
+			# elle tahsil etmesini gerektirirdi (kaybolmaz ama kafa karistirir).
+			_sim.collect_all()
+			_notice("Discovered: %s. Market revenue now reaches your treasury automatically." % node.display_name)
+		else:
+			_notice("Discovered: %s" % node.display_name)
 	_refresh_availability()
-	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
+	_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts, _research_rate)
+
+
+## Bir ürünün laboratuvara giden hattını tuvalde bulur ve ortalar.
+##
+## Yalnızca DOĞRUDAN kaynağı seçer — Dağıtıcı'nın ARKASINDAKİ istasyona kadar
+## otomatik geri izlemez (bkz. tasarım sınırı: "en yavaş ürün" ile "kök
+## neden" aynı şey değildir). Oyuncu oradan devam eder.
+func _on_locate_requested(item_id: StringName) -> void:
+	for link: SimLink in _sim.links_into(_arge_lab_sim_id()):
+		if _sim.item_id_on_link(link) == item_id:
+			if _canvas.focus_on(link.from_id):
+				return
+	var item: ItemType = ItemCatalog.find_by_id(item_id)
+	_notice("No route currently carries %s to the Scholars' Hall." % [
+		item.display_name if item != null else String(item_id)
+	])
+
+
+## Sahnede Ar-Ge Sarayı en fazla bir kez kurulabilir varsayımıyla ilk
+## bulunanı döner. Yoksa -1.
+func _arge_lab_sim_id() -> int:
+	for station: SimStation in _sim.stations():
+		if station.type.category == BlockType.Category.RESEARCH:
+			return station.id
+	return -1
 
 
 ## --- HUD --------------------------------------------------------------------
@@ -275,6 +377,16 @@ func _refresh_hud() -> void:
 		_last_money_rate = rate
 		_money_rate.text = rate
 
+	# Tahsilat artık üst bardan değil, her düğümün kendi Tahsil Et
+	# düğmesinden yapılıyor (bkz. DESIGN.md D27) — burası yalnızca toplam
+	# bekleyen para için salt okunur bir özet.
+	var uncollected: int = _sim.total_uncollected()
+	var market_text: String = "Market: %s gold" % GameConfig.format_money(uncollected)
+	if market_text != _last_market_accrued:
+		_last_market_accrued = market_text
+		_market_accrued.text = market_text
+	_market_accrued.visible = not _sim.auto_collect
+
 	var workforce: String = "%d / %d" % [_sim.workers_assigned(), _sim.workers_total]
 	if workforce != _last_workforce:
 		_last_workforce = workforce
@@ -284,6 +396,7 @@ func _refresh_hud() -> void:
 		_last_food = food_text
 		_food.text = food_text
 	_food_rate.sample(_sim.tick_count, _sim.food_produced_total)
+	_research_rate.sample(_sim.tick_count, _sim.research_counts)
 	var upkeep: int = _sim.workers_total * GameConfig.FOOD_PER_WORKER_PER_MINUTE
 	var food_rate_text: String = "+%.1f / -%d min" % [_food_rate.per_minute(), upkeep]
 	if food_rate_text != _last_food_rate:
@@ -303,9 +416,15 @@ func _refresh_hud() -> void:
 	# etkinleşmiyordu, oyuncu paneli kapatıp açmak zorunda kalıyordu.
 	var research_total: int = _research_total()
 	var research_changed: bool = research_total != _last_research_total
-	if _research_panel.visible and (balance_changed or research_changed):
+	# Yeni teslimat olmasa da hız/ETA zamanla değişir (akış duruyor, "değişken"
+	# oluyor, süre azalıyor) — panel açıkken en az saniyede bir tazelenir.
+	var time_to_refresh: bool = (
+		_sim.tick_count - _last_research_panel_refresh_tick >= _RESEARCH_PANEL_REFRESH_TICKS
+	)
+	if _research_panel.visible and (balance_changed or research_changed or time_to_refresh):
 		_last_research_total = research_total
-		_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts)
+		_last_research_panel_refresh_tick = _sim.tick_count
+		_research_panel.refresh(_progression, _sim.revenue, _sim.research_counts, _research_rate)
 
 	if _notice_timer.is_stopped():
 		_refresh_status()
@@ -321,10 +440,13 @@ func _research_total() -> int:
 ## Palet ve slot göstergesini mevcut duruma göre günceller.
 func _refresh_availability() -> void:
 	var available: Dictionary = {}
-	for type: BlockType in _progression.available_blocks():
+	for type: BlockType in _progression.available_blocks(_sim.tick_count):
 		available[type.id] = true
+	var counts: Dictionary = {}
+	for station: SimStation in _sim.stations():
+		counts[station.type.id] = int(counts.get(station.type.id, 0)) + 1
 	_last_balance = _balance()
-	_palette.set_availability(available, _last_balance)
+	_palette.set_availability(available, _last_balance, counts)
 	_refresh_status()
 
 
@@ -420,6 +542,8 @@ func _on_load_path_selected(path: String) -> void:
 	# yanlış bir sıçrama gösterirdi.
 	_sales_rate.reset()
 	_food_rate.reset()
+	_research_rate.reset()
+	_last_research_panel_refresh_tick = -999999
 
 	var layout: Dictionary = data.get("layout", {})
 	for station: SimStation in _sim.stations():

@@ -206,9 +206,12 @@ func _test_scrap_does_not_deadlock() -> void:
 		sim.tick()
 
 	var scrap_cap: int = BlockCatalog.KALITE.output_capacity
+	# Bu koşum auto_collect'i acmiyor: satis geliri Sevkiyat'ta BIRIKIR
+	# (bkz. FactorySim._run_sink, DESIGN.md D27) — hattin akip akmadigini
+	# gosteren artik sim.revenue degil total_uncollected().
 	_check("Fire kilitlenmesi: Ret portu bos olsa da hat akiyor",
-		sim.revenue > 0 and station.status != SimStation.Status.BLOCKED,
-		"gelir=%d durum=%s uretim=%d" % [sim.revenue, station.status_label(), station.produced_total])
+		sim.total_uncollected() > 0 and station.status != SimStation.Status.BLOCKED,
+		"bekleyen=%d durum=%s uretim=%d" % [sim.total_uncollected(), station.status_label(), station.produced_total])
 	_check("Fire kilitlenmesi: hurda kutusu kapasitede duruyor, tasmiyor",
 		int(station.output.get(&"hurda", 0)) <= scrap_cap,
 		"hurda=%d kapasite=%d" % [int(station.output.get(&"hurda", 0)), scrap_cap])

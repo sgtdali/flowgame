@@ -19,6 +19,19 @@ var producing: bool = false
 var progress_ticks: int = 0
 var assigned_worker: bool = false
 
+## Geliştirme seviyesi (1 = geliştirilmemiş). Yalnızca `type.upgradeable`
+## olan istasyonlarda 1'den büyük olabilir. Kalıcıdır — kaydediliyor.
+var level: int = 1
+
+## Sevkiyat'ta TAHSİL EDİLMEMİŞ, o istasyona ait bekleyen para.
+##
+## Yalnızca SINK istasyonlarında anlamlı. Satış OTOMATİK olur (bkz.
+## `FactorySim._run_sink`) ama para doğrudan harcanabilir kasaya değil BURAYA
+## birikir — oyuncu "Tahsil Et" ile kasaya aktarana kadar harcanamaz. Satış
+## HIZI göstergesi bu sayaca değil `consumed_total`'a bakar, o yüzden tahsilat
+## tıklamaları hızı ETKİLEMEZ (bkz. DESIGN.md D27).
+var accrued: int = 0
+
 ## Bu istasyonun ürettiği toplam parça. Fire sayacı buna bakar —
 ## rastgelelik yok, "her N üründen biri" deterministik olarak belirlenir.
 var produced_total: int = 0
@@ -86,14 +99,22 @@ func recipe() -> Recipe:
 	return type.recipe
 
 
+## Bu istasyonun GEÇERLİ seviyesindeki reçete süresi (tick). Hesap
+## `BlockType.duration_ticks_at_level`'da yaşar — `FlowBlock` da AYNI
+## fonksiyonu çağırır, ikisi ayrışırsa ilerleme çubuğu ile düğümün
+## gösterdiği "sonraki hız" yazısı uyuşmaz.
+func effective_duration_ticks() -> int:
+	return type.duration_ticks_at_level(level)
+
+
 ## İlerleme oranı (0.0 - 1.0). Sunumdaki ilerleme çubuğu için.
 func progress_ratio() -> float:
 	if not producing:
 		return 0.0
-	var recipe_ref: Recipe = recipe()
-	if recipe_ref == null or recipe_ref.duration_ticks <= 0:
+	var duration: int = effective_duration_ticks()
+	if duration <= 0:
 		return 0.0
-	return clampf(float(progress_ticks) / float(recipe_ref.duration_ticks), 0.0, 1.0)
+	return clampf(float(progress_ticks) / float(duration), 0.0, 1.0)
 
 
 func add_item(buffer: Dictionary, item_id: StringName, count: int) -> void:

@@ -4,12 +4,19 @@
 [ext_resource type="Script" path="res://data/research_node.gd" id="2_fjk2y"]
 [ext_resource type="Script" path="res://data/block_type.gd" id="3_p64hp"]
 [ext_resource type="Resource" path="res://data/block_types/pres.tres" id="4_5fqlk"]
+[ext_resource type="Resource" path="res://data/items/cevher.tres" id="5_cevher"]
+
+[sub_resource type="Resource" id="Resource_cost0"]
+script = ExtResource("1_gyt7s")
+item = ExtResource("5_cevher")
+count = 24
 
 [resource]
 script = ExtResource("2_fjk2y")
 id = &"presleme"
 display_name = "Hammer Craft"
-description = "Unlock the hammer forge. Iron plates command nearly three times an ingot's price."
+description = "Send iron ore to the Scholars' Hall. Learn to hammer ingots into plates worth nearly three times as much — and put an end to walking coin back from the market yourself."
 requires = PackedStringArray()
-cost_money = 1500
+cost_items = Array[ExtResource("1_gyt7s")]([SubResource("Resource_cost0")])
 unlocks_blocks = Array[ExtResource("3_p64hp")]([ExtResource("4_5fqlk")])
+unlocks_auto_collect = true

@@ -56,17 +56,30 @@ func _populate() -> void:
 ## Hangi istasyonlar açık, hangileri şu an karşılanabilir.
 ##
 ## Kilitli olan GİZLENİR (oyuncu daha varlığını bilmemeli), açık ama parası
-## yetmeyen SOLUK gösterilir (hedef görünür olmalı).
-func set_availability(available_ids: Dictionary, balance: int) -> void:
+## yetmeyen SOLUK gösterilir (hedef görünür olmalı). `counts_by_type`: şu an
+## kurulu örnek sayısı — `max_instances` sınırına ulaşmış bir tür (bkz.
+## DESIGN.md D27) parası yetse bile devre dışı kalır, NEDEN açıkça yazılır.
+func set_availability(available_ids: Dictionary, balance: int, counts_by_type: Dictionary = {}) -> void:
 	for row: Dictionary in _rows:
 		var type: BlockType = row["type"]
 		var unlocked: bool = available_ids.has(type.id)
-		var affordable: bool = balance >= type.build_cost
+		var built: int = int(counts_by_type.get(type.id, 0))
+		var at_cap: bool = type.max_instances > 0 and built >= type.max_instances
+		var affordable: bool = balance >= type.build_cost and not at_cap
 
 		(row["root"] as Control).visible = unlocked
-		(row["item"] as PaletteItem).disabled = not affordable
+		var item: PaletteItem = row["item"]
+		item.disabled = not affordable
+		if at_cap:
+			item.tooltip_text = "%s\n%s\nMAX REACHED (%d/%d) — upgrade the existing one instead." % [
+				type.category_label(), type.description, built, type.max_instances]
+		else:
+			item.tooltip_text = "%s\n%s" % [type.category_label(), type.description]
 		var cost_label: Label = row["cost_label"]
-		cost_label.text = "%s gold" % GameConfig.format_money(type.build_cost)
+		if at_cap:
+			cost_label.text = "MAX %d/%d" % [built, type.max_instances]
+		else:
+			cost_label.text = "%s gold" % GameConfig.format_money(type.build_cost)
 		cost_label.add_theme_color_override(&"font_color",
 			Color(0.90, 0.72, 0.39) if affordable else Color(0.61, 0.43, 0.36))
 

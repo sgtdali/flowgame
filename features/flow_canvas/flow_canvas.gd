@@ -21,6 +21,13 @@ signal disconnect_requested(from_sim: int, from_port: int, to_sim: int, to_port:
 signal delete_requested(sim_ids: Array[int])
 signal block_selected(block: FlowBlock)
 signal selection_cleared
+signal action_requested(block: FlowBlock, action: StringName)
+
+## Tuvale (boş alana veya bir düğüme) tıklanınca yukarı bildirilir. Düğümün
+## kendi Yükselt/Tahsil Et/İşçi düğmeleri bunu TETİKLEMEZ — Button kendi
+## input'unu tüketip yukarı bırakmaz. GameController bunu araştırma
+## yan panelini kapatmak için kullanır (bkz. DESIGN.md D28).
+signal interacted
 
 var _selected: FlowBlock = null
 var _by_sim_id: Dictionary = {}   # sim_id -> FlowBlock
@@ -28,6 +35,8 @@ var _next_node_index: int = 1
 
 
 func _ready() -> void:
+	resized.connect(_schedule_scrollbar_hide)
+	call_deferred("_hide_internal_scrollbars")
 	right_disconnects = true
 	show_grid = true
 	snapping_enabled = true
@@ -50,6 +59,30 @@ func _ready() -> void:
 	delete_nodes_request.connect(_on_delete_nodes_request)
 	node_selected.connect(_on_node_selected)
 	node_deselected.connect(_on_node_deselected)
+
+
+func _process(_delta: float) -> void:
+	call_deferred("_hide_internal_scrollbars")
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		interacted.emit()
+
+
+func _schedule_scrollbar_hide() -> void:
+	call_deferred("_hide_internal_scrollbars")
+
+
+func _hide_internal_scrollbars() -> void:
+	_hide_scrollbars_in(self)
+
+
+func _hide_scrollbars_in(root: Node) -> void:
+	for child: Node in root.get_children(true):
+		if child is HScrollBar or child is VScrollBar:
+			child.hide()
+		_hide_scrollbars_in(child)
 
 
 ## --- Paletten sürükle-bırak -------------------------------------------------
@@ -101,6 +134,7 @@ func spawn_block(sim_id: int, type: BlockType, at: Vector2) -> FlowBlock:
 	block.name = "n%d" % _next_node_index
 	_next_node_index += 1
 	block.position_offset = at
+	block.action_requested.connect(func(blk: FlowBlock, action: StringName) -> void: action_requested.emit(blk, action))
 	add_child(block)
 	_by_sim_id[sim_id] = block
 	return block
@@ -168,6 +202,22 @@ func selected_block() -> FlowBlock:
 
 func viewport_center() -> Vector2:
 	return (scroll_offset + size * 0.5) / zoom
+
+
+## Bir istasyonu seçer ve görünüme ortalar. Araştırma takip panelindeki
+## "Hatta bul" düğmesinin çağırdığı tek giriş noktası — kaydırma matematiği
+## `viewport_center()`'ın tersi, burada tek yerde yaşar.
+func focus_on(sim_id: int) -> bool:
+	var block: FlowBlock = _by_sim_id.get(sim_id)
+	if block == null:
+		return false
+	if is_instance_valid(_selected) and _selected != block:
+		_selected.selected = false
+	block.selected = true
+	_selected = block
+	block_selected.emit(block)
+	scroll_offset = block.position_offset * zoom - size * 0.5 + block.size * 0.5 * zoom
+	return true
 
 
 ## --- İç işler ---------------------------------------------------------------

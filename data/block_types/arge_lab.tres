@@ -12,4 +12,5 @@ icon_char = "SC"
 description = "Accepts goods for research instead of selling them at market."
 input_capacity = 20
 output_capacity = 0
-build_cost = 8000
+build_cost = 450
+requires_first_upgrade = true

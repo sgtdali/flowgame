@@ -21,6 +21,12 @@ enum Status {
 var spent: int = 0
 var unlocked: Dictionary = {}   # araştırma id -> true
 
+## Şimdiye kadar satın alınan geliştirme sayısı (bkz. `try_upgrade`).
+## Erken oyun kilometre taşı bunu okur: oyuncu en az bir geliştirme
+## almadan Ar-Ge Sarayı açılmaz (bkz. `GameConfig.MIN_UPGRADES_FOR_RESEARCH`,
+## `BlockType.requires_first_upgrade`).
+var upgrades_purchased: int = 0
+
 
 func balance(gross_revenue: int) -> int:
 	return GameConfig.START_MONEY + gross_revenue - spent
@@ -32,7 +38,22 @@ func is_unlocked(node_id: StringName) -> bool:
 
 
 ## Bu istasyon türü kurulabilir mi? (Araştırma açmış mı?)
-func is_block_available(type: BlockType) -> bool:
+##
+## `tick_count`: yalnızca `requires_first_upgrade` taşıyan bloklar için
+## anlamlı — erken oyun kilometre taşı (en az bir geliştirme) hiç
+## karşılanmazsa GÜVENLİK AĞI olarak devreye giren uzun zamanlayıcı (bkz.
+## `GameConfig.RESEARCH_FALLBACK_TICKS`). -1 = zamanlayıcı kontrolü atlanır
+## (çağıran tick sayısını bilmiyorsa/önemsemiyorsa).
+func is_block_available(type: BlockType, tick_count: int = -1) -> bool:
+	if type.requires_first_upgrade:
+		# KENDİ KENDİNE YETEN bir yol — `unlocked_at_start`'ın yerini alır,
+		# ÜSTÜNE binmez. Eskiden "gate + normal kontrollere düş" şeklindeydi;
+		# ama Ar-Ge Sarayı artık hiçbir araştırmanın unlocks_blocks'unda
+		# YOK (bkz. D22/D27) — kapı geçilse bile normal kontroller hep false
+		# dönüyordu. Bu yüzden kapı geçilince DOĞRUDAN true dönülür.
+		var milestone_met: bool = upgrades_purchased >= GameConfig.MIN_UPGRADES_FOR_RESEARCH
+		var timer_met: bool = tick_count >= 0 and tick_count >= GameConfig.RESEARCH_FALLBACK_TICKS
+		return milestone_met or timer_met
 	if type.unlocked_at_start:
 		return true
 	for node: ResearchNode in ResearchCatalog.all():
@@ -44,10 +65,10 @@ func is_block_available(type: BlockType) -> bool:
 	return false
 
 
-func available_blocks() -> Array[BlockType]:
+func available_blocks(tick_count: int = -1) -> Array[BlockType]:
 	var out: Array[BlockType] = []
 	for type: BlockType in BlockCatalog.all():
-		if is_block_available(type):
+		if is_block_available(type, tick_count):
 			out.append(type)
 	return out
 
@@ -130,6 +151,48 @@ func try_pay(cost: int, gross_revenue: int) -> bool:
 	return true
 
 
+## Bu istasyonu bir sonraki seviyeye geliştirmenin maliyeti. Zaten en üst
+## seviyedeyse veya geliştirilemiyorsa 0 döner — çağıran `can_upgrade` ile
+## önce kontrol etmeli.
+## Saf (içerik-türevi) — bir ProgressionState örneğine gerek duymaz, sunum
+## katmanı (bkz. FlowBlock) doğrudan `ProgressionState.upgrade_cost(...)`
+## diye çağırabilir.
+static func upgrade_cost(type: BlockType, current_level: int) -> int:
+	if not type.upgradeable or current_level >= type.max_level:
+		return 0
+	return roundi(float(type.upgrade_base_cost) * pow(type.upgrade_cost_growth, current_level - 1))
+
+
+static func can_upgrade(type: BlockType, current_level: int) -> bool:
+	return type.upgradeable and current_level < type.max_level
+
+
+## Neden geliştirilemiyor? Boş string = geliştirilebilir.
+func upgrade_problem(station: SimStation, gross_revenue: int) -> String:
+	if not station.type.upgradeable:
+		return "This workshop cannot be upgraded."
+	if station.level >= station.type.max_level:
+		return "Already at the highest level."
+	var cost: int = upgrade_cost(station.type, station.level)
+	if balance(gross_revenue) < cost:
+		return "Not enough gold. You need %s." % GameConfig.format_money(cost)
+	return ""
+
+
+## İstasyonu bir seviye geliştirir. Kalıcıdır (bkz. SimStation.level) — yeni
+## bir para birimi, bakım maliyeti veya işçi taşıma GEREKMEZ (bkz. D27).
+func try_upgrade(station: SimStation, gross_revenue: int) -> String:
+	var problem: String = upgrade_problem(station, gross_revenue)
+	if not problem.is_empty():
+		return problem
+	var cost: int = upgrade_cost(station.type, station.level)
+	spent += cost
+	station.level += 1
+	upgrades_purchased += 1
+	changed.emit()
+	return ""
+
+
 ## İstasyon sökülünce maliyetinin bir kısmı geri döner.
 ## Tam iade olsaydı oyuncu bedava deneyebilirdi ve yanlış kurulumun bedeli
 ## kalmazdı; hiç iade olmasaydı deneme yapmaya korkardı.
@@ -141,6 +204,7 @@ func refund(cost: int) -> void:
 func reset() -> void:
 	spent = 0
 	unlocked.clear()
+	upgrades_purchased = 0
 	changed.emit()
 
 
@@ -148,7 +212,7 @@ func to_dict() -> Dictionary:
 	var ids: PackedStringArray = PackedStringArray()
 	for node_id: StringName in unlocked:
 		ids.append(String(node_id))
-	return {"spent": spent, "unlocked": ids}
+	return {"spent": spent, "unlocked": ids, "upgrades_purchased": upgrades_purchased}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -156,4 +220,5 @@ func from_dict(data: Dictionary) -> void:
 	unlocked.clear()
 	for node_id: String in data.get("unlocked", []):
 		unlocked[StringName(node_id)] = true
+	upgrades_purchased = int(data.get("upgrades_purchased", 0))
 	changed.emit()

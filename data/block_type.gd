@@ -59,6 +59,57 @@ enum Category {
 @export var build_cost: int = 0
 ## Araştırma gerektirmeden, oyunun başında kullanılabilir mi?
 @export var unlocked_at_start: bool = false
+## Bu türden en fazla kaç örnek kurulabilir. 0 = sınırsız.
+##
+## Erken oyun deneyi (bkz. DESIGN.md D27): sınır ÜRETİM MİKTARINA değil
+## KURULABİLECEK NODE ADEDİNE uygulanır — oyuncu "daha çok istasyon" yerine
+## "mevcut istasyonu geliştir" seçeneğine yönlendirilir.
+@export var max_instances: int = 0
+## Bu blok, erken oyun kilometre taşı (en az bir geliştirme satın alınması,
+## bkz. `GameConfig.MIN_UPGRADES_FOR_RESEARCH`) karşılanmadan kurulamaz mı?
+## Yalnızca Ar-Ge Sarayı'nda kullanılıyor — araştırmanın oyuncu temel hattı
+## deneyimlemeden erişilmesini engellemek için.
+@export var requires_first_upgrade: bool = false
+
+@export_group("Geliştirme")
+## Bu istasyonun seviye atlayarak hızlandırılabilmesi.
+@export var upgradeable: bool = false
+## 1. seviyeden 2. seviyeye geçişin maliyeti. Sonraki seviyeler
+## `upgrade_cost_growth` ile büyür.
+@export var upgrade_base_cost: int = 0
+## Her seviyede maliyetin çarpıldığı oran.
+@export var upgrade_cost_growth: float = 1.6
+## Her seviyede reçete süresinin çarpıldığı oran (0.85 = %15 daha hızlı).
+## Yalnızca `upgrade_rate_increment <= 0` olan (yani ADDİTİF model
+## KULLANMAYAN) bloklarda okunur — bkz. `duration_ticks_at_level`.
+@export var upgrade_duration_factor: float = 0.85
+## Seviye başına TEMEL hıza (dk başına adet) eklenen SABİT miktar.
+##
+## Maliyet katlanır ama hız KATLANMAZ — art arda geliştirmeler benzer
+## mutlak kazanç verir, üstel bir güç eğrisi oluşmaz (bkz. DESIGN.md D29).
+## 0 = bu blok eski çarpımsal modeli kullanır (`upgrade_duration_factor`).
+@export var upgrade_rate_increment: float = 0.0
+## Ulaşılabilecek en yüksek seviye. Küçük tutulur — bu "sade" bir
+## geliştirme sistemi, sonsuz ölçeklenen bir güç eğrisi değil.
+@export var max_level: int = 3
+
+
+## Bu seviyede reçetenin süresi (tick). SUNUM (`FlowBlock`) ve MANTIK
+## (`SimStation`) AYNI hesaba bakar — ikisi ayrışırsa ilerleme çubuğu ile
+## "sonraki hız" yazısı uyuşmaz (bkz. DESIGN.md D29).
+func duration_ticks_at_level(target_level: int) -> int:
+	if recipe == null:
+		return 0
+	if target_level <= 1 or not upgradeable:
+		return recipe.duration_ticks
+	if upgrade_rate_increment > 0.0:
+		var base_per_min: float = float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(recipe.duration_ticks)
+		var target_per_min: float = base_per_min + upgrade_rate_increment * float(target_level - 1)
+		if target_per_min <= 0.0:
+			return recipe.duration_ticks
+		return maxi(1, roundi(float(GameConfig.TICKS_PER_SECOND) * 60.0 / target_per_min))
+	var factor: float = pow(upgrade_duration_factor, target_level - 1)
+	return maxi(1, roundi(float(recipe.duration_ticks) * factor))
 
 
 func category_label() -> String:

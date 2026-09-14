@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_block"]
+[ext_resource type="Resource" path="res://data/recipes/r_bantli_kask.tres" id="2_recipe"]
+
+[resource]
+script = ExtResource("1_block")
+id = &"kask_bantcisi"
+display_name = "Helm Bander"
+category = 1
+accent_color = Color(0.50, 0.47, 0.42, 1)
+icon_char = "HB"
+description = "Bands a helm with an ingot rim. Wants the same ingots the hearth's other routes want."
+recipe = ExtResource("2_recipe")
+input_capacity = 6
+output_capacity = 6
+build_cost = 2200

@@ -34,6 +34,11 @@ const COLOR_HUNGRY := Color(0.73, 0.43, 0.24)
 
 signal params_changed(block: FlowBlock)
 
+## Düğüm üstündeki Yükselt/Tahsil Et düğmesine basıldığında yukarı bildirilir.
+## `action`: &"upgrade" veya &"collect". Bkz. DESIGN.md D27 — bu iki eylem
+## artık sağ paneldeki denetçide değil, doğrudan düğümün kendisinde yaşıyor.
+signal action_requested(block: FlowBlock, action: StringName)
+
 var block_type: BlockType = null
 
 ## Simülasyondaki istasyonun kimliği. Faz 3'te atanacak.
@@ -44,10 +49,21 @@ var sim_id: int = -1
 var block_label: String = ""
 var worker_assigned: bool = false
 
+## Denetçi panelinin okuduğu, simülasyondan yansıtılan canlı değerler —
+## `worker_assigned` ile AYNI desen (bkz. `render_state`). Denetçi
+## `FlowCanvas.block_selected` sinyaliyle doğrudan bu bloktan okuyor,
+## GameController'dan geçmiyor — o yüzden ihtiyaç duyduğu her canlı değer
+## buraya yansıtılmalı.
+var level: int = 1
+var market_accrued: int = 0
+
 var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
 var _progress: ProgressBar = null
 var _panel_style: StyleBoxFlat = null
+var _worker_button: Button = null
+var _upgrade_button: Button = null
+var _collect_button: Button = null
 
 ## Son yazılan değerler. Label.text atamak font shaping tetikler; 80 düğüm ×
 ## 4 satır × 60 kare = saniyede 19.200 gereksiz shaping demek. Değişmediyse
@@ -172,6 +188,7 @@ func _build_rows() -> void:
 	add_child(_progress)
 
 	add_child(_build_stats_grid())
+	_build_action_buttons()
 
 
 ## Bilgi özeti: iki sütunlu ızgara.
@@ -193,6 +210,8 @@ func _build_stats_grid() -> GridContainer:
 		[&"in", "Input"],
 		[&"out", "Output"],
 		[&"worker", "Worker"],
+		[&"level", "Level"],
+		[&"market", "Market"],
 	]
 	for spec: Array in specs:
 		var key: StringName = spec[0]
@@ -218,6 +237,24 @@ func _build_stats_grid() -> GridContainer:
 	return grid
 
 
+## İşçi ata / Yükselt / Tahsil Et düğmeleri — düğümün kendi altında, sağ
+## paneli beklemeden tıklanabilir olsunlar diye burada yaşarlar (bkz.
+## DESIGN.md D27/D28 — sağ panel artık denetçi değil araştırma ağacı).
+func _build_action_buttons() -> void:
+	_worker_button = Button.new()
+	_worker_button.pressed.connect(func() -> void: action_requested.emit(self, &"worker"))
+	add_child(_worker_button)
+
+	_upgrade_button = Button.new()
+	_upgrade_button.pressed.connect(func() -> void: action_requested.emit(self, &"upgrade"))
+	add_child(_upgrade_button)
+
+	_collect_button = Button.new()
+	_collect_button.text = "Collect"
+	_collect_button.pressed.connect(func() -> void: action_requested.emit(self, &"collect"))
+	add_child(_collect_button)
+
+
 func _refresh_header() -> void:
 	title = "%s  %s" % [block_type.icon_char, block_label]
 	tooltip_text = "%s — %s\n%s" % [
@@ -233,25 +270,52 @@ func _refresh_stats() -> void:
 	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
 	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK and block_type.category != BlockType.Category.RESEARCH and block_type.category != BlockType.Category.FOOD)
 	_set_row_visible(&"worker", block_type.requires_worker())
+	_set_row_visible(&"market", block_type.category == BlockType.Category.SINK)
+	_set_row_visible(&"level", block_type.upgradeable)
 	_write(&"worker", "No")
 	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
+	_write(&"market", "0 gold")
+	_write(&"level", "1 / %d" % block_type.max_level)
+
+	_worker_button.visible = block_type.requires_worker()
+	_worker_button.text = "Assign worker"
+	_upgrade_button.visible = block_type.upgradeable
+	if block_type.upgradeable:
+		_refresh_upgrade_button(1)
+	_collect_button.visible = block_type.category == BlockType.Category.SINK
 
 
 ## SİMÜLASYONDAN GÖRÜNTÜYE TEK YAZMA NOKTASI.
 ##
 ## GameController her karede bunu çağırır. Blok simülasyonu kendisi
 ## SORGULAMAZ — durumu ona verilir.
-func render_state(station: SimStation, tick: int, unwired_ports: int) -> void:
+func render_state(station: SimStation, tick: int, unwired_ports: int, auto_collect: bool = false) -> void:
 	_progress.value = station.progress_ratio()
 	worker_assigned = station.assigned_worker
+	level = station.level
+	market_accrued = station.accrued
 	_write(&"worker", "Yes" if worker_assigned else "No")
+	if block_type.requires_worker():
+		_worker_button.text = "Worker assigned" if worker_assigned else "Assign worker"
 	_rate.sample(tick, station.throughput_total())
 
 	_write(&"rate", _rate_text())
 	_write(&"in", "%d / %d" % [station.total_input(), block_type.input_capacity])
 	_write(&"out", "%d / %d" % [station.total_output(), block_type.output_capacity])
+
+	if block_type.upgradeable:
+		_write(&"level", "%d / %d" % [station.level, block_type.max_level])
+		_refresh_upgrade_button(station.level)
+	if block_type.category == BlockType.Category.SINK:
+		# Otomasyon açılınca manuel tahsilat anlamsızlaşır — düğmeyi ve
+		# bekleyen-para satırını tamamen kaldırıyoruz (bkz. üst bar, aynı
+		# mantık %CollectButton için de geçerli — DESIGN.md D27).
+		_write(&"market", "%s gold" % GameConfig.format_money(station.accrued))
+		_set_row_visible(&"market", not auto_collect)
+		_collect_button.visible = not auto_collect
+		_collect_button.disabled = station.accrued <= 0
 
 	# Kurulum hatası akış sorununu bastırır: bir portu boştaysa oyuncunun
 	# önce onu düzeltmesi gerekir, "aç kaldı" bilgisi o hâlde yanıltıcıdır.
@@ -294,12 +358,38 @@ func _rate_text() -> String:
 	return text
 
 
-## Bu istasyonun hiç beklemeden çalışsa dakikada kaç üretebileceği.
+## Yükselt düğmesinin metni ve etkinliği — bkz. DESIGN.md D27. Statik bilgi
+## (bir sonraki seviyenin hızı) denetçide değil burada: oyuncu düğmeye
+## basmadan önce ne alacağını düğümün üstünde görmeli.
+func _refresh_upgrade_button(level_now: int) -> void:
+	if ProgressionState.can_upgrade(block_type, level_now):
+		var cost: int = ProgressionState.upgrade_cost(block_type, level_now)
+		var next_pace: String = _pace_text(level_now + 1)
+		_upgrade_button.text = "Upgrade → %s (%s gold)" % [next_pace, GameConfig.format_money(cost)]
+		_upgrade_button.disabled = false
+	else:
+		_upgrade_button.text = "Max level"
+		_upgrade_button.disabled = true
+
+
+## Belirtilen seviyede bu istasyonun teorik tavan hızı — yükselt düğmesinin
+## "bir sonraki seviye ne kazandırır" bilgisini taşır.
+func _pace_text(level_check: int) -> String:
+	var ticks: int = block_type.duration_ticks_at_level(level_check)
+	if ticks <= 0:
+		return "—"
+	var per_minute: float = float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(ticks)
+	return "%.1f/min" % per_minute
+
+
+## Bu istasyonun MEVCUT seviyesinde hiç beklemeden çalışsa dakikada kaç
+## üretebileceği. Geliştirme sonrası tavan da yükselir — sabit kalsaydı
+## yükseltme sonrası verim %'si yanlışlıkla %100'e yapışık görünürdü.
 func _ceiling_per_minute() -> float:
-	var recipe: Recipe = block_type.recipe
-	if recipe == null or recipe.duration_ticks <= 0:
+	var ticks: int = block_type.duration_ticks_at_level(level)
+	if ticks <= 0:
 		return 0.0
-	return float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(recipe.duration_ticks)
+	return float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(ticks)
 
 
 ## Çerçeve rengini ve açıklayıcı ipucunu günceller.

@@ -17,3 +17,6 @@ input_capacity = 0
 output_capacity = 8
 build_cost = 80
 unlocked_at_start = true
+max_instances = 1
+upgradeable = true
+upgrade_base_cost = 60

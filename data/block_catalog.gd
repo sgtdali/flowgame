@@ -24,12 +24,16 @@ const FARM := preload("res://data/block_types/farm.tres")
 const MILL := preload("res://data/block_types/mill.tres")
 const BAKERY := preload("res://data/block_types/bakery.tres")
 const GRANARY := preload("res://data/block_types/granary.tres")
+const KALKAN_USTASI := preload("res://data/block_types/kalkan_ustasi.tres")
+const KASK_USTASI := preload("res://data/block_types/kask_ustasi.tres")
+const KASK_BANTCISI := preload("res://data/block_types/kask_bantcisi.tres")
 
 ## Paletteki gösterim sırası — akışın doğal sırasını izler.
 const _ORDER: Array = [
 	FARM, MILL, BAKERY, GRANARY,
-	MADEN_OCAGI, MADEN_OCAGI_DERIN, ERITME, PRES, HADDE, KESIM, MONTAJ,
-	KALITE, DEPO, DAGITICI, GERI_DONUSUM, ARGE_LAB, SEVKIYAT,
+	MADEN_OCAGI, MADEN_OCAGI_DERIN, ERITME, ARGE_LAB, PRES, KALKAN_USTASI,
+	KASK_USTASI, KASK_BANTCISI,
+	HADDE, KESIM, MONTAJ, KALITE, DEPO, DAGITICI, GERI_DONUSUM, SEVKIYAT,
 ]
 
 

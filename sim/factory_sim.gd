@@ -20,8 +20,20 @@ signal item_sold(item: ItemType, count: int)
 var tick_count: int = 0
 
 ## Faz 2'de sim kendi geliri sayar; Faz 4'te bu Economy'ye taşınacak.
+##
+## Bu, HARCANABİLİR (tahsil edilmiş) toplam — Sevkiyat'ta bekleyen tahsil
+## edilmemiş para BURAYA sayılmaz (bkz. `SimStation.accrued`, `collect()`).
+## `ProgressionState.balance()` bu alanı okur; tahsil edilmemiş para asla
+## harcanamaz.
 var revenue: int = 0
 var sold_counts: Dictionary = {}
+
+## Erken oyun deneyi: tahsilat OTOMATİK mi? Kapalıyken satış geliri her
+## Sevkiyat istasyonunda BİRİKİR (`SimStation.accrued`), oyuncu `collect()`
+## çağırana kadar `revenue`'ya eklenmez. Bir araştırma bunu açar (bkz.
+## `ResearchNode.unlocks_auto_collect`) — sim kendisi ARAŞTIRMA bilmez,
+## yalnızca bu düz bayrağı taşır (bkz. D8: sim ilerleme durumunu bilmez).
+var auto_collect: bool = false
 
 ## Ar-Ge Laboratuvarı'na akıtılan toplam ürün (kümülatif).
 ## Araştırma ilerlemesi buradan okunur — simülasyon araştırma DURUMUNU
@@ -37,6 +49,17 @@ var _stations: Dictionary = {}        # id -> SimStation
 var _ordered_ids: Array[int] = []     # her zaman artan sırada
 var _links: Array[SimLink] = []
 var _links_by_port: Dictionary = {}   # "from_id:port" -> Array[SimLink]
+
+## Son GERÇEKTEN aktarılan ürün: "from_id:from_port" -> item_id.
+##
+## Tipsiz istasyonların (Dağıtıcı, Ara Depo) çıktısı bir tick içinde
+## üret-fazında dolup taşı-fazında hemen boşalır — dışarıdan (sunum
+## katmanından) o anki tamponu okumak neredeyse HER ZAMAN boş görür.
+## Araştırma takip panelinin "bu hat hangi ürünü taşıyor" sorusu (bkz.
+## `item_id_on_link`) bu yüzden ANLIK duruma değil, GERÇEKLEŞMİŞ son
+## aktarıma bakar. Sunum verisi — kayıtta yer almaz, yeniden dolmasına bir
+## iki tick yeter.
+var _last_transferred_item: Dictionary = {}
 
 ## Bağlı portlar: "id:port" -> true. Her karede sorulduğu için önbellekte
 ## tutulur, bağlantı değişince yeniden kurulur.
@@ -126,6 +149,34 @@ func links() -> Array[SimLink]:
 	return out
 
 
+## Belirli bir istasyona giren bağlantılar. Araştırma takip panelinin
+## "bu ürünü laboratuvara hangi hat getiriyor" sorusu için.
+func links_into(to_id: int) -> Array[SimLink]:
+	var out: Array[SimLink] = []
+	for link: SimLink in _links:
+		if link.to_id == to_id:
+			out.append(link)
+	return out
+
+
+## Bir bağlantı üzerinde HANGİ ürünün aktığı.
+##
+## Önce GERÇEKTEN AKTARILMIŞ son ürüne bakar (`_last_transferred_item`) —
+## tipsiz istasyonların (Dağıtıcı, Ara Depo) anlık çıktı tamponu bir tick
+## içinde dolup boşaldığı için dışarıdan okunduğunda neredeyse hep BOŞ
+## görünür. Hiç aktarım olmadıysa (yeni kurulmuş, henüz akmamış bağlantı)
+## `_port_item_id`'ye düşer — tipli kaynaklarda (reçeteden türeyen) bu zaten
+## anlık duruma bakmaz, sabittir.
+func item_id_on_link(link: SimLink) -> StringName:
+	var key: String = "%d:%d" % [link.from_id, link.from_port]
+	if _last_transferred_item.has(key):
+		return _last_transferred_item[key]
+	var src: SimStation = get_station(link.from_id)
+	if src == null:
+		return &""
+	return _port_item_id(src, link.from_port)
+
+
 ## Bağlantı neden kurulamıyor? Boş string = sorun yok.
 ##
 ## Kural ve mesaj TEK yerde. Arayüz kendi kopyasını tutsaydı er geç ayrışırdı.
@@ -189,6 +240,7 @@ func clear() -> void:
 	_links_by_port.clear()
 	_wired_in.clear()
 	_wired_out.clear()
+	_last_transferred_item.clear()
 	_next_id = 1
 	tick_count = 0
 	revenue = 0
@@ -198,6 +250,7 @@ func clear() -> void:
 	food_produced_total = 0
 	workers_total = GameConfig.START_WORKERS
 	food_shortage = false
+	auto_collect = false
 
 
 func _rebuild_link_index() -> void:
@@ -211,6 +264,11 @@ func _rebuild_link_index() -> void:
 		_links_by_port[key].append(link)
 		_wired_out[key] = true
 		_wired_in["%d:%d" % [link.to_id, link.to_port]] = true
+	# Artık bağlı olmayan portların eski "son aktarılan ürün" izi kalmasın —
+	# port başka bir ürüne yeniden bağlanırsa yanıltıcı olurdu.
+	for key: String in _last_transferred_item.keys():
+		if not _links_by_port.has(key):
+			_last_transferred_item.erase(key)
 
 
 ## Bu istasyonun kaç portu boşta?
@@ -320,11 +378,14 @@ func _run_producer(station: SimStation) -> void:
 
 	station.status = SimStation.Status.RUNNING
 
-	# Süre dolduktan sonra saymaya devam etmeyiz: istasyon "bitmiş ama
-	# boşaltamıyor" durumunda bekler, ilerleme çubuğu %100'de kalır.
-	if station.progress_ticks < recipe.duration_ticks:
+	# Süre GELİŞTİRME SEVİYESİNE göre değişir (bkz. SimStation.effective_
+	# duration_ticks) — geliştirilmemiş istasyonda reçetenin kendi süresiyle
+	# özdeştir. Süre dolduktan sonra saymaya devam etmeyiz: istasyon "bitmiş
+	# ama boşaltamıyor" durumunda bekler, ilerleme çubuğu %100'de kalır.
+	var duration: int = station.effective_duration_ticks()
+	if station.progress_ticks < duration:
 		station.progress_ticks += 1
-		if station.progress_ticks < recipe.duration_ticks:
+		if station.progress_ticks < duration:
 			return
 
 	# Üretim bitti — boşaltmayı dene.
@@ -420,7 +481,12 @@ func _run_buffer(station: SimStation) -> void:
 	station.produced_total += 1
 
 
-## Sevkiyat gelen her ürünü yutar ve satar.
+## Sevkiyat gelen her ürünü yutar ve satar. Satış OTOMATİK; parası
+## `auto_collect` kapalıyken KASAYA DEĞİL istasyonun kendi `accrued`
+## sayacına gider — oyuncu `collect()` çağırana kadar harcanamaz. Satış
+## HIZI göstergesi `sold_counts`'a bakar (bkz. RateMeter/SalesRateTracker),
+## bu sayaç tahsilattan BAĞIMSIZ, satış anında artar — tahsilat tıklaması
+## burada hiçbir şeyi artırmaz, yalnızca `collect()` parayı taşır.
 func _run_sink(station: SimStation) -> void:
 	if station.input.is_empty():
 		station.status = SimStation.Status.STARVED
@@ -431,10 +497,49 @@ func _run_sink(station: SimStation) -> void:
 		station.consumed_total += count
 		var item: ItemType = ItemCatalog.find_by_id(item_id)
 		if item != null:
-			revenue += item.base_price * count
+			var amount: int = item.base_price * count
+			if auto_collect:
+				revenue += amount
+			else:
+				station.accrued += amount
 			sold_counts[item_id] = int(sold_counts.get(item_id, 0)) + count
 			item_sold.emit(item, count)
 	station.input.clear()
+
+
+## Bir Sevkiyat istasyonunda BİRİKMİŞ parayı harcanabilir kasaya taşır.
+## Döndürdüğü miktar bildirimde ("X altın tahsil edildi") kullanılır.
+func collect(station_id: int) -> int:
+	var station: SimStation = get_station(station_id)
+	if station == null or station.type.category != BlockType.Category.SINK:
+		return 0
+	var amount: int = station.accrued
+	if amount > 0:
+		revenue += amount
+		station.accrued = 0
+	return amount
+
+
+## Tüm Sevkiyat istasyonlarını tek seferde tahsil eder. Üst bardaki tek
+## "Tahsil Et" düğmesinin çağırdığı yer — oyuncu birden fazla market
+## kursa bile tek tıkla hepsini toplar.
+func collect_all() -> int:
+	var total: int = 0
+	for id: int in _ordered_ids:
+		var station: SimStation = _stations[id]
+		if station.type.category == BlockType.Category.SINK:
+			total += collect(id)
+	return total
+
+
+## Tahsil edilmeyi bekleyen toplam — üst barda "Market" olarak gösterilir.
+func total_uncollected() -> int:
+	var total: int = 0
+	for id: int in _ordered_ids:
+		var station: SimStation = _stations[id]
+		if station.type.category == BlockType.Category.SINK:
+			total += station.accrued
+	return total
 
 
 ## Ar-Ge Laboratuvarı yutar ama satmaz — gelen ürün araştırmaya sayılır.
@@ -495,6 +600,7 @@ func _transfer_from_port(station: SimStation, port: int) -> bool:
 		station.take_item(station.output, item_id, 1)
 		dst.add_item(dst.input, item_id, 1)
 		station.next_link[port] = (index + 1) % links.size()
+		_last_transferred_item[key] = item_id
 		return true
 	return false
 
@@ -564,6 +670,8 @@ func to_dict() -> Dictionary:
 			"next_link": st.next_link.duplicate(),
 			"next_output_port": st.next_output_port,
 			"assigned_worker": st.assigned_worker,
+			"level": st.level,
+			"accrued": st.accrued,
 		})
 
 	var link_data: Array = []
@@ -577,6 +685,7 @@ func to_dict() -> Dictionary:
 		"tick": tick_count,
 		"next_id": _next_id,
 		"revenue": revenue,
+		"auto_collect": auto_collect,
 		"sold": _ids_to_strings(sold_counts),
 		"research": _ids_to_strings(research_counts),
 		"food": food,
@@ -593,6 +702,7 @@ func from_dict(data: Dictionary) -> bool:
 	tick_count = int(data.get("tick", 0))
 	_next_id = int(data.get("next_id", 1))
 	revenue = int(data.get("revenue", 0))
+	auto_collect = bool(data.get("auto_collect", false))
 	food = int(data.get("food", GameConfig.START_FOOD))
 	food_produced_total = int(data.get("food_produced_total", 0))
 	workers_total = int(data.get("workers_total", GameConfig.START_WORKERS))
@@ -618,6 +728,8 @@ func from_dict(data: Dictionary) -> bool:
 			st.next_link[int(port_key)] = int(entry["next_link"][port_key])
 		st.next_output_port = int(entry.get("next_output_port", 0))
 		st.assigned_worker = bool(entry.get("assigned_worker", not data.has("workers_total") and type.requires_worker()))
+		st.level = int(entry.get("level", 1))
+		st.accrued = int(entry.get("accrued", 0))
 		_stations[st.id] = st
 		_ordered_ids.append(st.id)
 
@@ -641,13 +753,14 @@ func from_dict(data: Dictionary) -> bool:
 ## hâle gelir. Bu yüzden testte her koşumda kontrol edilir.
 func state_hash() -> String:
 	var parts: PackedStringArray = PackedStringArray()
-	parts.append("t%d|r%d|g%s|f%d|p%d|w%d|h%d" % [tick_count, revenue, _stable_buffer(research_counts), food, food_produced_total, workers_total, int(food_shortage)])
+	parts.append("t%d|r%d|c%d|g%s|f%d|p%d|w%d|h%d" % [tick_count, revenue, int(auto_collect), _stable_buffer(research_counts), food, food_produced_total, workers_total, int(food_shortage)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
-		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:a%d:i%s:o%s" % [
+		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:a%d:l%d:u%d:i%s:o%s" % [
 			st.id, st.type.id, st.produced_total, st.consumed_total,
 			"1" if st.producing else "0", st.progress_ticks,
 			str(st.status), st.next_output_port, int(st.assigned_worker),
+			st.level, st.accrued,
 			_stable_buffer(st.input), _stable_buffer(st.output),
 		])
 	return "|".join(parts).sha256_text()
