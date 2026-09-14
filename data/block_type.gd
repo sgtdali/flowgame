@@ -26,6 +26,8 @@ enum Category {
 @export var category: Category = Category.PROCESS
 @export var accent_color: Color = Color(0.29, 0.64, 0.87)
 @export var icon_char: String = "??"
+## Akış düğümünün başlığının altında gösterilecek istasyona özel illüstrasyon.
+@export var node_image: Texture2D = null
 @export var food_chain: bool = false
 @export var food_item: ItemType = null
 @export_multiline var description: String = ""

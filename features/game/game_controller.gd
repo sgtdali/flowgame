@@ -366,7 +366,7 @@ func _refresh_hud() -> void:
 		_clock.text = clock
 
 	var balance: int = _balance()
-	var money: String = "%s gold" % GameConfig.format_money(balance)
+	var money: String = GameConfig.format_money(balance)
 	if money != _last_money:
 		_last_money = money
 		_money.text = money

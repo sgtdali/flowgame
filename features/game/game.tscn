@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://features/game/game_controller.gd" id="1_editor"]
 [ext_resource type="PackedScene" path="res://features/block_palette/block_palette.tscn" id="2_palette"]
 [ext_resource type="Script" path="res://features/flow_canvas/flow_canvas.gd" id="3_canvas"]
 [ext_resource type="PackedScene" path="res://features/research_panel/research_panel.tscn" id="5_research"]
+[ext_resource type="Texture2D" path="res://assets/ui/coin_topbar.png" id="6_coin_topbar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
 bg_color = Color(0.18, 0.13, 0.09, 1)
@@ -68,11 +69,17 @@ text = "00:00"
 
 [node name="Money" type="Label" parent="Root/TopBar/TopMargin/TopBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.75, 0.40, 1)
 theme_override_font_sizes/font_size = 15
-text = "0 gold"
+text = "0"
+
+[node name="GoldIcon" type="TextureRect" parent="Root/TopBar/TopMargin/TopBox"]
+custom_minimum_size = Vector2(25, 25)
+layout_mode = 2
+texture = ExtResource("6_coin_topbar")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="MoneyRate" type="Label" parent="Root/TopBar/TopMargin/TopBox"]
 unique_name_in_owner = true

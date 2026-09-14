@@ -2,6 +2,7 @@
 
 [ext_resource type="Resource" uid="uid://wsqwksxvt4ya" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
 [ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_htaww"]
+[ext_resource type="Texture2D" path="res://assets/nodes/iron_mine_node.png" id="3_iron_mine_image"]
 
 [resource]
 script = ExtResource("2_htaww")
@@ -10,6 +11,7 @@ display_name = "Iron Mine"
 category = 0
 accent_color = Color(0.45, 0.56, 0.34, 1)
 icon_char = "MI"
+node_image = ExtResource("3_iron_mine_image")
 description = "Extracts iron ore continuously. The beginning of every crafting route."
 recipe = ExtResource("1_oxrox")
 input_capacity = 0

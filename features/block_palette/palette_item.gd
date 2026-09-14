@@ -11,7 +11,7 @@ var block_type: BlockType = null
 
 func setup(type: BlockType) -> void:
 	block_type = type
-	text = "%s   %s" % [type.icon_char, type.display_name]
+	text = type.display_name
 	alignment = HORIZONTAL_ALIGNMENT_LEFT
 	tooltip_text = "%s\n%s" % [type.category_label(), type.description]
 	custom_minimum_size = Vector2(0.0, 30.0)
@@ -40,7 +40,7 @@ func _build_preview() -> Control:
 	panel.add_theme_stylebox_override(&"panel", style)
 
 	var label := Label.new()
-	label.text = "%s  %s" % [block_type.icon_char, block_type.display_name]
+	label.text = block_type.display_name
 	label.add_theme_font_size_override(&"font_size", 12)
 	label.add_theme_color_override(&"font_color", Color(0.16, 0.11, 0.07))
 	panel.add_child(label)

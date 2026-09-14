@@ -146,6 +146,9 @@ func _build_rows() -> void:
 	var row_count: int = maxi(inputs.size(), outputs.size())
 	var accent: Color = block_type.accent_color
 
+	if block_type.node_image != null:
+		add_child(_build_node_image())
+
 	for i in row_count:
 		var has_in: bool = i < inputs.size()
 		var has_out: bool = i < outputs.size()
@@ -189,6 +192,17 @@ func _build_rows() -> void:
 
 	add_child(_build_stats_grid())
 	_build_action_buttons()
+
+
+## İllüstrasyon başlığın hemen altında, düğüm gövdesinin tam genişliğinde yaşar.
+func _build_node_image() -> TextureRect:
+	var image := TextureRect.new()
+	image.texture = block_type.node_image
+	image.custom_minimum_size = Vector2(0.0, 96.0)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return image
 
 
 ## Bilgi özeti: iki sütunlu ızgara.
@@ -256,7 +270,7 @@ func _build_action_buttons() -> void:
 
 
 func _refresh_header() -> void:
-	title = "%s  %s" % [block_type.icon_char, block_label]
+	title = block_label
 	tooltip_text = "%s — %s\n%s" % [
 		block_type.display_name, block_type.category_label(), block_type.description
 	]
