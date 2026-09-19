@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/flow_canvas/flow_block.gd" id="1_flow_block"]
+
+[node name="FlowBlock" type="GraphNode"]
+script = ExtResource("1_flow_block")

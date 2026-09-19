@@ -21,11 +21,15 @@ enum Status {
 var spent: int = 0
 var unlocked: Dictionary = {}   # araştırma id -> true
 
-## Şimdiye kadar satın alınan geliştirme sayısı (bkz. `try_upgrade`).
-## Erken oyun kilometre taşı bunu okur: oyuncu en az bir geliştirme
-## almadan Ar-Ge Sarayı açılmaz (bkz. `GameConfig.MIN_UPGRADES_FOR_RESEARCH`,
-## `BlockType.requires_first_upgrade`).
+## Şimdiye kadar satın alınan geliştirme sayısı. İleride istatistik veya
+## başarımlar için korunur; araştırma erişimine yapay kapı koymaz.
 var upgrades_purchased: int = 0
+
+## Ürün id'si (String) -> mevcut satış geliştirme seviyesi. Araştırma
+## ağacının DIŞINDA, tekrar satın alınabilen küresel bir geliştirme (bkz.
+## ItemType.sale_upgradeable) — Iron Ore'un satış fiyatını HER YERDE
+## etkiler, tek bir istasyonu değil. Eksik anahtar = seviye 1 (taban fiyat).
+var item_levels: Dictionary = {}
 
 
 func balance(gross_revenue: int) -> int:
@@ -39,21 +43,7 @@ func is_unlocked(node_id: StringName) -> bool:
 
 ## Bu istasyon türü kurulabilir mi? (Araştırma açmış mı?)
 ##
-## `tick_count`: yalnızca `requires_first_upgrade` taşıyan bloklar için
-## anlamlı — erken oyun kilometre taşı (en az bir geliştirme) hiç
-## karşılanmazsa GÜVENLİK AĞI olarak devreye giren uzun zamanlayıcı (bkz.
-## `GameConfig.RESEARCH_FALLBACK_TICKS`). -1 = zamanlayıcı kontrolü atlanır
-## (çağıran tick sayısını bilmiyorsa/önemsemiyorsa).
-func is_block_available(type: BlockType, tick_count: int = -1) -> bool:
-	if type.requires_first_upgrade:
-		# KENDİ KENDİNE YETEN bir yol — `unlocked_at_start`'ın yerini alır,
-		# ÜSTÜNE binmez. Eskiden "gate + normal kontrollere düş" şeklindeydi;
-		# ama Ar-Ge Sarayı artık hiçbir araştırmanın unlocks_blocks'unda
-		# YOK (bkz. D22/D27) — kapı geçilse bile normal kontroller hep false
-		# dönüyordu. Bu yüzden kapı geçilince DOĞRUDAN true dönülür.
-		var milestone_met: bool = upgrades_purchased >= GameConfig.MIN_UPGRADES_FOR_RESEARCH
-		var timer_met: bool = tick_count >= 0 and tick_count >= GameConfig.RESEARCH_FALLBACK_TICKS
-		return milestone_met or timer_met
+func is_block_available(type: BlockType, _tick_count: int = -1) -> bool:
 	if type.unlocked_at_start:
 		return true
 	for node: ResearchNode in ResearchCatalog.all():
@@ -201,10 +191,66 @@ func refund(cost: int) -> void:
 	changed.emit()
 
 
+## --- Ürün satış geliştirmesi (araştırma ağacının DIŞINDA) -------------------
+##
+## `station.level`'ın aksine bu bir istasyona değil ÜRÜNE bağlıdır — Iron
+## Ore'u nerede satarsan sat (Collector, ileride başka bir satış noktası)
+## aynı yükseltilmiş fiyatla satılır. Bu yüzden `item_levels` burada,
+## SimStation'da değil yaşar.
+
+func item_level(item: ItemType) -> int:
+	return int(item_levels.get(String(item.id), 1))
+
+
+## Saf (içerik-türevi) — `BlockType.upgrade_cost`/`sale_value_multiplier_
+## at_level` ile AYNI desen, bkz. orada.
+static func item_sale_multiplier(item: ItemType, current_level: int) -> float:
+	return 1.0 + item.sale_bonus_per_level * float(maxi(0, current_level - 1))
+
+
+static func item_upgrade_cost(item: ItemType, current_level: int) -> int:
+	if not item.sale_upgradeable or current_level >= item.sale_max_level:
+		return 0
+	return roundi(float(item.sale_upgrade_base_cost) * pow(item.sale_upgrade_cost_growth, current_level - 1))
+
+
+static func can_upgrade_item(item: ItemType, current_level: int) -> bool:
+	return item.sale_upgradeable and current_level < item.sale_max_level
+
+
+## Neden geliştirilemiyor? Boş string = geliştirilebilir.
+func item_upgrade_problem(item: ItemType, gross_revenue: int) -> String:
+	var level: int = item_level(item)
+	if not item.sale_upgradeable:
+		return "This good cannot be upgraded."
+	if level >= item.sale_max_level:
+		return "Already at the highest level."
+	var cost: int = item_upgrade_cost(item, level)
+	if balance(gross_revenue) < cost:
+		return "Not enough gold. You need %s." % GameConfig.format_money(cost)
+	return ""
+
+
+## Ürünün satış fiyatını bir seviye yükseltir. Kalıcıdır (kayıtta yer alır,
+## bkz. to_dict/from_dict).
+func try_upgrade_item(item: ItemType, gross_revenue: int) -> String:
+	var problem: String = item_upgrade_problem(item, gross_revenue)
+	if not problem.is_empty():
+		return problem
+	var level: int = item_level(item)
+	var cost: int = item_upgrade_cost(item, level)
+	spent += cost
+	item_levels[String(item.id)] = level + 1
+	upgrades_purchased += 1
+	changed.emit()
+	return ""
+
+
 func reset() -> void:
 	spent = 0
 	unlocked.clear()
 	upgrades_purchased = 0
+	item_levels.clear()
 	changed.emit()
 
 
@@ -212,7 +258,10 @@ func to_dict() -> Dictionary:
 	var ids: PackedStringArray = PackedStringArray()
 	for node_id: StringName in unlocked:
 		ids.append(String(node_id))
-	return {"spent": spent, "unlocked": ids, "upgrades_purchased": upgrades_purchased}
+	return {
+		"spent": spent, "unlocked": ids, "upgrades_purchased": upgrades_purchased,
+		"item_levels": item_levels.duplicate(),
+	}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -221,4 +270,7 @@ func from_dict(data: Dictionary) -> void:
 	for node_id: String in data.get("unlocked", []):
 		unlocked[StringName(node_id)] = true
 	upgrades_purchased = int(data.get("upgrades_purchased", 0))
+	item_levels.clear()
+	for item_id: String in data.get("item_levels", {}):
+		item_levels[item_id] = int(data["item_levels"][item_id])
 	changed.emit()

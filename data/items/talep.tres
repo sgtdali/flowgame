@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemType" format=3]
+
+[ext_resource type="Script" uid="uid://b7scwc68n5sr5" path="res://data/item_type.gd" id="1_talep"]
+
+[resource]
+script = ExtResource("1_talep")
+id = &"talep"
+display_name = "Demand"
+color = Color(0.42, 0.58, 0.78, 1)
+icon_char = "DM"
+base_price = 0

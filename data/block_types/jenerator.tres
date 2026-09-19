@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://b3h5xm1kppkk4"]
+
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="1_jenerator"]
+
+[resource]
+script = ExtResource("1_jenerator")
+id = &"jenerator"
+display_name = "Generator"
+category = 0
+accent_color = Color(0.93, 0.78, 0.24, 1)
+icon_char = "GN"
+description = "Burns fuel on-site into a constant power capacity. Draws no ore or ingots — an income line independent of the iron route. Unused capacity can be sold directly or wired to a powered workshop."
+input_capacity = 0
+output_capacity = 0
+max_instances = 1
+upgradeable = true
+upgrade_base_cost = 300
+upgrade_cost_growth = 2.0
+upgrade_rate_increment = 15.0
+max_level = 4
+power_output = 40
+power_only = true

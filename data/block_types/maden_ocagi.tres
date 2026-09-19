@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://cxm3nf1bo7whf"]
 
-[ext_resource type="Resource" uid="uid://wsqwksxvt4ya" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
+[ext_resource type="Resource" uid="uid://3iueg4dx0xbc" path="res://data/recipes/r_ham_cevher.tres" id="1_oxrox"]
 [ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_htaww"]
-[ext_resource type="Texture2D" path="res://assets/nodes/iron_mine_node.png" id="3_iron_mine_image"]
+[ext_resource type="Texture2D" uid="uid://x5t01es84o3p" path="res://assets/nodes/iron_mine_node.png" id="3_iron_mine_image"]
 
 [resource]
 script = ExtResource("2_htaww")
@@ -12,15 +12,14 @@ category = 0
 accent_color = Color(0.45, 0.56, 0.34, 1)
 icon_char = "MI"
 node_image = ExtResource("3_iron_mine_image")
-description = "Extracts iron ore continuously. The beginning of every crafting route."
+description = "Extracts raw ore continuously — unrefined, not sellable as-is. Feed it into a Mine Extractor to turn it into usable Iron Ore."
 recipe = ExtResource("1_oxrox")
 input_capacity = 0
 output_capacity = 8
-build_cost = 250
 unlocked_at_start = true
 max_instances = 1
 upgradeable = true
-upgrade_base_cost = 150
+upgrade_base_cost = 80
 upgrade_cost_growth = 2.0
-upgrade_rate_increment = 15.0
-max_level = 4
+upgrade_duration_factor = 0.7071067811865476
+max_level = 10

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemType" format=3]
+
+[ext_resource type="Script" uid="uid://b7scwc68n5sr5" path="res://data/item_type.gd" id="1_elektrik"]
+
+[resource]
+script = ExtResource("1_elektrik")
+id = &"elektrik"
+display_name = "Electricity"
+color = Color(0.93, 0.78, 0.24, 1)
+icon_char = "EL"
+base_price = 4
+tier = 1

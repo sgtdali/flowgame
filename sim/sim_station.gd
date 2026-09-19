@@ -16,8 +16,20 @@ var output: Dictionary = {}
 
 ## Üretim durumu.
 var producing: bool = false
-var progress_ticks: int = 0
-var assigned_worker: bool = false
+## KESİRLİ ilerleme biriktiricisi (bkz. `duration_ticks_at_level`). Her tick
+## 1.0 artar; süre dolunca üretim biter ve süre TAM OLARAK (yuvarlanmadan)
+## düşülür — kalan küsurat bir sonraki döngüye taşınır. Bu yüzden `= 0`
+## DEĞİL `-= duration` ile sıfırlanır: aksi hâlde her döngüde süre kesirliyse
+## (ör. 1.25 tick) o küsurat kaybolur ve uzun vadeli hız formülden sapar.
+var progress_ticks: float = 0.0
+## Güç tüketen istasyonlarda (bkz. `type.power_required_per_tick`) BİRİKEN
+## enerji. Malzeme hazır olduğu hâlde güç yetersizse `progress_ticks` yerine
+## bu sayaç ilerler — yetersiz güç üretimi durdurmaz, oranlı yavaşlatır.
+## Elektrik Satış Noktası da aynı sayaçla sürekli güç akışını kesikli satış
+## birimlerine çevirir (bkz. FactorySim._run_power_sale).
+var energy_ticks: int = 0
+## Bu istasyona atanmış işçi sayısı. İlk işçi istasyonu çalıştırır; ilave
+## işçilerin üretim etkisi bilinçli olarak daha sonraki denge turuna bırakıldı.
 
 ## Geliştirme seviyesi (1 = geliştirilmemiş). Yalnızca `type.upgradeable`
 ## olan istasyonlarda 1'den büyük olabilir. Kalıcıdır — kaydediliyor.
@@ -66,7 +78,7 @@ var next_output_port: int = 0
 ##   TIKANDI (BLOCKED)  → çıktısını boşaltamıyor, SONRAKİ istasyon yavaş
 ## İkisini tek bir "blocked" bayrağında birleştirmek, oyunun asıl teşhis
 ## aracını kör eder.
-enum Status { RUNNING, STARVED, BLOCKED, UNSTAFFED, HUNGRY }
+enum Status { RUNNING, STARVED, BLOCKED, UNPOWERED }
 
 var status: Status = Status.STARVED
 
@@ -103,18 +115,78 @@ func recipe() -> Recipe:
 ## `BlockType.duration_ticks_at_level`'da yaşar — `FlowBlock` da AYNI
 ## fonksiyonu çağırır, ikisi ayrışırsa ilerleme çubuğu ile düğümün
 ## gösterdiği "sonraki hız" yazısı uyuşmaz.
-func effective_duration_ticks() -> int:
+func effective_duration_ticks() -> float:
 	return type.duration_ticks_at_level(level)
 
 
+## Güç sistemi enerji birimlerini TAM SAYI tutar (bkz. `energy_ticks`,
+## FactorySim._run_powered_producer) — kesirli biriktirici oradaki mekanikle
+## uyuşmaz. Güçle ilgili eşik hesapları bu yüzden YUVARLANMIŞ süreyi okur;
+## FactorySim AYNI fonksiyonu çağırmalı, yoksa "TIKALI" eşiği ile ilerleme
+## çubuğu ayrışır.
+func effective_duration_ticks_rounded() -> int:
+	return maxi(1, roundi(effective_duration_ticks()))
+
+
 ## İlerleme oranı (0.0 - 1.0). Sunumdaki ilerleme çubuğu için.
+##
+## Süresi 0 olan reçetelerde (bkz. Eritme Ocağı, DESIGN.md "Smelting Hearth
+## redesign") üretim aynı tick içinde başlayıp bitiyor — `progress_ticks`'in
+## gösterecek bir aralığı yok. Onun yerine girdi tamponunun ne kadar dolu
+## olduğunu gösteririz: çubuk 6. cevher gelene dek dolar, dönüşümde sıfırlanır.
 func progress_ratio() -> float:
+	if type.is_power_consumer():
+		if not producing:
+			return 0.0
+		var required: int = effective_duration_ticks_rounded() * type.power_required_per_tick
+		if required <= 0:
+			return 0.0
+		return clampf(float(energy_ticks) / float(required), 0.0, 1.0)
+	if type.demand_item != null:
+		return _demand_fill_ratio()
+	var duration: float = effective_duration_ticks()
+	if duration <= 0.0:
+		return _input_fill_ratio()
 	if not producing:
 		return 0.0
-	var duration: int = effective_duration_ticks()
-	if duration <= 0:
+	return clampf(progress_ticks / duration, 0.0, 1.0)
+
+
+## `progress_ratio`'nun süresiz reçeteler için baktığı girdi doluluğu.
+## Eritme Ocağı artık İKİ girdi istiyor (60 cevher + 6 kömür, bkz.
+## r_kulce.tres) — dönüşüm İKİSİ de tamamlanınca olur, o yüzden çubuk en
+## DAR boğazı gösterir: hangi girdi daha az doluysa (en küçük oran) o,
+## dönüşümü geciktiren gerçek darboğazdır.
+func _input_fill_ratio() -> float:
+	var r: Recipe = recipe()
+	if r == null or r.inputs.is_empty():
 		return 0.0
-	return clampf(float(progress_ticks) / float(duration), 0.0, 1.0)
+	var narrowest: float = 1.0
+	for slot: RecipeSlot in r.inputs:
+		if slot.count <= 0:
+			continue
+		var have: int = int(input.get(slot.item.id, 0))
+		narrowest = minf(narrowest, float(have) / float(slot.count))
+	return clampf(narrowest, 0.0, 1.0)
+
+
+## Trade Depot gibi TALEP KAPILI bloklarda `progress_ratio`'nun baktığı
+## dolgunluk. Elde bekleyen mal YOKSA çubuk boştur (satacak bir şey yok);
+## varsa çubuk `demand_required` eşiğine göre Talep'in ne kadar biriktiğini
+## gösterir — yani DOĞRUDAN Trade Network'ün hızıyla dolar, kendi başına bir
+## zamanlayıcısı yoktur (bkz. `BlockType.demand_item` dokümantasyonu).
+func _demand_fill_ratio() -> float:
+	var demand_id: StringName = type.demand_item.id
+	var has_goods: bool = false
+	for key: StringName in input.keys():
+		if key != demand_id and int(input[key]) > 0:
+			has_goods = true
+			break
+	if not has_goods:
+		return 0.0
+	var required: int = maxi(1, type.demand_required)
+	var have: int = int(input.get(demand_id, 0))
+	return clampf(float(have) / float(required), 0.0, 1.0)
 
 
 func add_item(buffer: Dictionary, item_id: StringName, count: int) -> void:
@@ -137,7 +209,7 @@ func take_item(buffer: Dictionary, item_id: StringName, count: int) -> bool:
 ## istasyonlarda tüketim.
 func throughput_total() -> int:
 	match type.category:
-		BlockType.Category.SINK, BlockType.Category.RESEARCH, BlockType.Category.FOOD:
+		BlockType.Category.SINK, BlockType.Category.RESEARCH:
 			return consumed_total
 	return produced_total
 
@@ -151,8 +223,7 @@ static func status_name(value: Status) -> String:
 		Status.RUNNING: return "working"
 		Status.STARVED: return "starved"
 		Status.BLOCKED: return "blocked"
-		Status.UNSTAFFED: return "unstaffed"
-		Status.HUNGRY: return "no food"
+		Status.UNPOWERED: return "unpowered"
 	return "?"
 
 

@@ -13,6 +13,10 @@ extends GraphEdit
 
 ## Port tipi — GraphEdit yalnızca aynı tipteki portların bağlanmasına izin verir.
 const PORT_TYPE_MATERIAL: int = 0
+## Güç portu — bkz. FlowBlock.PORT_TYPE_POWER. GraphEdit'in kendi tip
+## denetimi malzeme ve güç tellerinin karışmasını burada, sürükle-bırak
+## sırasında engeller.
+const PORT_TYPE_POWER: int = 1
 
 ## Kullanıcı niyetleri (yukarı).
 signal add_requested(type: BlockType, at: Vector2)
@@ -53,6 +57,7 @@ func _ready() -> void:
 	zoom_max = 2.0
 
 	add_valid_connection_type(PORT_TYPE_MATERIAL, PORT_TYPE_MATERIAL)
+	add_valid_connection_type(PORT_TYPE_POWER, PORT_TYPE_POWER)
 
 	connection_request.connect(_on_connection_request)
 	disconnection_request.connect(_on_disconnection_request)
@@ -128,7 +133,7 @@ func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
 
 ## Simülasyonda zaten yaratılmış bir istasyonun görüntüsünü oluşturur.
 func spawn_block(sim_id: int, type: BlockType, at: Vector2) -> FlowBlock:
-	var block := FlowBlock.new()
+	var block := preload("res://features/flow_canvas/flow_block.tscn").instantiate() as FlowBlock
 	block.setup(type)
 	block.sim_id = sim_id
 	block.name = "n%d" % _next_node_index

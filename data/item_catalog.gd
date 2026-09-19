@@ -7,22 +7,23 @@ extends RefCounted
 ## ("levha": 3), geri yüklerken id'den ItemType'a dönmek gerekir.
 
 const CEVHER := preload("res://data/items/cevher.tres")
+## Iron Mine'ın çıkardığı işlenmemiş hâl — satılamaz muadili yok, Mine
+## Extractor'dan geçmeden Eritme Ocağı'na giremez (bkz. r_cevher.tres, artık
+## Mine Extractor'ın reçetesi).
+const HAM_CEVHER := preload("res://data/items/ham_cevher.tres")
 const KULCE := preload("res://data/items/kulce.tres")
 const LEVHA := preload("res://data/items/levha.tres")
-const CUBUK := preload("res://data/items/cubuk.tres")
-const VIDA := preload("res://data/items/vida.tres")
-const GOVDE := preload("res://data/items/govde.tres")
-const HURDA := preload("res://data/items/hurda.tres")
-const WHEAT := preload("res://data/items/wheat.tres")
-const FLOUR := preload("res://data/items/flour.tres")
-const BREAD := preload("res://data/items/bread.tres")
-const KALKAN := preload("res://data/items/kalkan.tres")
-const KASK := preload("res://data/items/kask.tres")
-const BANTLI_KASK := preload("res://data/items/bantli_kask.tres")
+## Güç sisteminde satılan tek "ürün" — asla tamponlanmaz, yalnızca fiyatlama
+## ve satış muhasebesi (accrued/collect/sold_counts) için ItemType olarak
+## var (bkz. FactorySim._run_power_sale).
+const ELEKTRIK := preload("res://data/items/elektrik.tres")
+## Trade Network'ün ürettiği, Trade Depot'un tükettiği kontrol sinyali —
+## asla satılmaz (`base_price = 0`), yalnızca "bu malı Depot'tan geçirebilir
+## misin" sorusuna cevap verir (bkz. FactorySim._run_trade_depot).
+const TALEP := preload("res://data/items/talep.tres")
 
 const _ALL: Array = [
-	CEVHER, KULCE, LEVHA, CUBUK, VIDA, GOVDE, HURDA, WHEAT, FLOUR, BREAD,
-	KALKAN, KASK, BANTLI_KASK,
+	CEVHER, HAM_CEVHER, KULCE, LEVHA, ELEKTRIK, TALEP,
 ]
 
 ## id -> ItemType. İlk erişimde kurulur; O(1) arama.

@@ -1,107 +1,46 @@
 # Iron & Ember
 
-Orta çağ temalı bir zanaat ve ticaret oyunu: maden, döküm ocağı, demirci ve pazarı
-birbirine bağla; yeni ustalıkları keşfet. Godot 4.6 GraphEdit üzerine kurulu.
+A Godot 4 idle/incremental factory prototype: build short routes, then let
+them earn for a long time with little intervention.
 
-Tasarım ve karar günlüğü: [DESIGN.md](DESIGN.md)  ·  Kalan işler: [TODO.md](TODO.md)
+## This round's playable loop
 
-> Durum: **mekanik prototip**. Atölye sayısı sınırsız; üretim için işçi,
-> işçiler için düzenli gıda gerekir. Yeni ekonomi henüz tempo açısından dengelenmedi.
+1. Build `Iron Mine → Smelting Hearth → Market Stall`.
+2. Collect the gold piling up at the market roughly every 30 in-game seconds
+   with **Collect**.
+3. Optionally invest 150 gold in Mine speed or Market sale value.
+4. In parallel, research **Electrification** (1,100 gold), then build a
+   **Generator** (900 gold) and a **Power Exchange** (300 gold). Wire the
+   Generator to the Exchange and sell raw power — a second income line, with
+   no ore, ingots, or route required.
+5. Once both branches are running, research **Electrified Rolling** (1,600
+   gold) and build the **Electric Rolling Mill** (900 gold — this reuses the
+   existing plate-making workshop, now needing a power line as well as
+   ingots). Wire the Smelting Hearth's ingots and a Generator's power line
+   into it: plate sales beat selling the same ingots and electricity apart.
 
-## Çalıştırma
+Workshops run themselves once wired correctly; the Mill also needs its power
+line connected, or it idles even with a full ingot buffer. There is no
+worker, food, farming, or hunger mechanic in the active game.
 
-Godot 4.6 ile `project.godot` dosyasını aç, **F5**.
+## Power, in short
 
-## Kullanım
+Power is a capacity, not a stockpiled good — a Generator's kW never carries
+over to the next tick. Each tick, a connected production consumer (the Mill)
+is served first, up to what it actually needs; whatever capacity is left
+over goes to a connected Power Exchange. Power wires are a visually and
+mechanically separate connection type from material wires, so the two can
+never be cross-wired by accident.
 
-| İşlem | Nasıl |
-|---|---|
-| İstasyon ekle | Sol paletten tıkla **veya** tuvale sürükle-bırak; sayı sınırı yok |
-| Bağla | Bir istasyonun sağ portundan diğerinin sol portuna sürükle |
-| Bağlantıyı kaldır | Bağlantıya **sağ tık** |
-| Sil | İstasyonu seç, **Delete** |
-| İşçi ata / geri al | Üretim düğümünü seç, sağ panelde **Assign worker** düğmesini kullan |
-| İşçi al | Üst bardaki **Recruit**; 15 gıda harcar. Her işçi dakikada 1 gıda tüketir |
-| Gıda üret | **Farm → Windmill → Bakery → Granary** zincirini kur; ilk üçüne işçi ata |
-| Parametre düzenle | İstasyonu seç, sağ panelden değiştir |
-| Otomatik hizala | Üst bardaki **Otomatik Diz** |
-| Kaydet / Yükle | Üst bar — `.json` olarak |
+## Verification
 
-Alt çubuk kaç istasyonun **tıkalı** ve kaç tanesinin **aç** olduğunu gösterir.
-Bu ikisi birbirinin tersi problemdir:
-
-- **AÇ** — girdisi gelmiyor, suç **önceki** istasyonda (kenarlık sarı)
-- **TIKALI** — çıktısını boşaltamıyor, suç **sonraki** istasyonda (kenarlık kırmızı)
-
-## Yapı
-
-Klasörler dosya türüne göre değil, **özelliğe göre** ayrılmıştır.
-
-```
-common/
-  game_config.gd       Denge sayılarının TEK yeri (tick hızı, işçi, gıda, para)
-data/
-  item_type.gd         Ürün türü (Resource)
-  recipe.gd            Girdi -> çıktı + süre (tick)
-  recipe_slot.gd       "Levha × 2"
-  block_type.gd        İstasyon arketipi; portları reçetesinden türetir
-  research_node.gd     Araştırma kilidi (içeriği Faz 4'te)
-  block_catalog.gd     Arketiplerin tek kayıt noktası (preload)
-  items/*.tres         Demir ve gıda ürünleri
-  recipes/*.tres       Demir ve gıda reçeteleri
-  block_types/*.tres   Zanaat, gıda ve ticaret düğümleri
-features/
-  game/                ORKESTRATÖR — simülasyonu sahiplenir, tick'i sürer
-  flow_canvas/         GraphEdit tuvali + tek bir blok (GraphNode)
-  block_palette/       Sol panel: eklenebilir istasyonlar
-  research_panel/      Sağ panel: araştırma ağacı — sabit değil, sağ alttaki yüzen düğmeyle açılır/kapanır
-sim/
-  factory_sim.gd       Tick döngüsü, tıkanma, kayıt. Sahne ağacının dışında.
-  sim_station.gd       Bir istasyonun durumu: tamponlar, ilerleme, AÇ/TIKALI
-  sim_link.gd          İki istasyon arasındaki bağlantı
-tools/
-  gen_content.gd       İçerik .tres'lerini üreten önyükleme aracı
-  sim_test.gd          Determinizm, kaydet/yükle ve tıkanma kontrolleri
-  workforce_test.gd    İşçi ve gıda mekaniği kontrolleri
-  progression_test.gd  Eski tempo testi; yeni mekanik dengelenene kadar çalıştırılmıyor
-```
-
-## Testler
-
-```bash
+```powershell
 godot --headless --path . --script res://tools/sim_test.gd
+godot --headless --path . --script res://tools/iron_progression_test.gd
 ```
 
-```bash
-godot --headless --path . --script res://tools/workforce_test.gd
-```
-
-### Mimari kuralı
-
-Sinyal **yukarı**, çağrı **aşağı**. Palet, tuval ve denetçi birbirini tanımaz;
-hepsi `flow_editor.gd` üzerinden konuşur. Bir bloğun verisinin sahibi daima
-bloğun kendisidir — denetçi paneli bloğa doğrudan yazmaz, istek tuval üzerinden
-geçer.
-
-## Yeni istasyon türü eklemek
-
-1. Gerekiyorsa `data/items/` altına yeni ürün, `data/recipes/` altına reçete ekle
-   (Godot editöründe sağ tık -> New Resource).
-2. `data/block_types/` altına yeni istasyon `.tres`'i ekle, reçetesini bağla.
-3. `data/block_catalog.gd` içine `preload` satırını ve `_ORDER` listesine ekle.
-
-Palet, portlar ve denetçi kendiliğinden güncellenir — port etiketleri reçeteden
-türetilir, elle yazılmaz.
-
-Toplu değişiklik için `tools/gen_content.gd` kullanılabilir, ama **dikkat:**
-o araç mevcut dosyaların üzerine yazar ve Inspector'da elle yapılan ayarları siler.
-
-```bash
-godot --headless --path . --script res://tools/gen_content.gd
-```
-
-## Kayıt biçimi
-
-Düz JSON (`version`, `blocks`, `connections`). Konum `Vector2` yerine ayrı
-`x`/`y` float olarak yazılır — JSON'da tip kaybı olmaması için. Bağlantılar
-yüklenirken dosyadaki adlara değil, ad eşleme tablosuna göre kurulur.
+The first command checks production, collection, and save/load correctness.
+The second measures four small-investment routes through the iron branch's
+opening from the same start. Neither was extended to cover Electrification
+or the Electric Rolling Mill this round — see DESIGN.md's "Not yet verified"
+section.

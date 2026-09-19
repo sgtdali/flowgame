@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://bdtfbx2yeft16"]
+
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="1_elektrik_satis"]
+
+[resource]
+script = ExtResource("1_elektrik_satis")
+id = &"elektrik_satis"
+display_name = "Power Exchange"
+category = 4
+accent_color = Color(0.93, 0.78, 0.24, 1)
+icon_char = "PX"
+description = "Sells power drawn from a Generator directly, as-is. Wire a Generator to it to turn spare capacity into coin — no ore, no ingots, no route to build first."
+input_capacity = 0
+output_capacity = 0
+upgradeable = true
+upgrade_base_cost = 200
+upgrade_cost_growth = 2.0
+sale_value_bonus_per_level = 0.2
+max_level = 4
+sells_power = true
+power_only = true

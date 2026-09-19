@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Iron & Ember"
-config/description="Build a medieval craft and trade network."
+config/description="Build an iron and power industrial network."
 run/main_scene="res://features/game/game.tscn"
 config/features=PackedStringArray("4.6")
 config/icon="res://icon.svg"

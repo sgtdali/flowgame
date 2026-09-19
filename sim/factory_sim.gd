@@ -35,20 +35,31 @@ var sold_counts: Dictionary = {}
 ## yalnızca bu düz bayrağı taşır (bkz. D8: sim ilerleme durumunu bilmez).
 var auto_collect: bool = false
 
+## Ürün id'si (String) -> satış fiyatı çarpanı. `auto_collect` İLE AYNI
+## desen: sim kendisi ARAŞTIRMA/geliştirme bilmez, yalnızca dışarıdan
+## (GameController, bkz. ProgressionState.item_sale_multiplier) verilen bu
+## düz sözlüğe bakar. Eksik anahtar = çarpan 1.0 (taban fiyat).
+var item_sale_multipliers: Dictionary = {}
+
 ## Ar-Ge Laboratuvarı'na akıtılan toplam ürün (kümülatif).
 ## Araştırma ilerlemesi buradan okunur — simülasyon araştırma DURUMUNU
 ## bilmez, sadece ne aktığını sayar. Böylece sim saf ve deterministik kalır.
 var research_counts: Dictionary = {}
 
-var food: int = GameConfig.START_FOOD
-var food_produced_total: int = 0
-var workers_total: int = GameConfig.START_WORKERS
-var food_shortage: bool = false
 
 var _stations: Dictionary = {}        # id -> SimStation
 var _ordered_ids: Array[int] = []     # her zaman artan sırada
 var _links: Array[SimLink] = []
 var _links_by_port: Dictionary = {}   # "from_id:port" -> Array[SimLink]
+
+## Güç bağlantıları — malzeme `_links`'ten AYRI liste (bkz. `PowerLink`).
+var _power_links: Array[PowerLink] = []
+
+## Bu tick'te her istasyona TESLİM EDİLEN güç: station id -> int.
+## Sunum verisi değil, `_phase_power`'ın `_phase_produce`'a geçirdiği
+## GEÇİCİ hesap — her tick baştan kurulur, kaydedilmez (bkz. `SimStation.
+## status` gibi diğer türetilmiş alanlar).
+var _delivered_power: Dictionary = {}
 
 ## Son GERÇEKTEN aktarılan ürün: "from_id:from_port" -> item_id.
 ##
@@ -87,6 +98,10 @@ func remove_station(id: int) -> void:
 	for i in range(_links.size() - 1, -1, -1):
 		if _links[i].from_id == id or _links[i].to_id == id:
 			_links.remove_at(i)
+	for i in range(_power_links.size() - 1, -1, -1):
+		if _power_links[i].from_id == id or _power_links[i].to_id == id:
+			_power_links.remove_at(i)
+	_delivered_power.erase(id)
 	_rebuild_link_index()
 
 
@@ -103,32 +118,6 @@ func stations() -> Array[SimStation]:
 
 func station_count() -> int:
 	return _ordered_ids.size()
-
-
-func workers_assigned() -> int:
-	var total: int = 0
-	for id: int in _ordered_ids:
-		if (_stations[id] as SimStation).assigned_worker:
-			total += 1
-	return total
-
-
-func set_worker(id: int, assigned: bool) -> bool:
-	var station: SimStation = get_station(id)
-	if station == null or not station.type.requires_worker():
-		return false
-	if assigned and not station.assigned_worker and workers_assigned() >= workers_total:
-		return false
-	station.assigned_worker = assigned
-	return true
-
-
-func recruit_worker() -> bool:
-	if food < GameConfig.RECRUIT_FOOD_COST:
-		return false
-	food -= GameConfig.RECRUIT_FOOD_COST
-	workers_total += 1
-	return true
 
 
 func link_count() -> int:
@@ -199,9 +188,26 @@ func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) 
 			return "This output is already linked. Use a Crossroads to split a route."
 
 	var out_items: Array[ItemType] = src.type.output_items()
-	var in_items: Array[ItemType] = dst.type.input_items()
 	if not out_items.is_empty() and from_port >= out_items.size():
 		return "Invalid output port."
+
+	# Trade Depot gibi TALEP KAPILI bloklar: port 0 herhangi bir satılabilir
+	# ürünü kabul eder (Talep hariç), port 1 SADECE Talep kabul eder. Jenerik
+	# giriş kuralının (bkz. altta) port başına ikiye ayrışmış hâli — normal
+	# jenerik bloklarda (Ara Depo, Sevkiyat) TÜM portlar aynı kuralı paylaşır.
+	if dst.type.demand_item != null:
+		if to_port == 1:
+			if not out_items.is_empty() and out_items[from_port].id != dst.type.demand_item.id:
+				return "%s cannot enter here. This input expects %s." % [
+					out_items[from_port].display_name, dst.type.demand_item.display_name]
+			return ""
+		if to_port == 0:
+			if not out_items.is_empty() and out_items[from_port].id == dst.type.demand_item.id:
+				return "Demand cannot enter the goods input — use the Demand port."
+			return ""
+		return "Invalid input port."
+
+	var in_items: Array[ItemType] = dst.type.input_items()
 	if in_items.is_empty():
 		return ""  # jenerik giriş: tampon ve sevkiyat her ürünü kabul eder
 	if to_port >= in_items.size():
@@ -241,16 +247,88 @@ func clear() -> void:
 	_wired_in.clear()
 	_wired_out.clear()
 	_last_transferred_item.clear()
+	_power_links.clear()
+	_delivered_power.clear()
 	_next_id = 1
 	tick_count = 0
 	revenue = 0
 	sold_counts.clear()
 	research_counts.clear()
-	food = GameConfig.START_FOOD
-	food_produced_total = 0
-	workers_total = GameConfig.START_WORKERS
-	food_shortage = false
 	auto_collect = false
+
+
+## --- Güç bağlantıları ---------------------------------------------------
+
+## Bir güç bağlantısı neden kurulamıyor? Boş string = sorun yok.
+## Malzeme bağlantılarındaki `connection_problem` ile aynı desen: kural TEK
+## yerde yaşar, arayüz kopyasını tutmaz.
+func power_connection_problem(from_id: int, to_id: int) -> String:
+	if from_id == to_id:
+		return "A workshop cannot connect to itself."
+	var src: SimStation = get_station(from_id)
+	var dst: SimStation = get_station(to_id)
+	if src == null or dst == null:
+		return "Workshop not found."
+	if not src.type.is_power_generator():
+		return "%s does not generate power." % src.type.display_name
+	if not (dst.type.is_power_consumer() or dst.type.sells_power):
+		return "%s cannot use power." % dst.type.display_name
+	for link: PowerLink in _power_links:
+		if link.matches(from_id, to_id):
+			return "This power line already exists."
+	# Basit paylaşım kuralı: bir tüketici yalnızca TEK jeneratörden beslenir.
+	# Birden fazla jeneratör bağlansaydı paylaşım kuralı belirsizleşirdi
+	# (bkz. D5: bu turda karmaşık öncelik/oran yönetimi eklenmiyor).
+	for link: PowerLink in _power_links:
+		if link.to_id == to_id:
+			return "This workshop already draws power from another generator."
+	return ""
+
+
+func can_connect_power(from_id: int, to_id: int) -> bool:
+	return power_connection_problem(from_id, to_id).is_empty()
+
+
+func connect_power(from_id: int, to_id: int) -> bool:
+	if not can_connect_power(from_id, to_id):
+		return false
+	_power_links.append(PowerLink.new(from_id, to_id))
+	return true
+
+
+func disconnect_power(from_id: int, to_id: int) -> void:
+	for i in range(_power_links.size() - 1, -1, -1):
+		if _power_links[i].matches(from_id, to_id):
+			_power_links.remove_at(i)
+
+
+func power_links() -> Array[PowerLink]:
+	var out: Array[PowerLink] = []
+	out.assign(_power_links)
+	return out
+
+
+## Bu istasyona BU TICK teslim edilen güç. Sunum katmanı canlı "X / Y kW"
+## göstergesi için bunu okur.
+func delivered_power(station_id: int) -> int:
+	return int(_delivered_power.get(station_id, 0))
+
+
+func power_capacity(station_id: int) -> int:
+	var station: SimStation = get_station(station_id)
+	if station == null or not station.type.is_power_generator():
+		return 0
+	return station.type.power_output_at_level(station.level)
+
+
+## Bir jeneratörün BU TICK dağıttığı toplam güç (üretim + satış dahil).
+## Sunum katmanının "X / Y kW kullanımda" göstergesi için.
+func power_used(station_id: int) -> int:
+	var total: int = 0
+	for link: PowerLink in _power_links:
+		if link.from_id == station_id:
+			total += delivered_power(link.to_id)
+	return total
 
 
 func _rebuild_link_index() -> void:
@@ -298,32 +376,83 @@ func unwired_port_count(id: int) -> int:
 
 func tick() -> void:
 	tick_count += 1
-	if tick_count % (GameConfig.TICKS_PER_SECOND * 60) == 0:
-		var upkeep: int = workers_total * GameConfig.FOOD_PER_WORKER_PER_MINUTE
-		food_shortage = food < upkeep
-		food = maxi(0, food - upkeep)
+	_phase_power()
 	_phase_produce()
 	_phase_transfer()
+
+
+## Faz 0: güç dağıtımı. Üretimden ÖNCE çalışmalı — güç tüketen bir istasyon
+## bu tick ne kadar enerji alacağını bilmeden ilerleyemez (bkz. `_run_producer`).
+##
+## Paylaşım kuralı basit ve deterministik (D5): her jeneratör kapasitesini
+## KENDİNE bağlı tüketicilere id sırasına göre dağıtır, ÜRETİM tüketicileri
+## (Elektrikli Hadde gibi) önce doyurulur, kalan kapasite satış noktalarına
+## gider. Aynı elektrik iki kez sayılmaz — her tüketici en fazla bir
+## jeneratöre bağlıdır (bkz. `power_connection_problem`).
+func _phase_power() -> void:
+	_delivered_power.clear()
+	for id: int in _ordered_ids:
+		var generator: SimStation = _stations[id]
+		if not generator.type.is_power_generator():
+			continue
+		var remaining: int = generator.type.power_output_at_level(generator.level)
+		var consumer_ids: Array[int] = []
+		var sale_ids: Array[int] = []
+		for link: PowerLink in _power_links:
+			if link.from_id != id:
+				continue
+			var dst: SimStation = get_station(link.to_id)
+			if dst == null:
+				continue
+			if dst.type.sells_power:
+				sale_ids.append(dst.id)
+			else:
+				consumer_ids.append(dst.id)
+		consumer_ids.sort()
+		sale_ids.sort()
+
+		for consumer_id: int in consumer_ids:
+			var dst: SimStation = _stations[consumer_id]
+			var request: int = dst.type.power_required_per_tick if _wants_power(dst) else 0
+			var given: int = mini(remaining, request)
+			_delivered_power[consumer_id] = given
+			remaining -= given
+
+		if sale_ids.is_empty():
+			continue
+		# Kalan kapasiteyi satış noktaları arasında eşit paylaştır; kalan
+		# birimler (bölünemeyen) en düşük id'den başlayarak dağıtılır —
+		# determinist ve tek noktalı satış noktasında zaten tam kapasiteyi verir.
+		var share: int = remaining / sale_ids.size()
+		var extra: int = remaining % sale_ids.size()
+		for i in sale_ids.size():
+			_delivered_power[sale_ids[i]] = share + (1 if i < extra else 0)
+
+
+## Bir üretim tüketicisi BU TICK güç istiyor mu? Yalnızca zaten üretiyorsa
+## veya reçetesini başlatacak malzemesi hazırsa istekte bulunur — bağlı ama
+## boşta duran bir istasyon jeneratörü boşuna kilitlemez, kapasite satışa gider.
+func _wants_power(station: SimStation) -> bool:
+	if station.producing:
+		return true
+	var recipe: Recipe = station.recipe()
+	if recipe == null:
+		return false
+	for slot: RecipeSlot in recipe.inputs:
+		if int(station.input.get(slot.item.id, 0)) < slot.count:
+			return false
+	return true
 
 
 ## Faz 1: üret / ilerlet.
 func _phase_produce() -> void:
 	for id: int in _ordered_ids:
 		var station: SimStation = _stations[id]
-		if station.type.requires_worker():
-			if not station.assigned_worker:
-				station.status = SimStation.Status.UNSTAFFED
-				continue
-			if food_shortage and not station.type.food_chain:
-				station.status = SimStation.Status.HUNGRY
-				continue
 		match station.type.category:
 			BlockType.Category.BUFFER, BlockType.Category.SPLITTER:
 				_run_buffer(station)
 			BlockType.Category.SINK:
 				_run_sink(station)
-			BlockType.Category.FOOD:
-				_run_food(station)
 			BlockType.Category.RESEARCH:
 				_run_research(station)
 			_:
@@ -368,6 +497,11 @@ func _phase_transfer() -> void:
 func _run_producer(station: SimStation) -> void:
 	var recipe: Recipe = station.recipe()
 	if recipe == null:
+		# Jeneratörün reçetesi yok — gücü `_phase_power` zaten dağıttı, burada
+		# yalnızca durum rozetini yansıtıyoruz (aksi hâlde her zaman "aç"
+		# görünür, oysa kapasitesi varsa fiilen ÇALIŞIYORdur).
+		if station.type.is_power_generator():
+			station.status = SimStation.Status.RUNNING if station.type.power_output_at_level(station.level) > 0 else SimStation.Status.STARVED
 		return
 
 	if not station.producing:
@@ -376,25 +510,71 @@ func _run_producer(station: SimStation) -> void:
 			station.status = SimStation.Status.STARVED
 			return
 
+	if station.type.is_power_consumer():
+		_run_powered_producer(station, recipe)
+		return
+
 	station.status = SimStation.Status.RUNNING
 
 	# Süre GELİŞTİRME SEVİYESİNE göre değişir (bkz. SimStation.effective_
 	# duration_ticks) — geliştirilmemiş istasyonda reçetenin kendi süresiyle
 	# özdeştir. Süre dolduktan sonra saymaya devam etmeyiz: istasyon "bitmiş
 	# ama boşaltamıyor" durumunda bekler, ilerleme çubuğu %100'de kalır.
-	var duration: int = station.effective_duration_ticks()
+	var duration: float = station.effective_duration_ticks()
 	if station.progress_ticks < duration:
-		station.progress_ticks += 1
+		station.progress_ticks += 1.0
 		if station.progress_ticks < duration:
 			return
 
-	# Üretim bitti — boşaltmayı dene.
+	# Üretim bitti — boşaltmayı dene. Süre KESİRLİYSE (ör. 1.25 tick) tam
+	# sayıya yuvarlamadan düşülür — `= 0` değil `-= duration` — ki küsurat
+	# kaybolmasın ve uzun vadeli hız tam formüle otursun (bkz. SimStation.
+	# progress_ticks).
 	if _try_emit(station, recipe):
 		station.producing = false
-		station.progress_ticks = 0
+		station.progress_ticks = maxf(0.0, station.progress_ticks - duration)
 	else:
 		# Çıktı tamponu dolu: istasyon bitmiş parçayı elinde tutar ve DURUR.
 		# Suç SONRAKİNDE. Tıkanma zinciri buradan geriye doğru yürür.
+		station.status = SimStation.Status.BLOCKED
+
+
+## Güç tüketen bir istasyonun üretimi. `progress_ticks` yerine ENERJİ
+## birikir: her tick teslim edilen güç kadar `energy_ticks` artar, tam hızda
+## ihtiyaç duyulan toplam enerjiye (`duration * power_required_per_tick`)
+## ulaşınca üretim biter. Bu yüzden yarım güç YARI HIZ, sıfır güç HİÇ
+## İLERLEME demektir — ayrı bir zamanlayıcı gerekmez, tek sayaç yeter.
+##
+## `energy_ticks` üretim biteceği eşiğin (`required_energy`) ÜSTÜNE
+## ÇIKMAZ — tıpkı `progress_ticks`'in `duration`'ı aşmaması gibi (bkz.
+## `_run_producer`). Bu sınır olmasaydı, çıktı tamponu dolduğunda (TIKALI)
+## enerji sınırsız birikir; tıkanıklık açılınca tek bir tick'te aslında
+## karşılığı olmayan birden fazla parça birden boşalırdı.
+func _run_powered_producer(station: SimStation, recipe: Recipe) -> void:
+	var delivered: int = delivered_power(station.id)
+	if delivered <= 0:
+		# Malzeme hazır ama güç yok: AÇ değil, TIKALI değil — GÜÇSÜZ. Suç
+		# bağlantıda veya jeneratörün başka yere paylaştırdığı kapasitede.
+		station.status = SimStation.Status.UNPOWERED
+		return
+
+	var required_energy: int = station.effective_duration_ticks_rounded() * station.type.power_required_per_tick
+	if required_energy <= 0:
+		station.status = SimStation.Status.RUNNING
+		return
+
+	if station.energy_ticks < required_energy:
+		station.energy_ticks = mini(required_energy, station.energy_ticks + delivered)
+		if station.energy_ticks < required_energy:
+			station.status = SimStation.Status.RUNNING
+			return
+
+	if _try_emit(station, recipe):
+		station.producing = false
+		station.progress_ticks = 0
+		station.energy_ticks -= required_energy
+		station.status = SimStation.Status.RUNNING
+	else:
 		station.status = SimStation.Status.BLOCKED
 
 
@@ -407,8 +587,12 @@ func _try_start(station: SimStation, recipe: Recipe) -> bool:
 		for slot: RecipeSlot in recipe.inputs:
 			station.take_item(station.input, slot.item.id, slot.count)
 
+	# `progress_ticks` BİLİNÇLİ OLARAK sıfırlanmaz: önceki döngüden kalan
+	# kesirli küsurat (bkz. `_run_producer`) buraya taşınıyor olabilir —
+	# sıfırlarsak her yeni döngüde o küsurat kaybolur ve kesirli süreli
+	# bloklarda (bkz. `BlockType.duration_ticks_at_level`) gerçek hız
+	# formülden yavaşça sapar.
 	station.producing = true
-	station.progress_ticks = 0
 	return true
 
 
@@ -466,6 +650,9 @@ func _planned_output(station: SimStation, recipe: Recipe) -> Dictionary:
 
 ## Tampon üretmez: girdisini çıktısına geçirir.
 func _run_buffer(station: SimStation) -> void:
+	if station.type.demand_item != null:
+		_run_trade_depot(station)
+		return
 	if station.input.is_empty():
 		station.status = SimStation.Status.STARVED
 		return
@@ -481,6 +668,39 @@ func _run_buffer(station: SimStation) -> void:
 	station.produced_total += 1
 
 
+## Trade Depot gibi TALEP KAPILI geçiş noktaları: 0. porttan gelen HERHANGİ
+## bir satılabilir üründen 1 tanesi, 1. porttan gelen Talep'ten
+## `type.demand_required` kadar birikince karşıya geçer. Talep yetersizse mal
+## elde bekler ama GEÇEMEZ — bu, Eritme Ocağı'nın "60. cevher gelene dek
+## bekle" mantığıyla AYNI aile, tek fark Talep'in tükettiği ürünün TİPİNİN
+## sabit olmaması.
+func _run_trade_depot(station: SimStation) -> void:
+	var demand_id: StringName = station.type.demand_item.id
+	var required: int = maxi(1, station.type.demand_required)
+	if int(station.input.get(demand_id, 0)) < required:
+		station.status = SimStation.Status.STARVED
+		return
+
+	var goods_id: StringName = &""
+	for key: StringName in station.input.keys():
+		if key != demand_id:
+			goods_id = key
+			break
+	if goods_id == &"":
+		station.status = SimStation.Status.STARVED
+		return
+
+	if station.total_output() >= station.type.output_capacity:
+		station.status = SimStation.Status.BLOCKED
+		return
+
+	station.status = SimStation.Status.RUNNING
+	station.take_item(station.input, goods_id, 1)
+	station.take_item(station.input, demand_id, required)
+	station.add_item(station.output, goods_id, 1)
+	station.produced_total += 1
+
+
 ## Sevkiyat gelen her ürünü yutar ve satar. Satış OTOMATİK; parası
 ## `auto_collect` kapalıyken KASAYA DEĞİL istasyonun kendi `accrued`
 ## sayacına gider — oyuncu `collect()` çağırana kadar harcanamaz. Satış
@@ -488,23 +708,56 @@ func _run_buffer(station: SimStation) -> void:
 ## bu sayaç tahsilattan BAĞIMSIZ, satış anında artar — tahsilat tıklaması
 ## burada hiçbir şeyi artırmaz, yalnızca `collect()` parayı taşır.
 func _run_sink(station: SimStation) -> void:
+	if station.type.sells_power:
+		_run_power_sale(station)
+		return
 	if station.input.is_empty():
 		station.status = SimStation.Status.STARVED
 		return
 	station.status = SimStation.Status.RUNNING
 	for item_id: StringName in station.input.keys():
 		var count: int = int(station.input[item_id])
-		station.consumed_total += count
-		var item: ItemType = ItemCatalog.find_by_id(item_id)
-		if item != null:
-			var amount: int = item.base_price * count
-			if auto_collect:
-				revenue += amount
-			else:
-				station.accrued += amount
-			sold_counts[item_id] = int(sold_counts.get(item_id, 0)) + count
-			item_sold.emit(item, count)
+		_sell(station, item_id, count)
 	station.input.clear()
+
+
+## Bir Elektrik Satış Noktası'nın satışı. Girdisi PORT değil güç sistemidir
+## (bkz. `delivered_power`) — sürekli akan gücü `power_sale_batch` birimlik
+## kesikli satış paketlerine çevirir, sonra AYNI `_sell` yardımcısını çağırır.
+## Tahsilat muhasebesi (accrued/collect) böylece normal Sevkiyat ile
+## ÇOĞALTILMADAN paylaşılır.
+func _run_power_sale(station: SimStation) -> void:
+	var delivered: int = delivered_power(station.id)
+	if delivered <= 0:
+		station.status = SimStation.Status.STARVED
+		return
+	station.status = SimStation.Status.RUNNING
+	station.energy_ticks += delivered
+	var batch: int = maxi(1, station.type.power_sale_batch)
+	while station.energy_ticks >= batch:
+		station.energy_ticks -= batch
+		_sell(station, &"elektrik", 1)
+
+
+## Satış muhasebesinin TEK yeri: normal Sevkiyat ve Elektrik Satış Noktası
+## AYNI kodu çağırır (bkz. D6 — tahsilat mantığı çoğaltılmaz).
+func _sell(station: SimStation, item_id: StringName, count: int) -> void:
+	station.consumed_total += count
+	var item: ItemType = ItemCatalog.find_by_id(item_id)
+	if item == null:
+		return
+	var item_multiplier: float = float(item_sale_multipliers.get(String(item_id), 1.0))
+	var amount: int = roundi(
+		float(item.base_price * count)
+		* station.type.sale_value_multiplier_at_level(station.level)
+		* item_multiplier
+	)
+	if auto_collect:
+		revenue += amount
+	else:
+		station.accrued += amount
+	sold_counts[item_id] = int(sold_counts.get(item_id, 0)) + count
+	item_sold.emit(item, count)
 
 
 ## Bir Sevkiyat istasyonunda BİRİKMİŞ parayı harcanabilir kasaya taşır.
@@ -552,19 +805,6 @@ func _run_research(station: SimStation) -> void:
 		var count: int = int(station.input[item_id])
 		station.consumed_total += count
 		research_counts[item_id] = int(research_counts.get(item_id, 0)) + count
-	station.input.clear()
-
-
-func _run_food(station: SimStation) -> void:
-	if station.input.is_empty():
-		station.status = SimStation.Status.STARVED
-		return
-	station.status = SimStation.Status.RUNNING
-	for item_id: StringName in station.input.keys():
-		var count: int = int(station.input[item_id])
-		station.consumed_total += count
-		food += count
-		food_produced_total += count
 	station.input.clear()
 
 
@@ -619,6 +859,31 @@ func _port_item_id(station: SimStation, port: int) -> StringName:
 
 
 func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
+	# Trade Depot gibi TALEP KAPILI bloklar: port 0 Talep HARİÇ herhangi bir
+	# ürünü kabul eder. Port 1 (Talep) ise İKİ şartla kabul eder: (1) elde
+	# ZATEN bekleyen bir mal olmalı — Talep, mal gelmeden ÖNCEDEN
+	# bankalanamaz, yoksa ilk mal geldiğinde eşik zaten aşılmış olur ve
+	# ilerleme çubuğu hiç kademeli dolmadan anında atlar (bkz. oyuncu
+	# geri bildirimi); (2) birikim `demand_required`'ı aşamaz — Eritme
+	# Ocağı'nın "60. cevher gelene dek" eşiğiyle AYNI mantık, tek fark
+	# burada sayaç mal geldiği ANDAN itibaren başlıyor.
+	if dst.type.demand_item != null:
+		var demand_id: StringName = dst.type.demand_item.id
+		if port == 1:
+			if item_id != demand_id:
+				return false
+			var has_goods: bool = false
+			for key: StringName in dst.input.keys():
+				if key != demand_id:
+					has_goods = true
+					break
+			if not has_goods:
+				return false
+			return int(dst.input.get(item_id, 0)) < maxi(1, dst.type.demand_required)
+		if port == 0:
+			return item_id != demand_id and int(dst.input.get(item_id, 0)) < dst.type.input_capacity
+		return false
+
 	var expected: Array[ItemType] = dst.type.input_items()
 	if expected.is_empty():
 		# Jenerik giriş (tampon, sevkiyat): kapasite ürün başına değil toplam.
@@ -669,9 +934,9 @@ func to_dict() -> Dictionary:
 			"consumed_total": st.consumed_total,
 			"next_link": st.next_link.duplicate(),
 			"next_output_port": st.next_output_port,
-			"assigned_worker": st.assigned_worker,
 			"level": st.level,
 			"accrued": st.accrued,
+			"energy_ticks": st.energy_ticks,
 		})
 
 	var link_data: Array = []
@@ -681,6 +946,10 @@ func to_dict() -> Dictionary:
 			"to": link.to_id, "to_port": link.to_port,
 		})
 
+	var power_link_data: Array = []
+	for link: PowerLink in _power_links:
+		power_link_data.append({"from": link.from_id, "to": link.to_id})
+
 	return {
 		"tick": tick_count,
 		"next_id": _next_id,
@@ -688,12 +957,9 @@ func to_dict() -> Dictionary:
 		"auto_collect": auto_collect,
 		"sold": _ids_to_strings(sold_counts),
 		"research": _ids_to_strings(research_counts),
-		"food": food,
-		"food_produced_total": food_produced_total,
-		"workers_total": workers_total,
-		"food_shortage": food_shortage,
 		"stations": station_data,
 		"links": link_data,
+		"power_links": power_link_data,
 	}
 
 
@@ -703,10 +969,6 @@ func from_dict(data: Dictionary) -> bool:
 	_next_id = int(data.get("next_id", 1))
 	revenue = int(data.get("revenue", 0))
 	auto_collect = bool(data.get("auto_collect", false))
-	food = int(data.get("food", GameConfig.START_FOOD))
-	food_produced_total = int(data.get("food_produced_total", 0))
-	workers_total = int(data.get("workers_total", GameConfig.START_WORKERS))
-	food_shortage = bool(data.get("food_shortage", false))
 	for key: String in data.get("sold", {}):
 		sold_counts[StringName(key)] = int(data["sold"][key])
 	for key: String in data.get("research", {}):
@@ -715,34 +977,42 @@ func from_dict(data: Dictionary) -> bool:
 	for entry: Dictionary in data.get("stations", []):
 		var type := BlockCatalog.find_by_id(StringName(entry.get("type_id", "")))
 		if type == null:
-			push_warning("Unknown workshop type: %s" % entry.get("type_id", ""))
+			if not BlockCatalog.is_removed_type_id(StringName(entry.get("type_id", ""))):
+				push_warning("Unknown workshop type: %s" % entry.get("type_id", ""))
 			continue
 		var st := SimStation.new(int(entry.get("id", 0)), type)
 		st.input = _strings_to_ids(entry.get("input", {}))
 		st.output = _strings_to_ids(entry.get("output", {}))
 		st.producing = bool(entry.get("producing", false))
-		st.progress_ticks = int(entry.get("progress", 0))
+		st.progress_ticks = float(entry.get("progress", 0.0))
 		st.produced_total = int(entry.get("produced_total", 0))
 		st.consumed_total = int(entry.get("consumed_total", 0))
 		for port_key: Variant in entry.get("next_link", {}):
 			st.next_link[int(port_key)] = int(entry["next_link"][port_key])
 		st.next_output_port = int(entry.get("next_output_port", 0))
-		st.assigned_worker = bool(entry.get("assigned_worker", not data.has("workers_total") and type.requires_worker()))
 		st.level = int(entry.get("level", 1))
 		st.accrued = int(entry.get("accrued", 0))
+		st.energy_ticks = int(entry.get("energy_ticks", 0))
 		_stations[st.id] = st
 		_ordered_ids.append(st.id)
 
 	_ordered_ids.sort()
-	if not data.has("workers_total"):
-		workers_total = maxi(workers_total, workers_assigned())
-
 	for entry: Dictionary in data.get("links", []):
-		_links.append(SimLink.new(
-			int(entry.get("from", -1)), int(entry.get("from_port", 0)),
-			int(entry.get("to", -1)), int(entry.get("to_port", 0))
-		))
+		var from_id: int = int(entry.get("from", -1))
+		var to_id: int = int(entry.get("to", -1))
+		var from_port: int = int(entry.get("from_port", 0))
+		var to_port: int = int(entry.get("to_port", 0))
+		# Kaldırılmış gıda istasyonlarına veya artık geçersiz portlara giden
+		# eski bağlantıları sessizce atla; demir hattında sahipsiz tel kalmaz.
+		if connection_problem(from_id, from_port, to_id, to_port).is_empty():
+			_links.append(SimLink.new(from_id, from_port, to_id, to_port))
 	_rebuild_link_index()
+
+	for entry: Dictionary in data.get("power_links", []):
+		var from_id: int = int(entry.get("from", -1))
+		var to_id: int = int(entry.get("to", -1))
+		if can_connect_power(from_id, to_id):
+			_power_links.append(PowerLink.new(from_id, to_id))
 	return true
 
 
@@ -753,16 +1023,21 @@ func from_dict(data: Dictionary) -> bool:
 ## hâle gelir. Bu yüzden testte her koşumda kontrol edilir.
 func state_hash() -> String:
 	var parts: PackedStringArray = PackedStringArray()
-	parts.append("t%d|r%d|c%d|g%s|f%d|p%d|w%d|h%d" % [tick_count, revenue, int(auto_collect), _stable_buffer(research_counts), food, food_produced_total, workers_total, int(food_shortage)])
+	parts.append("t%d|r%d|c%d|g%s" % [tick_count, revenue, int(auto_collect), _stable_buffer(research_counts)])
 	for id: int in _ordered_ids:
 		var st: SimStation = _stations[id]
-		parts.append("#%d:%s:%d/%d:%s:p%d%s:n%d:a%d:l%d:u%d:i%s:o%s" % [
+		parts.append("#%d:%s:%d/%d:%s:p%s:e%d%s:n%d:l%d:u%d:i%s:o%s" % [
 			st.id, st.type.id, st.produced_total, st.consumed_total,
-			"1" if st.producing else "0", st.progress_ticks,
-			str(st.status), st.next_output_port, int(st.assigned_worker),
+			"1" if st.producing else "0", "%.6f" % st.progress_ticks, st.energy_ticks,
+			str(st.status), st.next_output_port,
 			st.level, st.accrued,
 			_stable_buffer(st.input), _stable_buffer(st.output),
 		])
+	var power_parts: PackedStringArray = PackedStringArray()
+	for link: PowerLink in _power_links:
+		power_parts.append("%d>%d" % [link.from_id, link.to_id])
+	power_parts.sort()
+	parts.append("pw:" + ",".join(power_parts))
 	return "|".join(parts).sha256_text()
 
 

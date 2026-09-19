@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://chkkajs3tqfkb"]
+
+[ext_resource type="Resource" uid="uid://wsqwksxvt4ya" path="res://data/recipes/r_cevher.tres" id="1_oxrox"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_htaww"]
+
+[resource]
+script = ExtResource("2_htaww")
+id = &"mine_extractor"
+display_name = "Mine Extractor"
+accent_color = Color(0.47, 0.4, 0.32, 1)
+icon_char = "MX"
+description = "Refines Raw Ore into usable Iron Ore, 100 raw ore per ingot-ready ore, the instant the hundredth arrives. Has no pace of its own — its output speed is a direct function of how fast raw ore reaches it, so a faster mine always helps."
+recipe = ExtResource("1_oxrox")
+input_capacity = 100
+output_capacity = 8
+unlocked_at_start = true

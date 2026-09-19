@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3 uid="uid://ifcu4u5cno0b"]
+
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="1_elektrifikasyon"]
+[ext_resource type="Script" uid="uid://d1vgas3ce6n5" path="res://data/recipe_slot.gd" id="1_r1uwm"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_elektrifikasyon"]
+[ext_resource type="Resource" uid="uid://b3h5xm1kppkk4" path="res://data/block_types/jenerator.tres" id="3_elektrifikasyon"]
+[ext_resource type="Resource" uid="uid://bdtfbx2yeft16" path="res://data/block_types/elektrik_satis.tres" id="4_elektrifikasyon"]
+
+[resource]
+script = ExtResource("1_elektrifikasyon")
+id = &"elektrifikasyon"
+display_name = "Electrification"
+description = "A second, independent income line — unlocks the Generator and Power Exchange. Sell raw power on its own, or hold onto it: a future workshop will want it too."
+requires = PackedStringArray()
+cost_money = 5000
+unlocks_blocks = Array[ExtResource("2_elektrifikasyon")]([ExtResource("3_elektrifikasyon"), ExtResource("4_elektrifikasyon")])

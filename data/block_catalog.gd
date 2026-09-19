@@ -8,32 +8,34 @@ extends RefCounted
 ## preload derleme zamanında çözülür — her platformda aynı sonucu verir.
 
 const MADEN_OCAGI := preload("res://data/block_types/maden_ocagi.tres")
+const MINE_EXTRACTOR := preload("res://data/block_types/mine_extractor.tres")
 const ERITME := preload("res://data/block_types/eritme.tres")
+const JENERATOR := preload("res://data/block_types/jenerator.tres")
+const ELEKTRIK_SATIS := preload("res://data/block_types/elektrik_satis.tres")
 const PRES := preload("res://data/block_types/pres.tres")
-const HADDE := preload("res://data/block_types/hadde.tres")
-const KESIM := preload("res://data/block_types/kesim.tres")
-const MONTAJ := preload("res://data/block_types/montaj.tres")
-const KALITE := preload("res://data/block_types/kalite.tres")
-const DEPO := preload("res://data/block_types/depo.tres")
-const GERI_DONUSUM := preload("res://data/block_types/geri_donusum.tres")
 const SEVKIYAT := preload("res://data/block_types/sevkiyat.tres")
-const ARGE_LAB := preload("res://data/block_types/arge_lab.tres")
-const MADEN_OCAGI_DERIN := preload("res://data/block_types/maden_ocagi_derin.tres")
 const DAGITICI := preload("res://data/block_types/dagitici.tres")
-const FARM := preload("res://data/block_types/farm.tres")
-const MILL := preload("res://data/block_types/mill.tres")
-const BAKERY := preload("res://data/block_types/bakery.tres")
-const GRANARY := preload("res://data/block_types/granary.tres")
-const KALKAN_USTASI := preload("res://data/block_types/kalkan_ustasi.tres")
-const KASK_USTASI := preload("res://data/block_types/kask_ustasi.tres")
-const KASK_BANTCISI := preload("res://data/block_types/kask_bantcisi.tres")
+const TRADE_NETWORK := preload("res://data/block_types/trade_network.tres")
+const TRADE_DEPOT := preload("res://data/block_types/trade_depot.tres")
+
+## Eski kayıtlarda görünmesi beklenen, aktif oyundan çıkarılmış kayıt
+## türleri — yükleme sırasında sessizce atılırlar (bkz. `is_removed_type_id`).
+## v5: tarım istasyonları. v7: zırh/silah üretim zinciri (Guard Press, Helm
+## Forge, Helm Bander, Storehouse, Drawbench, Rivet Press, Assembly Press,
+## Quality Inspector, Salvage Hearth, Deep Iron Mine, Research Lab) — üç
+## aşamalı demir/elektrik akışının dışında kalan, hiçbir araştırmadan artık
+## açılamayan içerik.
+const REMOVED_TYPE_IDS: Array[String] = [
+	"farm", "mill", "bakery", "granary",
+	"kalkan_ustasi", "kask_ustasi", "kask_bantcisi", "depo", "hadde", "kesim",
+	"montaj", "kalite", "geri_donusum", "maden_ocagi_derin", "arge_lab",
+	"komur_ocagi",
+]
 
 ## Paletteki gösterim sırası — akışın doğal sırasını izler.
 const _ORDER: Array = [
-	FARM, MILL, BAKERY, GRANARY,
-	MADEN_OCAGI, MADEN_OCAGI_DERIN, ERITME, ARGE_LAB, PRES, KALKAN_USTASI,
-	KASK_USTASI, KASK_BANTCISI,
-	HADDE, KESIM, MONTAJ, KALITE, DEPO, DAGITICI, GERI_DONUSUM, SEVKIYAT,
+	MADEN_OCAGI, MINE_EXTRACTOR, ERITME, JENERATOR, ELEKTRIK_SATIS, PRES,
+	DAGITICI, TRADE_NETWORK, TRADE_DEPOT, SEVKIYAT,
 ]
 
 
@@ -49,3 +51,7 @@ static func find_by_id(type_id: StringName) -> BlockType:
 		if type.id == type_id:
 			return type
 	return null
+
+
+static func is_removed_type_id(type_id: StringName) -> bool:
+	return REMOVED_TYPE_IDS.has(String(type_id))

@@ -3,9 +3,9 @@ extends GraphNode
 
 ## Akıştaki tek bir istasyonun GÖRÜNTÜSÜ.
 ##
-## Görseli tamamen `block_type` arketipinden türer; sabit bir .tscn yoktur
-## çünkü port sayısı reçeteye göre değişir (Montaj'ın iki girişi, Kalite
-## Kontrol'ün iki çıkışı vardır).
+## Kartın sabit iskeleti `flow_block.tscn` sahnesinde, değişken port satırları
+## ise reçeteye göre burada kurulur (Montaj'ın iki girişi, Kalite Kontrol'ün
+## iki çıkışı vardır).
 ##
 ## MİMARİ: Bu düğüm hiçbir şeye SAHİP DEĞİL. Faz 2'den itibaren kuyruklar ve
 ## ilerleme simülasyonda yaşayacak, burası sadece onu yansıtacak. Şimdilik
@@ -13,6 +13,10 @@ extends GraphNode
 
 ## Port tipi — GraphEdit yalnızca aynı tipteki portların bağlanmasına izin verir.
 const PORT_TYPE_MATERIAL: int = 0
+## Güç portu AYRI tiptedir: malzeme telleri ve güç telleri asla karışmaz,
+## GraphEdit'in kendi tip denetimi bunu bedavaya sağlar (bkz. FlowCanvas).
+const PORT_TYPE_POWER: int = 1
+const COLOR_POWER := Color(0.93, 0.78, 0.24)
 
 ## Düğümün çerçevesinin anlattığı şey.
 ##
@@ -22,15 +26,11 @@ enum Display {
 	RUNNING,   ## yeşil — üretiyor
 	IDLE,      ## turuncu — malzeme veya yer bekliyor
 	UNWIRED,   ## kırmızı — bir portu boşta, akışa katılamıyor
-	UNSTAFFED,
-	HUNGRY,
 }
 
 const COLOR_RUNNING := Color(0.55, 0.73, 0.43)
 const COLOR_IDLE := Color(0.86, 0.64, 0.32)
 const COLOR_UNWIRED := Color(0.78, 0.38, 0.31)
-const COLOR_UNSTAFFED := Color(0.50, 0.49, 0.44)
-const COLOR_HUNGRY := Color(0.73, 0.43, 0.24)
 
 signal params_changed(block: FlowBlock)
 
@@ -47,13 +47,8 @@ var sim_id: int = -1
 
 ## Kullanıcının verdiği ad (varsayılan: arketipin adı).
 var block_label: String = ""
-var worker_assigned: bool = false
 
-## Denetçi panelinin okuduğu, simülasyondan yansıtılan canlı değerler —
-## `worker_assigned` ile AYNI desen (bkz. `render_state`). Denetçi
-## `FlowCanvas.block_selected` sinyaliyle doğrudan bu bloktan okuyor,
-## GameController'dan geçmiyor — o yüzden ihtiyaç duyduğu her canlı değer
-## buraya yansıtılmalı.
+## Simülasyondan yansıtılan canlı değerler.
 var level: int = 1
 var market_accrued: int = 0
 
@@ -61,9 +56,19 @@ var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
 var _progress: ProgressBar = null
 var _panel_style: StyleBoxFlat = null
-var _worker_button: Button = null
 var _upgrade_button: Button = null
 var _collect_button: Button = null
+
+## "KAPILI" bloklara ÖZEL satırlar (bkz. `_uses_gate_layout`) — bunların
+## kendi üretim temposu YOK: bir eşik dolunca ANINDA dönüşür/geçer (Eritme
+## Ocağı: 60 cevher + 6 kömür, bkz. eritme.tres/r_kulce.tres; Trade Depot: 1
+## mal + N Talep, bkz. `BlockType.demand_item`). Genel "Rate" istatistiği bu
+## yüzden onlar için anlamsız — oyuncu bunun yerine canlı girdi/çıktı akış
+## hızını ve dolum durumunu görür. Girdi sayısı bloğa göre değiştiği için
+## (bkz. `_gate_slots`) satırlar DİZİ olarak tutulur.
+var _gate_input_value_labels: Array[Label] = []
+var _gate_output_value_label: Label = null
+var _gate_current_labels: Array[Label] = []
 
 ## Son yazılan değerler. Label.text atamak font shaping tetikler; 80 düğüm ×
 ## 4 satır × 60 kare = saniyede 19.200 gereksiz shaping demek. Değişmediyse
@@ -71,9 +76,6 @@ var _collect_button: Button = null
 var _last_text: Dictionary = {}
 var _last_display: int = -1
 var _last_unwired: int = -1
-
-## Bu istasyonun üretim hızı. Sunum verisi — simülasyonda yeri yok.
-var _rate := RateMeter.new()
 
 ## Son ÇALIŞIYOR görülen tick. Durum rozetini yumuşatmak için.
 var _last_running_tick: int = -999999
@@ -98,6 +100,29 @@ func _ready() -> void:
 	_build_rows()
 	_refresh_header()
 	_refresh_stats()
+
+
+## Bu blok, reçetesi olan ama kendi SÜRESİ (temposu) olmayan türden mi?
+## Eritme Ocağı (60 cevher + 6 kömür) VE Mine Extractor (1 ham cevher) AYNI
+## aile: `duration_ticks = 0`, bir eşik dolunca ANINDA dönüşür, hızı tamamen
+## girdinin ne kadar hızlı geldiğine bağlı. İsme göre DEĞİL, YAPIYA göre
+## tespit edilir — yeni bir "anlık dönüşüm" bloğu eklendiğinde burada elle
+## kayıt gerekmez.
+func _is_instant_conversion_block() -> bool:
+	return (
+		block_type.recipe != null
+		and not block_type.recipe.inputs.is_empty()
+		and block_type.recipe.duration_ticks <= 0.0
+	)
+
+
+## Iron Mine, Trade Network gibi girdisiz kaynaklar: hiçbir şey
+## biriktirmez, sadece durmadan üretir. İlerleme çubuğu (her ~1.7 tick'te bir
+## sıfırlanıp dolan) ve "Output: x/y" satırı bu bloklarda GÖRSEL GÜRÜLTÜ —
+## anlamlı bir bekleme/darboğaz göstermiyor, sadece titreşiyor. Bu yüzden
+## SADECE Rate ve Level (varsa) gösterilir.
+func _is_free_running_source() -> bool:
+	return block_type.category == BlockType.Category.SOURCE
 
 
 ## --- Görünüm ---------------------------------------------------------------
@@ -178,8 +203,15 @@ func _build_rows() -> void:
 		add_child(row)
 		set_slot(i, has_in, PORT_TYPE_MATERIAL, accent, has_out, PORT_TYPE_MATERIAL, accent)
 
+	if block_type.power_output > 0 or block_type.power_required_per_tick > 0 or block_type.sells_power:
+		_build_power_row(row_count)
+
+	if _uses_gate_layout():
+		_build_gate_value_rows()
+
 	var sep := HSeparator.new()
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sep.visible = not _is_free_running_source()
 	add_child(sep)
 
 	_progress = ProgressBar.new()
@@ -188,10 +220,146 @@ func _build_rows() -> void:
 	_progress.show_percentage = false
 	_progress.custom_minimum_size = Vector2(0.0, 6.0)
 	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_progress.visible = not _is_free_running_source()
 	add_child(_progress)
+
+	if _uses_gate_layout():
+		_build_gate_fill_rows()
 
 	add_child(_build_stats_grid())
 	_build_action_buttons()
+
+
+## Ortak sol/sağ etiket satırı — port ve güç satırlarının kullandığı deseni
+## Eritme Ocağı'nın özel satırları için tekrarlamamak adına burada toplar.
+func _build_label_row(color: Color) -> Dictionary:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", 14)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var left := Label.new()
+	left.add_theme_font_size_override(&"font_size", 11)
+	left.add_theme_color_override(&"font_color", color)
+	row.add_child(left)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
+
+	var right := Label.new()
+	right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	right.add_theme_font_size_override(&"font_size", 11)
+	right.add_theme_color_override(&"font_color", color)
+	row.add_child(right)
+
+	add_child(row)
+	return {"left": left, "right": right}
+
+
+## Bu blok "KAPILI" mı — kendi temposu olmayan, bir eşik dolunca ANINDA
+## dönüşen/geçen türden mi? Sabit reçeteli anlık-dönüşüm blokları (bkz.
+## `_is_instant_conversion_block` — Eritme Ocağı, Mine Extractor) VE Trade
+## Depot (değişken mal + Talep, bkz. `BlockType.demand_item`) AYNI aile —
+## hepsi bu özel 4 satırlı düzeni alır (reçete satırı, canlı hız satırı,
+## ilerleme çubuğu, dolum satırı).
+func _uses_gate_layout() -> bool:
+	return _is_instant_conversion_block() or block_type.demand_item != null
+
+
+## "Kapılı" bir bloğun girdi tanımları — hem Eritme Ocağı'nın SABİT reçete
+## girdileri hem Trade Depot'un TİPİ ÇALIŞMA ANINDA belli olan "herhangi bir
+## mal + Talep" girdisi için TEK ortak kaynak. `item_id` boş (&"") ise o
+## slotun ürünü sabit değildir — gerçek adedi `_gate_slot_have`'de aranır.
+func _gate_slots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if block_type.demand_item != null:
+		out.append({"label": "Goods", "target": 1, "item_id": &""})
+		out.append({
+			"label": block_type.demand_item.display_name,
+			"target": maxi(1, block_type.demand_required),
+			"item_id": block_type.demand_item.id,
+		})
+		return out
+	if block_type.recipe != null:
+		for slot: RecipeSlot in block_type.recipe.inputs:
+			out.append({"label": slot.item.display_name, "target": slot.count, "item_id": slot.item.id})
+	return out
+
+
+## Bir "kapı" slotunun o anki dolu adedi. `item_id` boşsa (Trade Depot'un
+## "herhangi bir mal" slotu) Talep HARİÇ ilk dolu anahtar aranır.
+func _gate_slot_have(station: SimStation, slot: Dictionary) -> int:
+	var item_id: StringName = slot["item_id"]
+	if item_id != &"":
+		return int(station.input.get(item_id, 0))
+	var exclude: StringName = block_type.demand_item.id if block_type.demand_item != null else &""
+	for key: StringName in station.input.keys():
+		if key != exclude and int(station.input[key]) > 0:
+			return int(station.input[key])
+	return 0
+
+
+## Reçete satırının (ör. Iron Ore/Coal/Iron Ingot, Goods/Demand/Output)
+## hemen altında: HER girdi için bir satır — o anki ölçülen saniyelik akışı
+## (bkz. `_update_gate_values`). "Output Value" tek değer olduğundan yalnızca
+## İLK satırın sağında görünür. Bloğun kendi temposu olmadığından tek
+## anlamlı "hız" budur.
+func _build_gate_value_rows() -> void:
+	_gate_input_value_labels.clear()
+	var slots: Array[Dictionary] = _gate_slots()
+	for i in maxi(1, slots.size()):
+		var labels: Dictionary = _build_label_row(Color(0.88, 0.79, 0.61))
+		labels["left"].text = "Input Value: —"
+		_gate_input_value_labels.append(labels["left"])
+		if i == 0:
+			_gate_output_value_label = labels["right"]
+			_gate_output_value_label.text = "Output Value: —"
+
+
+## İlerleme çubuğunun hemen altında: HER girdi tamponundaki anlık sayı ve
+## dönüşümü tetikleyen hedefi (bkz. `SimStation._input_fill_ratio`/
+## `_demand_fill_ratio` — çubuğun kendisi zaten en dar boğazın oranını
+## gösteriyor, bu satırlar çiğ sayıları kaynak başına ayrı ayrı verir).
+func _build_gate_fill_rows() -> void:
+	_gate_current_labels.clear()
+	for slot: Dictionary in _gate_slots():
+		var labels: Dictionary = _build_label_row(Color(0.94, 0.85, 0.67))
+		labels["left"].text = "0"
+		_gate_current_labels.append(labels["left"])
+		labels["right"].text = str(slot["target"])
+
+
+## Güç portu satırı — malzeme satırlarından hemen sonra, sabit tek satır.
+## `block_type.power_port_index()` İLE AYNI indekste olmalı (bkz. orada).
+func _build_power_row(row_index: int) -> void:
+	var has_in: bool = block_type.power_required_per_tick > 0 or block_type.sells_power
+	var has_out: bool = block_type.power_output > 0
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", 14)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var left := Label.new()
+	left.text = "Power In" if has_in else ""
+	left.add_theme_font_size_override(&"font_size", 12)
+	left.add_theme_color_override(&"font_color", COLOR_POWER)
+	row.add_child(left)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
+
+	var right := Label.new()
+	right.text = "Power Out" if has_out else ""
+	right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	right.add_theme_font_size_override(&"font_size", 12)
+	right.add_theme_color_override(&"font_color", COLOR_POWER)
+	row.add_child(right)
+
+	add_child(row)
+	set_slot(row_index, has_in, PORT_TYPE_POWER, COLOR_POWER, has_out, PORT_TYPE_POWER, COLOR_POWER)
 
 
 ## İllüstrasyon başlığın hemen altında, düğüm gövdesinin tam genişliğinde yaşar.
@@ -223,7 +391,7 @@ func _build_stats_grid() -> GridContainer:
 		[&"rate", "Rate"],
 		[&"in", "Input"],
 		[&"out", "Output"],
-		[&"worker", "Worker"],
+		[&"power", "Power"],
 		[&"level", "Level"],
 		[&"market", "Market"],
 	]
@@ -251,14 +419,8 @@ func _build_stats_grid() -> GridContainer:
 	return grid
 
 
-## İşçi ata / Yükselt / Tahsil Et düğmeleri — düğümün kendi altında, sağ
-## paneli beklemeden tıklanabilir olsunlar diye burada yaşarlar (bkz.
-## DESIGN.md D27/D28 — sağ panel artık denetçi değil araştırma ağacı).
+## Yükselt/Tahsil Et düğmeleri doğrudan düğümün üstünde yaşar.
 func _build_action_buttons() -> void:
-	_worker_button = Button.new()
-	_worker_button.pressed.connect(func() -> void: action_requested.emit(self, &"worker"))
-	add_child(_worker_button)
-
 	_upgrade_button = Button.new()
 	_upgrade_button.pressed.connect(func() -> void: action_requested.emit(self, &"upgrade"))
 	add_child(_upgrade_button)
@@ -267,8 +429,6 @@ func _build_action_buttons() -> void:
 	_collect_button.text = "Collect"
 	_collect_button.pressed.connect(func() -> void: action_requested.emit(self, &"collect"))
 	add_child(_collect_button)
-
-
 func _refresh_header() -> void:
 	title = block_label
 	tooltip_text = "%s — %s\n%s" % [
@@ -281,20 +441,31 @@ func _refresh_stats() -> void:
 	if _stat_values.is_empty():
 		return
 	# Kaynağın girişi, bitişin çıkışı yoktur — olmayan satırı hiç göstermeyiz.
-	_set_row_visible(&"in", block_type.category != BlockType.Category.SOURCE)
-	_set_row_visible(&"out", block_type.category != BlockType.Category.SINK and block_type.category != BlockType.Category.RESEARCH and block_type.category != BlockType.Category.FOOD)
-	_set_row_visible(&"worker", block_type.requires_worker())
+	var has_power: bool = block_type.power_output > 0 or block_type.power_required_per_tick > 0 or block_type.sells_power
+	# "Kapılı" blokların kendi özel satırları (bkz. `_build_gate_value_rows`,
+	# `_build_gate_fill_rows`) aynı bilgiyi zaten veriyor — jenerik
+	# Rate/Input/Output burada tekrar görünmesin.
+	var is_gated: bool = _uses_gate_layout()
+	_set_row_visible(&"rate", not is_gated)
+	# Kategoriye değil GERÇEKTEN port olup olmadığına bakılır — Mine
+	# Extractor gibi girdisiz INSPECT'ler de (kaynak SOURCE olmasa bile)
+	# boş "Input: 0/0" satırıyla kalmasın.
+	# Girdisiz kaynaklar (Iron Mine, Trade Network) hiçbir şey
+	# biriktirmez — "Output: x/y" onlarda anlamsız titreşen bir sayı, sadece
+	# Rate ve Level (varsa) kalsın (bkz. `_is_free_running_source`).
+	var is_source: bool = _is_free_running_source()
+	_set_row_visible(&"in", not is_gated and not block_type.input_labels().is_empty())
+	_set_row_visible(&"out", not is_gated and not is_source and block_type.category != BlockType.Category.SINK and block_type.category != BlockType.Category.RESEARCH and not block_type.power_only)
+	_set_row_visible(&"power", has_power)
 	_set_row_visible(&"market", block_type.category == BlockType.Category.SINK)
 	_set_row_visible(&"level", block_type.upgradeable)
-	_write(&"worker", "No")
 	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
+	_write(&"power", "—")
 	_write(&"market", "0 gold")
 	_write(&"level", "1 / %d" % block_type.max_level)
 
-	_worker_button.visible = block_type.requires_worker()
-	_worker_button.text = "Assign worker"
 	_upgrade_button.visible = block_type.upgradeable
 	if block_type.upgradeable:
 		_refresh_upgrade_button(1)
@@ -305,19 +476,18 @@ func _refresh_stats() -> void:
 ##
 ## GameController her karede bunu çağırır. Blok simülasyonu kendisi
 ## SORGULAMAZ — durumu ona verilir.
-func render_state(station: SimStation, tick: int, unwired_ports: int, auto_collect: bool = false) -> void:
+func render_state(station: SimStation, tick: int, unwired_ports: int, auto_collect: bool = false, power_text: String = "", incoming_rates_per_sec: Array[float] = []) -> void:
 	_progress.value = station.progress_ratio()
-	worker_assigned = station.assigned_worker
 	level = station.level
 	market_accrued = station.accrued
-	_write(&"worker", "Yes" if worker_assigned else "No")
-	if block_type.requires_worker():
-		_worker_button.text = "Worker assigned" if worker_assigned else "Assign worker"
-	_rate.sample(tick, station.throughput_total())
 
 	_write(&"rate", _rate_text())
 	_write(&"in", "%d / %d" % [station.total_input(), block_type.input_capacity])
 	_write(&"out", "%d / %d" % [station.total_output(), block_type.output_capacity])
+	if not power_text.is_empty():
+		_write(&"power", power_text)
+	if _uses_gate_layout():
+		_update_gate_values(station, incoming_rates_per_sec)
 
 	if block_type.upgradeable:
 		_write(&"level", "%d / %d" % [station.level, block_type.max_level])
@@ -333,16 +503,38 @@ func render_state(station: SimStation, tick: int, unwired_ports: int, auto_colle
 
 	# Kurulum hatası akış sorununu bastırır: bir portu boştaysa oyuncunun
 	# önce onu düzeltmesi gerekir, "aç kaldı" bilgisi o hâlde yanıltıcıdır.
-	if station.status == SimStation.Status.UNSTAFFED:
-		_apply_display(Display.UNSTAFFED, unwired_ports)
-	elif station.status == SimStation.Status.HUNGRY:
-		_apply_display(Display.HUNGRY, unwired_ports)
-	elif unwired_ports > 0:
+	if unwired_ports > 0:
 		_apply_display(Display.UNWIRED, unwired_ports)
 	elif _smoothed_status(station, tick) == SimStation.Status.RUNNING:
 		_apply_display(Display.RUNNING, 0)
 	else:
 		_apply_display(Display.IDLE, 0)
+
+
+## "Kapılı" blokların (Eritme Ocağı, Trade Depot) kendi temposu yok — hızı
+## tamamen girdilerin ne kadar hızlı geldiğine bağlı. Bu yüzden ÖLÇÜLMÜŞ
+## (zamanla artan/yavaşça oturan) bir ortalama DEĞİL, üst istasyonlardan
+## PORT BAŞINA GELEN GERÇEK HIZ (`GameController._incoming_rates`,
+## formülden — anlık) kullanılır: bağlantı kurulur kurulmaz doğru değer
+## görünür, yavaşça yükselmez. Çıktı, girdilerin `rate/slot.target` oranının
+## EN KÜÇÜĞÜ — dönüşüm ancak HEPSİ yetiştiğinde olur (bkz. `_gate_slots`).
+func _update_gate_values(station: SimStation, incoming_rates_per_sec: Array[float]) -> void:
+	var slots: Array[Dictionary] = _gate_slots()
+	if slots.is_empty():
+		return
+	var output_per_sec: float = INF
+	for i in slots.size():
+		var slot: Dictionary = slots[i]
+		var rate: float = incoming_rates_per_sec[i] if i < incoming_rates_per_sec.size() else 0.0
+		if i < _gate_input_value_labels.size():
+			_gate_input_value_labels[i].text = "Input Value: %.2f/sec" % rate
+		if i < _gate_current_labels.size():
+			_gate_current_labels[i].text = str(_gate_slot_have(station, slot))
+		var ratio: int = maxi(1, int(slot["target"]))
+		output_per_sec = minf(output_per_sec, rate / float(ratio))
+	if output_per_sec == INF:
+		output_per_sec = 0.0
+	_gate_output_value_label.text = "Output Value: %.2f/sec" % output_per_sec
 
 
 ## Ham durum her tick değişir ve rozet okunmaz hâle gelir: %75 verimle
@@ -358,52 +550,34 @@ func _smoothed_status(station: SimStation, tick: int) -> SimStation.Status:
 	return station.status
 
 
-## "12.4/dk · %52" — gerçekleşen hız ve teorik tavana göre verim.
-##
-## Verim, oyuncunun asıl teşhis aracı: %100 çalışan bir istasyon darboğazdır
-## (daha fazlası gerekiyor), %40 çalışan ise bekliyor demektir ve suç başka
-## yerdedir. Durum rozeti nedenini, verim ise ne kadarını söyler.
+## Doğrudan (ölçülmemiş) saniyelik hız — o anki seviyenin reçete süresinden
+## hesaplanır. Bilinçli olarak RateMeter/geçmiş örnekleme KULLANMAZ: bir
+## geliştirmeye basılınca değer o anda yeni seviyeye zıplasın, pencere
+## dolana kadar yavaşça artıp azalmasın.
 func _rate_text() -> String:
-	var actual: float = _rate.per_minute()
-	var text: String = "%.1f/min" % actual
-	var ceiling: float = _ceiling_per_minute()
-	if ceiling > 0.0:
-		text += "  %%%d" % roundi(clampf(actual / ceiling, 0.0, 1.0) * 100.0)
-	return text
+	var per_second: float = _rate_per_second(level)
+	if per_second <= 0.0:
+		return "—"
+	return "%d/sec" % roundi(per_second)
 
 
-## Yükselt düğmesinin metni ve etkinliği — bkz. DESIGN.md D27. Statik bilgi
-## (bir sonraki seviyenin hızı) denetçide değil burada: oyuncu düğmeye
-## basmadan önce ne alacağını düğümün üstünde görmeli.
+func _rate_per_second(level_check: int) -> float:
+	var ticks: float = block_type.duration_ticks_at_level(level_check)
+	if ticks <= 0.0:
+		return 0.0
+	return float(GameConfig.TICKS_PER_SECOND) / ticks
+
+
+## Yükselt düğmesinin metni ve etkinliği. Yalnızca fiyatı gösterir — bir
+## sonraki seviyenin etkisini artık ayrıca yazmıyoruz.
 func _refresh_upgrade_button(level_now: int) -> void:
 	if ProgressionState.can_upgrade(block_type, level_now):
 		var cost: int = ProgressionState.upgrade_cost(block_type, level_now)
-		var next_pace: String = _pace_text(level_now + 1)
-		_upgrade_button.text = "Upgrade → %s (%s gold)" % [next_pace, GameConfig.format_money(cost)]
+		_upgrade_button.text = "Upgrade (%s gold)" % GameConfig.format_money(cost)
 		_upgrade_button.disabled = false
 	else:
 		_upgrade_button.text = "Max level"
 		_upgrade_button.disabled = true
-
-
-## Belirtilen seviyede bu istasyonun teorik tavan hızı — yükselt düğmesinin
-## "bir sonraki seviye ne kazandırır" bilgisini taşır.
-func _pace_text(level_check: int) -> String:
-	var ticks: int = block_type.duration_ticks_at_level(level_check)
-	if ticks <= 0:
-		return "—"
-	var per_minute: float = float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(ticks)
-	return "%.1f/min" % per_minute
-
-
-## Bu istasyonun MEVCUT seviyesinde hiç beklemeden çalışsa dakikada kaç
-## üretebileceği. Geliştirme sonrası tavan da yükselir — sabit kalsaydı
-## yükseltme sonrası verim %'si yanlışlıkla %100'e yapışık görünürdü.
-func _ceiling_per_minute() -> float:
-	var ticks: int = block_type.duration_ticks_at_level(level)
-	if ticks <= 0:
-		return 0.0
-	return float(GameConfig.TICKS_PER_SECOND) * 60.0 / float(ticks)
 
 
 ## Çerçeve rengini ve açıklayıcı ipucunu günceller.
@@ -423,12 +597,6 @@ func _apply_display(display: Display, unwired_ports: int) -> void:
 		Display.UNWIRED:
 			tint = COLOR_UNWIRED
 			explanation = "%d unlinked ports. Connect them to keep goods moving." % unwired_ports
-		Display.UNSTAFFED:
-			tint = COLOR_UNSTAFFED
-			explanation = "Assign a worker to start this workshop."
-		Display.HUNGRY:
-			tint = COLOR_HUNGRY
-			explanation = "No food for the workforce. Keep the food route running."
 		Display.RUNNING:
 			tint = COLOR_RUNNING
 			explanation = "Working."

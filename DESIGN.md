@@ -1,293 +1,343 @@
-# Fabrika Oyunu — Tasarım Belgesi
+# Iron & Ember — three-stage industrial opening
 
-> Durum: **Faz 1-4 uygulandı.** MVP oynanabilir.
-> Motor: Godot 4.6.1 · Hedef: Windows masaüstü, tek oyuncu
+## Goal
 
----
+The opening of the game is an idle/incremental loop, not a routing puzzle:
+"a few small investments earlier bought me a new production capability, and
+now I earn noticeably more." Two independent income lines open first — iron
+and electricity — and combining them is the first strong power spike.
 
-## 1. Anlayış Özeti
+## Active scope
 
-- **Ne kuruyoruz:** Node tabanlı bir fabrika oyunu. Oyuncu üretim hattını graf olarak
-  kurar, hat gerçek zamanlı çalışır, ürün satılır, gelirle araştırma ağacından yeni
-  istasyon ve ürünler açılır.
-- **Neden var:** Asıl haz kaynağı **tıkanmayı çözmek**. Kuyruklar dolar, istasyonlar aç
-  kalır, oyuncu darboğazı görür ve hattı yeniden tasarlar. Oyun bu döngü etrafında döner.
-- **Kim için:** Ön bilgi gerektirmeyen jenerik fabrika dili (cevher → külçe → levha →
-  montaj). Alan uzmanlığı gerekmez.
-- **Nasıl çalışır:** Sabit tick'li ayrık parça simülasyonu. Her istasyonun kuyruğu ve
-  ilerlemesi var. Reçeteler çoklu girdi → çıktı alabilir, yani ürün ağacı dallanır.
-- **İlerleme:** Erken oyun parayla. Finalde Ar-Ge Laboratuvarı devreye girer; son
-  araştırma para değil, laboratuvara **akıtılan ürün** ister.
-- **Tavan:** İstasyon slotu limiti. Kademeli gelişimin motoru — "yeni istasyon mu, daha
-  verimli istasyon mu" tercihi.
-- **MVP hedefi:** Oyuncunun içeriği tüketmesi **en fazla 60 dakika**.
-
-### Explicit non-goals
-
-Offline kazanç · dinamik pazar · sözleşme/sipariş sistemi · enerji şebekesi ·
-çoklu reçete seçici · birden fazla fabrika/harita · bitiş koşulu · iflas/başarısızlık ·
-ses · çoklu dil desteği.
-
----
-
-## 2. Varsayımlar
-
-| # | Varsayım | Yanlışsa etkisi |
+| Stage | Player action | Lasting result |
 |---|---|---|
-| V1 | Tek oyuncu, yerel, Windows masaüstü. Ağ yok. | Düşük |
-| V2 | Tick hızı 10/sn, hedef 60 FPS, geç oyunda ~80 istasyon tavanı. | Orta |
-| V3 | Parçalar ayrı node değil, kuyruklarda **sayaç**. Binlerce parça bedava. | **Yüksek** — performansın tamamı buna dayanıyor |
-| V4 | Simülasyon deterministik: aynı kayıt + aynı tick = aynı sonuç. | **Yüksek** — offline ve test bunu gerektiriyor |
-| V5 | İçerik veri güdümlü (`.tres`): yeni ürün/reçete/araştırma = dosya işi, kod değil. | Orta |
-| V6 | Arayüz Türkçe, i18n altyapısı yok. | Düşük |
-| V7 | Tek fabrika, tek harita. | Orta |
+| 1. Iron | Mine → Smelting Hearth → Market Stall | Ingot sales, manually collected |
+| 1b. Small investments | Mine speed (Market Stall is no longer upgradeable — see "Market sale upgrade" below) | Now directly proportional to sustainable income — see "Smelting Hearth redesign" below |
+| 2. Electrification | 1,100 gold research + 900 gold Generator + 300 gold Power Exchange | A second income line, independent of the iron route — sell raw power directly |
+| 3. Electrified Rolling | 1,600 gold research + 900 gold Electric Rolling Mill (reuses the existing Iron Forge workshop and Iron Plate item) | Ingots + a power line together beat selling either input alone |
 
----
+### Stage 1: Iron
 
-## 3. Karar Günlüğü
+Mine → Smelting Hearth → Market Stall, early manual collection, later
+automatic. Mine upgrades remain an optional, non-forced investment; Market
+Stall has none (see the content contract below).
 
-| # | Karar | Değerlendirilen alternatifler | Gerekçe |
-|---|---|---|---|
-| D1 | **Ayrık parça + tick** simülasyonu | Oran/throughput tabanlı; parti/sipariş tabanlı | Tıkanma ve kuyruk oyunun kalbi. Oran modeli sonucu doğru verir ama hissettirmez — oyun tabloya bakmaya döner. |
-| D2 | **Çoklu girdi → çıktı** reçeteler | Tek girdi→tek çıktı; tipsiz tek "parça" | Ürün ağacının dallanması buna bağlı. Diğerlerinin üst kümesi olduğu için sonradan geçmek çekirdek yeniden yazımı demek. |
-| D3 | **Aktif + duraklatmalı** zaman | Idle/offline; hibrit | Tıkanma yönetimi dikkat ister. Deterministik tick sayesinde offline'ı sonradan eklemek ucuz; tersi zor. |
-| D4 | **Sabit fiyatlı satış node'u** | Sözleşme/sipariş; dinamik pazar | "Daha çok akıt = daha çok para" bağını doğrudan hissettirir. Diğer katmanlar bunun üstüne konabilir. |
-| D5 | **Önce para, sonra Ar-Ge** | Sadece para; baştan Ar-Ge puanı | Basit başlar, derinleşir. Sadece para olursa araştırma bir bekleme sayacına döner; baştan Ar-Ge ise ilk 10 dakikayı boğar. |
-| D6 | **İstasyon slotu limiti** | Enerji şebekesi; kısıt yok | Kademeli gelişimin doğrudan karşılığı. GraphEdit sonsuz tuval olduğu için fiziksel alan kısıtı bu yapıya ters. |
-| D7 | **Jenerik fabrika teması** | Sanayi teması + oyunlaşmış sunum; fantastik dünya | Ön bilgi gerektirmez, ürün ağacı sezgisel dallanır. Ayrıca önceki içeriğin silinmesi gerekiyordu (D17). |
-| D8 | **Simülasyon ayrı model** (`RefCounted`), GraphEdit sadece vitrin | Node'ların kendisi simüle etsin | Headless test, determinizm garantisi, offline yolu açık. Alternatif simülasyonu arayüze çivilerdi. |
-| D9 | `progress` **int tick**, float değil | Float delta birikimi | Float birikimli yuvarlama hatası yapar; saatler sonra iki aynı kayıt farklı sonuç verir. |
-| D10 | İstasyon kimliği **int id**, GraphEdit düğüm adı değil | Düğüm adını kimlik saymak | "İsim = kimlik" varsayımı bu projede zaten bir bağlantı kaybı hatasına yol açtı. |
-| D11 | **İki fazlı tick** (üret → taşı) | Tek fazlı döngü | Tek fazda sonuç istasyon sırasına bağlı olurdu. İki faz "bir tick = bir adım" garantisi verir. |
-| D12 | Fire **sayaçlı**, rastgele değil | Seed'li RNG | Determinizm bedavaya gelir; oyuncu örüntüyü öğrenip plan yapabilir. Rastgelelik burada haksızlık hissi üretir. |
-| D13 | Portlar **reçeteden türer** | `BlockType`'ta elle port etiketleri | Tek gerçek kaynağı. Montaj'ın iki girişi olması reçetesinden gelir. |
-| D14 | `ResearchNode.requires` = **id listesi** | `Array[ResearchNode]` referansı | Godot resource zincirleri derinleşince kırılgan. Id ile gevşek bağlamak düzenlemeyi de ucuzlatır. |
-| D15 | Para **int** | Float para | Birikimli yuvarlama hatası. |
-| D16 | Ar-Ge MVP **finalinde tek araştırma** | MVP'de hiç yok; baştan itibaren var | En belirsiz mekaniği gerçek oyunda test eder, kapsamı şişirmeden. MVP'ye doruk noktası verir. |
-| D17 | Önceki savunma sanayi içeriği **silindi** | Saklamak / "gerçekçi mod" olarak tutmak | Kullanıcı talebi; kamuya açık paylaşımın hukuki riski. |
-| D18 | MVP'de **bitiş koşulu yok** | Kazanma ekranı | Sonraya bırakıldı, henüz netleşmedi. |
-| D19 | Başarısızlık yok, **sadece yavaşlama** | İflas / oyun sonu | Kurcalama hissini korur. |
-| D21 | Fire, hurda kutusu doluysa **zarif bozulur** — parça sağlam geçer | İstasyonun kilitlenmesi (ilk davranış) | Faz 4 tempo koşumunda çıktı: Ret portu tıkanınca Kalite Kontrol elindeki hurdaya takılıp kalıyor, takıldığı için sağlam üretimi de duruyordu. Geri dönüşüm hattı bir döngü oluşturduğundan hurda hiç boşalmıyor ve fabrikanın TAMAMI kalıcı kilitleniyordu — gelir sıfıra düşüyor, oyuncunun çıkışı kalmıyordu. Artık tıkanma altında fire oranı düşer, hat ölmez. |
-| D20 | İstasyon durumu **üç hâlli**: ÇALIŞIYOR / AÇ / TIKALI | Tek bir `blocked` bayrağı | Faz 2 denge koşumunda çıktı: AÇ ve TIKALI birbirinin **tersi** problem — aç kalan istasyonun suçlusu ÖNCEKİ, tıkananınki SONRAKİ istasyondur. Tek bayrakta birleştirmek oyunun asıl teşhis aracını kör ediyordu. |
-| D22 | **Erken oyun araştırması ürün akıtmayla açılır**, Ar-Ge Sarayı ve Dağıtıcı oyunun başında kurulabilir | Erken oyunda da para; yalnızca finalde ürün maliyeti (eski durum) | Steam yorum analizi: "yeni unlock sadece yeni node olmamalı" ve tıkanmadan sonra oyuncunun elinde her zaman aktif bir optimizasyon problemi kalmalı. Ar-Ge Sarayı finale kadar kilitliyse ürün-maliyetli araştırma mekaniği ilk 50 dakika hiç denenmiyordu. Bina maliyeti 8000→450, Dağıtıcı 1400→350 — ikisi de artık `unlocked_at_start`. `Presleme` artık 40 cevher, yeni `Kalkan Zanaati` 25 levha, `Ara Depolama` 15 kalkan (yeni ürün: Külçe+Levha → Kalkan, iki üretim kolunun ilk birleştiği nokta) ister. Geç oyun zinciri (Haddeleme'den sonrası) parayla açılmaya devam ediyor. |
-| D23 | **Kaynak rekabeti yeni içerik gerektirmez** — mevcut Dağıtıcı (ucuz/yavaş bölme) ve tekrar istasyon kurma (yatırımlı/üretken genişleme) zaten iki farklı stratejiyi destekliyor | Öncelik/oran ayarlı bölücü; kapasite artıran ayrı bir "geliştirme" mekaniği | `Kask Zanaati` ve `Kask Bantlama` (bkz. Levha/Külçe rekabeti) eklenirken YENİ bir sistem kurmak yerine var olan mekaniklerin doğal sonucuna güvenildi: Dağıtıcı round-robin böldüğü için toplam verimi ARTIRMAZ (ucuz+yavaş), ikinci Eritme/Pres kurmak parayla+işçiyle gerçek ek verim getirir (yatırımlı+üretken). Bu, hiçbir kod değişikliği gerektirmedi — yalnızca yeni talebin mevcut darboğazlara (Külçe, Levha) denk gelecek şekilde içerik tasarımı. |
-| D24 | **Erken oyun ürün-maliyetleri `tools/balance_search.gd` ile ölçülüp ayarlandı** (Presleme 40→24 cevher, Kalkan Zanaati 25→15 levha, Kask Zanaati 35→60 kalkan; Kask Bantlama 20 kask sabit) | Elle oynayıp tahmin etmek; sabit bir kural (ör. "hep %25 kazanç") | Eski `progression_test.gd` bu araştırmaları hiç bilmiyordu (slot sistemi kalıntısıydı, derlenmiyordu) — yeniden yazmak yerine YENİ bir araç kuruldu çünkü soru farklıydı: "hangi strateji (bölerek/hedefli/ayrı hat) ne kadar sürede kazanıyor". Gerçek `FactorySim`+`ProgressionState` üzerinde üç strateji simüle edildi, iki senaryoda (normal/az sermaye) sınandı. Bulgu: Kask Bantlama'da MINIMUM'un dezavantajı MİKTARDAN bağımsız yapısal (Levha'yı iki atölye için art arda bölmek zorunda) — bu yüzden orada miktar büyütülmedi, en küçük aday tutuldu. Ayrıntı ve ham veri: `tools/balance_report.md` / `.json`. |
-| D27 | **Erken oyun deneyi**: manuel market tahsilatı, Maden/Çiftlik kurulum sınırı (1), sade geliştirme sistemi, araştırma erişimi ilk geliştirmeye bağlı | Erken oyunda da otomatik satış+araştırma; sınırsız kaynak node'u | Hedef: oyuncu araştırmaya atlamadan önce "üret → tahsil et → geliştir → etkisini gör" döngüsünü yaşasın. **Tahsilat**: `FactorySim._run_sink` artık parayı `SimStation.accrued`'da biriktiriyor, `auto_collect` (Presleme'nin ödülü) açılana kadar kasaya (`revenue`) geçmiyor — satış hızı (`sold_counts`) bundan ETKİLENMİYOR. **Sınır**: `BlockType.max_instances` (Maden/Çiftlik=1) — GERÇEK istasyon sayısından hesaplanır, ayrı bir sayaç TUTULMAZ, bu yüzden silme/yükleme yolları yanlışlıkla aşamaz, eski kayıtlar budanmaz. **Geliştirme**: `SimStation.level`, reçete süresini `upgrade_duration_factor` ile çarpar (üretim HIZINI değiştirir, tampon kapasitesini değil — böylece "kaynak hızlanınca işleme sınırlayıcı olur" dinamiği gerçekleşir); yalnızca Gathering kategorisinde (Maden/Çiftlik) var — Eritme/Değirmen/Fırın gibi işleme atölyeleri bu deneyde YÜKSELTİLEMİYOR (bilinçli kısıtlama, işleme tarafı ilk deneyde sade kalsın diye), en fazla 3 seviye. **(D29'da Maden'in modeli katlanan-maliyet/toplamsal-hız olarak değişti, Çiftlik'in modeli AYNEN kaldı — kapsam dışıydı; ayrıntı D29'da.)** **Araştırma zamanlaması**: Ar-Ge Sarayı artık `unlocked_at_start` DEĞİL, `requires_first_upgrade` taşıyor — en az 1 geliştirme SATIN ALINMADAN açılmıyor; tek başına asla açılmayan bir oyuncu için 10 dakikalık bir zamanlayıcı GÜVENLİK AĞI var (birincil yol değil). Ölçüldü (`tools/intro_timing.gd`): kısa hatlar kurulunca artan parayla ilk geliştirme ANINDA karşılanabiliyor (0 sn) — tahsilat adımının BEKLENMESİ gerekmiyor, bu bilinçli bir gözlem, "ilk yatırım erişilebilir olsun" isteğiyle örtüşüyor ama tahsilat döngüsünü biraz atlanabilir kılıyor. Ar-Ge Sarayı'nın fiilen KURULMASI ~160-180 oyun-sn (~0.7-0.8 dk @4x) sürüyor, tahsilat aralığından (10-45 sn) neredeyse BAĞIMSIZ — üretim hızı, tıklama sıklığından daha belirleyici. **Bilinen sınır**: `tools/balance_lib.gd`'nin hedefli/ayrı hat stratejileri 2./3. Maden/Çiftlik KURARAK çalışıyordu — artık `max_instances` bunu engelliyor, bu araçlar bu turda güncellenmedi. **Düzeltme (aynı gün)**: Yükselt/Tahsil Et düğmeleri başta sağ paneldeki denetçideydi — oyuncunun her tıklama için önce düğümü seçip panele bakması gerekiyordu, ayrıca üst bara eklenen Market etiketi+değeri+düğmesi de bar'ın toplam genişliğini aşırıp sağ uçtaki hız/kaydet düğmelerini ekran dışına itti. İkisi de aynı kökten: aynı bilgi/eylem birden çok yerde çoğaltılmıştı. Artık `FlowBlock` kendi altına bir "Seviye" satırı, bir "Market" satırı ve Yükselt/Tahsil Et düğmelerini doğrudan basıyor (`action_requested` sinyaliyle yukarı, `FlowCanvas` üzerinden `GameController`'a); denetçi panelinden bu ikisi tamamen kaldırıldı. Üst bardaki Market etiketi tek satıra indirildi ("Market: X gold"). |
-| D26 | **Denge aracının "MINIMUM" stratejisi, çıktıyı gereksiz yere satışla bölüyordu** — gerçek oyuncu turuyla karşılaştırınca bulundu, düzeltilmedi (ayrı "Dönüştür" varyantı eklendi) | MINIMUM'un tanımını değiştirmek | Oyuncu tek zinciri "dönüştürerek" (satışı bırakıp %100 araştırmaya yönlendirerek) ~5 gerçek dakikada/4x hızda son araştırmaya ulaştı; araç "MINIMUM" için 2260 sn (~9.4 dk) raporluyordu. İki ayrı hata bulundu: (1) `ACTION_SECONDS` toplam süreye EKLENİYORDU — gerçek oyunda sim tıklama sırasında durmuyor, bu yanlış; (2) MINIMUM modeli hiçbir yeni satın alma gerekmediği hâlde çıktıyı hep {sat, laboratuvar} arasında bölüyordu — oyuncunun "dönüştürme" tarifiyle örtüşmüyordu. "Dönüştür" varyantı (bkz. `tools/balance_playtest_compare.gd`) ~6.1 dk verdi, oyuncunun ~5 dakikasına çok daha yakın. Kalan ~1 dakikalık fark açıklanamadı — telemetri olmadan iddia edilmedi. **Sonuç: mevcut MINIMUM tanımı DEĞİŞTİRİLMEDİ (kullanıcı isteği), ama gelecekteki değer önerileri için hangi strateji varyantının temel alınacağı netleşmeden güvenilir olmayacağı not edildi.** |
-| D29 | **İlk 4 aşamalı hat (Maden→Eritme→Sevkiyat→Tahsilat) ekonomisi**: Maden'de maliyeti KATLANAN/hızı TOPLAMSAL artan üretim geliştirmesi, Sevkiyat'ta maliyeti KATLANAN/değeri TOPLAMSAL artan satış geliştirmesi | Her ikisinde de aynı çarpımsal (katlanan) hız modeli; yalnızca birini geliştirilebilir bırakmak | Kapsam yalnızca bu 4 aşama — yeni node YOK, Eritme yükseltilemez halinde kaldı (D27), işçi/gıda sistemi YENİDEN TASARLANMADI. **Üretim hızı**: `BlockType.upgrade_rate_increment` (Maden'de 15.0 cevher/dk/seviye) — `duration_ticks_at_level()` HEDEF hızı (taban + artış×(seviye-1)) hesaplayıp geriye tick süresine çevirir; maliyet `upgrade_cost_growth=2.0` ile KATLANIR (150→300→600 TL) ama hız KATLANMAZ (60→75→90→105 cevher/dk) — `SimStation.effective_duration_ticks()` VE `FlowBlock`'un "sonraki hız" yazısı AYNI bu fonksiyona bakar, ikisi ayrışamaz. **Satış değeri**: `BlockType.sell_multiplier_at()` — her seviye taban fiyata TOPLAMSAL +%100 ekler (×1→×2→×3→×4, seviye farkı hep +1, ÖNCEKİ TOPLAMI katlamaz), `FactorySim._run_sink`'te `item.base_price * count * station.sell_value_multiplier()` olarak uygulanır; maliyet burada da ×2.0 katlanır (900→1800→3600 TL). **Eritme darboğaz KONTROLÜ**: eritme 2 cevheri 14 tick'te işliyor → tavanı 85.7 cevher/dk; Maden'in ilk İKİ seviyesi (60, 75 cevher/dk) bu tavanın altında TAM gerçekleşiyor, 3. seviyede (90) hafifçe (~%5) aşıyor — "ilk birkaç geliştirme görünmeyen darboğazda kaybolmasın" isteği, Eritme'ye DOKUNMADAN, yalnızca artış miktarı (15/dk) seçilerek karşılandı. **Gerçek denge** (`tools/chain_balance.gd`, ayrıntı `tools/chain_balance.md`): "hiç geliştirme alma" stratejisi PARA olarak 1-2 dakikada yeterli olsa da her zaman TAM 10 dakika sürüyor çünkü D27'nin araştırma kapısı en az 1 geliştirme ister — bu, herhangi bir geliştirme almayı otomatik olarak ödüllendiriyor. Yalnızca Maden'i 3 kez geliştirip durmak (RATE_MAX, 1050 TL) ~9 dk'da kendini ödüyor ve sonra sabit bir ek getiri veriyor — düşük risk. Yalnızca Sevkiyat'ı 3 kez geliştirip durmak (VALUE_MAX, 6300 TL) 10-14 dk'ya kadar HENÜZ ödemiyor (çarpımsal etki küçük bir tabana uygulanıyor) ama sonra katlanarak büyüyor — yüksek risk/yüksek getiri. Bu asimetri KASITLI DEĞİL, kullanıcının sabit "+%100 toplamsal, maliyet katlanır" formülünün ÇARPIMSAL bir yükseltmeyi doğası gereği TOPLAMSAL bir yükseltmeden güçlü kılmasının doğal sonucu — tek ayarlanabilir karşı ağırlık Sevkiyat'ın TABAN maliyetiydi (400→900 TL'ye çıkarıldı, büyüme oranı kullanıcı isteği gereği ×2.0 sabit kaldı). **Gıda/işçi darbogazı**: `GameConfig.START_FOOD` 30→300 (5 işçi × 1 gıda/dk upkeep ile eskiden 6 dakikada tükenip istasyonları AÇ/HUNGRY durdururdu — "hiç geliştirme alma" stratejisinin kendisi 10 dk sürdüğünden bu GÖRÜNMEYEN bir darboğaz olurdu); işçi/gıda MEKANİĞİ değişmedi, yalnızca başlangıç STOĞU büyütüldü ve kalıcı olarak sınırsızlaştırılmadı (16 dk'lık gerçek-START_FOOD koşumuyla doğrulandı). Doğrulama: 31 kontrollü geçici bir script (maliyet katlanması, hız/değer toplamsal artışı, tahsilat muhasebesi carpanlı, kayıt/yükleme + ESKİ kayıt geriye dönük uyumluluğu — eski kayıtta `level` alanı hiç yoksa varsayılan 1 = fiyat DEĞİŞMEMİŞ) yazılıp çalıştırılıp silindi; `sim_test.gd`/`workforce_test.gd` regresyonsuz geçti. **Düzeltme (aynı gün)**: kullanıcı geri bildirimiyle Sevkiyat'ın satış-değeri geliştirmesi TAMAMEN KALDIRILDI ("market stall'da upgrade'e gerek yok") — `sevkiyat.tres`'te `upgradeable` tekrar `false`, `BlockType.sell_multiplier_at()`/`SimStation.sell_value_multiplier()`/`FlowBlock`'un "Sell" satırı ve SINK dallanması SİLİNDİ (artık hiçbir yerde çağrılmıyordu, ölü kod bırakılmadı), `_run_sink` eski `base_price * count` hesabına döndü. Maden'in katlanan-maliyet/toplamsal-hız üretim geliştirmesi AYNEN duruyor — yalnızca satış tarafı geri alındı. `tools/chain_balance.md`/`chain_balance.gd` bu kararın ARDINDAN üretilen analizi kayıt altında tutuyor (tarihsel referans), güncellenmedi. |
-| D28 | **Sağ panel Denetçi DEĞİL, Araştırma ağacı** — sabit değil, sağ alttaki yüzen "Knowledge" düğmesiyle açılır, tuvale tıklayınca veya tekrar basınca kapanır | Denetçiyi korumak; Araştırmayı ayrı bir tam-ekran modal olarak bırakmak | `BlockInspector`'ın son işlevi (isim düzenleme, İşçi Ata düğmesi, salt-okunur bilgiler) sırayla ANLAMINI YİTİRDİ: bilgiler zaten düğümün üstünde (rozet, ipucu, Seviye/Market satırları — D27), İşçi Ata da Yükselt/Tahsil Et'in izinden buraya taşındı (`FlowBlock._worker_button`, `action_requested` ile `&"worker"`). Geriye kalan tek iş — seçili düğümü göstermek — hiçbir zaman gerekmiyordu artık. `block_inspector/` klasörü SİLİNDİ. Boşalan `RightSplit` yuvasına `ResearchPanel` taşındı (tam-ekran `Dim`/`Center`/`Frame` sarmalayıcısı kaldırıldı, artık `HSplitContainer`'ın normal bir çocuğu — `PanelContainer`, sabit `custom_minimum_size`). Gizliyken `HSplitContainer` onu layout'tan tamamen DIŞLAR (Container kuralı), Canvas otomatik tam genişliğe döner — ayrı bir animasyon/collapse kodu YAZILMADI. Kapatma iki yoldan: yüzen düğmeye tekrar basmak, veya `FlowCanvas._gui_input`'ta eklenen `interacted` sinyali (düğümün kendi Button'ları input'u TÜKETTİĞİ için bu sinyali TETİKLEMEZ — yalnızca boş alan/düğüm sürükleme gibi GraphEdit'in kendisine ulaşan tıklamalar). Üst bardaki "Knowledge" düğmesi kaldırıldı, yerini yüzen düğme aldı. |
-| D25 | **Araştırma takip paneli mevcut Araştırma paneline GÖMÜLÜ** (yeni pencere değil), hız ölçümü `RateMeter`'ın (D9 civarı çözülen dalgalanma sorunu) üstüne ince bir katman | Ayrı bir HUD widget'ı; kendi hız algoritmasını yazmak | "Gör → müdahale et → sonucu gör" döngüsü zaten Araştırma panelinde yaşıyor, ayrı pencere ekstra tıklama demek. `ResearchDeliveryTracker`, `RateMeter`'a yalnızca 4 salt-okunur getter (event_count, has_measurement, avg_interval_ticks, ticks_since_last_event) ekleyip MEASURING/STOPPED/VARIABLE/STABLE durumu türetir — dalgalanmayı çözen asıl algoritmaya DOKUNMAZ. Beklenmedik bulgu: Dağıtıcı gibi tipsiz istasyonların çıktı tamponu bir tick içinde dolup boşaldığından, "bu hat hangi ürünü taşıyor" sorusu ANLIK tampona bakarak neredeyse hep BOŞ dönüyordu — `FactorySim._last_transferred_item` (gerçekleşen son aktarımı hatırlayan küçük önbellek) eklenerek düzeltildi. "En yavaş ürün" ile "kök neden atölye" kasıtlı olarak AYNI ŞEY sunulmuyor — "Bul" düğmesi yalnızca DOĞRUDAN besleyen istasyonu seçip ortalıyor, zincirde geriye otomatik yürümüyor (kapsam sınırı, D-notu). |
+### Smelting Hearth redesign — no pace of its own
 
----
+The Hearth used to have its own fixed processing duration (a "capacity"),
+which meant its throughput hit a hard ceiling that the Mine could exceed
+even at level 1 — Paket C's first measurement pass proved mine upgrades were
+doing almost nothing as a result (see the old finding in git history / the
+previous revision of this section). Fixed per user instruction: the Hearth
+no longer has a duration at all (`r_kulce.tres` `duration_ticks = 0`).
+Instead it needs **6 ore** to accumulate in its input before it converts
+them to **1 ingot**, and that conversion happens the instant the sixth ore
+arrives — there is no separate timer competing with delivery speed. This
+means the Hearth's output rate is now a pure function of how fast ore
+reaches it: `ingot/min = ore/min ÷ 6`, with no independent ceiling. Every
+Mine upgrade now translates directly into more ingots — re-measured in
+Paket C below.
 
-## 4. Tasarım
+This also changes what the node's "Rate" stat shows for the Hearth: since it
+has no intrinsic pace (`duration_ticks_at_level` is 0), it displays "—"
+rather than a number — showing a ceiling would be dishonest here, there
+isn't one to show.
 
-### 4.1 Katmanlar
+### Stage 2: Electrification (new)
 
-```
-SUNUM      GraphEdit · FlowBlock · Palet · Araştırma paneli · Üst bar
-           (hiçbir şeye sahip değil, sadece yansıtır)
-              ↑ sinyal              ↓ komut
-ORKESTRA   GameController
-              ↑ sinyal              ↓ komut
-MANTIK     FactorySim · Economy · ResearchTree      ← gerçeğin sahibi
-VERİ       ItemType · Recipe · BlockType · ResearchNode  (.tres)
-```
+`Generator → Power Exchange`, gated by the **Electrification** research
+(1,100 gold, no prerequisite — reachable independently of the iron branch's
+own research, though its 1,100 gold naturally tends to come from iron sales
+early on).
 
-Kural: **sinyal yukarı, çağrı aşağı.** Sunum katmanı veriyi asla doğrudan değiştirmez.
-Simülasyon `Node` değil `RefCounted` — sahne ağacında yaşamaz, `_process` kullanmaz.
+- **Generator**: 900 gold, produces a constant power *capacity* every tick
+  (40 kW at level 1, +15 kW per upgrade level up to level 4). It does not
+  consume ore or ingots — this is the point: a second, self-contained income
+  line. Capacity is never stockpiled; whatever isn't drawn a given tick is
+  simply not sold that tick, exactly like an idle mine wastes no ore but also
+  banks none in advance.
+- **Power Exchange**: 300 gold, a Market-Stall-twin for electricity. Wire a
+  Generator to it and it sells whatever power arrives, batched into 100-kW
+  units at 4 gold each (reuses the Market Stall's `accrued`/`collect`
+  accounting exactly — no parallel bookkeeping).
+- At level 1, running a Generator flat-out into a Power Exchange yields
+  roughly 960 gold/min — matching the post-Forge iron income, so the second
+  branch feels like a real payoff, not a filler mechanic.
 
-### 4.2 Simülasyon çekirdeği
+### Stage 3: Electrified Rolling (repurposed, not duplicated)
 
-```gdscript
-class SimStation:                 # RefCounted
-    var id: int                   # kalıcı kimlik
-    var type: BlockType
-    var recipe: Recipe
-    var input: Dictionary         # item_id -> adet
-    var output: Dictionary
-    var progress_ticks: int
-    var next_output_link: int     # round-robin sayacı
+Per the brief, this reuses the **existing** Iron Forge workshop and Iron
+Plate item rather than adding a parallel "rolling mill" — the project
+already has an unrelated "Drawbench" workshop with that name for a later
+plate→rod step, so a second one would have collided both in name and in
+function.
 
-class SimLink:
-    var from_id: int;  var from_port: int
-    var to_id: int;    var to_port: int
-```
+- The Iron Forge (`pres.tres`, now displayed as **Electric Rolling Mill**)
+  keeps its ingot → plate recipe and 900 gold build cost, but now also draws
+  **24 kW** from a connected Generator to run at full speed. Underpowered, it
+  slows proportionally (energy accumulates instead of raw ticks — see
+  `FactorySim._run_powered_producer`); at zero power it does not advance at
+  all. Out of ingots, it does not run regardless of power — power alone
+  never substitutes for the material input.
+- Its research (`presleme.tres`, now **"Electrified Rolling"**) now
+  `requires` **Electrification** — the player must have already opened the
+  power branch before this unlock is even offered, so the mandated
+  iron → electricity → combined-mill order can't be skipped. Cost stays at
+  1,600 gold, matching the previous Iron Forging balance point.
+- The old armor/weapon production chain that used to sit downstream of the
+  Iron Forge (Drawbench, Rivet Press, Assembly Press, Quality Inspector,
+  Storehouse, Salvage Hearth, Deep Iron Mine, Research Lab, and their ten
+  research nodes) has been **removed** rather than re-gated — it was
+  medieval-flavored leftover content outside this round's three-stage scope,
+  not something the brief asked to preserve. Their block/item ids are listed
+  in `BlockCatalog.REMOVED_TYPE_IDS` so old saves referencing them still load
+  cleanly (the stations are silently dropped, same as the old farm-era ids).
+- **Automation** is its own research now (1,200 gold, requires Electrified
+  Rolling) rather than a side effect of Electrified Rolling — discovering it
+  sets the single factory-wide `auto_collect` flag, so every Sevkiyat station
+  (Market Stall, Power Exchange) stops needing manual collection at once, not
+  just the Mill's own output.
 
-**Tıkanma mekaniği:** `output` dolu bir istasyon yeni üretime başlayamaz. Dolu çıktı →
-istasyon durur → ondan öncekinin çıktısı dolar → tıkanma zincir boyunca geriye yürür.
-Oyuncunun göreceği ve çözeceği şey bu.
+### Power sharing (new)
 
-### 4.3 Tick döngüsü
+A dedicated, deterministic power system, separate from the material-flow
+graph:
 
-```gdscript
-func tick() -> void:
-    _tick_count += 1
-    _phase_produce()    # üret / ilerlet
-    _phase_transfer()   # çıktıdan komşunun girdisine taşı
-```
+- Power connections are a **distinct port type** (`PORT_TYPE_POWER`) in the
+  flow canvas — Godot's own `GraphEdit` connection-type check keeps power
+  and material wires from ever being cross-wired by accident.
+- Each tick, a Generator's capacity is handed out in a fixed, explainable
+  order: connected **production** consumers (the Electric Rolling Mill) are
+  served first, up to what they actually want that tick (nothing if they
+  have no ingots queued); whatever capacity remains goes to connected **sale**
+  consumers (the Power Exchange), split evenly if more than one is wired.
+  A consumer draws from exactly one Generator — no double-counted capacity.
+- No manual ratios or priority menus in this pass, matching the brief. The
+  player can always disconnect the Mill's power line to fall back to selling
+  100% of a Generator's output directly.
 
-**Üretim fazı** (her istasyon):
-- Üretim sürüyorsa `progress_ticks += 1`; dolduğunda çıktı `output`'a düşer
-- Boştaysa **ve** girdi reçeteyi karşılıyorsa **ve** çıktıda yer varsa → girdiyi tüket,
-  üretime başla
-- Kaynak istasyon girdi istemez, sabit aralıkla üretir
-- Sevkiyat girdiyi yutar ve `Economy`'ye satışı bildirir
+## Paket C — measured three-stage progression (roadmap.md §5)
 
-**Taşıma fazı:** her çıkış portundaki bağlantılar **round-robin** denenir. Bir çıkışta iki
-bağlantı varsa yük kendiliğinden dengelenir, determinizm bozulmaz.
+`tools/iron_progression_test.gd` was rewritten against the current content:
+real `FactorySim`/`ProgressionState`, the actual Electrification →
+Electrified Rolling → Automation prerequisite chain, real power wiring (the
+Mill and every Generator are actually connected, not assumed), and the
+Automation research gate instead of flipping `auto_collect` directly. It was
+**actually run** (`godot --headless --path . --script
+res://tools/iron_progression_test.gd`, Godot 4.6.1) — this is measured data,
+not a hand calculation.
 
-**Neden iki faz:** Tek fazda id'si küçük zincirler bir tick'te baştan sona akar, büyükler
-beklerdi. İki faz "bir tick'te her ürün en fazla bir adım ilerler" garantisi verir.
+Five routes, same 1,000 gold start, same fixed iron opening, 30-game-second
+collection interval, 40-game-minute stall ceiling. All five reach the full
+Electrification → Electrified Rolling → Automation sequence (none stalled).
+"Sürdürülebilir" is gold/min measured over 4 game-minutes after Automation.
 
-**Hız kontrolü:**
-```gdscript
-_accumulator += delta * TICKS_PER_SECOND * speed   # temel 10 tick/sn
-while _accumulator >= 1.0 and processed < MAX_PER_FRAME:
-    sim.tick(); _accumulator -= 1.0; processed += 1
-```
-`MAX_PER_FRAME` tavanı zorunlu — yoksa bir kare takıldığında tick borcu birikir ve oyun
-kendini daha da yavaşlatarak geri dönemez hâle gelir.
+**Re-measured twice since the original pass**: once after the Smelting
+Hearth redesign (6 ore → 1 ingot, no timer, `input_capacity` 8→6), and once
+more after capping the Generator at `max_instances = 1`. Numbers below are
+current; earlier revisions of this table (still in git history) are
+superseded. The "Generator duplication" route is kept in the table on
+purpose, now as a **negative control** proving the cap works — it can no
+longer build a second Generator, so it degrades to exactly the "Accumulate"
+numbers.
 
-### 4.4 Veri modeli
+| Route | Total spent | Reaches Automation | 4× real time | Mine/Exchange upgrades / Generators | Sustainable income |
+|---|---:|---:|---:|---|---:|
+| Accumulate (no investment) | 6,650 | 23:30 | 5:52 | 0 / 0 / 1 | 1,184 gold/min |
+| Mine-focused (3 upgrades) | 7,700 | 22:30 | 5:37 | 3 / 0 / 1 | 1,336 gold/min |
+| Power Exchange-focused (3 upgrades) | 8,050 | 23:30 | 5:52 | 0 / 3 / 1 | 1,616 gold/min |
+| Mixed (mine + exchange) | 9,100 | 22:30 | 5:37 | 3 / 3 / 1 | **1,738 gold/min** |
+| Generator duplication (now capped — cannot build a 2nd) | 6,650 | 23:30 | 5:52 | 0 / 0 / 1 | 1,184 gold/min (= Accumulate) |
 
-```gdscript
-class_name ItemType extends Resource
-    id, display_name, color, icon_char
-    base_price: int               # int — float para yuvarlama hatası yapar
+### Findings
 
-class_name Recipe extends Resource
-    inputs:  Array[RecipeSlot]    # RecipeSlot = { item: ItemType, count: int }
-    outputs: Array[RecipeSlot]
-    duration_ticks: int
+1. **Fixed: Mine upgrades now matter.** "Mine-focused" beats "Accumulate" on
+   both speed (22:30 vs 23:30 to Automation) and sustainable income (1,336
+   vs 1,184 gold/min) — three mine upgrades costing 1,050 gold are now a
+   genuinely good trade, because the Hearth has no independent ceiling to
+   hide behind any more.
+2. **Expected pacing shift, not a bug.** Reaching Automation went from
+   ~7:30–10:30 game-minutes (old duration-based Hearth) to ~22:30–25:00 —
+   roughly 3× longer — because level-1 ingot output dropped from ~42.9/min
+   to 10/min (60 ore/min ÷ 6). Direct consequence of "6 ore per ingot, tied
+   to mining speed" as specified. Still open if the pacing itself needs
+   further tuning (ore/ingot prices, the 6:1 ratio) — not touched here.
+3. **Fixed: Generator capped at 1, duplication no longer possible.** Before
+   the cap, 3 Generator+Exchange pairs beat every other route by ~2×
+   (11,750 spent → 3,104 gold/min). With `max_instances = 1`, that route
+   degrades to exactly the Accumulate numbers, confirmed by measurement
+   (same 6,650 spent, same 23:30, same 1,184 gold/min — not approximately
+   equal, *identical*, since it's now mechanically the same route). **Mixed
+   is now the best measured strategy** (1,738 gold/min) — a player who
+   wants to maximize income now has a real reason to invest in both the
+   Mine and the Power Exchange, and no reason to try to spam Generators
+   instead of engaging with the Mill/upgrade systems.
 
-class_name ResearchNode extends Resource
-    requires: PackedStringArray   # id listesi (Resource referansı değil)
-    cost_money: int
-    cost_items: Array[RecipeSlot] # doluysa Ar-Ge Lab gerektirir
-    unlocks_blocks: Array[BlockType]
-    slot_bonus: int
-```
+Full per-route event timelines (first collection, each research purchase,
+each construction, first small investment) are printed by the tool itself,
+not duplicated here — see the "OZET TABLO" and per-route sections in its
+stdout.
 
-`BlockType` sadeleşir: kimlik, görsel, maliyet ve **bir reçete referansı** tutar. Port
-etiketleri reçeteden türetilir.
+## Paket A — current behavior contract (roadmap.md §3)
 
-### 4.5 MVP içeriği
+Raw values pulled directly from the `.tres`/`.gd` source of truth as of this
+pass, plus the ambiguities `roadmap.md` flagged, resolved or explicitly left
+open. This section is the single comparison table Paket A's exit condition
+asks for.
 
-**Ürün ağacı — 6 kademe**
+### Starting state
 
-| Ürün | Reçete | Fiyat |
-|---|---|---|
-| Cevher | (Maden Ocağı üretir) | — |
-| Külçe | 2 Cevher | 10₺ |
-| Levha | 1 Külçe | 28₺ |
-| Çubuk | 1 Levha | 26₺ |
-| Vida | 1 Çubuk → 2 Vida | 20₺ |
-| **Gövde** | 2 Levha + 3 Vida | **150₺** |
+- Start money: **1,000 gold** (`GameConfig.START_MONEY`).
+- Simulation rate: **10 ticks/second** (`GameConfig.TICKS_PER_SECOND`) — 1
+  tick = 0.1 s. Every "per tick" number below is on this clock.
+- Buildable from the start (`unlocked_at_start = true`): Iron Mine, Smelting
+  Hearth, Market Stall, Crossroads.
 
-**Araştırma sırası — 10 düğüm**
+### Content table
 
-Presleme → Fabrika Genişlemesi I → Haddeleme → Kesim → Fabrika Genişlemesi II →
-Ara Depo → **Montaj** → Kalite Kontrol → Geri Dönüşüm + Ar-Ge Lab →
-**Otomasyon II** (150 × Gövde ister)
+| Workshop | Build cost | Recipe | Duration | Cap on count | Upgradeable | Power |
+|---|---:|---|---:|---|---|---|
+| Iron Mine | 250 | — → 1 Ore | 10 ticks | 1 (`max_instances`) | Yes, base 150g ×2/lvl, +15 ore/min per level, max lvl 4 | — |
+| Smelting Hearth | 400 | 6 Ore → 1 Ingot | 0 ticks (instant on 6th ore — no pace of its own, see "Smelting Hearth redesign") | none | No | — |
+| Generator | 900 | — (power only) | — | 1 (`max_instances`, see "Generator instance cap") | Yes, base 300g ×2/lvl, +15 kW per level, max lvl 4 | produces 40 kW (lvl 1) |
+| Power Exchange | 300 | — (power only) | — | none | Yes, base 200g ×2/lvl, +20% sale value per level, max lvl 4 | consumes, sells in 100-kW batches |
+| Electric Rolling Mill | 900 | 1 Ingot → 1 Plate | 10 ticks | none | No | needs 24 kW/tick while active |
+| Market Stall | 0 | — (sells anything) | — | none | **No — see "Market sale upgrade" below** | — |
+| Crossroads | 350 | — (splits one route into two) | — | none | No | — |
 
-Slotlar: başlangıç **5** → Genişleme I **9** → Genişleme II **14**
+Item prices: Iron Ore 2g, Iron Ingot 10g, Iron Plate 32g, Electricity 4g per
+100-kW-tick batch.
 
-> Bu sayılar `tools/progression_test.gd` ile ÖLÇÜLEREK ayarlandı, tahmin edilmedi.
-> İlk koşum 231 dakika verdi (hedef 60) ve son aşamaya hiç ulaşılamadı. Üç turda
-> maden ocağı hızı iki katına çıkarıldı, gövde fiyatı 150 → 220 yapıldı ve
-> araştırma maliyetleri yaklaşık yarıya indirildi. Son ölçüm: **63.3 dakika.**
+### The three researches
 
-**Ölçülen tempo (son hâli)**
+| Research | Requires | Cost | Unlocks | Cumulative cost from scratch |
+|---|---|---:|---|---:|
+| Electrification | none | 1,100 | Generator + Power Exchange | 1,100 + 900 + 300 = **2,300** |
+| Electrified Rolling | Electrification | 1,600 | Electric Rolling Mill | 2,300 + 1,600 + 900 = **4,800** |
+| Automation | Electrified Rolling | 1,200 | (no new workshop — sets `auto_collect`) | 4,800 + 1,200 = **6,000** |
 
-| Aşama | Süre |
-|---|---|
-| Başlangıç hattı | 0.0 dk |
-| Pres | 6.9 dk |
-| İkinci ön hat | 10.1 dk |
-| Vida hattı | 18.0 dk |
-| Montaj hattı | 33.0 dk |
-| Kalite Kontrol | 39.4 dk |
-| Ar-Ge Laboratuvarı | 50.9 dk |
-| Derin Maden (final) | 63.3 dk |
+A research being **purchased** (`ProgressionState.unlocked[id] = true`) and a
+workshop **actually producing** are deliberately different events: buying
+Electrification only makes the Generator and Power Exchange buildable in the
+palette. The player still has to spend their build cost, place them, and
+wire power before either earns anything. `iron_progression_test.gd`
+conflating these two events (see the "not yet verified" note) is exactly the
+bug Paket C exists to fix; any test or UI code added later must keep
+"unlocked" and "wired and running" as separate checks, not infer one from
+the other.
 
-### 4.6 Sunum katmanı
+### Collection, automation, and sale-rate semantics
 
-`FlowBlock` artık sim id tutar ve her kare durumunu okur: ilerleme çubuğu, giriş/çıkış
-kuyruk sayaçları, `TIKALI` rozeti. Palet sadece açılmış istasyonları gösterir, kilitliler
-soluk durur. Üst bara para / slot (7/9) / hız kontrolü girer. Araştırma paneli yeni.
+- Every Sevkiyat-category station (Market Stall, Power Exchange) sells on
+  contact: `sold_counts` and the node's `Rate` stat both update the instant a
+  sale happens, whether or not anyone has clicked Collect.
+- Before Automation: sale proceeds sit in that station's own `accrued` and
+  are **not spendable** until `collect()` moves them to the treasury
+  (`FactorySim.revenue`). Clicking Collect never changes the sale rate — it
+  only moves already-earned gold into the spendable balance.
+- After Automation (`auto_collect = true`): this is a single **factory-wide**
+  flag, not per-station. The instant it flips, every Sevkiyat station's
+  future sales go straight to `revenue`, and any gold already sitting in
+  `accrued` anywhere is swept once (`collect_all()`) so it isn't stranded.
+  There is no way to automate only the Market and not the Power Exchange, or
+  vice versa, in the current model.
 
-Güncelleme **tek bir döngüden** yapılır: `GameController` her karede sim'i okuyup
-FlowBlock'lara yazar — 80 node'un her birine ayrı `_process` konmaz. `Label.text` yazmak
-pahalı olduğundan (font shaping) değer değişmediyse yazılmaz.
+### Market sale upgrade — resolved
 
-Kablolarda akan noktalar MVP kapsamı dışında.
+`roadmap.md` flagged a mismatch between README's old "invest in Market sale
+value" narrative and `sevkiyat.tres` not actually being upgradeable.
+Resolved this pass, by explicit instruction: **Market Stall's upgrade was
+removed on purpose** (no `upgradeable`, no `sale_value_bonus_per_level` in
+`sevkiyat.tres`). This was not a silent revert — it's this round's decision.
+The old README/DESIGN prose describing it as a live investment option is
+stale and should not be treated as current behavior. Power Exchange keeps
+its own, separate upgrade (`+20% sale value/level`) — the asymmetry between
+the two Sevkiyat-category stations is intentional, not an oversight.
 
-### 4.7 Kaydetme
+### Power unit — defined
 
-Mevcut JSON şeması genişler: sim durumu (kuyruklar, progress, tick sayacı), para ve
-açılmış araştırmalar eklenir. `FORMAT_VERSION` zaten mevcut, geriye dönük kırılma olmaz.
-Konumlar `Vector2` yerine ayrı `x`/`y` float olarak yazılmaya devam eder.
+- **Capacity**: an integer "power unit" a Generator makes available every
+  tick (`power_output_at_level`), labeled "kW" in the UI as flavor, not a
+  real physical unit. It is never stockpiled — unclaimed capacity in a tick
+  is simply not delivered that tick, full stop, not banked for later
+  (`FactorySim._phase_power` rebuilds `_delivered_power` from zero every
+  tick).
+- **Delivered energy equivalent** (Mill): the Mill needs
+  `power_required_per_tick` (24) every tick it's actively running; over one
+  item's `duration_ticks_at_level` (10 at level 1) that's 240 energy units
+  total. At full power this completes in exactly 10 ticks — the same pace as
+  if power didn't exist — because delivered power is capped at exactly what
+  the Mill asked for (see `_phase_power`'s `mini(remaining, request)`), so
+  above-100% power never speeds it up further.
+- **Sale fraction** (Power Exchange): power is not sold per-unit; it
+  accumulates in `energy_ticks` and converts to one discrete sale every
+  `power_sale_batch` (100) units, each batch worth the Electricity item's
+  `base_price` (4 gold, × the Exchange's own level multiplier). So the
+  effective price is "4 gold per 100 kW-ticks delivered," not "4 gold per
+  kW."
 
-### 4.8 Test stratejisi
+### Power sharing order for multiple consumers — documented
 
-- **Denge koşumu:** bir hat kur, 36.000 tick (≈1 saat) koştur, gelir/dk ve ürün/dk ölç.
-- **Determinizm testi:** iki özdeş koşum → aynı durum parmak izi.
-- **Kaydet/yükle turu:** kayıttan devam eden koşum, kesintisiz koşumla aynı sonucu vermeli.
-- **Tıkanma ve açlık testleri:** zincirin geriye doğru dolduğu, ve açlığın tıkanmayla
-  karışmadığı doğrulanır.
+`FactorySim._phase_power()` processes each Generator's connected consumers
+in **ascending station id order**, in two passes:
 
-Hepsi `tools/sim_test.gd` içinde:
+1. **Production consumers** (Mill-type) go first, each taking up to its full
+   request (24) from whatever capacity is still left when its turn comes —
+   this is **priority by id, not a fair split**. The lowest-id Mill always
+   gets served first and takes its full request off the top; a second Mill
+   sharing the same Generator gets whatever's left, which can be a *partial*
+   amount (genuine proportional slowdown, e.g. 16 of 24 needed) or nothing at
+   all if the first Mill already exhausted the capacity. There is no
+   rotation between ticks — the same Mill always wins if nothing changes.
+2. Whatever capacity remains after every production consumer is served is
+   split **evenly** across connected sale consumers (Power Exchanges),
+   remainder going to the lowest ids first.
 
-```bash
-godot --headless --path . --script res://tools/sim_test.gd
-```
+This asymmetry (winner-take-all for production, even split for sale) is
+intentional and matches the "simple, explainable, no priority menus" brief —
+but it is a real behavior a player with two Mills would notice, and is not
+currently surfaced anywhere in the UI beyond each node's own delivered/kW
+stat. Recorded here so Paket B's test list and any future UI work start from
+the same rule instead of two different guesses.
 
-Test koşumu, hiç kontrol çalışmadıysa yanlışlıkla "geçti" demesin diye beklenen
-kontrol sayısını da doğrular — bu bir kez başımıza geldi.
+### Generator instance cap — resolved
 
-Bu koşumların mümkün olması, D8'i (ayrı simülasyon modeli) seçmemizin asıl getirisidir.
+`jenerator.tres` now has `max_instances = 1`, matching the Iron Mine. This
+was a direct user decision after Paket C's measurement showed uncapped
+duplication (3 Generator+Exchange pairs) beating every other strategy by
+roughly 2× for comparable cost/time — see "Findings" under Paket C, and the
+re-measurement below confirming the fix. A player who tries to build a
+second Generator now gets the same "capped, upgrade the existing one
+instead" message the Mine already gives (`GameController._on_add_requested`,
+generic on `max_instances`, no new code needed).
 
----
+## Save migration
 
-## 5. MVP tempo taslağı (60 dakika)
+Save v6 adds the power system (Generator/Power Exchange connections, the
+Mill's energy accumulator) on top of v5's iron-route migration. Older v5 (and
+v3–v4) saves load fine with no power stations or power links — the new
+fields default to empty/zero and nothing is lost. Removed farm-era AND
+removed armor/weapon-chain station types are both silently dropped the same
+way (see `BlockCatalog.REMOVED_TYPE_IDS`).
 
-| Dakika | Ne olur | Yeni gelen |
-|---|---|---|
-| 0–5 | Maden Ocağı → Eritme → Sevkiyat. Külçe sat, para aksın. | temel döngü |
-| 5–15 | Pres açılır, Levha külçeden değerli. **İlk darboğaz:** Eritme yetişmiyor. | zincir uzatma |
-| 15–25 | İkinci Eritme al → **slot dolar.** Fabrika genişlemesi araştır. | kıtlık |
-| 25–40 | Hadde + Kesim. **Montaj açılır** — iki ayrı hattı birleştirmek. | asıl tasarım problemi |
-| 40–50 | Kalite Kontrol + Geri Dönüşüm. Fire çıkar, geri besleme hattı kur. | döngüsel graf |
-| 50–60 | **Ar-Ge Laboratuvarı.** Son araştırma para değil, akıtılan ürün ister. | ikinci döngü |
+## Not yet verified
 
----
+Tracking `roadmap.md`'s package list — see there for the authoritative
+sequencing. **Paket A, B, and C are done and were actually run** (Godot
+4.6.1, `godot --headless`), not just reasoned through:
 
-## 6. Riskler
+- Paket B: `sim_test.gd`, 35/35 checks passed (one bug found and fixed along
+  the way — see roadmap.md §4).
+- Paket C: `iron_progression_test.gd`, all 5 routes reached Automation; see
+  the measured table and two open findings above.
 
-| Risk | Azaltma |
-|---|---|
-| **60 dk tempo ilk denemede tutmaz** (en büyük risk) | Tüm süre/fiyat sayıları tek yerde; headless koşumla ölç, tahmin etme |
-| Tıkanma sinir bozucu olabilir | Tıkalı istasyon net işaretlenir; oyuncu **neden** tıkandığını görmeli |
-| Montaj öğrenme eşiği — MVP'nin zirvesi, kavranmazsa oyun orada biter | Montaj açılınca örnek düzen ipucu göster |
-| GraphEdit 80+ node'da yavaşlayabilir | Sim zaten ayrı; sıkışırsak sadece görsel kısılır, oyun bozulmaz |
+Still open:
 
----
-
-## 7. Mevcut durum (bu tasarımdan önce hazır olan)
-
-GraphEdit tuvali, sürükle-bırak palet, `BlockType` resource sistemi, parametre denetçisi,
-JSON kaydet/yükle, darboğaz özeti. Mimari zaten "sinyal yukarı / çağrı aşağı" kuralına
-uygun — simülasyon katmanı bunun **altına** girecek, üstüne değil.
-
----
-
-## 8. Sırada ne var
-
-Faz 1-4 uygulandı. Kalan işler, ertelenmiş kararlar ve devam ederken
-hatırlanması gerekenler: **[TODO.md](TODO.md)**
-
-Kısaca: Montaj ipucu, bağlanmamış Ret portu uyarısı, çıkış oranı kontrolü
-kararı, denge ince ayarı ve kablolarda akan noktalar. Hepsinin önceliği
-gerçek oynanış geri bildirimine bağlı — o yüzden ilk adım kod yazmak değil,
-oyunu 10-15 dakika oynamak.
+- **Paket D** (balance tuning) — now unblocked, with Paket C's measurements
+  to work from instead of guesses. The Generator-cap decision and the
+  Smelting Hearth throughput-ceiling problem are the concrete starting
+  points.
+- Whether 24 kW / 40 kW reads as a legible "the Mill is eating most of my
+  power" moment in the actual flow-canvas UI, versus just being two numbers
+  in a stats grid, is unplayed (Paket E/F territory) — none of this pass's
+  testing was visual/interactive, only headless simulation.

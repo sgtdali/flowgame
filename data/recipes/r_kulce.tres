@@ -8,7 +8,7 @@
 [sub_resource type="Resource" id="Resource_aowef"]
 script = ExtResource("1_5h6pk")
 item = ExtResource("2_bitfw")
-count = 2
+count = 60
 
 [sub_resource type="Resource" id="Resource_4g7l2"]
 script = ExtResource("1_5h6pk")
@@ -19,4 +19,4 @@ script = ExtResource("4_uvual")
 id = &"r_kulce"
 inputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_aowef")])
 outputs = Array[ExtResource("1_5h6pk")]([SubResource("Resource_4g7l2")])
-duration_ticks = 14
+duration_ticks = 0

@@ -18,7 +18,6 @@ const _CATEGORY_ORDER: Array[BlockType.Category] = [
 	BlockType.Category.SPLITTER,
 	BlockType.Category.RESEARCH,
 	BlockType.Category.SINK,
-	BlockType.Category.FOOD,
 ]
 
 @onready var _list: VBoxContainer = %List

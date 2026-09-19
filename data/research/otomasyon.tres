@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ResearchNode" format=3]
+
+[ext_resource type="Script" uid="uid://cll4hkhjverc7" path="res://data/research_node.gd" id="1_otomasyon"]
+
+[resource]
+script = ExtResource("1_otomasyon")
+id = &"otomasyon"
+display_name = "Automation"
+description = "Sales no longer wait at the workshop to be collected by hand — every Sevkiyat station (Market Stall, Power Exchange, and beyond) pays straight into the treasury as it sells."
+requires = PackedStringArray("presleme")
+cost_money = 1200
+unlocks_auto_collect = true

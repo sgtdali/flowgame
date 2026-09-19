@@ -10,11 +10,14 @@ extends Resource
 @export var inputs: Array[RecipeSlot] = []
 @export var outputs: Array[RecipeSlot] = []
 
-## Üretim süresi TICK cinsinden — float saniye değil.
+## Üretim süresi TICK cinsinden.
 ##
-## Simülasyon tamsayı tick sayar. Float süre birikimli yuvarlama hatası
-## yapar ve aynı kaydın iki koşumu farklı sonuç verir; determinizm kırılır.
-@export var duration_ticks: int = 10
+## KESİRLİ olabilir (ör. 1.667) — simülasyon artık `SimStation.progress_ticks`
+## üzerinden kesirli bir biriktiriciyle çalışıyor (bkz. orada) ve her
+## döngüden kalan küsuratı bir sonrakine taşıyor, o yüzden float'ın yuvarlama
+## hatası birikmiyor. Bu, "dakikada tam X adet" gibi hedefleri
+## `TICKS_PER_SECOND` ile tam bölünmeyen tick sayılarında da mümkün kılar.
+@export var duration_ticks: float = 10.0
 
 
 ## Sunum için: tick'i okunabilir süreye çevirir.

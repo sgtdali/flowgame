@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://d05pvjcpui56k"]
+
+[ext_resource type="Resource" uid="uid://csj3qs18mi78l" path="res://data/recipes/r_talep.tres" id="1_oxrox"]
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="2_htaww"]
+
+[resource]
+script = ExtResource("2_htaww")
+id = &"trade_network"
+display_name = "Trade Network"
+category = 0
+accent_color = Color(0.36, 0.46, 0.62, 1)
+icon_char = "TN"
+description = "Generates demand for goods, continuously — the start of a sales route, same role as a Mine but for selling instead of gathering. Feed it into a Trade Depot alongside a sellable good."
+recipe = ExtResource("1_oxrox")
+input_capacity = 0
+output_capacity = 8
+unlocked_at_start = true
+max_instances = 1
+upgradeable = true
+upgrade_base_cost = 80
+upgrade_cost_growth = 2.0
+upgrade_duration_factor = 0.7071067811865476
+max_level = 10

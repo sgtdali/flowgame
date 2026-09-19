@@ -19,7 +19,7 @@ extends Resource
 @export_group("Maliyet")
 @export var cost_money: int = 0
 ## Doluysa bu araştırma parayla değil, Ar-Ge Laboratuvarı'na AKITILAN
-## ürünle açılır. MVP'de yalnızca son araştırma bunu kullanır.
+## ürünle açılır. İlk açılışta kullanılmaz; ileri içerik için korunur.
 @export var cost_items: Array[RecipeSlot] = []
 
 @export_group("Reward")

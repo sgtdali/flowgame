@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BlockType" format=3 uid="uid://c8va6b6mjgdaj"]
+
+[ext_resource type="Script" uid="uid://b4482t0h7gvkl" path="res://data/block_type.gd" id="1_htaww"]
+[ext_resource type="Resource" path="res://data/items/talep.tres" id="2_talep"]
+
+[resource]
+script = ExtResource("1_htaww")
+id = &"trade_depot"
+display_name = "Trade Depot"
+category = 3
+accent_color = Color(0.5, 0.42, 0.62, 1)
+icon_char = "TD"
+description = "Holds one sellable good and waits — the moment it arrives, Demand from a Trade Network starts accumulating, and the good sells the instant 100 Demand is reached. Has no pace of its own — its throughput is a direct function of Trade Network's speed, so a faster network always helps."
+demand_item = ExtResource("2_talep")
+demand_required = 100
+input_capacity = 20
+output_capacity = 8
+unlocked_at_start = true

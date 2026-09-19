@@ -8,5 +8,5 @@ id = &"kulce"
 display_name = "Iron Ingot"
 color = Color(0.75, 0.62, 0.4, 1)
 icon_char = "IG"
-base_price = 10
+base_price = 60
 tier = 1
