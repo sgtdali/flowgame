@@ -40,13 +40,14 @@ func refresh(
 
 	for node: ResearchNode in ResearchCatalog.all():
 		var status: ProgressionState.Status = progression.status_of(node, gross_revenue, research_counts)
-		_list.add_child(_build_row(node, status, progression, research_counts, tracker))
+		_list.add_child(_build_row(node, status, progression, gross_revenue, research_counts, tracker))
 
 
 func _build_row(
 	node: ResearchNode,
 	status: ProgressionState.Status,
 	progression: ProgressionState,
+	gross_revenue: int,
 	research_counts: Dictionary,
 	tracker: ResearchDeliveryTracker
 ) -> Control:
@@ -118,9 +119,9 @@ func _build_row(
 		action.add_child(done)
 	else:
 		var button := Button.new()
-		button.text = "Discover"
+		button.text = "Discover" if status == ProgressionState.Status.AFFORDABLE else "Locked"
 		button.disabled = status != ProgressionState.Status.AFFORDABLE
-		button.tooltip_text = progression.unlock_problem(node, 0, research_counts)
+		button.tooltip_text = progression.unlock_problem(node, gross_revenue, research_counts)
 		button.pressed.connect(unlock_requested.emit.bind(node.id))
 		action.add_child(button)
 
@@ -235,6 +236,8 @@ func _build_reward_line(node: ResearchNode) -> Label:
 	var parts: PackedStringArray = PackedStringArray()
 	for block: BlockType in node.unlocks_blocks:
 		parts.append(block.display_name)
+	if node.unlocks_complexes:
+		parts.append("Ironworks Complex")
 
 	var label := Label.new()
 	label.text = "→  " + ("  ·  ".join(parts) if not parts.is_empty() else "—")

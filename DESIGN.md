@@ -13,8 +13,8 @@ and electricity — and combining them is the first strong power spike.
 |---|---|---|
 | 1. Iron | Mine → Smelting Hearth → Market Stall | Ingot sales, manually collected |
 | 1b. Small investments | Mine speed (Market Stall is no longer upgradeable — see "Market sale upgrade" below) | Now directly proportional to sustainable income — see "Smelting Hearth redesign" below |
-| 2. Electrification | 1,100 gold research + 900 gold Generator + 300 gold Power Exchange | A second income line, independent of the iron route — sell raw power directly |
-| 3. Electrified Rolling | 1,600 gold research + 900 gold Electric Rolling Mill (reuses the existing Iron Forge workshop and Iron Plate item) | Ingots + a power line together beat selling either input alone |
+| 2. Electrification | free research + 900 gold Generator + 300 gold Power Exchange | A second income line, independent of the iron route — trade electricity through Demand and a Collector |
+| 3. Electrified Rolling | 1,000 gold research + 900 gold Electric Rolling Mill (reuses the existing Iron Forge workshop and Iron Plate item) | Ingots + a power line together beat selling either input alone |
 
 ### Stage 1: Iron
 
@@ -45,10 +45,10 @@ isn't one to show.
 
 ### Stage 2: Electrification (new)
 
-`Generator → Power Exchange`, gated by the **Electrification** research
-(1,100 gold, no prerequisite — reachable independently of the iron branch's
-own research, though its 1,100 gold naturally tends to come from iron sales
-early on).
+`Generator → Power Exchange → Collector`, with a Trade Network feeding the
+Exchange's Demand port, gated by the **Electrification** research
+(free, no prerequisite — reachable independently of the iron branch's own
+research).
 
 - **Generator**: 900 gold, produces a constant power *capacity* every tick
   (40 kW at level 1, +15 kW per upgrade level up to level 4). It does not
@@ -56,13 +56,12 @@ early on).
   line. Capacity is never stockpiled; whatever isn't drawn a given tick is
   simply not sold that tick, exactly like an idle mine wastes no ore but also
   banks none in advance.
-- **Power Exchange**: 300 gold, a Market-Stall-twin for electricity. Wire a
-  Generator to it and it sells whatever power arrives, batched into 100-kW
-  units at 4 gold each (reuses the Market Stall's `accrued`/`collect`
-  accounting exactly — no parallel bookkeeping).
-- At level 1, running a Generator flat-out into a Power Exchange yields
-  roughly 960 gold/min — matching the post-Forge iron income, so the second
-  branch feels like a real payoff, not a filler mechanic.
+- **Power Exchange**: 300 gold, an electric Trade Depot. Wire a Generator to
+  its power port and a Trade Network to its Demand port: each 1 kW plus 1
+  Demand creates 1 Electricity. Its Electricity output must go to a Collector;
+  the Exchange has no accrued gold and cannot be upgraded.
+- Electricity income is limited by Trade Network Demand and Collector flow,
+  making the route a visible trade chain rather than a hidden direct sale.
 
 ### Stage 3: Electrified Rolling (repurposed, not duplicated)
 
@@ -82,8 +81,8 @@ function.
 - Its research (`presleme.tres`, now **"Electrified Rolling"**) now
   `requires` **Electrification** — the player must have already opened the
   power branch before this unlock is even offered, so the mandated
-  iron → electricity → combined-mill order can't be skipped. Cost stays at
-  1,600 gold, matching the previous Iron Forging balance point.
+  iron → electricity → combined-mill order can't be skipped. Its cost is
+  1,000 gold.
 - The old armor/weapon production chain that used to sit downstream of the
   Iron Forge (Drawbench, Rivet Press, Assembly Press, Quality Inspector,
   Storehouse, Salvage Hearth, Deep Iron Mine, Research Lab, and their ten
@@ -106,15 +105,15 @@ graph:
 - Power connections are a **distinct port type** (`PORT_TYPE_POWER`) in the
   flow canvas — Godot's own `GraphEdit` connection-type check keeps power
   and material wires from ever being cross-wired by accident.
-- Each tick, a Generator's capacity is handed out in a fixed, explainable
-  order: connected **production** consumers (the Electric Rolling Mill) are
-  served first, up to what they actually want that tick (nothing if they
-  have no ingots queued); whatever capacity remains goes to connected **sale**
-  consumers (the Power Exchange), split evenly if more than one is wired.
-  A consumer draws from exactly one Generator — no double-counted capacity.
-- No manual ratios or priority menus in this pass, matching the brief. The
-  player can always disconnect the Mill's power line to fall back to selling
-  100% of a Generator's output directly.
+- Each tick, a Generator's direct output is split evenly across all connected
+  power branches: two branches receive half each; three receive thirds.
+  Non-divisible remainder goes to the lowest station id, deterministically.
+  A consumer still draws from exactly one Generator — no double-counted
+  capacity.
+- Iron Mine and Trade Network use the equivalent material rule: their single
+  output port may connect to any number of branches, and items transfer
+  round-robin so long-run throughput is shared evenly. Other outputs still
+  need Crossroads to split.
 
 ## Paket C — measured three-stage progression (roadmap.md §5)
 
@@ -141,13 +140,13 @@ purpose, now as a **negative control** proving the cap works — it can no
 longer build a second Generator, so it degrades to exactly the "Accumulate"
 numbers.
 
-| Route | Total spent | Reaches Automation | 4× real time | Mine/Exchange upgrades / Generators | Sustainable income |
+| Route | Total spent | Reaches Automation | 4× real time | Mine upgrades / Generators | Sustainable income |
 |---|---:|---:|---:|---|---:|
-| Accumulate (no investment) | 6,650 | 23:30 | 5:52 | 0 / 0 / 1 | 1,184 gold/min |
-| Mine-focused (3 upgrades) | 7,700 | 22:30 | 5:37 | 3 / 0 / 1 | 1,336 gold/min |
-| Power Exchange-focused (3 upgrades) | 8,050 | 23:30 | 5:52 | 0 / 3 / 1 | 1,616 gold/min |
-| Mixed (mine + exchange) | 9,100 | 22:30 | 5:37 | 3 / 3 / 1 | **1,738 gold/min** |
-| Generator duplication (now capped — cannot build a 2nd) | 6,650 | 23:30 | 5:52 | 0 / 0 / 1 | 1,184 gold/min (= Accumulate) |
+| Accumulate (no investment) | N/A | N/A | N/A | N/A | N/A |
+| Mine-focused (3 upgrades) | N/A | N/A | N/A | N/A | N/A |
+| Demand-route baseline | N/A | N/A | N/A | N/A | N/A |
+| Mixed (mine + electric trade) | N/A | N/A | N/A | N/A | N/A |
+| Generator duplication (now capped — cannot build a 2nd) | N/A | N/A | N/A | N/A | N/A |
 
 ### Findings
 
@@ -200,21 +199,21 @@ asks for.
 | Iron Mine | 250 | — → 1 Ore | 10 ticks | 1 (`max_instances`) | Yes, base 150g ×2/lvl, +15 ore/min per level, max lvl 4 | — |
 | Smelting Hearth | 400 | 6 Ore → 1 Ingot | 0 ticks (instant on 6th ore — no pace of its own, see "Smelting Hearth redesign") | none | No | — |
 | Generator | 900 | — (power only) | — | 1 (`max_instances`, see "Generator instance cap") | Yes, base 300g ×2/lvl, +15 kW per level, max lvl 4 | produces 40 kW (lvl 1) |
-| Power Exchange | 300 | — (power only) | — | none | Yes, base 200g ×2/lvl, +20% sale value per level, max lvl 4 | consumes, sells in 100-kW batches |
+| Power Exchange | 300 | 1 kW + 1 Demand → 1 Electricity | — | none | No | Electric Trade Depot; output goes to Collector |
 | Electric Rolling Mill | 900 | 1 Ingot → 1 Plate | 10 ticks | none | No | needs 24 kW/tick while active |
 | Market Stall | 0 | — (sells anything) | — | none | **No — see "Market sale upgrade" below** | — |
 | Crossroads | 350 | — (splits one route into two) | — | none | No | — |
 
 Item prices: Iron Ore 2g, Iron Ingot 10g, Iron Plate 32g, Electricity 4g per
-100-kW-tick batch.
+1-kW + Demand trade.
 
 ### The three researches
 
 | Research | Requires | Cost | Unlocks | Cumulative cost from scratch |
 |---|---|---:|---|---:|
-| Electrification | none | 1,100 | Generator + Power Exchange | 1,100 + 900 + 300 = **2,300** |
-| Electrified Rolling | Electrification | 1,600 | Electric Rolling Mill | 2,300 + 1,600 + 900 = **4,800** |
-| Automation | Electrified Rolling | 1,200 | (no new workshop — sets `auto_collect`) | 4,800 + 1,200 = **6,000** |
+| Electrification | none | 0 | Generator + Power Exchange | 0 + 900 + 300 = **1,200** |
+| Electrified Rolling | Electrification | 1,000 | Electric Rolling Mill | 1,200 + 1,000 + 900 = **3,100** |
+| Automation | Electrified Rolling | 1,200 | (no new workshop — sets `auto_collect`) | 3,100 + 1,200 = **4,300** |
 
 A research being **purchased** (`ProgressionState.unlocked[id] = true`) and a
 workshop **actually producing** are deliberately different events: buying
@@ -269,36 +268,18 @@ the two Sevkiyat-category stations is intentional, not an oversight.
   if power didn't exist — because delivered power is capped at exactly what
   the Mill asked for (see `_phase_power`'s `mini(remaining, request)`), so
   above-100% power never speeds it up further.
-- **Sale fraction** (Power Exchange): power is not sold per-unit; it
-  accumulates in `energy_ticks` and converts to one discrete sale every
-  `power_sale_batch` (100) units, each batch worth the Electricity item's
-  `base_price` (4 gold, × the Exchange's own level multiplier). So the
-  effective price is "4 gold per 100 kW-ticks delivered," not "4 gold per
-  kW."
+- **Electric trade unit** (Power Exchange): it receives at most 1 kW in a
+  tick when it has 1 Demand and free output space. That exact pair creates 1
+  Electricity, which is then sold by a Collector at the item's base price.
 
-### Power sharing order for multiple consumers — documented
+### Source output splitting
 
-`FactorySim._phase_power()` processes each Generator's connected consumers
-in **ascending station id order**, in two passes:
-
-1. **Production consumers** (Mill-type) go first, each taking up to its full
-   request (24) from whatever capacity is still left when its turn comes —
-   this is **priority by id, not a fair split**. The lowest-id Mill always
-   gets served first and takes its full request off the top; a second Mill
-   sharing the same Generator gets whatever's left, which can be a *partial*
-   amount (genuine proportional slowdown, e.g. 16 of 24 needed) or nothing at
-   all if the first Mill already exhausted the capacity. There is no
-   rotation between ticks — the same Mill always wins if nothing changes.
-2. Whatever capacity remains after every production consumer is served is
-   split **evenly** across connected sale consumers (Power Exchanges),
-   remainder going to the lowest ids first.
-
-This asymmetry (winner-take-all for production, even split for sale) is
-intentional and matches the "simple, explainable, no priority menus" brief —
-but it is a real behavior a player with two Mills would notice, and is not
-currently surfaced anywhere in the UI beyond each node's own delivered/kW
-stat. Recorded here so Paket B's test list and any future UI work start from
-the same rule instead of two different guesses.
+`FactorySim` gives Iron Mine, Generator, and Trade Network a split-capable
+source output. Material sources distribute individual items round-robin across
+all connected branches. Generator capacity is divided evenly every tick: with
+40 kW, two branches receive 20/20 and three receive 14/13/13, with the
+deterministic remainder assigned by station id. This keeps total source output
+fixed while making every branch's share visible and predictable.
 
 ### Generator instance cap — resolved
 

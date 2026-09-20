@@ -12,5 +12,5 @@ id = &"elektrifikasyon"
 display_name = "Electrification"
 description = "A second, independent income line — unlocks the Generator and Power Exchange. Sell raw power on its own, or hold onto it: a future workshop will want it too."
 requires = PackedStringArray()
-cost_money = 5000
+cost_money = 0
 unlocks_blocks = Array[ExtResource("2_elektrifikasyon")]([ExtResource("3_elektrifikasyon"), ExtResource("4_elektrifikasyon")])

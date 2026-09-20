@@ -8,7 +8,7 @@
 script = ExtResource("2_fjk2y")
 id = &"presleme"
 display_name = "Electrified Rolling"
-description = "The first combination — 1,600 gold research plus a 900 gold Electric Rolling Mill. Feed it ingots and a power line from your Generator to convert the same ingot flow into plates worth 32 gold instead of 10."
+description = "The first combination — 1,000 gold research plus a 900 gold Electric Rolling Mill. Feed it ingots and a power line from your Generator to convert the same ingot flow into plates worth 32 gold instead of 10."
 requires = PackedStringArray("elektrifikasyon")
-cost_money = 1600
+cost_money = 1000
 unlocks_blocks = Array[ExtResource("3_p64hp")]([ExtResource("4_5fqlk")])

@@ -11,13 +11,13 @@ const IndustrialTheme = preload("res://common/industrial_theme.gd")
 ## bileşenlerden gelen YUKARI niyetleri alıp doğru mantığa sormak, cevabı
 ## AŞAĞI komutla görsellere yazmak.
 
-## Kayıt biçimi. v2'de ilerleme durumu yoktu. v6 güç sistemini ekledi
-## (jeneratör bağlantıları, enerji sayacı) — eski v5 kayıtlar güçsüz
-## istasyonlar/bağlantı olmadan sorunsuz yüklenir (bkz. FactorySim.from_dict).
-const SAVE_VERSION: int = 6
+## Kayıt biçimi. v6 güç sistemini ekledi; v7 kompleks üyeliğini, ortak
+## havuzları, güç kaynaklarını ve iç canvas yerleşimini ekler. Eski kayıtlar
+## kompleks alanı olmadan sorunsuz açılır (bkz. FactorySim.from_dict).
+const SAVE_VERSION: int = 7
 
 ## Hız seçenekleri. 0 = duraklatıldı.
-const SPEEDS: Array[int] = [0, 1, 2, 4]
+const SPEEDS: Array[int] = [0, 1, 2, 4, 8]
 
 @onready var _canvas: FlowCanvas = %Canvas
 @onready var _palette: BlockPalette = %Palette
@@ -31,6 +31,7 @@ const SPEEDS: Array[int] = [0, 1, 2, 4]
 @onready var _iron_ore_upgrade: Button = %IronOreUpgradeButton
 @onready var _save_dialog: FileDialog = %SaveDialog
 @onready var _load_dialog: FileDialog = %LoadDialog
+@onready var _create_complex_button: Button = %CreateComplexButton
 
 var _sim: FactorySim = FactorySim.new()
 var _progression: ProgressionState = ProgressionState.new()
@@ -60,6 +61,16 @@ var _research_rate := ResearchDeliveryTracker.new()
 const _RESEARCH_PANEL_REFRESH_TICKS: int = GameConfig.TICKS_PER_SECOND
 var _last_research_panel_refresh_tick: int = -999999
 
+var _complex_layout: Dictionary = {}
+var _complex_workspace: PanelContainer = null
+var _internal_canvas: FlowCanvas = null
+var _complex_bus_label: Label = null
+var _complex_status_label: Label = null
+var _complex_inspector: Label = null
+var _complex_strategy: OptionButton = null
+var _complex_power_sources: OptionButton = null
+var _open_complex_id: int = -1
+
 
 func _ready() -> void:
 	theme = IndustrialTheme.build()
@@ -71,6 +82,7 @@ func _ready() -> void:
 	_canvas.delete_requested.connect(_on_delete_requested)
 	_canvas.action_requested.connect(_on_canvas_action_requested)
 	_canvas.interacted.connect(_on_canvas_interacted)
+	_canvas.complex_open_requested.connect(_open_complex)
 
 	_research_panel.unlock_requested.connect(_on_unlock_requested)
 	_research_panel.locate_requested.connect(_on_locate_requested)
@@ -78,6 +90,7 @@ func _ready() -> void:
 
 	_research_toggle.pressed.connect(_on_research_toggle_pressed)
 	%ArrangeButton.pressed.connect(_canvas.arrange_nodes)
+	_create_complex_button.pressed.connect(_on_create_complex_pressed)
 	%ClearButton.pressed.connect(_on_clear_pressed)
 	# Lambda DEĞİL adlandırılmış metot: Godot, yerel değişken yakalayan
 	# lambda'ları otomatik çözemiyor ve düğüm silindiğinde çökme riski doğuyor.
@@ -86,8 +99,9 @@ func _ready() -> void:
 	_save_dialog.file_selected.connect(_on_save_path_selected)
 	_load_dialog.file_selected.connect(_on_load_path_selected)
 	_iron_ore_upgrade.pressed.connect(_on_iron_ore_upgrade_pressed)
+	_build_complex_workspace()
 
-	_speed_buttons = [%PauseButton, %Speed1Button, %Speed2Button, %Speed4Button]
+	_speed_buttons = [%PauseButton, %Speed1Button, %Speed2Button, %Speed4Button, %Speed8Button]
 	for index in _speed_buttons.size():
 		_speed_buttons[index].pressed.connect(_on_speed_pressed.bind(index))
 
@@ -161,7 +175,14 @@ func _advance_sim(delta: float) -> void:
 ## 80 düğümün her birine ayrı `_process` koymak yerine tek yerden yazıyoruz —
 ## düğüm başına SceneTree çağrı yükü olmuyor.
 func _sync_visuals() -> void:
-	for block: FlowBlock in _canvas.get_blocks():
+	_sync_canvas_visuals(_canvas)
+	if _internal_canvas != null and _internal_canvas.visible:
+		_sync_canvas_visuals(_internal_canvas)
+		_refresh_complex_workspace()
+
+
+func _sync_canvas_visuals(target: FlowCanvas) -> void:
+	for block: FlowBlock in target.get_blocks():
 		var station: SimStation = _sim.get_station(block.sim_id)
 		if station != null:
 			block.render_state(
@@ -177,8 +198,10 @@ func _sync_visuals() -> void:
 ## indeksiyle AYNI hizada olmalı (bkz. `BlockType.input_labels`).
 func _incoming_rates(station: SimStation) -> Array[float]:
 	var slot_count: int = 1
-	if station.type.demand_item != null:
-		slot_count = 2  # Trade Depot: 0=mal, 1=Talep (bkz. BlockType.input_labels)
+	if station.type.category == BlockType.Category.SINK:
+		slot_count = station.input_port_count
+	elif station.type.demand_item != null:
+		slot_count = 1 if station.type.power_trade_item != null else 2
 	else:
 		var recipe: Recipe = station.recipe()
 		if recipe != null and not recipe.inputs.is_empty():
@@ -189,9 +212,13 @@ func _incoming_rates(station: SimStation) -> Array[float]:
 	for link: SimLink in _sim.links_into(station.id):
 		if link.to_port < 0 or link.to_port >= slot_count:
 			continue
-		var src: SimStation = _sim.get_station(link.from_id)
-		if src != null:
-			rates[link.to_port] += _effective_output_rate(src)
+		var rate: float = _rate_contributed_by_link(link)
+		if station.type.category == BlockType.Category.SINK:
+			var item: ItemType = ItemCatalog.find_by_id(_sim.item_id_on_link(link))
+			if item != null:
+				var item_multiplier: float = float(_sim.item_sale_multipliers.get(String(item.id), 1.0))
+				rate *= float(item.base_price) * station.type.sale_value_multiplier_at_level(station.level) * item_multiplier
+		rates[link.to_port] += rate
 	return rates
 
 
@@ -203,10 +230,26 @@ func _incoming_rate_for_port(station: SimStation, port: int) -> float:
 	for link: SimLink in _sim.links_into(station.id):
 		if link.to_port != port:
 			continue
-		var src: SimStation = _sim.get_station(link.from_id)
-		if src != null:
-			total += _effective_output_rate(src)
+		total += _rate_contributed_by_link(link)
 	return total
+
+
+## Bölünebilen kaynakların hızı, tek bir çıkış portundan çıkan her bağlantıya
+## eşit paylaştırılır. Bu, ekrandaki Input/Output Value'nun gerçek round-robin
+## aktarımıyla aynı kalmasını sağlar: 11/sn, iki kola 5.5/sn + 5.5/sn gider.
+func _rate_contributed_by_link(link: SimLink) -> float:
+	var src: SimStation = _sim.get_station(link.from_id)
+	if src == null:
+		return 0.0
+	var total_rate: float = _effective_output_rate(src)
+	if not src.type.splits_output:
+		return total_rate
+
+	var branch_count: int = 0
+	for outgoing: SimLink in _sim.links():
+		if outgoing.from_id == link.from_id and outgoing.from_port == link.from_port:
+			branch_count += 1
+	return total_rate / float(maxi(1, branch_count))
 
 
 ## Bir istasyonun GERÇEK, o anki koşullarda üretebileceği hız (adet/sn) —
@@ -222,6 +265,10 @@ func _incoming_rate_for_port(station: SimStation, port: int) -> float:
 ## sınırlıdır — dönüşüm ancak İKİSİ de yetiştiğinde olur.
 func _effective_output_rate(station: SimStation) -> float:
 	if station.type.demand_item != null:
+		if station.type.power_trade_item != null:
+			var demand_rate: float = _incoming_rate_for_port(station, 0) / float(maxi(1, station.type.demand_required))
+			var power_rate: float = float(_sim.delivered_power(station.id)) * float(GameConfig.TICKS_PER_SECOND)
+			return minf(demand_rate, power_rate)
 		# Trade Depot: mal (port 0) SADECE Talep'ten (port 1) yeterince
 		# geliyorsa geçer — Talep hızı `demand_required`'a bölünüp mal
 		# hızıyla EN KÜÇÜK olan alınır, tıpkı Eritme Ocağı'nın çok-girdili
@@ -264,19 +311,8 @@ func _current_income_per_sec() -> float:
 	for station: SimStation in _sim.stations():
 		if station.type.category != BlockType.Category.SINK:
 			continue
-		if station.type.sells_power:
-			var batch: int = maxi(1, station.type.power_sale_batch)
-			var units_per_sec: float = float(_sim.delivered_power(station.id)) / float(batch) * float(GameConfig.TICKS_PER_SECOND)
-			var power_item: ItemType = ItemCatalog.find_by_id(&"elektrik")
-			if power_item != null:
-				var power_multiplier: float = float(_sim.item_sale_multipliers.get(String(power_item.id), 1.0))
-				total += units_per_sec * float(power_item.base_price) * station.type.sale_value_multiplier_at_level(station.level) * power_multiplier
-			continue
 		for link: SimLink in _sim.links_into(station.id):
-			var src: SimStation = _sim.get_station(link.from_id)
-			if src == null:
-				continue
-			var rate: float = _effective_output_rate(src)
+			var rate: float = _rate_contributed_by_link(link)
 			if rate <= 0.0:
 				continue
 			var item: ItemType = ItemCatalog.find_by_id(_sim.item_id_on_link(link))
@@ -432,7 +468,12 @@ func _on_delete_requested(sim_ids: Array[int]) -> void:
 			_progression.refund(station.type.build_cost)
 		_sim.remove_station(sim_id)
 		_canvas.remove_block(sim_id)
+		if _internal_canvas != null:
+			_internal_canvas.remove_block(sim_id)
 	_refresh_availability()
+	if _open_complex_id >= 0:
+		_rebuild_complex_canvas()
+	_rebuild_main_canvas()
 	if refunded > 0:
 		_notice("Dismantled. %s gold returned (half the cost)." % GameConfig.format_money(refunded))
 
@@ -443,6 +484,8 @@ func _on_clear_pressed() -> void:
 	_progression.reset()
 	_accumulator = 0.0
 	_research_rate.reset()
+	_complex_layout.clear()
+	_close_complex()
 	_last_research_panel_refresh_tick = -999999
 	_sync_item_sale_multipliers()
 	_refresh_availability()
@@ -488,10 +531,6 @@ func _refresh_iron_ore_value() -> void:
 		_last_iron_ore_value = text
 		_iron_ore_value.text = text
 
-	if not ProgressionState.can_upgrade_item(ItemCatalog.CEVHER, level):
-		_iron_ore_upgrade.text = "Max level"
-		_iron_ore_upgrade.disabled = true
-		return
 	var cost: int = ProgressionState.item_upgrade_cost(ItemCatalog.CEVHER, level)
 	_iron_ore_upgrade.text = "Upgrade (%s gold)" % GameConfig.format_money(cost)
 	_iron_ore_upgrade.disabled = _balance() < cost
@@ -639,6 +678,8 @@ func _refresh_availability() -> void:
 		counts[station.type.id] = int(counts.get(station.type.id, 0)) + 1
 	_last_balance = _balance()
 	_palette.set_availability(available, _last_balance, counts)
+	_create_complex_button.visible = _progression.complexes_available()
+	_create_complex_button.disabled = not _progression.complexes_available()
 	_refresh_status()
 
 
@@ -663,6 +704,7 @@ func _on_load_pressed() -> void:
 ## Üç bölüm: simülasyon durumu, yerleşim, ilerleme.
 ## Konum ve ad simülasyonu; para ve kilitler simülasyonu ilgilendirmez.
 func _snapshot() -> Dictionary:
+	_store_internal_layout()
 	var layout: Dictionary = {}
 	for block: FlowBlock in _canvas.get_blocks():
 		layout[str(block.sim_id)] = {
@@ -674,6 +716,7 @@ func _snapshot() -> Dictionary:
 		"version": SAVE_VERSION,
 		"sim": _sim.to_dict(),
 		"layout": layout,
+		"complex_layout": _complex_layout.duplicate(true),
 		"progression": _progression.to_dict(),
 	}
 
@@ -706,33 +749,352 @@ func _on_load_path_selected(path: String) -> void:
 	_sim.from_dict(data.get("sim", {}))
 	_progression.from_dict(data.get("progression", {}))
 	_sync_item_sale_multipliers()
-	_canvas.clear_all()
+	_complex_layout = data.get("complex_layout", {}).duplicate(true)
 	_accumulator = 0.0
 	# Ar-Ge hız ölçeri kümülatif sayaçlara bakıyor; yükleme sonrası eski
 	# örnekler yanlış bir sıçrama gösterirdi.
 	_research_rate.reset()
 	_last_research_panel_refresh_tick = -999999
 
-	var layout: Dictionary = data.get("layout", {})
-	for station: SimStation in _sim.stations():
-		var entry: Dictionary = layout.get(str(station.id), {})
-		var at := Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
-		var block: FlowBlock = _canvas.spawn_block(station.id, station.type, at)
-		if entry.has("label"):
-			block.set_param(&"label", entry["label"])
-
-	for link: SimLink in _sim.links():
-		_canvas.apply_connection(link.from_id, link.from_port, link.to_id, link.to_port)
-
-	for power_link: PowerLink in _sim.power_links():
-		var src: SimStation = _sim.get_station(power_link.from_id)
-		var dst: SimStation = _sim.get_station(power_link.to_id)
-		if src == null or dst == null:
-			continue
-		_canvas.apply_connection(
-			power_link.from_id, src.type.power_port_index(),
-			power_link.to_id, dst.type.power_port_index()
-		)
+	_rebuild_main_canvas(data.get("layout", {}))
 
 	_refresh_availability()
 	_notice("Loaded: %s" % path.get_file())
+
+
+## --- Ironworks Complex UI --------------------------------------------------
+
+func _build_complex_workspace() -> void:
+	_complex_workspace = PanelContainer.new()
+	_complex_workspace.name = "ComplexWorkspace"
+	_complex_workspace.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_complex_workspace.visible = false
+	_complex_workspace.add_theme_stylebox_override(&"panel", _panel_style(Color(0.10, 0.08, 0.055, 1.0), Color(0.67, 0.47, 0.25, 1.0)))
+	add_child(_complex_workspace)
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override(&"separation", 8)
+	_complex_workspace.add_child(root)
+	var top := HBoxContainer.new()
+	root.add_child(top)
+	var back := Button.new()
+	back.text = "← Back to Factory"
+	back.pressed.connect(_close_complex)
+	top.add_child(back)
+	_complex_status_label = Label.new()
+	_complex_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_complex_status_label.add_theme_font_size_override(&"font_size", 16)
+	top.add_child(_complex_status_label)
+	_complex_strategy = OptionButton.new()
+	_complex_strategy.add_item("Ingot Focus", IronworksComplex.Strategy.INGOT_FOCUS)
+	_complex_strategy.add_item("Balanced", IronworksComplex.Strategy.BALANCED)
+	_complex_strategy.add_item("Plate Focus", IronworksComplex.Strategy.PLATE_FOCUS)
+	_complex_strategy.item_selected.connect(_on_complex_strategy_selected)
+	top.add_child(_complex_strategy)
+
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(body)
+	var palette := VBoxContainer.new()
+	palette.custom_minimum_size = Vector2(180, 0)
+	body.add_child(palette)
+	var palette_title := Label.new()
+	palette_title.text = "COMPLEX MACHINES"
+	palette.add_child(palette_title)
+	for type: BlockType in [BlockCatalog.MINE_EXTRACTOR, BlockCatalog.ERITME, BlockCatalog.PRES]:
+		var add := Button.new()
+		add.text = "+ " + type.display_name
+		add.tooltip_text = "Build inside the open complex"
+		add.pressed.connect(_add_machine_to_open_complex.bind(type))
+		palette.add_child(add)
+	var source_title := Label.new()
+	source_title.text = "EXTERNAL POWER"
+	palette.add_child(source_title)
+	_complex_power_sources = OptionButton.new()
+	palette.add_child(_complex_power_sources)
+	var connect_power := Button.new()
+	connect_power.text = "Connect Power Bus"
+	connect_power.pressed.connect(_connect_open_complex_power)
+	palette.add_child(connect_power)
+
+	_internal_canvas = FlowCanvas.new()
+	_internal_canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_internal_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_internal_canvas.custom_minimum_size = Vector2(520, 380)
+	body.add_child(_internal_canvas)
+	_internal_canvas.add_requested.connect(_on_add_requested)
+	_internal_canvas.connect_requested.connect(_on_connect_requested)
+	_internal_canvas.disconnect_requested.connect(_on_disconnect_requested)
+	_internal_canvas.delete_requested.connect(_on_delete_requested)
+	_internal_canvas.action_requested.connect(_on_canvas_action_requested)
+	_internal_canvas.block_selected.connect(_on_internal_block_selected)
+
+	var inspector := VBoxContainer.new()
+	inspector.custom_minimum_size = Vector2(270, 0)
+	body.add_child(inspector)
+	_complex_bus_label = Label.new()
+	_complex_bus_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inspector.add_child(_complex_bus_label)
+	_complex_inspector = Label.new()
+	_complex_inspector.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inspector.add_child(_complex_inspector)
+	var input_bus := Button.new()
+	input_bus.text = "Use Material Bus Input"
+	input_bus.pressed.connect(_set_selected_bus_mode.bind(true, true))
+	inspector.add_child(input_bus)
+	var direct_input := Button.new()
+	direct_input.text = "Use Direct Input"
+	direct_input.pressed.connect(_set_selected_bus_mode.bind(true, false))
+	inspector.add_child(direct_input)
+	var output_bus := Button.new()
+	output_bus.text = "Use Material Bus Output"
+	output_bus.pressed.connect(_set_selected_bus_mode.bind(false, true))
+	inspector.add_child(output_bus)
+	var direct_output := Button.new()
+	direct_output.text = "Use Direct Output"
+	direct_output.pressed.connect(_set_selected_bus_mode.bind(false, false))
+	inspector.add_child(direct_output)
+	var power_bus := Button.new()
+	power_bus.text = "Use Power Bus"
+	power_bus.pressed.connect(_set_selected_power_bus.bind(true))
+	inspector.add_child(power_bus)
+	var direct_power := Button.new()
+	direct_power.text = "Use Direct Power"
+	direct_power.pressed.connect(_set_selected_power_bus.bind(false))
+	inspector.add_child(direct_power)
+
+
+func _panel_style(background: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(5)
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	return style
+
+
+func _on_create_complex_pressed() -> void:
+	if not _progression.complexes_available():
+		_notice("Discover Industrial Organization first.")
+		return
+	var selected: Array[int] = _canvas.selected_sim_ids()
+	var complex_id: int
+	if selected.is_empty():
+		complex_id = _sim.create_empty_complex()
+		_complex_layout[str(complex_id)] = {"x": _canvas.viewport_center().x, "y": _canvas.viewport_center().y, "stations": {}}
+	else:
+		complex_id = _sim.create_complex(selected)
+		if complex_id < 0:
+			_notice("Select at least two connected, eligible workshops that are not already in a complex.")
+			return
+		var positions: Dictionary = {}
+		var center := Vector2.ZERO
+		for station_id: int in selected:
+			var block: FlowBlock = _canvas.get_block(station_id)
+			if block != null:
+				positions[str(station_id)] = {"x": block.position_offset.x, "y": block.position_offset.y}
+				center += block.position_offset
+		center /= maxf(1.0, float(selected.size()))
+		_complex_layout[str(complex_id)] = {"x": center.x, "y": center.y, "stations": positions}
+	_rebuild_main_canvas()
+	_open_complex(complex_id)
+
+
+func _open_complex(complex_id: int) -> void:
+	if _sim.get_complex(complex_id) == null:
+		return
+	_open_complex_id = complex_id
+	get_node("Root").visible = false
+	_research_toggle.visible = false
+	_complex_workspace.visible = true
+	_rebuild_complex_canvas()
+
+
+func _close_complex() -> void:
+	_store_internal_layout()
+	_open_complex_id = -1
+	if _complex_workspace != null:
+		_complex_workspace.visible = false
+	get_node("Root").visible = true
+	_research_toggle.visible = true
+
+
+func _rebuild_main_canvas(saved_layout: Dictionary = {}) -> void:
+	var live_layout: Dictionary = saved_layout.duplicate(true)
+	for block: FlowBlock in _canvas.get_blocks():
+		live_layout[str(block.sim_id)] = {"x": block.position_offset.x, "y": block.position_offset.y, "label": block.block_label}
+	_canvas.clear_all()
+	for station: SimStation in _sim.stations():
+		if _sim.complex_for_station(station.id) != null:
+			continue
+		var entry: Dictionary = live_layout.get(str(station.id), {})
+		var block: FlowBlock = _canvas.spawn_block(station.id, station.type, Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0))))
+		if entry.has("label"):
+			block.set_param(&"label", entry["label"])
+	for link: SimLink in _sim.links():
+		if _canvas.get_block(link.from_id) != null and _canvas.get_block(link.to_id) != null:
+			_canvas.apply_connection(link.from_id, link.from_port, link.to_id, link.to_port)
+	for power_link: PowerLink in _sim.power_links():
+		var src: SimStation = _sim.get_station(power_link.from_id)
+		var dst: SimStation = _sim.get_station(power_link.to_id)
+		if src != null and dst != null and _canvas.get_block(src.id) != null and _canvas.get_block(dst.id) != null:
+			_canvas.apply_connection(src.id, src.type.power_port_index(), dst.id, dst.type.power_port_index())
+	for complex: IronworksComplex in _sim.complexes():
+		var entry: Dictionary = _complex_layout.get(str(complex.id), {})
+		_canvas.spawn_complex(complex.id, complex.display_name, complex.station_ids.size(), Vector2(float(entry.get("x", 200.0)), float(entry.get("y", 200.0))))
+
+
+func _rebuild_complex_canvas() -> void:
+	if _internal_canvas == null:
+		return
+	var complex: IronworksComplex = _sim.get_complex(_open_complex_id)
+	if complex == null:
+		_close_complex()
+		return
+	_internal_canvas.clear_all()
+	var entry: Dictionary = _complex_layout.get(str(complex.id), {})
+	var positions: Dictionary = entry.get("stations", {})
+	for station_id: int in complex.station_ids:
+		var station: SimStation = _sim.get_station(station_id)
+		if station == null:
+			continue
+		var at: Dictionary = positions.get(str(station_id), {})
+		_internal_canvas.spawn_block(station.id, station.type, Vector2(float(at.get("x", 160.0)), float(at.get("y", 130.0))))
+	for link: SimLink in _sim.links():
+		if complex.contains(link.from_id) and complex.contains(link.to_id):
+			_internal_canvas.apply_connection(link.from_id, link.from_port, link.to_id, link.to_port)
+	for power_link: PowerLink in _sim.power_links():
+		if complex.contains(power_link.from_id) and complex.contains(power_link.to_id):
+			var src: SimStation = _sim.get_station(power_link.from_id)
+			var dst: SimStation = _sim.get_station(power_link.to_id)
+			if src != null and dst != null:
+				_internal_canvas.apply_connection(src.id, src.type.power_port_index(), dst.id, dst.type.power_port_index())
+	_complex_strategy.select(int(complex.strategy))
+	_refresh_complex_workspace()
+
+
+func _store_internal_layout() -> void:
+	if _internal_canvas == null or _open_complex_id < 0:
+		return
+	var entry: Dictionary = _complex_layout.get(str(_open_complex_id), {"stations": {}})
+	var positions: Dictionary = entry.get("stations", {})
+	for block: FlowBlock in _internal_canvas.get_blocks():
+		positions[str(block.sim_id)] = {"x": block.position_offset.x, "y": block.position_offset.y}
+	entry["stations"] = positions
+	_complex_layout[str(_open_complex_id)] = entry
+
+
+func _refresh_complex_workspace() -> void:
+	var complex: IronworksComplex = _sim.get_complex(_open_complex_id)
+	if complex == null:
+		return
+	_complex_status_label.text = "%s  •  %d Machines  •  %s" % [complex.display_name, complex.station_ids.size(), _complex_status(complex)]
+	var stocks: PackedStringArray = PackedStringArray()
+	for item_id: StringName in complex.material_bus:
+		stocks.append("%s: %d / %d" % [item_id.capitalize(), complex.material_bus[item_id], complex.material_capacity])
+	stocks.sort()
+	_complex_bus_label.text = "MATERIAL BUS\n%s\n\nPOWER BUS\n%s" % ["\n".join(stocks) if not stocks.is_empty() else "Empty", _complex_power_text(complex)]
+	_refresh_power_sources(complex)
+
+
+func _complex_status(complex: IronworksComplex) -> String:
+	var running: int = 0
+	for station_id: int in complex.station_ids:
+		var station: SimStation = _sim.get_station(station_id)
+		if station != null and station.status == SimStation.Status.RUNNING:
+			running += 1
+	return "Running" if running == complex.station_ids.size() else "Partially Running"
+
+
+func _complex_power_text(complex: IronworksComplex) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for station_id: int in complex.station_ids:
+		if complex.power_bus_members.has(station_id):
+			var station: SimStation = _sim.get_station(station_id)
+			if station != null:
+				parts.append("%s: %d / %d" % [station.type.display_name, _sim.delivered_power(station_id), station.type.power_required_per_tick])
+	return "\n".join(parts) if not parts.is_empty() else "No Power Bus consumers"
+
+
+func _refresh_power_sources(complex: IronworksComplex) -> void:
+	var selected_id: int = _complex_power_sources.get_selected_id()
+	_complex_power_sources.clear()
+	for station: SimStation in _sim.stations():
+		if station.type.is_power_generator() and not complex.contains(station.id):
+			_complex_power_sources.add_item(station.type.display_name + " #" + str(station.id), station.id)
+	if selected_id >= 0:
+		for index in _complex_power_sources.item_count:
+			if _complex_power_sources.get_item_id(index) == selected_id:
+				_complex_power_sources.select(index)
+
+
+func _on_complex_strategy_selected(index: int) -> void:
+	if _open_complex_id >= 0:
+		_sim.set_complex_strategy(_open_complex_id, _complex_strategy.get_item_id(index))
+
+
+func _on_internal_block_selected(block: FlowBlock) -> void:
+	var station: SimStation = _sim.get_station(block.sim_id)
+	if station != null:
+		_complex_inspector.text = "%s\n%s\nInput and output can each use either a direct route or the shared Material Bus." % [station.type.display_name, station.status_label().capitalize()]
+
+
+func _set_selected_bus_mode(is_input: bool, shared: bool) -> void:
+	var block: FlowBlock = _internal_canvas.selected_block()
+	if block == null:
+		_notice("Select a workshop in the complex first.")
+		return
+	var problem: String = _sim.set_complex_material_mode(_open_complex_id, block.sim_id, 0, is_input, shared)
+	if not problem.is_empty():
+		_notice(problem)
+	else:
+		_notice("Material route updated.")
+
+
+func _set_selected_power_bus(shared: bool) -> void:
+	var block: FlowBlock = _internal_canvas.selected_block()
+	if block == null:
+		_notice("Select a workshop in the complex first.")
+		return
+	var problem: String = _sim.set_complex_power_bus_member(_open_complex_id, block.sim_id, shared)
+	if not problem.is_empty():
+		_notice(problem)
+
+
+func _connect_open_complex_power() -> void:
+	if _complex_power_sources.item_count <= 0:
+		_notice("Build an external Generator first.")
+		return
+	var problem: String = _sim.connect_power_to_complex(_complex_power_sources.get_selected_id(), _open_complex_id)
+	if not problem.is_empty():
+		_notice(problem)
+
+
+func _add_machine_to_open_complex(type: BlockType) -> void:
+	if _open_complex_id < 0 or not _progression.is_block_available(type, _sim.tick_count):
+		return
+	if type.max_instances > 0 and _count_of_type(type.id) >= type.max_instances:
+		_notice("This machine has reached its instance limit.")
+		return
+	if not _progression.try_pay(type.build_cost, _sim.revenue):
+		_notice("Not enough gold.")
+		return
+	var station_id: int = _sim.add_station(type)
+	var problem: String = _sim.add_station_to_complex(_open_complex_id, station_id)
+	if not problem.is_empty():
+		_sim.remove_station(station_id)
+		_progression.refund(type.build_cost * 2)
+		_notice(problem)
+		return
+	var complex_entry: Dictionary = _complex_layout.get(str(_open_complex_id), {"stations": {}})
+	var positions: Dictionary = complex_entry.get("stations", {})
+	positions[str(station_id)] = {"x": 160.0 + 40.0 * positions.size(), "y": 180.0}
+	complex_entry["stations"] = positions
+	_complex_layout[str(_open_complex_id)] = complex_entry
+	_rebuild_complex_canvas()
+	_rebuild_main_canvas()
+	_refresh_availability()

@@ -25,8 +25,6 @@ var progress_ticks: float = 0.0
 ## Güç tüketen istasyonlarda (bkz. `type.power_required_per_tick`) BİRİKEN
 ## enerji. Malzeme hazır olduğu hâlde güç yetersizse `progress_ticks` yerine
 ## bu sayaç ilerler — yetersiz güç üretimi durdurmaz, oranlı yavaşlatır.
-## Elektrik Satış Noktası da aynı sayaçla sürekli güç akışını kesikli satış
-## birimlerine çevirir (bkz. FactorySim._run_power_sale).
 var energy_ticks: int = 0
 ## Bu istasyona atanmış işçi sayısı. İlk işçi istasyonu çalıştırır; ilave
 ## işçilerin üretim etkisi bilinçli olarak daha sonraki denge turuna bırakıldı.

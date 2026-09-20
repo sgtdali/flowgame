@@ -36,15 +36,15 @@ func _initialize() -> void:
 		COLLECT_INTERVAL_TICKS / GameConfig.TICKS_PER_SECOND, MAX_TICKS / GameConfig.TICKS_PER_SECOND / 60])
 	print("Not: Market Stall'un satis gelistirmesi bu turda kaldirildi (bkz.")
 	print("DESIGN.md 'Market sale upgrade'); eski 'Satis odakli' rotasi artik")
-	print("Power Exchange gelistirmesiyle ('Borsa odakli') temsil ediliyor.")
+	print("Power Exchange artik gelistirilemez; elektrik rotasi Trade Network ve Collector ister.")
 	print("")
 
 	var routes: Array[Dictionary] = [
-		_run_route("Biriktir", 0, 0, 0),
-		_run_route("Maden odakli", 4, 0, 0),
-		_run_route("Borsa odakli", 0, 4, 0),
-		_run_route("Karma", 4, 4, 0),
-		_run_route("Jenerator cogalt", 0, 0, 2),
+		_run_route("Biriktir", 0, 0),
+		_run_route("Maden odakli", 4, 0),
+		_run_route("Talep agi", 0, 0),
+		_run_route("Karma", 4, 0),
+		_run_route("Jenerator cogalt", 0, 2),
 	]
 
 	for r: Dictionary in routes:
@@ -62,10 +62,10 @@ func _initialize() -> void:
 		print("%-16s %8s %10s %10s %10s %11.0f/dk" % [
 			r["name"], GameConfig.format_money(r["spent"]),
 			_format_game_time(automation_tick), _format_real_time_at_4x(automation_tick),
-			"%d/%d/%d" % [r["mine_upgrades"], r["exchange_upgrades"], r["generators"]],
+			"%d/%d" % [r["mine_upgrades"], r["generators"]],
 			r["sustainable_gold_per_min"],
 		])
-	print("(Gelistirme sutunu: maden/borsa gelistirme sayisi / toplam jenerator sayisi)")
+	print("(Gelistirme sutunu: maden gelistirme sayisi / toplam jenerator sayisi)")
 
 	var any_stalled: bool = false
 	for r: Dictionary in routes:
@@ -76,13 +76,12 @@ func _initialize() -> void:
 
 ## --- Tek bir rotanın koşumu ---------------------------------------------
 
-## `mine_upgrade_cap`: madene en fazla kaç seviye yatırım yapılsın (max 3,
-## çünkü max_level=4 -> 3 geliştirme). `exchange_upgrade_cap`: Power
-## Exchange için aynısı. `extra_generator_cap`: ilk jeneratörün ÜSTÜNE kaç
+## `mine_upgrade_cap`: madene en fazla kaç seviye yatırım yapılsın.
+## `extra_generator_cap`: ilk jeneratörün ÜSTÜne kaç
 ## ek jeneratör+borsa çifti kurulsun (jeneratör çoğaltmanın geçerli bir
 ## rota olup olmadığını sınamak için — roadmap.md §5, "jenerator cogaltma
 ## gecerliyse aday olmali").
-func _run_route(name: String, mine_upgrade_cap: int, exchange_upgrade_cap: int, extra_generator_cap: int) -> Dictionary:
+func _run_route(name: String, mine_upgrade_cap: int, extra_generator_cap: int) -> Dictionary:
 	var sim := FactorySim.new()
 	var progression := ProgressionState.new()
 	var events: Array[Dictionary] = []
@@ -100,10 +99,10 @@ func _run_route(name: String, mine_upgrade_cap: int, exchange_upgrade_cap: int, 
 	_log_once(events, logged, sim, "demir_hatti_kuruldu")
 
 	var mine_upgrades_done: int = 0
-	var exchange_upgrades_done: int = 0
 	var generators_built: int = 0
 	var primary_generator: int = -1
 	var exchange: int = -1
+	var trade_network: int = -1
 	var mill: int = -1
 
 	while sim.tick_count < MAX_TICKS:
@@ -125,8 +124,12 @@ func _run_route(name: String, mine_upgrade_cap: int, exchange_upgrade_cap: int, 
 		elif exchange < 0:
 			exchange = _build(sim, progression, BlockCatalog.ELEKTRIK_SATIS)
 			if exchange >= 0:
+				trade_network = _build(sim, progression, BlockCatalog.TRADE_NETWORK)
 				sim.connect_power(primary_generator, exchange)
-				_log_once(events, logged, sim, "borsa_kuruldu_ilk_elektrik_satisi_mumkun")
+				if trade_network >= 0:
+					sim.connect_stations(trade_network, 0, exchange, 0)
+					sim.connect_stations(exchange, 0, sevkiyat, 0)
+				_log_once(events, logged, sim, "borsa_kuruldu_ilk_elektrik_ticareti_mumkun")
 		elif not progression.is_unlocked(&"presleme"):
 			if progression.try_unlock(ResearchCatalog.PRESLEME, sim.revenue, sim.research_counts).is_empty():
 				_log_once(events, logged, sim, "hadde_arastirmasi_alindi")
@@ -150,11 +153,6 @@ func _run_route(name: String, mine_upgrade_cap: int, exchange_upgrade_cap: int, 
 			if progression.try_upgrade(sim.get_station(maden), sim.revenue).is_empty():
 				mine_upgrades_done += 1
 				_log_once(events, logged, sim, "ilk_maden_gelistirme")
-
-		if exchange >= 0 and exchange_upgrades_done < exchange_upgrade_cap:
-			if progression.try_upgrade(sim.get_station(exchange), sim.revenue).is_empty():
-				exchange_upgrades_done += 1
-				_log_once(events, logged, sim, "ilk_borsa_gelistirme")
 
 		if extra_generator_cap > 0 and primary_generator >= 0 and generators_built <= extra_generator_cap:
 			var extra_gen: int = _build(sim, progression, BlockCatalog.JENERATOR)
@@ -186,7 +184,6 @@ func _run_route(name: String, mine_upgrade_cap: int, exchange_upgrade_cap: int, 
 		"events": events,
 		"spent": progression.spent,
 		"mine_upgrades": mine_upgrades_done,
-		"exchange_upgrades": exchange_upgrades_done,
 		"generators": generators_built,
 		"automation_tick": logged.get("otomasyon_alindi", -1),
 		"sustainable_gold_per_min": sustainable,

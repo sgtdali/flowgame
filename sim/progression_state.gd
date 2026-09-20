@@ -55,6 +55,13 @@ func is_block_available(type: BlockType, _tick_count: int = -1) -> bool:
 	return false
 
 
+func complexes_available() -> bool:
+	for node: ResearchNode in ResearchCatalog.all():
+		if unlocked.has(node.id) and node.unlocks_complexes:
+			return true
+	return false
+
+
 func available_blocks(tick_count: int = -1) -> Array[BlockType]:
 	var out: Array[BlockType] = []
 	for type: BlockType in BlockCatalog.all():
@@ -141,28 +148,24 @@ func try_pay(cost: int, gross_revenue: int) -> bool:
 	return true
 
 
-## Bu istasyonu bir sonraki seviyeye geliştirmenin maliyeti. Zaten en üst
-## seviyedeyse veya geliştirilemiyorsa 0 döner — çağıran `can_upgrade` ile
-## önce kontrol etmeli.
+## Bu istasyonu bir sonraki seviyeye geliştirmenin maliyeti.
 ## Saf (içerik-türevi) — bir ProgressionState örneğine gerek duymaz, sunum
 ## katmanı (bkz. FlowBlock) doğrudan `ProgressionState.upgrade_cost(...)`
 ## diye çağırabilir.
 static func upgrade_cost(type: BlockType, current_level: int) -> int:
-	if not type.upgradeable or current_level >= type.max_level:
+	if not type.upgradeable:
 		return 0
 	return roundi(float(type.upgrade_base_cost) * pow(type.upgrade_cost_growth, current_level - 1))
 
 
 static func can_upgrade(type: BlockType, current_level: int) -> bool:
-	return type.upgradeable and current_level < type.max_level
+	return type.upgradeable
 
 
 ## Neden geliştirilemiyor? Boş string = geliştirilebilir.
 func upgrade_problem(station: SimStation, gross_revenue: int) -> String:
 	if not station.type.upgradeable:
 		return "This workshop cannot be upgraded."
-	if station.level >= station.type.max_level:
-		return "Already at the highest level."
 	var cost: int = upgrade_cost(station.type, station.level)
 	if balance(gross_revenue) < cost:
 		return "Not enough gold. You need %s." % GameConfig.format_money(cost)
@@ -209,13 +212,13 @@ static func item_sale_multiplier(item: ItemType, current_level: int) -> float:
 
 
 static func item_upgrade_cost(item: ItemType, current_level: int) -> int:
-	if not item.sale_upgradeable or current_level >= item.sale_max_level:
+	if not item.sale_upgradeable:
 		return 0
 	return roundi(float(item.sale_upgrade_base_cost) * pow(item.sale_upgrade_cost_growth, current_level - 1))
 
 
 static func can_upgrade_item(item: ItemType, current_level: int) -> bool:
-	return item.sale_upgradeable and current_level < item.sale_max_level
+	return item.sale_upgradeable
 
 
 ## Neden geliştirilemiyor? Boş string = geliştirilebilir.
@@ -223,8 +226,6 @@ func item_upgrade_problem(item: ItemType, gross_revenue: int) -> String:
 	var level: int = item_level(item)
 	if not item.sale_upgradeable:
 		return "This good cannot be upgraded."
-	if level >= item.sale_max_level:
-		return "Already at the highest level."
 	var cost: int = item_upgrade_cost(item, level)
 	if balance(gross_revenue) < cost:
 		return "Not enough gold. You need %s." % GameConfig.format_money(cost)

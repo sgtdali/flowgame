@@ -148,6 +148,14 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_speed")
 text = "4×"
 
+[node name="Speed8Button" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_speed")
+text = "8×"
+
 [node name="Sep2" type="VSeparator" parent="Root/TopBar/TopMargin/TopBox"]
 layout_mode = 2
 
@@ -156,6 +164,12 @@ unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Arrange workshops"
 text = "Arrange"
+
+[node name="CreateComplexButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Select connected workshops, then organize them as an Ironworks Complex"
+text = "Create Complex"
 
 [node name="ClearButton" type="Button" parent="Root/TopBar/TopMargin/TopBox"]
 unique_name_in_owner = true

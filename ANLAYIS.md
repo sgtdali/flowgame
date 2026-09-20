@@ -64,10 +64,11 @@ Oyuncu cevheri çıkarır, külçeye dönüştürür ve satar. Satış geliri er
 ### Aşama B — Bağımsız elektrik kolu
 
 ```text
-Generator → Power Exchange / Collect
+Generator ── güç ──┐
+Trade Network ─ Talep ─┼─ Power Exchange ─ Electricity ─ Collector / Collect
 ```
 
-Elektrifikasyon yeni gelir kolunu açar. Jeneratör demir ürünlerine ihtiyaç duymadan elektrik üretir ve bu kapasite satılabilir.
+Elektrifikasyon yeni gelir kolunu açar. Jeneratör demir ürünlerine ihtiyaç duymadan güç üretir; Power Exchange bu gücün her 1 kW'ını 1 Demand ile eşleştirip Electricity çıktısına çevirir. Para yalnızca Collector'da birikir.
 
 Bu aşamanın ödülü, önceki hattı bırakmadan ikinci bir işletme edinmektir. Oyuncu bu kolu kendi başına çalışırken görme fırsatı bulmalıdır. Sadece araştırma ağacında elektrifikasyon satın almak, bu deneyimi yaşadığı anlamına gelmez.
 
@@ -88,10 +89,9 @@ Elektrikli hadde külçe ve güç alır, levha üretir. Burada levhanın anlamı
 - Sıfır güçte hadde ilerlemez. Yetersiz güçte üretim orantılı yavaşlar.
 - Tam gereksinimin üzerindeki güç otomatik olarak sınırsız hız sağlamaz.
 - Külçe olmadan elektrik tek başına ürün üretemez.
-- Çalışabilen tesis önce gereken gücü alır, kalan kapasite satışa gider.
-- Tek kapasite aynı anda hem tamamen satılamaz hem tamamen üretimde kullanılamaz.
-- İlk kapsamda manuel güç oranları veya karmaşık öncelik menüleri yoktur.
-- Oyuncu bağlantıyı kesip ayrı satışa dönebilir.
+- Generator'ın her doğrudan güç kolu eşit kapasite payı alır: iki kol yarı yarıya, üç kol üçte birer pay alır.
+- Iron Mine ve Trade Network de tek çıkışlarını istenen sayıda kola round-robin ile eşit dağıtır.
+- Toplam kaynak üretimi artmaz; yalnızca kollar arasındaki pay bölünür.
 
 Birleşme kazancı aynı maden, jeneratör ve geliştirme seviyelerinde ayrı satışla karşılaştırılır:
 
@@ -188,8 +188,8 @@ Bu bölüm kaynak kodunun okunmasına dayanır; testten geçti veya oynanışta 
 
 | Teknoloji | Kilit bedeli | Ek kurulum | Ön koşul |
 |---|---:|---:|---|
-| Electrification | 1.100 | Generator 900 + Power Exchange 300 | Yok |
-| Electrified Rolling | 1.600 | Electric Rolling Mill 900 | Electrification |
+| Electrification | 0 | Generator 900 + Power Exchange 300 | Yok |
+| Electrified Rolling | 1.000 | Electric Rolling Mill 900 | Electrification |
 | Automation | 1.200 | Yok | Electrified Rolling |
 
 Bu sayılar mevcut dosya değerleridir, önerilen/nihai denge değildir. Ortak hat ve marketin yeniden kullanımı kurulum maliyetini etkiler.

@@ -55,6 +55,13 @@ var _links_by_port: Dictionary = {}   # "from_id:port" -> Array[SimLink]
 ## Güç bağlantıları — malzeme `_links`'ten AYRI liste (bkz. `PowerLink`).
 var _power_links: Array[PowerLink] = []
 
+## Kompleksler istasyon listesinden ayrı tutulur: kompleks kurmak yeni bir
+## üretim istasyonu yaratmaz, yalnızca mevcut istasyonların organizasyonudur.
+var _complexes: Dictionary = {} # complex id -> IronworksComplex
+var _station_complex: Dictionary = {} # station id -> complex id
+var _next_complex_id: int = 1
+var _complex_power_used: Dictionary = {} # generator id -> int, türetilmiş
+
 ## Bu tick'te her istasyona TESLİM EDİLEN güç: station id -> int.
 ## Sunum verisi değil, `_phase_power`'ın `_phase_produce`'a geçirdiği
 ## GEÇİCİ hesap — her tick baştan kurulur, kaydedilmez (bkz. `SimStation.
@@ -102,6 +109,9 @@ func remove_station(id: int) -> void:
 		if _power_links[i].from_id == id or _power_links[i].to_id == id:
 			_power_links.remove_at(i)
 	_delivered_power.erase(id)
+	_remove_station_from_complex(id)
+	for complex: IronworksComplex in complexes():
+		complex.power_source_ids.erase(id)
 	_rebuild_link_index()
 
 
@@ -176,16 +186,19 @@ func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) 
 	var dst: SimStation = get_station(to_id)
 	if src == null or dst == null:
 		return "Workshop not found."
+	if to_port < 0 or to_port >= dst.input_port_count:
+		return "Invalid input port."
 	for link: SimLink in _links:
 		if link.matches(from_id, from_port, to_id, to_port):
 			return "This route already exists."
 
-	# Her çıkış portu TEK tele sınırlıdır. Bir hattı birden fazla yere
-	# dağıtmanın tek yolu Dağıtıcı'dır — o, aynı işi ayrı PORTLARLA yapar
-	# (her portu yine tek tel), tek portun kendisini çoğaltarak değil.
-	for link: SimLink in _links:
-		if link.from_id == from_id and link.from_port == from_port:
-			return "This output is already linked. Use a Crossroads to split a route."
+	# Kaynaklar tek çıkış portunu istediği kadar hatta bölebilir. Diğer
+	# istasyonlarda tek port = tek hat kuralı sürer; bunları bölmek için
+	# Crossroads kullanılmalıdır.
+	if not src.type.splits_output:
+		for link: SimLink in _links:
+			if link.from_id == from_id and link.from_port == from_port:
+				return "This output is already linked. Use a Crossroads to split a route."
 
 	var out_items: Array[ItemType] = src.type.output_items()
 	if not out_items.is_empty() and from_port >= out_items.size():
@@ -196,12 +209,13 @@ func connection_problem(from_id: int, from_port: int, to_id: int, to_port: int) 
 	# giriş kuralının (bkz. altta) port başına ikiye ayrışmış hâli — normal
 	# jenerik bloklarda (Ara Depo, Sevkiyat) TÜM portlar aynı kuralı paylaşır.
 	if dst.type.demand_item != null:
-		if to_port == 1:
+		var demand_port: int = 0 if dst.type.power_trade_item != null else 1
+		if to_port == demand_port:
 			if not out_items.is_empty() and out_items[from_port].id != dst.type.demand_item.id:
 				return "%s cannot enter here. This input expects %s." % [
 					out_items[from_port].display_name, dst.type.demand_item.display_name]
 			return ""
-		if to_port == 0:
+		if dst.type.power_trade_item == null and to_port == 0:
 			if not out_items.is_empty() and out_items[from_port].id == dst.type.demand_item.id:
 				return "Demand cannot enter the goods input — use the Demand port."
 			return ""
@@ -248,6 +262,10 @@ func clear() -> void:
 	_wired_out.clear()
 	_last_transferred_item.clear()
 	_power_links.clear()
+	_complexes.clear()
+	_station_complex.clear()
+	_complex_power_used.clear()
+	_next_complex_id = 1
 	_delivered_power.clear()
 	_next_id = 1
 	tick_count = 0
@@ -273,6 +291,8 @@ func power_connection_problem(from_id: int, to_id: int) -> String:
 		return "%s does not generate power." % src.type.display_name
 	if not (dst.type.is_power_consumer() or dst.type.sells_power):
 		return "%s cannot use power." % dst.type.display_name
+	if _station_uses_power_bus(to_id):
+		return "%s already uses its complex Power Bus." % dst.type.display_name
 	for link: PowerLink in _power_links:
 		if link.matches(from_id, to_id):
 			return "This power line already exists."
@@ -328,7 +348,175 @@ func power_used(station_id: int) -> int:
 	for link: PowerLink in _power_links:
 		if link.from_id == station_id:
 			total += delivered_power(link.to_id)
-	return total
+	return total + int(_complex_power_used.get(station_id, 0))
+
+
+## --- Ironworks Complex -----------------------------------------------------
+
+func complexes() -> Array[IronworksComplex]:
+	var out: Array[IronworksComplex] = []
+	var ids: Array = _complexes.keys()
+	ids.sort()
+	for complex_id: int in ids:
+		out.append(_complexes[complex_id])
+	return out
+
+
+func get_complex(complex_id: int) -> IronworksComplex:
+	return _complexes.get(complex_id, null)
+
+
+func complex_for_station(station_id: int) -> IronworksComplex:
+	return get_complex(int(_station_complex.get(station_id, -1)))
+
+
+func create_complex(station_ids: Array[int], display_name: String = "") -> int:
+	var unique: Array[int] = []
+	for station_id: int in station_ids:
+		if not unique.has(station_id):
+			unique.append(station_id)
+	unique.sort()
+	if unique.size() < 2 or not _selected_stations_form_network(unique):
+		return -1
+	for station_id: int in unique:
+		if not _can_join_complex(station_id):
+			return -1
+	var complex := IronworksComplex.new(_next_complex_id, display_name)
+	_next_complex_id += 1
+	complex.station_ids.assign(unique)
+	_complexes[complex.id] = complex
+	for station_id: int in unique:
+		_station_complex[station_id] = complex.id
+	return complex.id
+
+
+func create_empty_complex(display_name: String = "") -> int:
+	var complex := IronworksComplex.new(_next_complex_id, display_name)
+	_next_complex_id += 1
+	_complexes[complex.id] = complex
+	return complex.id
+
+
+func add_station_to_complex(complex_id: int, station_id: int) -> String:
+	var complex: IronworksComplex = get_complex(complex_id)
+	if complex == null:
+		return "Complex not found."
+	if not _can_join_complex(station_id):
+		return "Only unassigned Extractors, Smelting Hearths, and Rolling Mills can join this complex."
+	complex.station_ids.append(station_id)
+	complex.station_ids.sort()
+	_station_complex[station_id] = complex_id
+	return ""
+
+
+func set_complex_material_mode(complex_id: int, station_id: int, port: int, is_input: bool, shared: bool) -> String:
+	var complex: IronworksComplex = get_complex(complex_id)
+	if complex == null or not complex.contains(station_id):
+		return "Workshop is not inside this complex."
+	var key: String = IronworksComplex.port_key(station_id, port)
+	if shared and _has_direct_material_link(station_id, port, is_input):
+		return "Disconnect the direct material route before using the Material Bus."
+	var modes: Dictionary = complex.shared_inputs if is_input else complex.shared_outputs
+	if shared:
+		modes[key] = true
+	else:
+		modes.erase(key)
+	return ""
+
+
+func set_complex_power_bus_member(complex_id: int, station_id: int, enabled: bool) -> String:
+	var complex: IronworksComplex = get_complex(complex_id)
+	var station: SimStation = get_station(station_id)
+	if complex == null or station == null or not complex.contains(station_id) or not station.type.is_power_consumer():
+		return "Only a powered workshop inside this complex can use its Power Bus."
+	if enabled:
+		for link: PowerLink in _power_links:
+			if link.to_id == station_id:
+				return "Disconnect the direct power line before using the Power Bus."
+		complex.power_bus_members[station_id] = true
+	else:
+		complex.power_bus_members.erase(station_id)
+	return ""
+
+
+func connect_power_to_complex(generator_id: int, complex_id: int) -> String:
+	var generator: SimStation = get_station(generator_id)
+	var complex: IronworksComplex = get_complex(complex_id)
+	if generator == null or complex == null:
+		return "Generator or complex not found."
+	if not generator.type.is_power_generator() or complex.contains(generator_id):
+		return "An external Generator is required."
+	if not complex.power_source_ids.has(generator_id):
+		complex.power_source_ids.append(generator_id)
+		complex.power_source_ids.sort()
+	return ""
+
+
+func set_complex_strategy(complex_id: int, strategy: IronworksComplex.Strategy) -> void:
+	var complex: IronworksComplex = get_complex(complex_id)
+	if complex != null:
+		complex.strategy = strategy
+
+
+func _can_join_complex(station_id: int) -> bool:
+	if _station_complex.has(station_id):
+		return false
+	var station: SimStation = get_station(station_id)
+	if station == null:
+		return false
+	return station.type.id in [&"mine_extractor", &"eritme", &"pres"]
+
+
+func _selected_stations_form_network(ids: Array[int]) -> bool:
+	var seen: Dictionary = {ids[0]: true}
+	var pending: Array[int] = [ids[0]]
+	while not pending.is_empty():
+		var current: int = pending.pop_front()
+		for link: SimLink in _links:
+			var neighbour: int = -1
+			if link.from_id == current and ids.has(link.to_id):
+				neighbour = link.to_id
+			elif link.to_id == current and ids.has(link.from_id):
+				neighbour = link.from_id
+			if neighbour >= 0 and not seen.has(neighbour):
+				seen[neighbour] = true
+				pending.append(neighbour)
+	return seen.size() == ids.size()
+
+
+func _remove_station_from_complex(station_id: int) -> void:
+	var complex: IronworksComplex = complex_for_station(station_id)
+	if complex == null:
+		return
+	complex.station_ids.erase(station_id)
+	complex.shared_inputs.erase(IronworksComplex.port_key(station_id, 0))
+	complex.shared_outputs.erase(IronworksComplex.port_key(station_id, 0))
+	complex.power_bus_members.erase(station_id)
+	_station_complex.erase(station_id)
+
+
+func _has_direct_material_link(station_id: int, port: int, is_input: bool) -> bool:
+	for link: SimLink in _links:
+		if is_input and link.to_id == station_id and link.to_port == port:
+			return true
+		if not is_input and link.from_id == station_id and link.from_port == port:
+			return true
+	return false
+
+
+func _station_uses_power_bus(station_id: int) -> bool:
+	var complex: IronworksComplex = complex_for_station(station_id)
+	return complex != null and complex.power_bus_members.has(station_id)
+
+
+func _uses_shared_input(station: SimStation, port: int) -> bool:
+	var complex: IronworksComplex = complex_for_station(station.id)
+	return complex != null and complex.shared_inputs.has(IronworksComplex.port_key(station.id, port))
+
+
+func _uses_shared_output(station: SimStation, port: int) -> bool:
+	var complex: IronworksComplex = complex_for_station(station.id)
+	return complex != null and complex.shared_outputs.has(IronworksComplex.port_key(station.id, port))
 
 
 func _rebuild_link_index() -> void:
@@ -347,6 +535,21 @@ func _rebuild_link_index() -> void:
 	for key: String in _last_transferred_item.keys():
 		if not _links_by_port.has(key):
 			_last_transferred_item.erase(key)
+	_sync_collector_input_ports()
+
+
+## Collector her zaman bağlı son girişin altında BİR boş port tutar. Böylece
+## satış hattı bağlanır bağlanmaz oyuncu ikinci hattı ekleyebilir; port sayısı
+## sabit bir veri limiti değildir.
+func _sync_collector_input_ports() -> void:
+	for station: SimStation in _stations.values():
+		if station.type.category != BlockType.Category.SINK:
+			continue
+		var highest_connected_port: int = -1
+		for link: SimLink in _links:
+			if link.to_id == station.id:
+				highest_connected_port = maxi(highest_connected_port, link.to_port)
+		station.input_port_count = highest_connected_port + 2
 
 
 ## Bu istasyonun kaç portu boşta?
@@ -361,6 +564,10 @@ func _rebuild_link_index() -> void:
 func unwired_port_count(id: int) -> int:
 	var station: SimStation = get_station(id)
 	if station == null:
+		return 0
+	# Collector'daki girişler isteğe bağlı satış hatlarıdır. Boşta duran
+	# "bir sonraki" port kurulum hatası değildir.
+	if station.type.category == BlockType.Category.SINK:
 		return 0
 	var missing: int = 0
 	for port in station.input_port_count:
@@ -391,42 +598,67 @@ func tick() -> void:
 ## jeneratöre bağlıdır (bkz. `power_connection_problem`).
 func _phase_power() -> void:
 	_delivered_power.clear()
+	_complex_power_used.clear()
 	for id: int in _ordered_ids:
 		var generator: SimStation = _stations[id]
 		if not generator.type.is_power_generator():
 			continue
-		var remaining: int = generator.type.power_output_at_level(generator.level)
-		var consumer_ids: Array[int] = []
-		var sale_ids: Array[int] = []
+		var direct_ids: Array[int] = []
 		for link: PowerLink in _power_links:
 			if link.from_id != id:
 				continue
 			var dst: SimStation = get_station(link.to_id)
 			if dst == null:
 				continue
-			if dst.type.sells_power:
-				sale_ids.append(dst.id)
-			else:
-				consumer_ids.append(dst.id)
-		consumer_ids.sort()
-		sale_ids.sort()
+			direct_ids.append(dst.id)
+		direct_ids.sort()
 
-		for consumer_id: int in consumer_ids:
-			var dst: SimStation = _stations[consumer_id]
-			var request: int = dst.type.power_required_per_tick if _wants_power(dst) else 0
-			var given: int = mini(remaining, request)
-			_delivered_power[consumer_id] = given
-			remaining -= given
-
-		if sale_ids.is_empty():
+		# Generator bir kaynak çıkışıdır: iki doğrudan hat varsa kapasitesini
+		# 2'ye, üç hat varsa 3'e böler. Tamsayı bölünmeyen birimler sabit id
+		# sırasıyla ilk kollara gider; toplam asla kapasiteyi aşmaz.
+		if not direct_ids.is_empty():
+			var capacity: int = generator.type.power_output_at_level(generator.level)
+			var share: int = capacity / direct_ids.size()
+			var extra: int = capacity % direct_ids.size()
+			for index in direct_ids.size():
+				_delivered_power[direct_ids[index]] = share + (1 if index < extra else 0)
 			continue
-		# Kalan kapasiteyi satış noktaları arasında eşit paylaştır; kalan
-		# birimler (bölünemeyen) en düşük id'den başlayarak dağıtılır —
-		# determinist ve tek noktalı satış noktasında zaten tam kapasiteyi verir.
-		var share: int = remaining / sale_ids.size()
-		var extra: int = remaining % sale_ids.size()
-		for i in sale_ids.size():
-			_delivered_power[sale_ids[i]] = share + (1 if i < extra else 0)
+
+		var remaining: int = generator.type.power_output_at_level(generator.level)
+
+		# Kompleks tüketicileri dış jeneratörden TEK bir kapasite havuzu olarak
+		# pay alır. Doğrudan bağlı makinelerin eski öncelik davranışı korunur;
+		# güç satışı ise yalnızca kompleks ve doğrudan üretimden sonra kalanı alır.
+		var complex_consumers: Array[Dictionary] = []
+		for complex: IronworksComplex in complexes():
+			if not complex.power_source_ids.has(id):
+				continue
+			for station_id: int in complex.station_ids:
+				if not complex.power_bus_members.has(station_id):
+					continue
+				var member: SimStation = get_station(station_id)
+				if member != null and _wants_power(member):
+					complex_consumers.append({"id": station_id, "request": member.type.power_required_per_tick})
+		complex_consumers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["id"]) < int(b["id"]))
+		if not complex_consumers.is_empty() and remaining > 0:
+			var requested: int = 0
+			for consumer: Dictionary in complex_consumers:
+				requested += int(consumer["request"])
+			var budget: int = mini(remaining, requested)
+			var assigned: int = 0
+			for consumer: Dictionary in complex_consumers:
+				var share: int = budget * int(consumer["request"]) / requested
+				_delivered_power[int(consumer["id"])] = int(_delivered_power.get(int(consumer["id"]), 0)) + share
+				assigned += share
+			# Bölünmeyen birimler sabit id sırasıyla dağıtılır; aynı başlangıç
+			# durumundan her koşumda aynı sonuç çıkar.
+			var remainder: int = budget - assigned
+			for i in remainder:
+				var target_id: int = int(complex_consumers[i % complex_consumers.size()]["id"])
+				_delivered_power[target_id] = int(_delivered_power.get(target_id, 0)) + 1
+			_complex_power_used[id] = int(_complex_power_used.get(id, 0)) + budget
+			remaining -= budget
+
 
 
 ## Bir üretim tüketicisi BU TICK güç istiyor mu? Yalnızca zaten üretiyorsa
@@ -438,8 +670,12 @@ func _wants_power(station: SimStation) -> bool:
 	var recipe: Recipe = station.recipe()
 	if recipe == null:
 		return false
-	for slot: RecipeSlot in recipe.inputs:
-		if int(station.input.get(slot.item.id, 0)) < slot.count:
+	for port in recipe.inputs.size():
+		var slot: RecipeSlot = recipe.inputs[port]
+		if _uses_shared_input(station, port):
+			if not _can_consume_from_bus(station, slot.item.id, slot.count):
+				return false
+		elif int(station.input.get(slot.item.id, 0)) < slot.count:
 			return false
 	return true
 
@@ -581,11 +817,19 @@ func _run_powered_producer(station: SimStation, recipe: Recipe) -> void:
 ## Girdiler reçeteyi karşılıyorsa tüketir ve üretimi başlatır.
 func _try_start(station: SimStation, recipe: Recipe) -> bool:
 	if station.type.category != BlockType.Category.SOURCE:
-		for slot: RecipeSlot in recipe.inputs:
-			if int(station.input.get(slot.item.id, 0)) < slot.count:
+		for port in recipe.inputs.size():
+			var slot: RecipeSlot = recipe.inputs[port]
+			if _uses_shared_input(station, port):
+				if not _can_consume_from_bus(station, slot.item.id, slot.count):
+					return false
+			elif int(station.input.get(slot.item.id, 0)) < slot.count:
 				return false
-		for slot: RecipeSlot in recipe.inputs:
-			station.take_item(station.input, slot.item.id, slot.count)
+		for port in recipe.inputs.size():
+			var slot: RecipeSlot = recipe.inputs[port]
+			if _uses_shared_input(station, port):
+				_take_from_bus(station, slot.item.id, slot.count)
+			else:
+				station.take_item(station.input, slot.item.id, slot.count)
 
 	# `progress_ticks` BİLİNÇLİ OLARAK sıfırlanmaz: önceki döngüden kalan
 	# kesirli küsurat (bkz. `_run_producer`) buraya taşınıyor olabilir —
@@ -611,6 +855,14 @@ func _try_emit(station: SimStation, recipe: Recipe) -> bool:
 	if not _fits(station, planned) and station.type.category == BlockType.Category.INSPECT:
 		planned = _recipe_output(recipe)
 
+	if _uses_shared_output(station, 0):
+		if not _bus_fits(station, planned):
+			return false
+		var complex: IronworksComplex = complex_for_station(station.id)
+		for item_id: StringName in planned:
+			complex.material_bus[item_id] = int(complex.material_bus.get(item_id, 0)) + int(planned[item_id])
+		station.produced_total += 1
+		return true
 	if not _fits(station, planned):
 		return false
 	for item_id: StringName in planned:
@@ -651,6 +903,9 @@ func _planned_output(station: SimStation, recipe: Recipe) -> Dictionary:
 ## Tampon üretmez: girdisini çıktısına geçirir.
 func _run_buffer(station: SimStation) -> void:
 	if station.type.demand_item != null:
+		if station.type.power_trade_item != null:
+			_run_power_trade(station)
+			return
 		_run_trade_depot(station)
 		return
 	if station.input.is_empty():
@@ -666,6 +921,28 @@ func _run_buffer(station: SimStation) -> void:
 	station.add_item(station.output, item_id, 1)
 	# throughput_total() bu sayaca bakıyor — yoksa Hız göstergesi hep 0 kalır.
 	station.produced_total += 1
+
+
+## Elektrikli Trade Depot: 1 kW ve gereken Talep eşleşince 1 Electricity
+## çıktısı oluşur. Çıktı, normal malzeme hattından Collector'a taşınır;
+## bu düğümde `accrued` veya satış muhasebesi kesinlikle tutulmaz.
+func _run_power_trade(station: SimStation) -> void:
+	var delivered: int = delivered_power(station.id)
+	if delivered <= 0:
+		station.status = SimStation.Status.UNPOWERED
+		return
+	var demand_id: StringName = station.type.demand_item.id
+	var required: int = maxi(1, station.type.demand_required)
+	if int(station.input.get(demand_id, 0)) < required:
+		station.status = SimStation.Status.STARVED
+		return
+	if station.total_output() >= station.type.output_capacity:
+		station.status = SimStation.Status.BLOCKED
+		return
+	station.take_item(station.input, demand_id, required)
+	station.add_item(station.output, station.type.power_trade_item.id, 1)
+	station.produced_total += 1
+	station.status = SimStation.Status.RUNNING
 
 
 ## Trade Depot gibi TALEP KAPILI geçiş noktaları: 0. porttan gelen HERHANGİ
@@ -708,9 +985,6 @@ func _run_trade_depot(station: SimStation) -> void:
 ## bu sayaç tahsilattan BAĞIMSIZ, satış anında artar — tahsilat tıklaması
 ## burada hiçbir şeyi artırmaz, yalnızca `collect()` parayı taşır.
 func _run_sink(station: SimStation) -> void:
-	if station.type.sells_power:
-		_run_power_sale(station)
-		return
 	if station.input.is_empty():
 		station.status = SimStation.Status.STARVED
 		return
@@ -719,25 +993,6 @@ func _run_sink(station: SimStation) -> void:
 		var count: int = int(station.input[item_id])
 		_sell(station, item_id, count)
 	station.input.clear()
-
-
-## Bir Elektrik Satış Noktası'nın satışı. Girdisi PORT değil güç sistemidir
-## (bkz. `delivered_power`) — sürekli akan gücü `power_sale_batch` birimlik
-## kesikli satış paketlerine çevirir, sonra AYNI `_sell` yardımcısını çağırır.
-## Tahsilat muhasebesi (accrued/collect) böylece normal Sevkiyat ile
-## ÇOĞALTILMADAN paylaşılır.
-func _run_power_sale(station: SimStation) -> void:
-	var delivered: int = delivered_power(station.id)
-	if delivered <= 0:
-		station.status = SimStation.Status.STARVED
-		return
-	station.status = SimStation.Status.RUNNING
-	station.energy_ticks += delivered
-	var batch: int = maxi(1, station.type.power_sale_batch)
-	while station.energy_ticks >= batch:
-		station.energy_ticks -= batch
-		_sell(station, &"elektrik", 1)
-
 
 ## Satış muhasebesinin TEK yeri: normal Sevkiyat ve Elektrik Satış Noktası
 ## AYNI kodu çağırır (bkz. D6 — tahsilat mantığı çoğaltılmaz).
@@ -859,6 +1114,8 @@ func _port_item_id(station: SimStation, port: int) -> StringName:
 
 
 func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
+	if _uses_shared_input(dst, port):
+		return false
 	# Trade Depot gibi TALEP KAPILI bloklar: port 0 Talep HARİÇ herhangi bir
 	# ürünü kabul eder. Port 1 (Talep) ise İKİ şartla kabul eder: (1) elde
 	# ZATEN bekleyen bir mal olmalı — Talep, mal gelmeden ÖNCEDEN
@@ -869,9 +1126,12 @@ func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
 	# burada sayaç mal geldiği ANDAN itibaren başlıyor.
 	if dst.type.demand_item != null:
 		var demand_id: StringName = dst.type.demand_item.id
-		if port == 1:
+		var demand_port: int = 0 if dst.type.power_trade_item != null else 1
+		if port == demand_port:
 			if item_id != demand_id:
 				return false
+			if dst.type.power_trade_item != null:
+				return int(dst.input.get(item_id, 0)) < maxi(1, dst.type.demand_required)
 			var has_goods: bool = false
 			for key: StringName in dst.input.keys():
 				if key != demand_id:
@@ -880,7 +1140,7 @@ func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
 			if not has_goods:
 				return false
 			return int(dst.input.get(item_id, 0)) < maxi(1, dst.type.demand_required)
-		if port == 0:
+		if dst.type.power_trade_item == null and port == 0:
 			return item_id != demand_id and int(dst.input.get(item_id, 0)) < dst.type.input_capacity
 		return false
 
@@ -893,6 +1153,41 @@ func _can_accept(dst: SimStation, port: int, item_id: StringName) -> bool:
 	if expected[port].id != item_id:
 		return false
 	return int(dst.input.get(item_id, 0)) < dst.type.input_capacity
+
+
+func _can_consume_from_bus(station: SimStation, item_id: StringName, count: int) -> bool:
+	var complex: IronworksComplex = complex_for_station(station.id)
+	if complex == null or int(complex.material_bus.get(item_id, 0)) < count:
+		return false
+	# Ingot strategy yalnızca ortak havuzdan beslenen haddeyi etkiler;
+	# oyuncunun doğrudan bağladığı özel hatlara asla müdahale etmez.
+	if station.type.id == &"pres" and item_id == &"kulce":
+		if complex.strategy == IronworksComplex.Strategy.INGOT_FOCUS:
+			return false
+		if complex.strategy == IronworksComplex.Strategy.BALANCED and tick_count % 2 != 0:
+			return false
+	return true
+
+
+func _take_from_bus(station: SimStation, item_id: StringName, count: int) -> void:
+	var complex: IronworksComplex = complex_for_station(station.id)
+	if complex == null:
+		return
+	var remaining: int = int(complex.material_bus.get(item_id, 0)) - count
+	if remaining <= 0:
+		complex.material_bus.erase(item_id)
+	else:
+		complex.material_bus[item_id] = remaining
+
+
+func _bus_fits(station: SimStation, planned: Dictionary) -> bool:
+	var complex: IronworksComplex = complex_for_station(station.id)
+	if complex == null:
+		return false
+	for item_id: StringName in planned:
+		if int(complex.material_bus.get(item_id, 0)) + int(planned[item_id]) > complex.material_capacity:
+			return false
+	return true
 
 
 ## --- Özet -------------------------------------------------------------------
@@ -949,6 +1244,9 @@ func to_dict() -> Dictionary:
 	var power_link_data: Array = []
 	for link: PowerLink in _power_links:
 		power_link_data.append({"from": link.from_id, "to": link.to_id})
+	var complex_data: Array = []
+	for complex: IronworksComplex in complexes():
+		complex_data.append(complex.to_dict())
 
 	return {
 		"tick": tick_count,
@@ -960,6 +1258,8 @@ func to_dict() -> Dictionary:
 		"stations": station_data,
 		"links": link_data,
 		"power_links": power_link_data,
+		"complexes": complex_data,
+		"next_complex_id": _next_complex_id,
 	}
 
 
@@ -997,6 +1297,14 @@ func from_dict(data: Dictionary) -> bool:
 		_ordered_ids.append(st.id)
 
 	_ordered_ids.sort()
+	# Eski kayıtta Collector'ın ikinci/üçüncü portu ilk sırada yazılmış olsa
+	# bile bağlantı geçersiz sayılmasın. Gerçek "bir boş port bırak" sayısı
+	# aşağıdaki her bağlantıdan sonra `_sync_collector_input_ports` ile yeniden
+	# hesaplanır.
+	for entry: Dictionary in data.get("links", []):
+		var dst: SimStation = get_station(int(entry.get("to", -1)))
+		if dst != null and dst.type.category == BlockType.Category.SINK:
+			dst.input_port_count = maxi(dst.input_port_count, int(entry.get("to_port", 0)) + 1)
 	for entry: Dictionary in data.get("links", []):
 		var from_id: int = int(entry.get("from", -1))
 		var to_id: int = int(entry.get("to", -1))
@@ -1013,6 +1321,23 @@ func from_dict(data: Dictionary) -> bool:
 		var to_id: int = int(entry.get("to", -1))
 		if can_connect_power(from_id, to_id):
 			_power_links.append(PowerLink.new(from_id, to_id))
+
+	_next_complex_id = maxi(1, int(data.get("next_complex_id", 1)))
+	for entry: Dictionary in data.get("complexes", []):
+		var complex_id: int = int(entry.get("id", -1))
+		if complex_id < 1 or _complexes.has(complex_id):
+			continue
+		var complex := IronworksComplex.new(complex_id)
+		complex.load_dict(entry)
+		var valid_members: Array[int] = []
+		for station_id: int in complex.station_ids:
+			if _can_join_complex(station_id):
+				valid_members.append(station_id)
+		complex.station_ids = valid_members
+		_complexes[complex_id] = complex
+		for station_id: int in valid_members:
+			_station_complex[station_id] = complex_id
+		_next_complex_id = maxi(_next_complex_id, complex_id + 1)
 	return true
 
 
@@ -1038,6 +1363,10 @@ func state_hash() -> String:
 		power_parts.append("%d>%d" % [link.from_id, link.to_id])
 	power_parts.sort()
 	parts.append("pw:" + ",".join(power_parts))
+	var complex_parts: PackedStringArray = PackedStringArray()
+	for complex: IronworksComplex in complexes():
+		complex_parts.append(complex.fingerprint())
+	parts.append("cx:" + "|".join(complex_parts))
 	return "|".join(parts).sha256_text()
 
 

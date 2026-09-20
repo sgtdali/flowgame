@@ -17,6 +17,7 @@ const PORT_TYPE_MATERIAL: int = 0
 ## GraphEdit'in kendi tip denetimi bunu bedavaya sağlar (bkz. FlowCanvas).
 const PORT_TYPE_POWER: int = 1
 const COLOR_POWER := Color(0.93, 0.78, 0.24)
+const NODE_BACKGROUND: Texture2D = preload("res://assets/ui/node_background.png")
 
 ## Düğümün çerçevesinin anlattığı şey.
 ##
@@ -55,7 +56,7 @@ var market_accrued: int = 0
 var _stat_keys: Dictionary = {}
 var _stat_values: Dictionary = {}
 var _progress: ProgressBar = null
-var _panel_style: StyleBoxFlat = null
+var _panel_style: StyleBoxTexture = null
 var _upgrade_button: Button = null
 var _collect_button: Button = null
 
@@ -66,8 +67,10 @@ var _collect_button: Button = null
 ## yüzden onlar için anlamsız — oyuncu bunun yerine canlı girdi/çıktı akış
 ## hızını ve dolum durumunu görür. Girdi sayısı bloğa göre değiştiği için
 ## (bkz. `_gate_slots`) satırlar DİZİ olarak tutulur.
-var _gate_input_value_labels: Array[Label] = []
-var _gate_output_value_label: Label = null
+var _gate_input_port_labels: Array[Label] = []
+var _gate_output_port_label: Label = null
+var _collector_port_rows: Array[HBoxContainer] = []
+var _collector_port_labels: Array[Label] = []
 var _gate_current_labels: Array[Label] = []
 
 ## Son yazılan değerler. Label.text atamak font shaping tetikler; 80 düğüm ×
@@ -120,9 +123,13 @@ func _is_instant_conversion_block() -> bool:
 ## biriktirmez, sadece durmadan üretir. İlerleme çubuğu (her ~1.7 tick'te bir
 ## sıfırlanıp dolan) ve "Output: x/y" satırı bu bloklarda GÖRSEL GÜRÜLTÜ —
 ## anlamlı bir bekleme/darboğaz göstermiyor, sadece titreşiyor. Bu yüzden
-## SADECE Rate ve Level (varsa) gösterilir.
+## SADECE Rate gösterilir.
 func _is_free_running_source() -> bool:
 	return block_type.category == BlockType.Category.SOURCE
+
+
+func _is_collector() -> bool:
+	return block_type.category == BlockType.Category.SINK
 
 
 ## --- Görünüm ---------------------------------------------------------------
@@ -144,12 +151,14 @@ func _apply_style() -> void:
 	titlebar_sel.bg_color = accent.lightened(0.22)
 	add_theme_stylebox_override(&"titlebar_selected", titlebar_sel)
 
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = Color(0.24, 0.18, 0.12, 0.98)
-	panel.border_color = accent.darkened(0.25)
-	panel.set_border_width_all(1)
-	panel.corner_radius_bottom_left = 5
-	panel.corner_radius_bottom_right = 5
+	var panel := StyleBoxTexture.new()
+	panel.texture = NODE_BACKGROUND
+	# Dört kenar 5 px sabit kalır; orta alan node yüksekliği/genişliğiyle
+	# esner. Böylece kaynak görselinin köşeleri ve çerçevesi bozulmaz.
+	panel.texture_margin_left = 5.0
+	panel.texture_margin_top = 5.0
+	panel.texture_margin_right = 5.0
+	panel.texture_margin_bottom = 5.0
 	panel.content_margin_left = 9.0
 	panel.content_margin_right = 9.0
 	panel.content_margin_top = 7.0
@@ -158,9 +167,8 @@ func _apply_style() -> void:
 
 	_panel_style = panel
 
-	var panel_sel: StyleBoxFlat = panel.duplicate()
-	panel_sel.border_color = accent.lightened(0.35)
-	panel_sel.set_border_width_all(2)
+	var panel_sel: StyleBoxTexture = panel.duplicate()
+	panel_sel.modulate_color = accent.lightened(0.18)
 	add_theme_stylebox_override(&"panel_selected", panel_sel)
 
 
@@ -170,6 +178,11 @@ func _build_rows() -> void:
 	var outputs: PackedStringArray = block_type.output_labels()
 	var row_count: int = maxi(inputs.size(), outputs.size())
 	var accent: Color = block_type.accent_color
+	var is_gate: bool = _uses_gate_layout()
+	_gate_input_port_labels.clear()
+	_gate_output_port_label = null
+	_collector_port_rows.clear()
+	_collector_port_labels.clear()
 
 	if block_type.node_image != null:
 		add_child(_build_node_image())
@@ -187,6 +200,11 @@ func _build_rows() -> void:
 		left.add_theme_font_size_override(&"font_size", 12)
 		left.add_theme_color_override(&"font_color", Color(0.88, 0.79, 0.61))
 		row.add_child(left)
+		if _is_collector() and has_in:
+			_collector_port_rows.append(row)
+			_collector_port_labels.append(left)
+		if is_gate and has_in:
+			_gate_input_port_labels.append(left)
 
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -199,6 +217,8 @@ func _build_rows() -> void:
 		right.add_theme_font_size_override(&"font_size", 12)
 		right.add_theme_color_override(&"font_color", Color(0.88, 0.79, 0.61))
 		row.add_child(right)
+		if is_gate and has_out and _gate_output_port_label == null:
+			_gate_output_port_label = right
 
 		add_child(row)
 		set_slot(i, has_in, PORT_TYPE_MATERIAL, accent, has_out, PORT_TYPE_MATERIAL, accent)
@@ -206,12 +226,9 @@ func _build_rows() -> void:
 	if block_type.power_output > 0 or block_type.power_required_per_tick > 0 or block_type.sells_power:
 		_build_power_row(row_count)
 
-	if _uses_gate_layout():
-		_build_gate_value_rows()
-
 	var sep := HSeparator.new()
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sep.visible = not _is_free_running_source()
+	sep.visible = not _is_free_running_source() and not _is_collector()
 	add_child(sep)
 
 	_progress = ProgressBar.new()
@@ -220,7 +237,7 @@ func _build_rows() -> void:
 	_progress.show_percentage = false
 	_progress.custom_minimum_size = Vector2(0.0, 6.0)
 	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_progress.visible = not _is_free_running_source()
+	_progress.visible = not _is_free_running_source() and not _is_collector()
 	add_child(_progress)
 
 	if _uses_gate_layout():
@@ -274,6 +291,13 @@ func _uses_gate_layout() -> bool:
 func _gate_slots() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	if block_type.demand_item != null:
+		if block_type.power_trade_item != null:
+			out.append({
+				"label": block_type.demand_item.display_name,
+				"target": maxi(1, block_type.demand_required),
+				"item_id": block_type.demand_item.id,
+			})
+			return out
 		out.append({"label": "Goods", "target": 1, "item_id": &""})
 		out.append({
 			"label": block_type.demand_item.display_name,
@@ -298,23 +322,6 @@ func _gate_slot_have(station: SimStation, slot: Dictionary) -> int:
 		if key != exclude and int(station.input[key]) > 0:
 			return int(station.input[key])
 	return 0
-
-
-## Reçete satırının (ör. Iron Ore/Coal/Iron Ingot, Goods/Demand/Output)
-## hemen altında: HER girdi için bir satır — o anki ölçülen saniyelik akışı
-## (bkz. `_update_gate_values`). "Output Value" tek değer olduğundan yalnızca
-## İLK satırın sağında görünür. Bloğun kendi temposu olmadığından tek
-## anlamlı "hız" budur.
-func _build_gate_value_rows() -> void:
-	_gate_input_value_labels.clear()
-	var slots: Array[Dictionary] = _gate_slots()
-	for i in maxi(1, slots.size()):
-		var labels: Dictionary = _build_label_row(Color(0.88, 0.79, 0.61))
-		labels["left"].text = "Input Value: —"
-		_gate_input_value_labels.append(labels["left"])
-		if i == 0:
-			_gate_output_value_label = labels["right"]
-			_gate_output_value_label.text = "Output Value: —"
 
 
 ## İlerleme çubuğunun hemen altında: HER girdi tamponundaki anlık sayı ve
@@ -392,7 +399,6 @@ func _build_stats_grid() -> GridContainer:
 		[&"in", "Input"],
 		[&"out", "Output"],
 		[&"power", "Power"],
-		[&"level", "Level"],
 		[&"market", "Market"],
 	]
 	for spec: Array in specs:
@@ -430,10 +436,7 @@ func _build_action_buttons() -> void:
 	_collect_button.pressed.connect(func() -> void: action_requested.emit(self, &"collect"))
 	add_child(_collect_button)
 func _refresh_header() -> void:
-	title = block_label
-	tooltip_text = "%s — %s\n%s" % [
-		block_type.display_name, block_type.category_label(), block_type.description
-	]
+	title = "%s - %d" % [block_label, level] if block_type.upgradeable else block_label
 
 
 ## Simülasyon bağlanmadan önceki boş görünüm.
@@ -452,19 +455,17 @@ func _refresh_stats() -> void:
 	# boş "Input: 0/0" satırıyla kalmasın.
 	# Girdisiz kaynaklar (Iron Mine, Trade Network) hiçbir şey
 	# biriktirmez — "Output: x/y" onlarda anlamsız titreşen bir sayı, sadece
-	# Rate ve Level (varsa) kalsın (bkz. `_is_free_running_source`).
+	# Rate kalsın (bkz. `_is_free_running_source`).
 	var is_source: bool = _is_free_running_source()
-	_set_row_visible(&"in", not is_gated and not block_type.input_labels().is_empty())
+	_set_row_visible(&"in", not is_gated and not _is_collector() and not block_type.input_labels().is_empty())
 	_set_row_visible(&"out", not is_gated and not is_source and block_type.category != BlockType.Category.SINK and block_type.category != BlockType.Category.RESEARCH and not block_type.power_only)
 	_set_row_visible(&"power", has_power)
 	_set_row_visible(&"market", block_type.category == BlockType.Category.SINK)
-	_set_row_visible(&"level", block_type.upgradeable)
 	_write(&"rate", "—")
 	_write(&"in", "0 / %d" % block_type.input_capacity)
 	_write(&"out", "0 / %d" % block_type.output_capacity)
 	_write(&"power", "—")
 	_write(&"market", "0 gold")
-	_write(&"level", "1 / %d" % block_type.max_level)
 
 	_upgrade_button.visible = block_type.upgradeable
 	if block_type.upgradeable:
@@ -477,8 +478,10 @@ func _refresh_stats() -> void:
 ## GameController her karede bunu çağırır. Blok simülasyonu kendisi
 ## SORGULAMAZ — durumu ona verilir.
 func render_state(station: SimStation, tick: int, unwired_ports: int, auto_collect: bool = false, power_text: String = "", incoming_rates_per_sec: Array[float] = []) -> void:
-	_progress.value = station.progress_ratio()
+	if not _is_collector():
+		_progress.value = station.progress_ratio()
 	level = station.level
+	_refresh_header()
 	market_accrued = station.accrued
 
 	_write(&"rate", _rate_text())
@@ -488,9 +491,10 @@ func render_state(station: SimStation, tick: int, unwired_ports: int, auto_colle
 		_write(&"power", power_text)
 	if _uses_gate_layout():
 		_update_gate_values(station, incoming_rates_per_sec)
+	if _is_collector():
+		_update_collector_ports(station.input_port_count, incoming_rates_per_sec)
 
 	if block_type.upgradeable:
-		_write(&"level", "%d / %d" % [station.level, block_type.max_level])
 		_refresh_upgrade_button(station.level)
 	if block_type.category == BlockType.Category.SINK:
 		# Otomasyon açılınca manuel tahsilat anlamsızlaşır — düğmeyi ve
@@ -526,15 +530,60 @@ func _update_gate_values(station: SimStation, incoming_rates_per_sec: Array[floa
 	for i in slots.size():
 		var slot: Dictionary = slots[i]
 		var rate: float = incoming_rates_per_sec[i] if i < incoming_rates_per_sec.size() else 0.0
-		if i < _gate_input_value_labels.size():
-			_gate_input_value_labels[i].text = "Input Value: %.2f/sec" % rate
+		if i < _gate_input_port_labels.size():
+			_gate_input_port_labels[i].text = "%s [%.2f/s]" % [slot["label"], rate]
 		if i < _gate_current_labels.size():
 			_gate_current_labels[i].text = str(_gate_slot_have(station, slot))
 		var ratio: int = maxi(1, int(slot["target"]))
 		output_per_sec = minf(output_per_sec, rate / float(ratio))
 	if output_per_sec == INF:
 		output_per_sec = 0.0
-	_gate_output_value_label.text = "Output Value: %.2f/sec" % output_per_sec
+	if _gate_output_port_label != null:
+		var outputs: PackedStringArray = block_type.output_labels()
+		var output_label: String = outputs[0] if not outputs.is_empty() else "Output"
+		_gate_output_port_label.text = "[%.2f/s] %s" % [output_per_sec, output_label]
+
+
+## Her Collector girişi kendi satış hızını gösterir. Bağlanan son portun
+## altında daima yeni, boş bir giriş bırakılır.
+func _update_collector_ports(port_count: int, income_rates_per_sec: Array[float]) -> void:
+	while _collector_port_labels.size() < port_count:
+		_add_collector_port(_collector_port_labels.size())
+	for port in _collector_port_labels.size():
+		var is_open: bool = port < port_count
+		_collector_port_rows[port].visible = is_open
+		set_slot(port, is_open, PORT_TYPE_MATERIAL, block_type.accent_color, false, PORT_TYPE_MATERIAL, block_type.accent_color)
+		if not is_open:
+			continue
+		var income_rate: float = income_rates_per_sec[port] if port < income_rates_per_sec.size() else 0.0
+		_collector_port_labels[port].text = "Input [%s g/s]" % _format_income_rate(income_rate)
+
+
+func _add_collector_port(port: int) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", 14)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var left := Label.new()
+	left.text = "Input [0 g/s]"
+	left.add_theme_font_size_override(&"font_size", 12)
+	left.add_theme_color_override(&"font_color", Color(0.88, 0.79, 0.61))
+	row.add_child(left)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
+
+	add_child(row)
+	move_child(row, port)
+	set_slot(port, true, PORT_TYPE_MATERIAL, block_type.accent_color, false, PORT_TYPE_MATERIAL, block_type.accent_color)
+	_collector_port_rows.append(row)
+	_collector_port_labels.append(left)
+
+
+func _format_income_rate(rate: float) -> String:
+	return str(roundi(rate)) if is_equal_approx(rate, roundf(rate)) else "%.2f" % rate
 
 
 ## Ham durum her tick değişir ve rozet okunmaz hâle gelir: %75 verimle
@@ -571,19 +620,12 @@ func _rate_per_second(level_check: int) -> float:
 ## Yükselt düğmesinin metni ve etkinliği. Yalnızca fiyatı gösterir — bir
 ## sonraki seviyenin etkisini artık ayrıca yazmıyoruz.
 func _refresh_upgrade_button(level_now: int) -> void:
-	if ProgressionState.can_upgrade(block_type, level_now):
-		var cost: int = ProgressionState.upgrade_cost(block_type, level_now)
-		_upgrade_button.text = "Upgrade (%s gold)" % GameConfig.format_money(cost)
-		_upgrade_button.disabled = false
-	else:
-		_upgrade_button.text = "Max level"
-		_upgrade_button.disabled = true
+	var cost: int = ProgressionState.upgrade_cost(block_type, level_now)
+	_upgrade_button.text = "Upgrade (%s gold)" % GameConfig.format_money(cost)
+	_upgrade_button.disabled = false
 
 
-## Çerçeve rengini ve açıklayıcı ipucunu günceller.
-##
-## Renk yazıdan hızlı okunur ama kendi kendini açıklamaz; ne anlama geldiğini
-## düğümün üstüne gelince ipucu söyler.
+## Çerçeve rengini günceller. Node üzerinde bekleyince açıklama gösterilmez.
 func _apply_display(display: Display, unwired_ports: int) -> void:
 	if display == _last_display and unwired_ports == _last_unwired:
 		return
@@ -592,28 +634,18 @@ func _apply_display(display: Display, unwired_ports: int) -> void:
 	shown_display = display
 
 	var tint: Color
-	var explanation: String
 	match display:
 		Display.UNWIRED:
 			tint = COLOR_UNWIRED
-			explanation = "%d unlinked ports. Connect them to keep goods moving." % unwired_ports
 		Display.RUNNING:
 			tint = COLOR_RUNNING
-			explanation = "Working."
 		_:
 			tint = COLOR_IDLE
-			explanation = "Idle. Waiting for materials or room to send goods."
 
 	if _panel_style != null:
-		_panel_style.border_color = tint
-		_panel_style.set_border_width_all(2)
-	tooltip_text = "%s — %s
-%s
-
-%s" % [
-		block_type.display_name, block_type.category_label(),
-		block_type.description, explanation
-	]
+		# Çerçeve görselin kendi 9-slice kenarıdır; durum tonu yalnızca hafif
+		# uygulanır, doku ve yazı okunurluğu korunur.
+		_panel_style.modulate_color = Color.WHITE.lerp(tint, 0.16)
 
 
 ## Değişmediyse yazma — bkz. _last_text.

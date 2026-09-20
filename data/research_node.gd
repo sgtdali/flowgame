@@ -28,6 +28,9 @@ extends Resource
 ## BİRİKMEZ, doğrudan harcanabilir kasaya akar (bkz. FactorySim.auto_collect,
 ## DESIGN.md D27). Erken oyun deneyinde ilk ödüllerden biri.
 @export var unlocks_auto_collect: bool = false
+## Kompleks oluşturma araçlarını açar. Bu bir BlockType değildir; mevcut
+## istasyonları yeniden organize ettiği için ayrı ve açık bir ödül alanıdır.
+@export var unlocks_complexes: bool = false
 
 
 func is_item_cost() -> bool:

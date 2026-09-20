@@ -8,10 +8,11 @@ extends RefCounted
 
 const ELEKTRIFIKASYON := preload("res://data/research/elektrifikasyon.tres")
 const PRESLEME := preload("res://data/research/presleme.tres")
+const INDUSTRIAL_ORGANIZATION := preload("res://data/research/industrial_organization.tres")
 const OTOMASYON := preload("res://data/research/otomasyon.tres")
 
 const _ORDER: Array = [
-	ELEKTRIFIKASYON, PRESLEME, OTOMASYON,
+	ELEKTRIFIKASYON, PRESLEME, INDUSTRIAL_ORGANIZATION, OTOMASYON,
 ]
 
 

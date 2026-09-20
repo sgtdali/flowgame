@@ -36,4 +36,3 @@ extends Resource
 ## Seviye başına satış fiyatına eklenen oran. 1.0 = +%100 (taban fiyatın
 ## katları hâlinde birikir — bkz. ProgressionState.item_sale_multiplier).
 @export var sale_bonus_per_level: float = 0.0
-@export var sale_max_level: int = 1

@@ -46,16 +46,25 @@ enum Category {
 ## Elde bekleyen 1 malı karşıya geçirmek için gereken Talep miktarı.
 ## Yalnızca `demand_item` doluyken anlamlı.
 @export var demand_required: int = 1
+## Güçle çalışan Trade Depot'un sattığı ürün. Doluysa bu blok malzeme
+## girişi yerine güç portundan 1 kW alır, Talep ile eşleştirip bu ürünü
+## çıktısına verir. Para burada değil, bağlı Collector'da birikir.
+@export var power_trade_item: ItemType = null
 
 @export_group("Kuyruk")
 ## Girdi tamponunda ürün başına tutulabilecek en fazla adet.
 @export var input_capacity: int = 4
 ## Reçetesi olmayan istasyonların (BUFFER, SPLITTER) kaç çıkış portu olduğu.
-## Yalnızca SPLITTER birden fazla kullanır — diğer her istasyonun çıkışı
-## tek tele sınırlıdır, birden fazlaya dağıtmak için Dağıtıcı gerekir.
+## Kaynakların tek çıkış portu da birden fazla hatta bağlanabilir; bu durum
+## `splits_output` ile ayrı olarak tanımlanır.
 @export var output_port_count: int = 1
 ## Çıktı tamponu. DOLU ÇIKTI ÜRETİMİ DURDURUR — tıkanma mekaniğinin kaynağı.
 @export var output_capacity: int = 4
+## Bu istasyonun aynı çıkış portu birden fazla hatta bağlanabilir mi?
+## Kaynaklarda (Iron Mine, Generator, Trade Network) true'dur. Malzeme
+## aktarımı her ürün için round-robin yapar; güç ise kapasiteyi tüm doğrudan
+## bağlantılara eşit tamsayı paylarla böler.
+@export var splits_output: bool = false
 
 @export_group("Fire")
 ## Her kaçıncı ürünün Ret portuna gideceği. 0 = fire yok.
@@ -101,7 +110,6 @@ enum Category {
 @export var sale_value_bonus_per_level: float = 0.0
 ## Ulaşılabilecek en yüksek seviye. Küçük tutulur — bu "sade" bir
 ## geliştirme sistemi, sonsuz ölçeklenen bir güç eğrisi değil.
-@export var max_level: int = 3
 
 @export_group("Güç")
 ## Jeneratörün bu seviyedeki TEMEL güç kapasitesi (tick başına birim).
@@ -114,13 +122,9 @@ enum Category {
 ## Yetersiz güçte üretim ORANTILI yavaşlar (bkz. FactorySim._run_producer);
 ## sıfır güçte hiç ilerlemez.
 @export var power_required_per_tick: int = 0
-## true ise bu istasyon Elektrik Satış Noktası'dır: girişi malzeme değil,
-## güç sistemidir. Mevcut Sevkiyat (SINK) muhasebesini (accrued/collect)
-## AYNEN kullanır — tahsilat mantığı çoğaltılmaz.
+## true ise bu istasyon güç portu kullanır. `power_trade_item` doluysa güç,
+## Talep ile eşleşip fiziksel bir satış çıktısına dönüşür.
 @export var sells_power: bool = false
-## Sürekli güç akışını kaç enerji biriminde bir "bir birim elektrik" satışına
-## çevireceği. Yalnızca `sells_power` için anlamlı.
-@export var power_sale_batch: int = 100
 ## true ise bu istasyonun malzeme portu YOKTUR, yalnızca güç portu vardır
 ## (Jeneratör ve Elektrik Satış Noktası). Jenerik "Girdi/Çıktı" satırı bu
 ## istasyonlarda bastırılır — aksi hâlde hiçbir işe yaramayan bir malzeme
@@ -227,6 +231,9 @@ func input_items() -> Array[ItemType]:
 
 func output_items() -> Array[ItemType]:
 	var out: Array[ItemType] = []
+	if power_trade_item != null:
+		out.append(power_trade_item)
+		return out
 	if recipe == null:
 		return out
 	for slot: RecipeSlot in recipe.outputs:
@@ -250,6 +257,9 @@ func input_labels() -> PackedStringArray:
 	if power_only:
 		return out  # yalnızca güç portu var, jenerik malzeme girişi yok
 	if demand_item != null:
+		if power_trade_item != null:
+			out.append(demand_item.display_name)
+			return out
 		out.append("Goods")
 		out.append(demand_item.display_name)
 		return out
@@ -267,6 +277,9 @@ func output_labels() -> PackedStringArray:
 		return out  # bitiş noktasının çıkışı yok
 	if power_only:
 		return out  # yalnızca güç portu var, jenerik malzeme çıkışı yok
+	if power_trade_item != null:
+		out.append(power_trade_item.display_name)
+		return out
 	if recipe == null:
 		if output_port_count <= 1:
 			out.append("Output")

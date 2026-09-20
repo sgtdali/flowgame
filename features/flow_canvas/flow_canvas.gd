@@ -17,6 +17,10 @@ const PORT_TYPE_MATERIAL: int = 0
 ## denetimi malzeme ve güç tellerinin karışmasını burada, sürükle-bırak
 ## sırasında engeller.
 const PORT_TYPE_POWER: int = 1
+const COLOR_MATERIAL_CONNECTION := Color(0.76, 0.57, 0.31, 0.95)
+const COLOR_POWER_CONNECTION := Color(0.96, 0.79, 0.22, 0.98)
+const SMOOTH_STEP_RADIUS: float = 22.0
+const SMOOTH_STEP_SEGMENTS: int = 5
 
 ## Kullanıcı niyetleri (yukarı).
 signal add_requested(type: BlockType, at: Vector2)
@@ -26,6 +30,7 @@ signal delete_requested(sim_ids: Array[int])
 signal block_selected(block: FlowBlock)
 signal selection_cleared
 signal action_requested(block: FlowBlock, action: StringName)
+signal complex_open_requested(complex_id: int)
 
 ## Tuvale (boş alana veya bir düğüme) tıklanınca yukarı bildirilir. Düğümün
 ## kendi Yükselt/Tahsil Et/İşçi düğmeleri bunu TETİKLEMEZ — Button kendi
@@ -35,6 +40,7 @@ signal interacted
 
 var _selected: FlowBlock = null
 var _by_sim_id: Dictionary = {}   # sim_id -> FlowBlock
+var _complex_by_id: Dictionary = {} # complex id -> FlowComplexNode
 var _next_node_index: int = 1
 
 
@@ -50,9 +56,15 @@ func _ready() -> void:
 	minimap_opacity = 0.6
 	add_theme_color_override(&"grid_major", Color(0.37, 0.29, 0.19, 0.56))
 	add_theme_color_override(&"grid_minor", Color(0.26, 0.21, 0.15, 0.42))
-	connection_lines_curvature = 0.45
+	# Hem kurulu bağlantı hem de sürükleme önizlemesi GraphEdit'in aynı rota
+	# sağlayıcısından geçer. Böylece fareyle yeni bir tel çekerken de Smooth Step
+	# görünür; ayrı bir koyu yerleşik tel çizilmez.
+	connection_lines_curvature = 0.0
 	connection_lines_thickness = 2.5
 	connection_lines_antialiased = true
+	add_theme_color_override(&"connection_rim_color", Color.TRANSPARENT)
+	add_theme_color_override(&"connection_valid_target_color", COLOR_MATERIAL_CONNECTION)
+	add_theme_color_override(&"connection_invalid_target_color", Color(0.85, 0.35, 0.28, 0.95))
 	zoom_min = 0.35
 	zoom_max = 2.0
 
@@ -68,6 +80,45 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	call_deferred("_hide_internal_scrollbars")
+
+
+## GraphEdit bunu hem mevcut bağlantılar hem de bağlantı sürükleme önizlemesi
+## için çağırır. Böylece iki çizim sistemi birbirinin üstüne binmez.
+func _get_connection_line(from: Vector2, to: Vector2) -> PackedVector2Array:
+	return _smooth_step_points(from, to)
+
+
+func _smooth_step_points(from: Vector2, to: Vector2) -> PackedVector2Array:
+	var x_direction: float = 1.0 if to.x >= from.x else -1.0
+	var y_direction: float = 1.0 if to.y >= from.y else -1.0
+	var horizontal_half: float = absf(to.x - from.x) * 0.5
+	var vertical_distance: float = absf(to.y - from.y)
+	# Kısa mesafede köşe yarıçapı küçülür; bağlantı asla düz bir çizgiye
+	# geri dönmez. Aynı hizada iki port varsa küçük bir Smooth Step sapması
+	# yaratılır ki rota yine okunur kalsın.
+	var corner_radius: float = minf(SMOOTH_STEP_RADIUS, maxf(2.0, horizontal_half * 0.5))
+	if vertical_distance > 0.0:
+		corner_radius = minf(corner_radius, maxf(2.0, vertical_distance * 0.5))
+	else:
+		y_direction = 1.0
+	var middle_x: float = (from.x + to.x) * 0.5
+	var first_before := Vector2(middle_x - x_direction * corner_radius, from.y)
+	var first_after := Vector2(middle_x, from.y + y_direction * corner_radius)
+	var second_before := Vector2(middle_x, to.y - y_direction * corner_radius)
+	var second_after := Vector2(middle_x + x_direction * corner_radius, to.y)
+	var points := PackedVector2Array([from, first_before])
+	_append_quadratic(points, first_before, Vector2(middle_x, from.y), first_after)
+	points.append(second_before)
+	_append_quadratic(points, second_before, Vector2(middle_x, to.y), second_after)
+	points.append(to)
+	return points
+
+
+func _append_quadratic(points: PackedVector2Array, from: Vector2, control: Vector2, to: Vector2) -> void:
+	for step in range(1, SMOOTH_STEP_SEGMENTS + 1):
+		var t: float = float(step) / float(SMOOTH_STEP_SEGMENTS)
+		var inverse: float = 1.0 - t
+		points.append(inverse * inverse * from + 2.0 * inverse * t * control + t * t * to)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -145,6 +196,16 @@ func spawn_block(sim_id: int, type: BlockType, at: Vector2) -> FlowBlock:
 	return block
 
 
+func spawn_complex(complex_id: int, display_name: String, machine_count: int, at: Vector2) -> FlowComplexNode:
+	var node := FlowComplexNode.new()
+	node.setup(complex_id, display_name, machine_count)
+	node.position_offset = at
+	node.open_requested.connect(func(id: int) -> void: complex_open_requested.emit(id))
+	add_child(node)
+	_complex_by_id[complex_id] = node
+	return node
+
+
 func apply_connection(from_sim: int, from_port: int, to_sim: int, to_port: int) -> void:
 	var src: FlowBlock = _by_sim_id.get(from_sim)
 	var dst: FlowBlock = _by_sim_id.get(to_sim)
@@ -176,12 +237,15 @@ func remove_block(sim_id: int) -> void:
 
 func clear_all() -> void:
 	clear_connections()
-	for block: FlowBlock in get_blocks():
+	for child: Node in get_children():
+		if child is not FlowBlock and child is not FlowComplexNode:
+			continue
 		# queue_free ertelenir ve düğüm adı bir süre daha dolu kalır; ağaçtan
 		# hemen çıkarmazsak sonra eklenen aynı adlı bloklar yeniden adlandırılır.
-		remove_child(block)
-		block.queue_free()
+		remove_child(child)
+		child.queue_free()
 	_by_sim_id.clear()
+	_complex_by_id.clear()
 	_selected = null
 	_next_node_index = 1
 	selection_cleared.emit()
@@ -203,6 +267,14 @@ func get_block(sim_id: int) -> FlowBlock:
 
 func selected_block() -> FlowBlock:
 	return _selected if is_instance_valid(_selected) else null
+
+
+func selected_sim_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for block: FlowBlock in get_blocks():
+		if block.selected:
+			ids.append(block.sim_id)
+	return ids
 
 
 func viewport_center() -> Vector2:

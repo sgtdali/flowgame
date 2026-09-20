@@ -22,7 +22,7 @@ var _checks: int = 0
 ## Beklenen kontrol sayisi. Bir derleme hatasi yuzunden testler hic
 ## calismazsa _failures 0 kalir ve kosum yanlislikla "gecti" der.
 ## Bu tam olarak bir kez basimiza geldi; sayac o yuzden var.
-const EXPECTED_CHECKS: int = 35
+const EXPECTED_CHECKS: int = 40
 
 
 func _initialize() -> void:
@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_test_blocking()
 	_test_backpressure_chain()
 	_test_starved()
+	_test_gathering_outputs_split_evenly()
 
 	# roadmap.md Paket B — guc/para dogrulugu senaryolari.
 	_test_power_solo_generator_sale()
@@ -74,6 +75,7 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 		"eritme": sim.add_station(BlockCatalog.ERITME),
 		"jenerator": sim.add_station(BlockCatalog.JENERATOR),
 		"pres": sim.add_station(BlockCatalog.PRES),
+		"network": sim.add_station(BlockCatalog.TRADE_NETWORK),
 		"borsa": sim.add_station(BlockCatalog.ELEKTRIK_SATIS),
 		"sevkiyat": sim.add_station(BlockCatalog.SEVKIYAT),
 	}
@@ -82,6 +84,8 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 		[ids.extractor, 0, ids.eritme, 0],
 		[ids.eritme, 0, ids.pres, 0],
 		[ids.pres, 0, ids.sevkiyat, 0],
+		[ids.network, 0, ids.borsa, 0],
+		[ids.borsa, 0, ids.sevkiyat, 0],
 	]
 	for wire: Array in wires:
 		if not sim.connect_stations(wire[0], wire[1], wire[2], wire[3]):
@@ -90,6 +94,21 @@ func _build_reference_line(sim: FactorySim) -> Dictionary:
 		_fail("Guc baglantisi kurulamadi: jenerator -> pres")
 	if not sim.connect_power(ids.jenerator, ids.borsa):
 		_fail("Guc baglantisi kurulamadi: jenerator -> borsa")
+	return ids
+
+
+## Elektrik satış zinciri: Generator --güç--> Power Exchange,
+## Trade Network --Demand--> Power Exchange --Electricity--> Collector.
+func _build_power_trade_route(sim: FactorySim) -> Dictionary:
+	var ids: Dictionary = {
+		"gen": sim.add_station(BlockCatalog.JENERATOR),
+		"network": sim.add_station(BlockCatalog.TRADE_NETWORK),
+		"exchange": sim.add_station(BlockCatalog.ELEKTRIK_SATIS),
+		"collector": sim.add_station(BlockCatalog.SEVKIYAT),
+	}
+	sim.connect_stations(ids.network, 0, ids.exchange, 0)
+	sim.connect_stations(ids.exchange, 0, ids.collector, 0)
+	sim.connect_power(ids.gen, ids.exchange)
 	return ids
 
 
@@ -220,22 +239,101 @@ func _test_starved() -> void:
 			station.status_label(), station.total_input(), station.total_output()])
 
 
+## Gathering kaynaklarının aynı çıkış portu birden fazla hatta bağlanabilir.
+## Toplam üretim artmaz: ürünler round-robin ile her kol arasında eşit dağılır.
+func _test_gathering_outputs_split_evenly() -> void:
+	var mine_two := FactorySim.new()
+	var mine: int = mine_two.add_station(BlockCatalog.MADEN_OCAGI)
+	var mine_a: int = mine_two.add_station(BlockCatalog.SEVKIYAT)
+	var mine_b: int = mine_two.add_station(BlockCatalog.SEVKIYAT)
+	mine_two.connect_stations(mine, 0, mine_a, 0)
+	mine_two.connect_stations(mine, 0, mine_b, 0)
+	_run(mine_two, 600)
+	var mine_a_count: int = mine_two.get_station(mine_a).consumed_total
+	var mine_b_count: int = mine_two.get_station(mine_b).consumed_total
+	_check("Kaynak bolme: Iron Mine iki hatta esit dagilir",
+		mine_a_count > 0 and absi(mine_a_count - mine_b_count) <= 1,
+		"a=%d b=%d" % [mine_a_count, mine_b_count])
+
+	var mine_three := FactorySim.new()
+	var mine_3: int = mine_three.add_station(BlockCatalog.MADEN_OCAGI)
+	var mine_3a: int = mine_three.add_station(BlockCatalog.SEVKIYAT)
+	var mine_3b: int = mine_three.add_station(BlockCatalog.SEVKIYAT)
+	var mine_3c: int = mine_three.add_station(BlockCatalog.SEVKIYAT)
+	mine_three.connect_stations(mine_3, 0, mine_3a, 0)
+	mine_three.connect_stations(mine_3, 0, mine_3b, 0)
+	mine_three.connect_stations(mine_3, 0, mine_3c, 0)
+	_run(mine_three, 600)
+	var mine_counts: Array[int] = [mine_three.get_station(mine_3a).consumed_total, mine_three.get_station(mine_3b).consumed_total, mine_three.get_station(mine_3c).consumed_total]
+	_check("Kaynak bolme: Iron Mine uc hatta esit dagilir",
+		mine_counts.min() > 0 and mine_counts.max() - mine_counts.min() <= 1,
+		"a=%d b=%d c=%d" % mine_counts)
+
+	var network_two := FactorySim.new()
+	var network: int = network_two.add_station(BlockCatalog.TRADE_NETWORK)
+	var network_a: int = network_two.add_station(BlockCatalog.SEVKIYAT)
+	var network_b: int = network_two.add_station(BlockCatalog.SEVKIYAT)
+	network_two.connect_stations(network, 0, network_a, 0)
+	network_two.connect_stations(network, 0, network_b, 0)
+	_run(network_two, 600)
+	var network_a_count: int = network_two.get_station(network_a).consumed_total
+	var network_b_count: int = network_two.get_station(network_b).consumed_total
+	_check("Kaynak bolme: Trade Network iki hatta esit dagilir",
+		network_a_count > 0 and absi(network_a_count - network_b_count) <= 1,
+		"a=%d b=%d" % [network_a_count, network_b_count])
+
+	var network_three := FactorySim.new()
+	var network_3: int = network_three.add_station(BlockCatalog.TRADE_NETWORK)
+	var network_3a: int = network_three.add_station(BlockCatalog.SEVKIYAT)
+	var network_3b: int = network_three.add_station(BlockCatalog.SEVKIYAT)
+	var network_3c: int = network_three.add_station(BlockCatalog.SEVKIYAT)
+	network_three.connect_stations(network_3, 0, network_3a, 0)
+	network_three.connect_stations(network_3, 0, network_3b, 0)
+	network_three.connect_stations(network_3, 0, network_3c, 0)
+	_run(network_three, 600)
+	var network_counts: Array[int] = [network_three.get_station(network_3a).consumed_total, network_three.get_station(network_3b).consumed_total, network_three.get_station(network_3c).consumed_total]
+	_check("Kaynak bolme: Trade Network uc hatta esit dagilir",
+		network_counts.min() > 0 and network_counts.max() - network_counts.min() <= 1,
+		"a=%d b=%d c=%d" % network_counts)
+
+	var generator_two := FactorySim.new()
+	var generator_2: int = generator_two.add_station(BlockCatalog.JENERATOR)
+	var exchange_2a: int = generator_two.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var exchange_2b: int = generator_two.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	generator_two.connect_power(generator_2, exchange_2a)
+	generator_two.connect_power(generator_2, exchange_2b)
+	generator_two.tick()
+	_check("Kaynak bolme: Generator iki kola 20/20 kW ayirir",
+		generator_two.delivered_power(exchange_2a) == 20 and generator_two.delivered_power(exchange_2b) == 20,
+		"a=%d b=%d" % [generator_two.delivered_power(exchange_2a), generator_two.delivered_power(exchange_2b)])
+
+	var generator_three := FactorySim.new()
+	var generator: int = generator_three.add_station(BlockCatalog.JENERATOR)
+	var exchange_a: int = generator_three.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var exchange_b: int = generator_three.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var exchange_c: int = generator_three.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	generator_three.connect_power(generator, exchange_a)
+	generator_three.connect_power(generator, exchange_b)
+	generator_three.connect_power(generator, exchange_c)
+	generator_three.tick()
+	var generator_shares: Array[int] = [generator_three.delivered_power(exchange_a), generator_three.delivered_power(exchange_b), generator_three.delivered_power(exchange_c)]
+	_check("Kaynak bolme: Generator uc kola 14/13/13 kW ayirir",
+		generator_shares[0] + generator_shares[1] + generator_shares[2] == 40 and generator_shares.max() - generator_shares.min() <= 1,
+		"a=%d b=%d c=%d" % generator_shares)
+
+
 ## --- Guc testleri (roadmap.md Paket B) --------------------------------------
 
 ## Senaryo: yalniz jenerator + satis, demirsiz.
 func _test_power_solo_generator_sale() -> void:
 	var sim := FactorySim.new()
-	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
-	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
-	if not sim.connect_power(gen, exch):
-		_fail("Guc baglantisi kurulamadi: jenerator -> borsa")
-		return
+	var ids: Dictionary = _build_power_trade_route(sim)
+	var exch: int = ids.exchange
 	_run(sim, 2000)
-	_check("Guc: demirsiz, yalniz jenerator+satis gelir uretiyor",
+	_check("Guc: Jenerator+Talep+Collector elektrik geliri uretiyor",
 		sim.total_uncollected() > 0, "bekleyen=%d" % sim.total_uncollected())
-	_check("Guc: tek tuketicili satis noktasi tam kapasiteyi aliyor",
-		sim.delivered_power(exch) == sim.power_capacity(gen),
-		"teslim=%d kapasite=%d" % [sim.delivered_power(exch), sim.power_capacity(gen)])
+	_check("Guc: tek kollu Generator tum kapasiteyi Exchange'e verir",
+		sim.delivered_power(exch) == 40, "teslim=%d" % sim.delivered_power(exch))
 
 
 ## Senaryo: tam guclu hadde recetesine uygun kulce tuketip levha uretiyor mu.
@@ -313,13 +411,12 @@ func _test_power_partial_slows_proportionally() -> void:
 			st_b.add_item(st_b.input, &"kulce", 1)
 		sim.tick()
 
-	_check("Guc: dusuk id'li hadde tam guc (24kW) aliyor",
-		sim.delivered_power(pres_a) == 24, "teslim=%d" % sim.delivered_power(pres_a))
-	_check("Guc: yuksek id'li hadde kalani (16kW) aliyor",
-		sim.delivered_power(pres_b) == 16, "teslim=%d" % sim.delivered_power(pres_b))
-	_check("Guc: kismi guc orantili yavasliyor, tam gucten daha az uretiyor",
-		st_b.produced_total > 0 and st_a.produced_total > st_b.produced_total,
-		"tam_guc_uretim=%d kismi_guc_uretim=%d" % [st_a.produced_total, st_b.produced_total])
+	_check("Guc: iki kol Generator kapasitesini esit (20/20 kW) boluyor",
+		sim.delivered_power(pres_a) == 20 and sim.delivered_power(pres_b) == 20,
+		"a=%d b=%d" % [sim.delivered_power(pres_a), sim.delivered_power(pres_b)])
+	_check("Guc: esit payli iki hadde ayni uretim hizinda kaliyor",
+		st_a.produced_total > 0 and st_a.produced_total == st_b.produced_total,
+		"a=%d b=%d" % [st_a.produced_total, st_b.produced_total])
 
 
 ## Senaryo: kulcesi olmayan hadde guc istemez, tum kapasite satisa gider.
@@ -327,18 +424,22 @@ func _test_power_no_ingots_frees_capacity_for_sale() -> void:
 	var sim := FactorySim.new()
 	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
 	var pres: int = sim.add_station(BlockCatalog.PRES)  # hic kulce beslenmiyor
+	var network: int = sim.add_station(BlockCatalog.TRADE_NETWORK)
 	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var collector: int = sim.add_station(BlockCatalog.SEVKIYAT)
 	sim.connect_power(gen, pres)
 	sim.connect_power(gen, exch)
+	sim.connect_stations(network, 0, exch, 0)
+	sim.connect_stations(exch, 0, collector, 0)
 	_run(sim, 500)
 
 	var st: SimStation = sim.get_station(pres)
-	_check("Guc: kulcesiz hadde guc istemiyor, uretmiyor",
-		not st.producing and st.produced_total == 0 and sim.delivered_power(pres) == 0,
+	_check("Guc: kulcesiz hadde uretmiyor ama ayrilan 20 kW payini tutuyor",
+		not st.producing and st.produced_total == 0 and sim.delivered_power(pres) == 20,
 		"uretiyor=%s uretim=%d teslim=%d" % [st.producing, st.produced_total, sim.delivered_power(pres)])
-	_check("Guc: kullanilmayan kapasitenin tamami satisa gidiyor",
-		sim.delivered_power(exch) == sim.power_capacity(gen),
-		"teslim=%d kapasite=%d" % [sim.delivered_power(exch), sim.power_capacity(gen)])
+	_check("Guc: ikinci kol Exchange'e esit 20 kW pay verir",
+		sim.delivered_power(exch) == 20,
+		"teslim=%d" % sim.delivered_power(exch))
 
 
 ## Regresyon: cikisi bagli olmayan hadde TIKALI'ya girince enerji sayaci
@@ -370,9 +471,13 @@ func _test_power_production_and_sale_share_capacity() -> void:
 	var sim := FactorySim.new()
 	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
 	var pres: int = sim.add_station(BlockCatalog.PRES)
+	var network: int = sim.add_station(BlockCatalog.TRADE_NETWORK)
 	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var collector: int = sim.add_station(BlockCatalog.SEVKIYAT)
 	sim.connect_power(gen, pres)
 	sim.connect_power(gen, exch)
+	sim.connect_stations(network, 0, exch, 0)
+	sim.connect_stations(exch, 0, collector, 0)
 
 	var st: SimStation = sim.get_station(pres)
 	var capacity: int = sim.power_capacity(gen)
@@ -385,14 +490,14 @@ func _test_power_production_and_sale_share_capacity() -> void:
 		sim.tick()
 		if sim.delivered_power(pres) + sim.delivered_power(exch) > capacity:
 			ever_exceeded = true
-		if sim.delivered_power(pres) == 24:
+		if sim.delivered_power(pres) == 20:
 			mill_ever_full = true
-		if sim.delivered_power(exch) == capacity - 24:
+		if sim.delivered_power(exch) == 20:
 			exchange_ever_got_leftover = true
 
 	_check("Guc: uretim+satis toplami kaynak kapasitesini hic asmadi",
 		not ever_exceeded, "asildi=%s" % ever_exceeded)
-	_check("Guc: uretim tam istedigini aldi, satis kalan kapasiteyi aldi",
+	_check("Guc: uretim ve Exchange Generator kapasitesini esit paylasti",
 		mill_ever_full and exchange_ever_got_leftover,
 		"hadde_tam_guc=%s satis_kalan=%s" % [mill_ever_full, exchange_ever_got_leftover])
 
@@ -402,16 +507,23 @@ func _test_power_production_and_sale_share_capacity() -> void:
 func _test_power_multiple_sale_points_split_not_duplicate() -> void:
 	var sim := FactorySim.new()
 	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
+	var network_a: int = sim.add_station(BlockCatalog.TRADE_NETWORK)
+	var network_b: int = sim.add_station(BlockCatalog.TRADE_NETWORK)
 	var exch_a: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
 	var exch_b: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var collector_a: int = sim.add_station(BlockCatalog.SEVKIYAT)
+	var collector_b: int = sim.add_station(BlockCatalog.SEVKIYAT)
 	sim.connect_power(gen, exch_a)
 	sim.connect_power(gen, exch_b)
+	sim.connect_stations(network_a, 0, exch_a, 0)
+	sim.connect_stations(network_b, 0, exch_b, 0)
+	sim.connect_stations(exch_a, 0, collector_a, 0)
+	sim.connect_stations(exch_b, 0, collector_b, 0)
 	_run(sim, 100)
 
-	var capacity: int = sim.power_capacity(gen)
-	_check("Guc: iki satis noktasi kapasiteyi paylasiyor, cogaltmiyor",
-		sim.delivered_power(exch_a) + sim.delivered_power(exch_b) == capacity,
-		"a=%d b=%d kapasite=%d" % [sim.delivered_power(exch_a), sim.delivered_power(exch_b), capacity])
+	_check("Guc: iki Exchange Generator kapasitesini esit bolusuyor",
+		sim.delivered_power(exch_a) + sim.delivered_power(exch_b) == 40,
+		"a=%d b=%d" % [sim.delivered_power(exch_a), sim.delivered_power(exch_b)])
 
 
 ## Senaryo: bir tuketici ayni anda iki jeneratore baglanamiyor -- guc iki kez
@@ -431,34 +543,36 @@ func _test_power_consumer_cannot_double_connect() -> void:
 ## Senaryo: baglanti kesilince eski tuketici guc almayi ve satmayi birakiyor.
 func _test_power_disconnect_stops_delivery() -> void:
 	var sim := FactorySim.new()
-	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
-	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
-	sim.connect_power(gen, exch)
+	var ids: Dictionary = _build_power_trade_route(sim)
+	var gen: int = ids.gen
+	var exch: int = ids.exchange
 	_run(sim, 200)
-	var before: int = sim.total_uncollected()
+	var produced_before: int = sim.get_station(exch).produced_total
 
 	sim.disconnect_power(gen, exch)
 	_run(sim, 200)
-	var after: int = sim.total_uncollected()
+	var produced_after: int = sim.get_station(exch).produced_total
 
 	_check("Guc: baglanti kesilince eski tuketici guc almiyor",
 		sim.delivered_power(exch) == 0, "teslim=%d" % sim.delivered_power(exch))
-	_check("Guc: baglanti kesilince satis durdu, para artmadi",
-		after == before, "once=%d sonra=%d" % [before, after])
+	_check("Guc: baglanti kesilince yeni elektrik uretilmiyor",
+		produced_after == produced_before, "once=%d sonra=%d" % [produced_before, produced_after])
 
 
 ## Senaryo: ayni istasyonu iki kez tahsil etmek parayi cogaltmiyor.
 func _test_power_collect_does_not_double() -> void:
 	var sim := FactorySim.new()
-	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
-	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
-	sim.connect_power(gen, exch)
+	var ids: Dictionary = _build_power_trade_route(sim)
+	var exch: int = ids.exchange
+	var collector: int = ids.collector
 	_run(sim, 500)
 
-	var first: int = sim.collect(exch)
-	var second: int = sim.collect(exch)
-	_check("Guc: ayni istasyonu iki kez tahsil etmek para cogaltmiyor",
-		first > 0 and second == 0, "ilk=%d ikinci=%d" % [first, second])
+	var exchange_collect: int = sim.collect(exch)
+	var first: int = sim.collect(collector)
+	var second: int = sim.collect(collector)
+	_check("Guc: para Exchange'de degil yalnizca Collector'da birikiyor",
+		exchange_collect == 0 and first > 0 and second == 0,
+		"exchange=%d ilk=%d ikinci=%d" % [exchange_collect, first, second])
 
 
 ## Senaryo: otomasyona gecerken birikmis para BIR KEZ suruklenir, satis hizi
@@ -466,9 +580,7 @@ func _test_power_collect_does_not_double() -> void:
 ## _on_unlock_requested -- bu test ayni sirayi elle uygular).
 func _test_power_automation_transition_sweeps_once() -> void:
 	var sim := FactorySim.new()
-	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
-	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
-	sim.connect_power(gen, exch)
+	_build_power_trade_route(sim)
 	_run(sim, 500)
 
 	var accrued_before: int = sim.total_uncollected()
@@ -495,9 +607,13 @@ func _test_power_save_load_mid_batch() -> void:
 	var sim := FactorySim.new()
 	var gen: int = sim.add_station(BlockCatalog.JENERATOR)
 	var pres: int = sim.add_station(BlockCatalog.PRES)
+	var network: int = sim.add_station(BlockCatalog.TRADE_NETWORK)
 	var exch: int = sim.add_station(BlockCatalog.ELEKTRIK_SATIS)
+	var collector: int = sim.add_station(BlockCatalog.SEVKIYAT)
 	sim.connect_power(gen, pres)
 	sim.connect_power(gen, exch)
+	sim.connect_stations(network, 0, exch, 0)
+	sim.connect_stations(exch, 0, collector, 0)
 
 	var st: SimStation = sim.get_station(pres)
 	for i in 5:
