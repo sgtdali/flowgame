@@ -91,20 +91,26 @@ Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
 
 **Hat kurma:** Oyuncu iki noktayı seçer; hat bu iki noktayı bağlar. Hat yalnızca açık bölgelerdeki noktalar arasında kurulur; hattın çizgisi kilitli bir bölgenin üstünden geçebilir, önemli olan iki ucudur. Mesafe iki nokta arasındaki düz uzaklıktır. Coğrafi parametre (arazi, dağ vb.) yoktur.
 
-**Araç turu:** Her hatta oyuncunun eklediği araçlar çalışır. Araç belirli bir yük taşır ve gidiş-dönüş yapar; hattın kapasitesi = araç sayısı × araç yükü ÷ tur süresi. Uzun hat daha az birim/dk taşır; oyuncu araç ekleyerek telafi eder. Araçlar tek tek simüle edilmez: akış bu formülle soyut olarak hesaplanır, haritadaki araçlar görseldir.
+**Araç turu:** Her hatta oyuncunun eklediği araçlar çalışır. Araç belirli bir yük taşır ve gidiş-dönüş yapar; hattın kapasitesi = araç sayısı × araç yükü ÷ tur süresi. Uzun hat daha az birim/dk taşır; oyuncu araç ekleyerek telafi eder. Araçlar tek tek simüle edilmez: akış bu formülle soyut olarak hesaplanır, haritadaki araçlar görseldir. Kapasite = araç yükü × hız ÷ (2 × mesafe); yükleme süresi yoktur.
 
 **Yön:** Hat çift yönlüdür; araç dönüşte de yük alır.
+
+**Maliyet:** Hat kurmak sabit ve ucuzdur; asıl gider araçtır: araç başına alış fiyatı ve dakika başı bakım. Mesafenin bedeli, aynı akış için gereken fazladan araçlardır; kuruluma mesafe ücreti eklenmez.
+
+**Tek hat:** İki nokta arasında yalnızca bir hat olur; kapasite araç ekleyerek artar. Bir noktaya bağlanabilecek hat sayısı sınırsızdır.
 
 **Yük seçimi:** Oyuncu her yön için taşınacak malları ve oranlarını seçer (ör. Tomruk %60, Buğday %40). Bir malın arzı payını dolduramazsa kalan pay diğer mallara geçer.
 
 **Taşıma türleri**
 
-| Tür | Araç yükü | Hız | Maliyet | Açılış |
-| --- | --- | --- | --- | --- |
-| At arabası | Açık | Açık | Açık | Başlangıç |
-| Kamyon yolu | Açık | Açık | Açık | Kademe 1 |
-| Demiryolu | Açık | Açık | Açık | Kademe 2 |
-| Boru hattı (sıvı) | Açık | Açık | Açık | Kademe 3 |
+| Tür | Araç yükü | Hız (birim/dk) | Araç fiyatı | Araç bakımı (/dk) | Hat kurulumu | Açılış |
+| --- | --- | --- | --- | --- | --- | --- |
+| At arabası | 10 | 300 | 50 | 1 | 20 | Başlangıç |
+| Kamyon yolu | 30 | 400 | 200 | 3 | 20 | Kademe 1 |
+| Demiryolu | Açık | Açık | Açık | Açık | Açık | Kademe 2 |
+| Boru hattı (sıvı) | Açık | Açık | Açık | Açık | Açık | Kademe 3 |
+
+Mesafe harita birimiyle ölçülür (başlangıç bölgesinin içi yaklaşık 100–200, haritanın bir ucundan öbürüne yaklaşık 1.400).
 
 **Akış kuralları**
 
@@ -133,7 +139,7 @@ Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
 
 **Para giderleri (paranın oyun ortasında anlamsızlaşmaması için)**
 
-- Hat ve fabrika bakımı (sürekli, dakika başı)
+- Araç ve fabrika bakımı (sürekli, dakika başı)
 - Yeni fabrika ve fabrika seviye yükseltmesi
 - Bölge erişim izni
 - Kademe 4'ten itibaren: araştırmayı para ile hızlandırma (malın yerini tutmaz, sadece süreyi kısaltır)
@@ -284,5 +290,5 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 - [ ] İsteyene açık senaryo modu (hedefli haritalar) eklenecek mi?
 - [ ] Fiyat modeli: ücretli mi, Upload Labs gibi ücretsiz + destekçi paketi mi? Demo planlanıyor mu?
 - [ ] Mobil hedefleniyor mu? Düğüm editörü dokunmatik ekranda kullanışlı olmalı mı?
-- [ ] Hat ve araç maliyeti: kurulum, bakım, araç başı ücret.
+- [ ] Erken ekonomi çok sıkışık: köy en fazla 20 para/dk getiriyor, iki fabrikanın bakımı 6/dk tutuyor ve ilk bölge izni 500; ilk bölge yaklaşık 50 dakikada açılabiliyor. Köy fiyatları, fabrika bakımı ya da bölge izni, akış simülasyonu çalışınca gerçek sayılarla ayarlanacak.
 - [ ] Araştırma merkezi dördüncü nokta türü mü?
