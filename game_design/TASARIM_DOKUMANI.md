@@ -85,9 +85,13 @@ Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüş
 
 **Godot uygulaması:** Editör için yerleşik `GraphEdit` + `GraphNode` kullanılır; bağlantılar `connection_request` sinyaliyle yönetilir.
 
+**Geçici sabit fabrika:** Düğüm editörü gelene kadar fabrika kurulurken tek bir tarif seçilir (Bıçkıhane: Tomruk → Kereste veya Değirmen: 2 Buğday → Un) ve sonra değişmez. Bu geçici bir çözümdür: kalıcı tasarımda fabrikanın türü yoktur, içini oyuncu düğümlerle kurar.
+
 ## Lojistik ve akış modeli
 
 Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
+
+**Oyun saati:** 1 oyun dakikası = 1 gerçek dakika. Oyuncu hızı Duraklat / x1 / x2 / x4 ile değiştirebilir.
 
 **Hat kurma:** Oyuncu iki noktayı seçer; hat bu iki noktayı bağlar. Hat yalnızca açık bölgelerdeki noktalar arasında kurulur; hattın çizgisi kilitli bir bölgenin üstünden geçebilir, önemli olan iki ucudur. Mesafe iki nokta arasındaki düz uzaklıktır. Coğrafi parametre (arazi, dağ vb.) yoktur.
 
@@ -116,6 +120,8 @@ Mesafe harita birimiyle ölçülür (başlangıç bölgesinin içi yaklaşık 10
 
 - Hat kapasitesi dolarsa kaynak tarafında birikir; üretim durmaz, depo dolunca yavaşlar.
 
+**Stok ve kabul:** Her noktada mal başına küçük bir stok vardır (yer tutucu: 50 birim). Yatak ürettiğini kendi stoğuna koyar; stok dolunca üretim durur. Hat bir malı yalnızca varış noktası kabul ediyorsa taşır: fabrika kendi tarifinin girdilerini, şehir talep ettiği malları kabul eder; ham madde alanı ve boş arsa hiçbir şey kabul etmez. Şehrin stok sınırı yoktur; mal gelir gelmez doygunluk fiyatıyla satılır. Hat kurulunca varış noktasının kabul ettiği mallar eşit paylarla seçili gelir. Varış stoku dolu olan mal taşınmaz; payı diğer mallara geçer.
+
 **Neden bu model:** Transport INC 30 araçtan sonra çöküyordu. Akış hesabı 20 bölge ve yüzlerce bağlantıda bile sabit maliyetlidir.
 
 ## Ekonomi ve şehir talebi
@@ -134,6 +140,8 @@ Mesafe harita birimiyle ölçülür (başlangıç bölgesinin içi yaklaşık 10
 **Doygunluk fiyatı:** Talebin %100'üne kadar mal tam fiyattan satılır. Fazlası için fiyat hızla düşer (%100–150 arası yarı fiyat, %150 üstü %10). Bu kural iki şeyi zorunlu kılar: oyuncu farklı mallar üretir ve fazla üretimi doğal olarak araştırma paketi üretimine yönlendirir.
 
 **Ham mal satılmaz:** Ham mal şehre satılamaz; şehirler yalnızca fabrikada işlenmiş mal alır.
+
+**Borç:** Bakım yüzünden para eksiye düşebilir. Para eksideyken yeni alım yapılamaz, ama hiçbir şey kapanmaz ya da durmaz.
 
 **Ceza yok:** Şehir asla seviye kaybetmez ve memnuniyeti zamanla düşmez. Beslenmeyen talep sadece büyümeyi bekletir.
 
@@ -264,9 +272,9 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 1. 5 bölgelik harita, tıklama ve bilgi paneli
 2. Harita noktaları (ham madde alanı, fabrika arsası, şehir)
 3. Hat kurma: noktaları bağlama, araç ekleme, kapasite gösterimi, görsel araçlar
-4. Akış simülasyonu, yük seçimi ve sabit fabrika (tek tarifli bina, ör. Tomruk → Kereste)
+4. Akış simülasyonu, yük seçimi, geçici sabit fabrika, köy talebi ve doygunluk fiyatı
 5. Fabrika içi `GraphEdit` editörü (sabit fabrikanın yerini alır)
-6. Şehir talebi, doygunluk fiyatı ve büyüme
+6. Şehir büyümesi (köy → kasaba) ve kasaba talebi
 7. Araştırma paketleri, araştırma merkezi ve 6 düğüm
 
 **Başarı ölçütü:** 3–5 kişi oynar. Oyuncuların çoğu Kademe 2'ye kendiliğinden ulaşıyor, en az bir kez "şimdi mi araştırsam" diye duraksadığını söylüyor ve 1 saatin sonunda devam etmek istiyorsa döngü tutuyor demektir. Tutmuyorsa önce doygunluk ve araştırma maliyetleri ayarlanır, sonra kapsam büyütülür.
