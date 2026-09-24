@@ -15,6 +15,7 @@ const PAN_MARGIN: float = 300.0
 @onready var region_map: Node2D = $RegionMap
 @onready var map_bounds: Control = $RegionMap/MapBounds
 @onready var info_panel: RegionInfoPanel = $UI/InfoPanel
+@onready var money_label: Label = %MoneyLabel
 
 var state: RegionState = RegionState.new()
 var selected: RegionView = null
@@ -27,7 +28,9 @@ func _ready() -> void:
 	# Area2D'lerin fare üzerine gelme sinyalleri için gerekli.
 	get_viewport().physics_object_picking = true
 	_target_zoom = camera.zoom
+	info_panel.unlock_requested.connect(_on_unlock_requested)
 	refresh_statuses()
+	_update_money()
 
 
 func _process(delta: float) -> void:
@@ -71,7 +74,20 @@ func _update_panel() -> void:
 	if selected == null or selected.data == null:
 		info_panel.hide()
 		return
-	info_panel.show_region(selected.data, state.status(selected.data.id))
+	var region_id: StringName = selected.data.id
+	info_panel.show_region(selected.data, state.status(region_id), state.unlock_cost(),
+			state.unlock_block_reason(region_id))
+
+
+func _on_unlock_requested(region_id: StringName) -> void:
+	if state.unlock(region_id):
+		refresh_statuses()
+		_update_money()
+		_update_panel()
+
+
+func _update_money() -> void:
+	money_label.text = "Money: %s" % RegionInfoPanel.format_money(state.money)
 
 
 func _region_at(world_point: Vector2) -> RegionView:

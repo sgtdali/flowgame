@@ -13,6 +13,8 @@ extends SceneTree
 ##   5. Tam 1 başlangıç bölgesi var
 ##   6. Değerler tasarım belgesindeki aralıklarda (kaynak 1–3, fabrika alanı 2–4,
 ##      prototipte 2 şehir) ve para ayarları geçerli
+##   7. Bölge açma kuralları (RegionState): komşuluk şartı, para yetmezliği,
+##      para düşer, maliyet sırayla artar, açılan bölge kalıcı
 
 const REGION_MAP_SCENE: String = "res://features/worldmap/RegionMap.tscn"
 const MAP_CONFIG: MapConfig = preload("res://data/map_config.tres")
@@ -26,9 +28,9 @@ const PROTOTYPE_CITY_COUNT: int = 2
 var _failures: int = 0
 var _checks: int = 0
 
-## Beklenen kontrol sayısı: 5 bölge × 2 + 8 genel kontrol.
+## Beklenen kontrol sayısı: 5 bölge × 2 + 8 genel + 10 bölge açma.
 ## Derleme hatasında sessizce "geçti" demesin diye (bkz. sim_test.gd).
-const EXPECTED_CHECKS: int = 18
+const EXPECTED_CHECKS: int = 28
 
 
 func _initialize() -> void:
@@ -47,6 +49,8 @@ func _initialize() -> void:
 	_test_single_start()
 	_test_value_ranges()
 	_test_map_config()
+	_test_unlock_rules()
+	_test_unlock_cost_sequence()
 	scene.free()
 
 	print("")
@@ -154,6 +158,71 @@ func _test_map_config() -> void:
 	_check("Para ayarlari gecerli",
 			MAP_CONFIG.starting_money > 0 and MAP_CONFIG.first_unlock_cost > 0
 			and MAP_CONFIG.unlock_cost_step >= 0)
+
+
+## Kabul senaryosu, gerçek harita ayarıyla (başlangıç 1.000, ilk açma 500).
+func _test_unlock_rules() -> void:
+	var state: RegionState = RegionState.new(MAP_CONFIG)
+	var start_money: int = state.money
+	_check("Baslangic parasi ayardan geliyor", start_money == MAP_CONFIG.starting_money,
+			"para=%d" % start_money)
+
+	# area4'ün açık komşusu yok (komşuları area2, area5).
+	var locked_ok: bool = state.unlock(&"area4")
+	_check("Komsusu kapali bolge acilamiyor, para dusmuyor",
+			not locked_ok and state.money == start_money
+			and state.status(&"area4") == RegionState.Status.LOCKED,
+			"sonuc=%s para=%d" % [locked_ok, state.money])
+
+	var cost: int = state.unlock_cost()
+	var ok: bool = state.unlock(&"area2")
+	_check("Acilabilir bolge aciliyor ve para dusuyor",
+			ok and state.is_unlocked(&"area2") and state.money == start_money - cost,
+			"sonuc=%s para=%d maliyet=%d" % [ok, state.money, cost])
+	_check("Maliyet bir adim artti",
+			state.unlock_cost() == cost + MAP_CONFIG.unlock_cost_step,
+			"maliyet=%d" % state.unlock_cost())
+	_check("Yeni komsular acilabilir oldu",
+			state.status(&"area4") == RegionState.Status.AVAILABLE
+			and state.status(&"area5") == RegionState.Status.AVAILABLE)
+
+	# 1.000 − 500 = 500 kaldı, sonraki 750: yetmez.
+	var money_before: int = state.money
+	var poor_ok: bool = state.unlock(&"area4")
+	_check("Para yetmezse acilamiyor ve nedeni soyleniyor",
+			not poor_ok and state.money == money_before
+			and state.unlock_block_reason(&"area4") == "Not enough money",
+			"sonuc=%s neden='%s'" % [poor_ok, state.unlock_block_reason(&"area4")])
+
+	var again_ok: bool = state.unlock(&"area2")
+	_check("Acilmis bolge tekrar satin alinamiyor, kalici",
+			not again_ok and state.money == money_before
+			and state.status(&"area2") == RegionState.Status.UNLOCKED)
+
+
+func _test_unlock_cost_sequence() -> void:
+	var rich: MapConfig = MapConfig.new()
+	rich.starting_money = 100000
+	rich.first_unlock_cost = MAP_CONFIG.first_unlock_cost
+	rich.unlock_cost_step = MAP_CONFIG.unlock_cost_step
+	var state: RegionState = RegionState.new(rich)
+	var paid: Array[int] = []
+	# Komşuluk sırasıyla: area1 açık → area2 → area4 → area5 → area3.
+	for region_id: StringName in [&"area2", &"area4", &"area5", &"area3"]:
+		var before: int = state.money
+		state.unlock(region_id)
+		paid.append(before - state.money)
+	var expected: Array[int] = []
+	for i: int in 4:
+		expected.append(rich.first_unlock_cost + rich.unlock_cost_step * i)
+	_check("Maliyet sirasi 500, 750, 1000, 1250", paid == expected,
+			"odenen=%s beklenen=%s" % [paid, expected])
+	var all_open: bool = true
+	for region: RegionData in RegionCatalog.all():
+		all_open = all_open and state.is_unlocked(region.id)
+	_check("Tum bolgeler acilabildi", all_open)
+	_check("Hepsi acikken acilacak bolge kalmadi",
+			state.unlock_block_reason(&"area3") == "Already unlocked")
 
 
 ## Bölgenin parçaları sahne kökünün koordinatında.
