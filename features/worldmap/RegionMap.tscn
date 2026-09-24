@@ -20,6 +20,7 @@ polygon = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160,
 uv = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160, -60, 120, 101.391846, -42.818398)
 
 [node name="MapBounds" type="ReferenceRect" parent="." unique_id=1052238418]
+mouse_filter = 2
 offset_right = 1600.0
 offset_bottom = 900.0
 
