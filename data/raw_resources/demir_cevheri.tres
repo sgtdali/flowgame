@@ -7,3 +7,4 @@ script = ExtResource("1_raw")
 id = &"demir_cevheri"
 display_name = "Iron Ore"
 extraction_per_minute = 20
+site_kind = 2

@@ -22,7 +22,6 @@ const STATUS_COLOR: Dictionary = {
 
 @onready var title_label: Label = %TitleLabel
 @onready var status_label: Label = %StatusLabel
-@onready var terrain_value: Label = %TerrainValue
 @onready var resources_value: Label = %ResourcesValue
 @onready var city_value: Label = %CityValue
 @onready var slots_value: Label = %SlotsValue
@@ -47,7 +46,6 @@ func show_region(region: RegionData, status: RegionState.Status, cost: int,
 	title_label.text = region.display_name
 	status_label.text = STATUS_TEXT[status]
 	status_label.add_theme_color_override("font_color", STATUS_COLOR[status])
-	terrain_value.text = RegionData.terrain_name(region.terrain)
 	resources_value.text = _resources_text(region)
 	city_value.text = region.city_name if region.has_city() else "None"
 	slots_value.text = str(region.factory_slots)
@@ -68,7 +66,8 @@ func show_region(region: RegionData, status: RegionState.Status, cost: int,
 func _resources_text(region: RegionData) -> String:
 	var lines: PackedStringArray = []
 	for resource: RawResource in region.resources:
-		lines.append("%s  %d/min" % [resource.display_name, resource.extraction_per_minute])
+		lines.append("%s (%s)  %d/min" % [resource.display_name,
+				RawResource.site_name(resource.site_kind), resource.extraction_per_minute])
 	return "\n".join(lines) if not lines.is_empty() else "None"
 
 

@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_raw")
-id = &"kereste"
-display_name = "Timber"
+id = &"bugday"
+display_name = "Wheat"
 extraction_per_minute = 20
+site_kind = 1

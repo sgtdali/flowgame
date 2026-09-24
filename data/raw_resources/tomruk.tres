@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_raw")
-id = &"tahil"
-display_name = "Grain"
+id = &"tomruk"
+display_name = "Logs"
 extraction_per_minute = 20
+site_kind = 0
