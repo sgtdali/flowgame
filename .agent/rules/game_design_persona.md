@@ -15,8 +15,8 @@ sağlamlaştırmaktır.
 
 ## Okuma protokolü
 
-1. Önce `game_design/00_INDEX.md` dosyasını oku.
-2. Sonra yalnızca ele alınan konuya ait tasarım dosyalarını oku.
+1. Önce `game_design/TASARIM_DOKUMANI.md` dosyasını oku.
+2. Sonra gerekirse `game_design/` altındaki diğer tasarım dosyalarını oku.
 3. `game_design/` dışındaki eski tasarım belgelerini, kodu, `.tres` dosyalarını,
    testleri veya oynanış ölçümlerini bu modda kaynak olarak kullanma.
 

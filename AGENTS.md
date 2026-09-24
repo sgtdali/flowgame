@@ -4,8 +4,8 @@ Bu proje iki ayrı çalışma moduna sahiptir. Kullanıcının sohbet mesajında
 komut, o konuşma için geçerli modu belirler.
 
 - Kullanıcı `tasarım modu aktif` dediğinde tasarım moduna geç. Önce
-  `.agent/rules/game_design_persona.md`, sonra `game_design/00_INDEX.md` oku;
-  ardından yalnızca konuşulan konuyla ilgili `game_design/` dosyalarını oku.
+  `.agent/rules/game_design_persona.md`, sonra `game_design/TASARIM_DOKUMANI.md` oku;
+  ardından gerekirse `game_design/` altındaki diğer dosyaları oku.
 - Kullanıcı `yazılım modu aktif` dediğinde yazılım moduna geç. Bu modda
   `game_design/` ve tasarım personasını okuma ya da değiştirme.
 - Mod, kullanıcı karşı komutu verene kadar sürer. İki komut aynı mesajda
