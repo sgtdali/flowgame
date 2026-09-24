@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://features/worldmap/world_map.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://features/worldmap/RegionMap.tscn" id="2_regions"]
 [ext_resource type="Script" path="res://features/worldmap/region_info_panel.gd" id="3_panel"]
+[ext_resource type="Script" path="res://features/worldmap/point_info_panel.gd" id="4_point_panel"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -181,3 +182,72 @@ theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 1)
 text = "-"
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="PointPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 56.0
+offset_right = -16.0
+offset_bottom = 96.0
+grow_horizontal = 0
+script = ExtResource("4_point_panel")
+
+[node name="Margin" type="MarginContainer" parent="UI/PointPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="UI/PointPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PointTitleLabel" type="Label" parent="UI/PointPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Point"
+
+[node name="PointKindLabel" type="Label" parent="UI/PointPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Kind"
+
+[node name="Separator" type="HSeparator" parent="UI/PointPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="UI/PointPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="RegionCaption" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Region"
+
+[node name="PointRegionValue" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="PointDetailCaption" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "-"
+
+[node name="PointDetailValue" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
