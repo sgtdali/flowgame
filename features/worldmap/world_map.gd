@@ -6,18 +6,17 @@ extends Node2D
 ## bölgelerin CollisionPolygon2D'lerine fizik sorgusuyla bulunur. Noktaya
 ## tıklama bölgeye tıklamadan önceliklidir (yarıçap kontrolü). Hat kurma
 ## akışı RouteBuilder'dadır; burası yalnızca girdiyi ona yönlendirir.
+## Kaydırma ve yakınlaştırma MapCamera'dadır.
 
-const MIN_ZOOM: float = 0.6
-const MAX_ZOOM: float = 3.0
-const ZOOM_STEP: float = 1.15
-## Kamera haritadan en fazla bu kadar dışarı kayabilir (px).
-const PAN_MARGIN: float = 300.0
+## Hat çizgisine bu kadar yakın tıklama hattı seçer (dünya birimi).
+const ROUTE_HIT_DISTANCE: float = 10.0
 
-@onready var camera: Camera2D = $Camera2D
+@onready var camera: MapCamera = $Camera2D
 @onready var region_map: Node2D = $RegionMap
 @onready var map_bounds: Control = $RegionMap/MapBounds
 @onready var info_panel: RegionInfoPanel = $UI/InfoPanel
 @onready var point_panel: PointInfoPanel = $UI/PointPanel
+@onready var route_panel: RouteInfoPanel = $UI/RoutePanel
 @onready var money_label: Label = %MoneyLabel
 @onready var hint_label: Label = $UI/TopBar/Margin/HBox/HintLabel
 @onready var route_builder: RouteBuilder = $Routes
@@ -26,33 +25,32 @@ var state: RegionState = RegionState.new()
 var routes: RouteState = RouteState.new(state)
 var selected: RegionView = null
 var selected_point: MapPoint = null
+var selected_route: RouteView = null
 
 var _points: Array[MapPoint] = []
 var _hovered_point: MapPoint = null
+var _hovered_route: RouteView = null
 
-var _panning: bool = false
-var _target_zoom: Vector2 = Vector2.ONE
 var _default_hint: String = ""
 
 
 func _ready() -> void:
 	# Area2D'lerin fare üzerine gelme sinyalleri için gerekli.
 	get_viewport().physics_object_picking = true
-	_target_zoom = camera.zoom
+	camera.map_rect = Rect2(map_bounds.position, map_bounds.size)
 	for node: Node in region_map.find_children("*", "MapPoint", true, false):
 		_points.append(node as MapPoint)
 	info_panel.unlock_requested.connect(_on_unlock_requested)
 	point_panel.build_route_requested.connect(_on_build_route_requested)
+	route_panel.add_vehicle_requested.connect(_on_add_vehicle_requested)
+	route_panel.remove_vehicle_requested.connect(_on_remove_vehicle_requested)
+	route_panel.remove_route_requested.connect(_on_remove_route_requested)
 	route_builder.routes = routes
 	route_builder.hint_changed.connect(_on_hint_changed)
 	route_builder.route_built.connect(_on_route_built)
 	_default_hint = hint_label.text
 	refresh_statuses()
 	_update_money()
-
-
-func _process(delta: float) -> void:
-	camera.zoom = camera.zoom.lerp(_target_zoom, minf(delta * 12.0, 1.0))
 
 
 func refresh_statuses() -> void:
@@ -72,14 +70,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var button: InputEventMouseButton = event as InputEventMouseButton
 	if button != null:
-		if button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_zoom_at_mouse(ZOOM_STEP)
-		elif button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_zoom_at_mouse(1.0 / ZOOM_STEP)
-		elif button.button_index in [MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
-			_panning = button.pressed
-			if button.pressed and button.button_index == MOUSE_BUTTON_RIGHT and route_builder.is_building():
-				route_builder.cancel()
+		if button.pressed and button.button_index == MOUSE_BUTTON_RIGHT and route_builder.is_building():
+			route_builder.cancel()
 		elif button.pressed and button.button_index == MOUSE_BUTTON_LEFT:
 			var world: Vector2 = _event_to_world(button.position)
 			var point: MapPoint = _point_at(world)
@@ -92,16 +84,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif point != null:
 				_select_point(point)
 			else:
-				_select(_region_at(world))
+				var route_view: RouteView = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
+				if route_view != null:
+					_select_route(route_view)
+				else:
+					_select(_region_at(world))
 		return
 	var motion: InputEventMouseMotion = event as InputEventMouseMotion
-	if motion != null and _panning:
-		camera.position -= motion.relative / camera.zoom
-		_clamp_camera()
-	elif motion != null:
+	if motion != null:
 		var world: Vector2 = _event_to_world(motion.position)
 		_set_hovered_point(_point_at(world))
 		route_builder.update_preview(world, _hovered_point)
+		var hover_route: RouteView = null
+		if _hovered_point == null and not route_builder.is_building():
+			hover_route = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
+		_set_hovered_route(hover_route)
 
 
 ## Olayın ekran konumunu dünya koordinatına çevirir (kamera ve yakınlaştırma dahil).
@@ -124,13 +121,33 @@ func _select_point(point: MapPoint) -> void:
 	_update_panel()
 
 
+func _select_route(view: RouteView) -> void:
+	_clear_selection()
+	selected_route = view
+	view.set_selected(true)
+	_update_panel()
+
+
 func _clear_selection() -> void:
 	if selected != null:
 		selected.set_selected(false)
 	if selected_point != null:
 		selected_point.set_selected(false)
+	if selected_route != null:
+		selected_route.set_selected(false)
 	selected = null
 	selected_point = null
+	selected_route = null
+
+
+func _set_hovered_route(view: RouteView) -> void:
+	if view == _hovered_route:
+		return
+	if _hovered_route != null and is_instance_valid(_hovered_route):
+		_hovered_route.set_hovered(false)
+	_hovered_route = view
+	if view != null:
+		view.set_hovered(true)
 
 
 func _set_hovered_point(point: MapPoint) -> void:
@@ -146,6 +163,12 @@ func _set_hovered_point(point: MapPoint) -> void:
 func _update_panel() -> void:
 	info_panel.hide()
 	point_panel.hide()
+	route_panel.hide()
+	if selected_route != null:
+		var route: MapRoute = selected_route.route
+		route_panel.show_route(selected_route, routes.add_vehicle_block_reason(route),
+				routes.remove_vehicle_block_reason(route), routes.vehicle_refund(route.transport))
+		return
 	if selected_point != null:
 		var view: RegionView = selected_point.get_region_view()
 		point_panel.show_point(selected_point, state.status(view.data.id),
@@ -174,6 +197,32 @@ func _on_build_route_requested(point: MapPoint) -> void:
 func _on_route_built(_route: MapRoute) -> void:
 	_update_money()
 	hint_label.text = _default_hint
+
+
+func _on_add_vehicle_requested(route: MapRoute) -> void:
+	if routes.add_vehicle(route):
+		_after_route_change()
+
+
+func _on_remove_vehicle_requested(route: MapRoute) -> void:
+	if routes.remove_vehicle(route):
+		_after_route_change()
+
+
+func _on_remove_route_requested(route: MapRoute) -> void:
+	var view: RouteView = selected_route
+	routes.remove_route(route)
+	_clear_selection()
+	_set_hovered_route(null)
+	if view != null:
+		route_builder.remove_view(view)
+	_after_route_change()
+
+
+func _after_route_change() -> void:
+	route_builder.refresh_views()
+	_update_money()
+	_update_panel()
 
 
 func _on_hint_changed(text: String) -> void:
@@ -214,17 +263,3 @@ func _views() -> Array[RegionView]:
 		if child is RegionView:
 			out.append(child)
 	return out
-
-
-func _zoom_at_mouse(factor: float) -> void:
-	var before: float = _target_zoom.x
-	var after: float = clampf(before * factor, MIN_ZOOM, MAX_ZOOM)
-	_target_zoom = Vector2(after, after)
-	var mouse_world: Vector2 = get_global_mouse_position()
-	camera.position += (mouse_world - camera.position) * (1.0 - before / after)
-	_clamp_camera()
-
-
-func _clamp_camera() -> void:
-	var bounds: Rect2 = Rect2(map_bounds.position, map_bounds.size).grow(PAN_MARGIN)
-	camera.position = camera.position.clamp(bounds.position, bounds.end)

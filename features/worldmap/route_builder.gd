@@ -43,7 +43,7 @@ func start(point: MapPoint) -> void:
 	_preview.points = PackedVector2Array([to_local(point.global_position), to_local(point.global_position)])
 	_preview.default_color = PREVIEW_IDLE
 	_start_hint = "Route from %s: click another point (cost %d). Right-click or Esc to cancel." % [
-			_describe(point), routes.build_cost(DEFAULT_TRANSPORT)]
+			point.describe(), routes.build_cost(DEFAULT_TRANSPORT)]
 	hint_changed.emit(_start_hint)
 
 
@@ -71,11 +71,11 @@ func update_preview(world_mouse: Vector2, hovered: MapPoint) -> void:
 		var capacity: float = MapRoute.capacity_for(1, DEFAULT_TRANSPORT,
 				_start.global_position.distance_to(hovered.global_position))
 		hint_changed.emit("Build route to %s: cost %d, %s/min with 1 %s" % [
-				_describe(hovered), routes.build_cost(DEFAULT_TRANSPORT),
+				hovered.describe(), routes.build_cost(DEFAULT_TRANSPORT),
 				RouteView.format_rate(capacity), DEFAULT_TRANSPORT.display_name.to_lower()])
 	else:
 		_preview.default_color = PREVIEW_BLOCKED
-		hint_changed.emit("Can't build to %s: %s" % [_describe(hovered), reason])
+		hint_changed.emit("Can't build to %s: %s" % [hovered.describe(), reason])
 
 
 ## İkinci noktaya tıklandı. Kurulursa akış biter ve true döner; kurulamazsa
@@ -87,10 +87,10 @@ func try_finish(point: MapPoint) -> bool:
 	var route: MapRoute = routes.build(_start.get_point_id(), point.get_point_id(),
 			distance, DEFAULT_TRANSPORT)
 	if route == null:
-		hint_changed.emit("Can't build to %s: %s" % [_describe(point), routes.build_block_reason(
+		hint_changed.emit("Can't build to %s: %s" % [point.describe(), routes.build_block_reason(
 				_start.get_point_id(), point.get_point_id(), DEFAULT_TRANSPORT)])
 		return false
-	_add_view(route, _start.global_position, point.global_position)
+	_add_view(route, _start, point)
 	_start = null
 	_preview.visible = false
 	route_built.emit(route)
@@ -102,17 +102,27 @@ func refresh_views() -> void:
 		view.refresh()
 
 
-func _add_view(route: MapRoute, from_pos: Vector2, to_pos: Vector2) -> void:
+## Dünya noktasına `max_distance` içindeki en yakın hat (yoksa null).
+func route_at(world_point: Vector2, max_distance: float) -> RouteView:
+	var best: RouteView = null
+	var best_distance: float = max_distance
+	for view: RouteView in _views:
+		var distance: float = view.distance_to(world_point)
+		if distance <= best_distance:
+			best = view
+			best_distance = distance
+	return best
+
+
+func remove_view(view: RouteView) -> void:
+	_views.erase(view)
+	view.queue_free()
+
+
+func _add_view(route: MapRoute, start: MapPoint, end: MapPoint) -> void:
 	var view: RouteView = RouteView.new()
 	add_child(view)
 	# Önizleme çizgisi hatların üstünde kalsın.
 	move_child(view, _preview.get_index())
-	view.setup(route, to_local(from_pos), to_local(to_pos))
+	view.setup(route, start, end)
 	_views.append(view)
-
-
-## "Forest (Area 1)"
-static func _describe(point: MapPoint) -> String:
-	var view: RegionView = point.get_region_view()
-	var region_name: String = view.data.display_name if view != null and view.data != null else "?"
-	return "%s (%s)" % [point.get_title(), region_name]

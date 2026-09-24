@@ -97,6 +97,13 @@ func get_title() -> String:
 	return "Plot %d" % (slot_index + 1)
 
 
+## "Forest (Area 1)" — ipuçlarında ve hat panelinde.
+func describe() -> String:
+	var view: RegionView = get_region_view()
+	var region_name: String = view.data.display_name if view != null and view.data != null else "?"
+	return "%s (%s)" % [get_title(), region_name]
+
+
 func _draw() -> void:
 	if _selected:
 		draw_circle(Vector2.ZERO, SIZE + 9.0, Color(1.0, 1.0, 1.0, 0.35))

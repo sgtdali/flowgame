@@ -5,6 +5,8 @@
 [ext_resource type="Script" path="res://features/worldmap/region_info_panel.gd" id="3_panel"]
 [ext_resource type="Script" path="res://features/worldmap/point_info_panel.gd" id="4_point_panel"]
 [ext_resource type="Script" path="res://features/worldmap/route_builder.gd" id="5_routes"]
+[ext_resource type="Script" path="res://features/worldmap/route_info_panel.gd" id="6_route_panel"]
+[ext_resource type="Script" path="res://features/worldmap/map_camera.gd" id="7_camera"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -24,6 +26,7 @@ z_index = 10
 script = ExtResource("5_routes")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("7_camera")
 position = Vector2(800, 440)
 zoom = Vector2(0.9, 0.9)
 
@@ -266,6 +269,173 @@ text = "Build route"
 [node name="BuildReasonLabel" type="Label" parent="UI/PointPanel/Margin/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 1)
+text = "-"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="RoutePanel" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -360.0
+offset_top = 56.0
+offset_right = -16.0
+offset_bottom = 96.0
+grow_horizontal = 0
+script = ExtResource("6_route_panel")
+
+[node name="Margin" type="MarginContainer" parent="UI/RoutePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="UI/RoutePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RouteTitleLabel" type="Label" parent="UI/RoutePanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Route"
+
+[node name="Separator" type="HSeparator" parent="UI/RoutePanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="UI/RoutePanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="RouteFromCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "From"
+
+[node name="RouteFromValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteToCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "To"
+
+[node name="RouteToValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteDistanceCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Distance"
+
+[node name="RouteDistanceValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteTransportCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Transport"
+
+[node name="RouteTransportValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteVehiclesCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Vehicles"
+
+[node name="RouteVehiclesValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteCapacityCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Capacity"
+
+[node name="RouteCapacityValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteUpkeepCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Upkeep"
+
+[node name="RouteUpkeepValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="VehicleButtons" type="HBoxContainer" parent="UI/RoutePanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddVehicleButton" type="Button" parent="UI/RoutePanel/Margin/VBox/VehicleButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ Vehicle"
+
+[node name="RemoveVehicleButton" type="Button" parent="UI/RoutePanel/Margin/VBox/VehicleButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "- Vehicle"
+
+[node name="RemoveRouteButton" type="Button" parent="UI/RoutePanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "Remove route"
+
+[node name="RouteReasonLabel" type="Label" parent="UI/RoutePanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 1)
 text = "-"
