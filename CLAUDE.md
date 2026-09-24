@@ -7,7 +7,7 @@ Yukarıdaki çalışma modu kuralları (tasarım modu / yazılım modu) Claude C
 ## Proje
 
 - Motor: Godot 4.6, dil: GDScript. Tipli değişken kullan (`untyped_declaration` uyarısı açık).
-- Ana sahne: `res://features/game/game.tscn`
+- Ana sahne: `res://features/worldmap/WorldMap.tscn` (eski Iron & Ember sahnesi `res://features/game/game.tscn` duruyor, açılışta açılmıyor)
 - Klasör düzeni:
   - `features/<özellik>/` → sahne + o sahnenin görüntü/etkileşim scriptleri
   - `data/` → Resource sınıfları, `data/<tür>/*.tres` → veri

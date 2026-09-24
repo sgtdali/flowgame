@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Iron & Ember"
 config/description="Build an iron and power industrial network."
-run/main_scene="res://features/game/game.tscn"
+run/main_scene="res://features/worldmap/WorldMap.tscn"
 config/features=PackedStringArray("4.6")
 config/icon="res://icon.svg"
 
