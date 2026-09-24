@@ -5,8 +5,6 @@ extends Node2D
 ## Kural hesaplamaz: bölge durumu RegionState'ten gelir. Tıklanan bölge,
 ## bölgelerin CollisionPolygon2D'lerine fizik sorgusuyla bulunur.
 
-signal region_selected(region: RegionData)
-
 const MIN_ZOOM: float = 0.6
 const MAX_ZOOM: float = 3.0
 const ZOOM_STEP: float = 1.15
@@ -16,6 +14,7 @@ const PAN_MARGIN: float = 300.0
 @onready var camera: Camera2D = $Camera2D
 @onready var region_map: Node2D = $RegionMap
 @onready var map_bounds: Control = $RegionMap/MapBounds
+@onready var info_panel: RegionInfoPanel = $UI/InfoPanel
 
 var state: RegionState = RegionState.new()
 var selected: RegionView = null
@@ -65,7 +64,14 @@ func _select(view: RegionView) -> void:
 	selected = view
 	if selected != null:
 		selected.set_selected(true)
-	region_selected.emit(selected.data if selected != null else null)
+	_update_panel()
+
+
+func _update_panel() -> void:
+	if selected == null or selected.data == null:
+		info_panel.hide()
+		return
+	info_panel.show_region(selected.data, state.status(selected.data.id))
 
 
 func _region_at(world_point: Vector2) -> RegionView:

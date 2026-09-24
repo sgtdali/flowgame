@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://features/worldmap/world_map.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://features/worldmap/RegionMap.tscn" id="2_regions"]
+[ext_resource type="Script" path="res://features/worldmap/region_info_panel.gd" id="3_panel"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -34,3 +35,115 @@ layout_mode = 2
 text = "Click a region to select it.   Right/middle drag: pan   ·   Wheel: zoom"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="InfoPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 56.0
+offset_right = -16.0
+offset_bottom = 96.0
+grow_horizontal = 0
+script = ExtResource("3_panel")
+
+[node name="Margin" type="MarginContainer" parent="UI/InfoPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="UI/InfoPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="UI/InfoPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Region"
+
+[node name="StatusLabel" type="Label" parent="UI/InfoPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Status"
+
+[node name="Separator" type="HSeparator" parent="UI/InfoPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="UI/InfoPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="TerrainCaption" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Terrain"
+
+[node name="TerrainValue" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="ResourcesCaption" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Resources"
+
+[node name="ResourcesValue" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="CityCaption" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "City"
+
+[node name="CityValue" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="SlotsCaption" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Factory slots"
+
+[node name="SlotsValue" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="NeighborsCaption" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "Neighbors"
+
+[node name="NeighborsValue" type="Label" parent="UI/InfoPanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
