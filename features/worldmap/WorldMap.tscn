@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://features/worldmap/route_builder.gd" id="5_routes"]
 [ext_resource type="Script" path="res://features/worldmap/route_info_panel.gd" id="6_route_panel"]
 [ext_resource type="Script" path="res://features/worldmap/map_camera.gd" id="7_camera"]
+[ext_resource type="Script" path="res://features/worldmap/speed_bar.gd" id="8_speed"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -57,12 +58,25 @@ theme_override_font_sizes/font_size = 18
 text = "Money: 0"
 vertical_alignment = 1
 
+[node name="IncomeLabel" type="Label" parent="UI/TopBar/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(230, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.8, 1)
+text = "Net: 0/min"
+vertical_alignment = 1
+
 [node name="HintLabel" type="Label" parent="UI/TopBar/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Click a region or point to select it.   Right/middle drag: pan   ·   Wheel: zoom"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SpeedBar" type="HBoxContainer" parent="UI/TopBar/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("8_speed")
 
 [node name="InfoPanel" type="PanelContainer" parent="UI"]
 anchors_preset = 1
@@ -228,18 +242,19 @@ text = "Kind"
 [node name="Separator" type="HSeparator" parent="UI/PointPanel/Margin/VBox"]
 layout_mode = 2
 
-[node name="Grid" type="GridContainer" parent="UI/PointPanel/Margin/VBox"]
+[node name="PointGrid" type="GridContainer" parent="UI/PointPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 14
 theme_override_constants/v_separation = 8
 columns = 2
 
-[node name="RegionCaption" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+[node name="RegionCaption" type="Label" parent="UI/PointPanel/Margin/VBox/PointGrid"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
 text = "Region"
 
-[node name="PointRegionValue" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+[node name="PointRegionValue" type="Label" parent="UI/PointPanel/Margin/VBox/PointGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
@@ -247,18 +262,10 @@ size_flags_horizontal = 3
 autowrap_mode = 3
 text = "-"
 
-[node name="PointDetailCaption" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
+[node name="FactoryBox" type="VBoxContainer" parent="UI/PointPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
-text = "-"
-
-[node name="PointDetailValue" type="Label" parent="UI/PointPanel/Margin/VBox/Grid"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(190, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "-"
+theme_override_constants/separation = 6
 
 [node name="BuildRouteButton" type="Button" parent="UI/PointPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -402,6 +409,36 @@ theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
 text = "Upkeep"
 
 [node name="RouteUpkeepValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteForwardCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "-"
+
+[node name="RouteForwardValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+text = "-"
+
+[node name="RouteBackwardCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
+text = "-"
+
+[node name="RouteBackwardValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2

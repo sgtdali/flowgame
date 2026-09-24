@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="RawResource" format=3]
+[gd_resource type="Resource" script_class="RawResource" format=3 uid="uid://djgo8mjralfof"]
 
-[ext_resource type="Script" path="res://data/raw_resource.gd" id="1_raw"]
+[ext_resource type="Script" uid="uid://bfgjo4ahrw6mv" path="res://data/raw_resource.gd" id="1_raw"]
 
 [resource]
 script = ExtResource("1_raw")
+site_kind = 2
+extraction_per_minute = 20
 id = &"demir_cevheri"
 display_name = "Iron Ore"
-extraction_per_minute = 20
-site_kind = 2

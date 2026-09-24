@@ -18,6 +18,10 @@ signal remove_route_requested(route: MapRoute)
 @onready var vehicles_value: Label = %RouteVehiclesValue
 @onready var capacity_value: Label = %RouteCapacityValue
 @onready var upkeep_value: Label = %RouteUpkeepValue
+@onready var forward_caption: Label = %RouteForwardCaption
+@onready var forward_value: Label = %RouteForwardValue
+@onready var backward_caption: Label = %RouteBackwardCaption
+@onready var backward_value: Label = %RouteBackwardValue
 @onready var add_button: Button = %AddVehicleButton
 @onready var remove_button: Button = %RemoveVehicleButton
 @onready var delete_button: Button = %RemoveRouteButton
@@ -34,8 +38,10 @@ func _ready() -> void:
 
 
 ## `add_reason` / `remove_reason`: işlem yapılamıyorsa nedeni, yoksa "".
-## `refund`: bir aracın iadesi.
-func show_route(view: RouteView, add_reason: String, remove_reason: String, refund: int) -> void:
+## `refund`: bir aracın iadesi. `flows`: iki yön için [başlık, metin]
+## (ör. ["Forest -> Sawmill", "Logs 10/min"]).
+func show_route(view: RouteView, add_reason: String, remove_reason: String, refund: int,
+		flows: Array[PackedStringArray]) -> void:
 	_route = view.route
 	var transport: TransportType = _route.transport
 	from_value.text = view.from_point.describe()
@@ -44,7 +50,11 @@ func show_route(view: RouteView, add_reason: String, remove_reason: String, refu
 	transport_value.text = transport.display_name
 	vehicles_value.text = str(_route.vehicles)
 	capacity_value.text = "%s/min" % RouteView.format_rate(_route.capacity_per_minute())
-	upkeep_value.text = "%d/min (not charged yet)" % _route.upkeep_per_minute()
+	upkeep_value.text = "%d/min" % _route.upkeep_per_minute()
+	forward_caption.text = flows[0][0]
+	forward_value.text = flows[0][1]
+	backward_caption.text = flows[1][0]
+	backward_value.text = flows[1][1]
 	add_button.text = "+ Vehicle (%d)" % transport.vehicle_price
 	remove_button.text = "- Vehicle (+%d)" % refund
 	delete_button.text = "Remove route (+%d)" % (refund * _route.vehicles)

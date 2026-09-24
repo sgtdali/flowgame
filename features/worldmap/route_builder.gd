@@ -102,6 +102,12 @@ func refresh_views() -> void:
 		view.refresh()
 
 
+## Araçları oyun saatine göre konumlandırır.
+func set_clock(game_minutes: float) -> void:
+	for view: RouteView in _views:
+		view.set_clock(game_minutes)
+
+
 ## Dünya noktasına `max_distance` içindeki en yakın hat (yoksa null).
 func route_at(world_point: Vector2, max_distance: float) -> RouteView:
 	var best: RouteView = null

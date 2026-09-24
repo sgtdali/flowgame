@@ -17,9 +17,6 @@ const SELECTED_EXTRA_WIDTH: float = 4.0
 const LABEL_SIZE: int = 14
 ## Kapasite yazısının çizgiden uzaklığı (nokta adlarının üstüne binmesin).
 const LABEL_OFFSET: float = 16.0
-## Görsel zaman ölçeği: oyun içi 1 dakika kaç saniyede oynatılsın. Yalnızca
-## araçların görüntüsü için; akış simülasyonu gelince onun saatine bağlanır.
-const SECONDS_PER_GAME_MINUTE: float = 10.0
 const VEHICLE_SIZE: Vector2 = Vector2(18.0, 11.0)
 const VEHICLE_COLOR: Color = Color(0.72, 0.5, 0.28)
 
@@ -31,7 +28,7 @@ var to_position: Vector2
 
 var _hovered: bool = false
 var _selected: bool = false
-## Oyun içi dakika cinsinden geçen görsel zaman.
+## Oyun saati (dakika); WorldMap her karede verir. Duraklatınca araçlar durur.
 var _clock: float = 0.0
 
 
@@ -66,9 +63,10 @@ func distance_to(world_point: Vector2) -> float:
 	return local.distance_to(Geometry2D.get_closest_point_to_segment(local, from_position, to_position))
 
 
-func _process(delta: float) -> void:
-	_clock += delta / SECONDS_PER_GAME_MINUTE
-	queue_redraw()
+func set_clock(game_minutes: float) -> void:
+	if not is_equal_approx(_clock, game_minutes):
+		_clock = game_minutes
+		queue_redraw()
 
 
 func _draw() -> void:
@@ -119,6 +117,7 @@ func _draw_label() -> void:
 
 ## 10.0 -> "10", 2.5 -> "2.5"
 static func format_rate(value: float) -> String:
+	value = snappedf(value, 0.1)
 	if is_equal_approx(value, roundf(value)):
 		return str(roundi(value))
 	return "%.1f" % value

@@ -1,15 +1,17 @@
 extends Node2D
 
-## Harita ekranı: bölgeleri durumlarıyla gösterir, seçimi ve kamerayı yönetir.
+## Harita ekranı: girdiyi, seçimi ve oyun saatini yönetir.
 ##
-## Kural hesaplamaz: bölge durumu RegionState'ten gelir. Tıklanan bölge,
-## bölgelerin CollisionPolygon2D'lerine fizik sorgusuyla bulunur. Noktaya
-## tıklama bölgeye tıklamadan önceliklidir (yarıçap kontrolü). Hat kurma
-## akışı RouteBuilder'dadır; burası yalnızca girdiyi ona yönlendirir.
-## Kaydırma ve yakınlaştırma MapCamera'dadır.
+## Kural hesaplamaz: bütün kurallar ve sayılar MapFlowSim'dedir (bölge, hat,
+## fabrika, şehir). Panelleri MapPanels doldurur; hat kurma akışı RouteBuilder'da,
+## kaydırma/yakınlaştırma MapCamera'da, oyun hızı SpeedBar'dadır.
+## Tıklama önceliği: nokta → hat → bölge. Tıklanan bölge, bölgelerin
+## CollisionPolygon2D'lerine fizik sorgusuyla bulunur.
 
 ## Hat çizgisine bu kadar yakın tıklama hattı seçer (dünya birimi).
 const ROUTE_HIT_DISTANCE: float = 10.0
+## Panellerin ve üst çubuğun yenilenme aralığı (gerçek saniye).
+const UI_REFRESH_SECONDS: float = 0.25
 
 @onready var camera: MapCamera = $Camera2D
 @onready var region_map: Node2D = $RegionMap
@@ -18,20 +20,24 @@ const ROUTE_HIT_DISTANCE: float = 10.0
 @onready var point_panel: PointInfoPanel = $UI/PointPanel
 @onready var route_panel: RouteInfoPanel = $UI/RoutePanel
 @onready var money_label: Label = %MoneyLabel
+@onready var income_label: Label = %IncomeLabel
 @onready var hint_label: Label = $UI/TopBar/Margin/HBox/HintLabel
+@onready var speed_bar: SpeedBar = %SpeedBar
 @onready var route_builder: RouteBuilder = $Routes
 
-var state: RegionState = RegionState.new()
-var routes: RouteState = RouteState.new(state)
+var sim: MapFlowSim = MapFlowSim.new()
+var state: RegionState = sim.regions
+var routes: RouteState = sim.routes
 var selected: RegionView = null
 var selected_point: MapPoint = null
 var selected_route: RouteView = null
 
+var _panels: MapPanels
 var _points: Array[MapPoint] = []
 var _hovered_point: MapPoint = null
 var _hovered_route: RouteView = null
-
 var _default_hint: String = ""
+var _ui_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -40,17 +46,32 @@ func _ready() -> void:
 	camera.map_rect = Rect2(map_bounds.position, map_bounds.size)
 	for node: Node in region_map.find_children("*", "MapPoint", true, false):
 		_points.append(node as MapPoint)
+	_panels = MapPanels.new(sim, RegionState.DEFAULT_CONFIG, info_panel, point_panel, route_panel)
 	info_panel.unlock_requested.connect(_on_unlock_requested)
 	point_panel.build_route_requested.connect(_on_build_route_requested)
-	route_panel.add_vehicle_requested.connect(_on_add_vehicle_requested)
-	route_panel.remove_vehicle_requested.connect(_on_remove_vehicle_requested)
+	point_panel.build_factory_requested.connect(_on_build_factory_requested)
+	route_panel.add_vehicle_requested.connect(func(route: MapRoute) -> void:
+		if routes.add_vehicle(route): _refresh_now())
+	route_panel.remove_vehicle_requested.connect(func(route: MapRoute) -> void:
+		if routes.remove_vehicle(route): _refresh_now())
 	route_panel.remove_route_requested.connect(_on_remove_route_requested)
 	route_builder.routes = routes
-	route_builder.hint_changed.connect(_on_hint_changed)
-	route_builder.route_built.connect(_on_route_built)
+	route_builder.hint_changed.connect(func(text: String) -> void:
+		hint_label.text = text if not text.is_empty() else _default_hint)
+	route_builder.route_built.connect(func(_route: MapRoute) -> void:
+		hint_label.text = _default_hint
+		_refresh_now())
+	speed_bar.advanced.connect(sim.step)
 	_default_hint = hint_label.text
 	refresh_statuses()
-	_update_money()
+	_refresh_now()
+
+
+func _process(delta: float) -> void:
+	route_builder.set_clock(sim.clock)
+	_ui_timer += delta
+	if _ui_timer >= UI_REFRESH_SECONDS:
+		_refresh_now()
 
 
 func refresh_statuses() -> void:
@@ -73,22 +94,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if button.pressed and button.button_index == MOUSE_BUTTON_RIGHT and route_builder.is_building():
 			route_builder.cancel()
 		elif button.pressed and button.button_index == MOUSE_BUTTON_LEFT:
-			var world: Vector2 = _event_to_world(button.position)
-			var point: MapPoint = _point_at(world)
-			if route_builder.is_building():
-				# Hat kurarken: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
-				if point != null:
-					route_builder.try_finish(point)
-				else:
-					route_builder.cancel()
-			elif point != null:
-				_select_point(point)
-			else:
-				var route_view: RouteView = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
-				if route_view != null:
-					_select_route(route_view)
-				else:
-					_select(_region_at(world))
+			_on_left_click(_event_to_world(button.position))
 		return
 	var motion: InputEventMouseMotion = event as InputEventMouseMotion
 	if motion != null:
@@ -101,31 +107,33 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_hovered_route(hover_route)
 
 
+func _on_left_click(world: Vector2) -> void:
+	var point: MapPoint = _point_at(world)
+	if route_builder.is_building():
+		# Hat kurarken: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
+		if point != null:
+			route_builder.try_finish(point)
+		else:
+			route_builder.cancel()
+		return
+	_clear_selection()
+	if point != null:
+		selected_point = point
+		point.set_selected(true)
+	else:
+		selected_route = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
+		if selected_route != null:
+			selected_route.set_selected(true)
+		else:
+			selected = _region_at(world)
+			if selected != null:
+				selected.set_selected(true)
+	_refresh_now()
+
+
 ## Olayın ekran konumunu dünya koordinatına çevirir (kamera ve yakınlaştırma dahil).
 func _event_to_world(screen_position: Vector2) -> Vector2:
 	return get_canvas_transform().affine_inverse() * screen_position
-
-
-func _select(view: RegionView) -> void:
-	_clear_selection()
-	selected = view
-	if selected != null:
-		selected.set_selected(true)
-	_update_panel()
-
-
-func _select_point(point: MapPoint) -> void:
-	_clear_selection()
-	selected_point = point
-	point.set_selected(true)
-	_update_panel()
-
-
-func _select_route(view: RouteView) -> void:
-	_clear_selection()
-	selected_route = view
-	view.set_selected(true)
-	_update_panel()
 
 
 func _clear_selection() -> void:
@@ -160,53 +168,33 @@ func _set_hovered_point(point: MapPoint) -> void:
 		point.set_hovered(true)
 
 
-func _update_panel() -> void:
-	info_panel.hide()
-	point_panel.hide()
-	route_panel.hide()
-	if selected_route != null:
-		var route: MapRoute = selected_route.route
-		route_panel.show_route(selected_route, routes.add_vehicle_block_reason(route),
-				routes.remove_vehicle_block_reason(route), routes.vehicle_refund(route.transport))
-		return
-	if selected_point != null:
-		var view: RegionView = selected_point.get_region_view()
-		point_panel.show_point(selected_point, state.status(view.data.id),
-				routes.start_block_reason(selected_point.get_point_id()))
-		return
-	if selected == null or selected.data == null:
-		return
-	var region_id: StringName = selected.data.id
-	info_panel.show_region(selected.data, state.status(region_id), state.unlock_cost(),
-			state.unlock_block_reason(region_id))
+## Üst çubuğu, hat etiketlerini ve açık paneli şimdi yeniler.
+func _refresh_now() -> void:
+	_ui_timer = 0.0
+	money_label.text = "Money: %s" % RegionInfoPanel.format_money(state.money)
+	var net: float = snappedf(sim.income_last_minute() - sim.upkeep_per_minute(), 0.1)
+	income_label.text = "Net: %s%s/min (upkeep %d)" % ["+" if net >= 0.0 else "",
+			RouteView.format_rate(net), sim.upkeep_per_minute()]
+	route_builder.refresh_views()
+	_panels.show_selection(selected, selected_point, selected_route)
 
 
 func _on_unlock_requested(region_id: StringName) -> void:
 	if state.unlock(region_id):
 		refresh_statuses()
-		_update_money()
-		_update_panel()
+		_refresh_now()
 
 
 func _on_build_route_requested(point: MapPoint) -> void:
 	_clear_selection()
-	_update_panel()
+	_refresh_now()
 	route_builder.start(point)
 
 
-func _on_route_built(_route: MapRoute) -> void:
-	_update_money()
-	hint_label.text = _default_hint
-
-
-func _on_add_vehicle_requested(route: MapRoute) -> void:
-	if routes.add_vehicle(route):
-		_after_route_change()
-
-
-func _on_remove_vehicle_requested(route: MapRoute) -> void:
-	if routes.remove_vehicle(route):
-		_after_route_change()
+func _on_build_factory_requested(point: MapPoint, recipe: ProcessRecipe) -> void:
+	if sim.factories.build(point.get_point_id(), recipe):
+		point.set_factory(recipe.display_name)
+		_refresh_now()
 
 
 func _on_remove_route_requested(route: MapRoute) -> void:
@@ -216,21 +204,7 @@ func _on_remove_route_requested(route: MapRoute) -> void:
 	_set_hovered_route(null)
 	if view != null:
 		route_builder.remove_view(view)
-	_after_route_change()
-
-
-func _after_route_change() -> void:
-	route_builder.refresh_views()
-	_update_money()
-	_update_panel()
-
-
-func _on_hint_changed(text: String) -> void:
-	hint_label.text = text if not text.is_empty() else _default_hint
-
-
-func _update_money() -> void:
-	money_label.text = "Money: %s" % RegionInfoPanel.format_money(state.money)
+	_refresh_now()
 
 
 ## Dünya noktasına en yakın, HIT_RADIUS içindeki nokta.

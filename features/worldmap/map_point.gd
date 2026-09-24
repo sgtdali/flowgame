@@ -32,6 +32,7 @@ const HIT_RADIUS: float = 18.0
 const SIZE: float = 11.0
 const CITY_COLOR: Color = Color(0.86, 0.3, 0.26)
 const PLOT_COLOR: Color = Color(0.2, 0.22, 0.24, 0.75)
+const FACTORY_COLOR: Color = Color(0.85, 0.55, 0.25)
 const SITE_COLORS: Dictionary = {
 	RawResource.SiteKind.FOREST: Color(0.22, 0.62, 0.3),
 	RawResource.SiteKind.FARM: Color(0.93, 0.78, 0.28),
@@ -44,11 +45,18 @@ const DIMMED_ALPHA: float = 0.6
 
 var _hovered: bool = false
 var _selected: bool = false
+## Arsaya fabrika kurulduysa adı (ör. "Sawmill"); boşsa arsa boş.
+var _factory_name: String = ""
 
 
 func _ready() -> void:
 	z_as_relative = false
 	z_index = POINT_Z_INDEX
+
+
+func set_factory(factory_name: String) -> void:
+	_factory_name = factory_name
+	queue_redraw()
 
 
 func set_dimmed(value: bool) -> void:
@@ -94,6 +102,8 @@ func get_title() -> String:
 			if resource != null:
 				return RawResource.site_name(resource.site_kind)
 			return "Resource Site"
+	if not _factory_name.is_empty():
+		return _factory_name
 	return "Plot %d" % (slot_index + 1)
 
 
@@ -129,8 +139,15 @@ func _draw() -> void:
 			draw_polyline(diamond, OUTLINE, 2.0)
 		Kind.FACTORY_PLOT:
 			var rect: Rect2 = Rect2(Vector2(-SIZE, -SIZE), Vector2(SIZE, SIZE) * 2.0)
-			draw_rect(rect, PLOT_COLOR)
-			draw_rect(rect, Color.WHITE, false, 2.0)
+			if _factory_name.is_empty():
+				draw_rect(rect, PLOT_COLOR)
+				draw_rect(rect, Color.WHITE, false, 2.0)
+			else:
+				# Kurulu fabrika: dolu kare + çatı.
+				draw_rect(rect.grow(2.0), FACTORY_COLOR)
+				draw_rect(rect.grow(2.0), OUTLINE, false, 2.0)
+				draw_colored_polygon(PackedVector2Array([Vector2(-SIZE, -SIZE),
+						Vector2(0.0, -SIZE - 8.0), Vector2(SIZE, -SIZE)]), FACTORY_COLOR.darkened(0.3))
 
 	_draw_label()
 

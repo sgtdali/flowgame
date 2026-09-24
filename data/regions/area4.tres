@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="RegionData" format=3]
+[gd_resource type="Resource" script_class="RegionData" format=3 uid="uid://b7x4hy47p0bdb"]
 
-[ext_resource type="Script" path="res://data/region_data.gd" id="1_region"]
-[ext_resource type="Script" path="res://data/raw_resource.gd" id="1_raw_script"]
+[ext_resource type="Script" uid="uid://bfgjo4ahrw6mv" path="res://data/raw_resource.gd" id="1_raw_script"]
+[ext_resource type="Script" uid="uid://c148oaregplq3" path="res://data/region_data.gd" id="1_region"]
 [ext_resource type="Resource" path="res://data/raw_resources/bugday.tres" id="2"]
 [ext_resource type="Resource" path="res://data/raw_resources/tomruk.tres" id="3"]
 
@@ -13,4 +13,3 @@ resources = Array[ExtResource("1_raw_script")]([ExtResource("2"), ExtResource("3
 factory_slots = 4
 city_name = "City B"
 neighbors = Array[StringName]([&"area2", &"area5"])
-starts_unlocked = false

@@ -12,6 +12,9 @@ extends RefCounted
 ## Kayan nokta karşılaştırma toleransı (taşıma payı dağıtımı ve paranın yuvarlanması).
 const EPSILON: float = 0.000001
 
+## Fabrikanın son adımdaki durumu (panelde gösterilir).
+enum FactoryStatus { WORKING, NO_INPUT, OUTPUT_FULL }
+
 var regions: RegionState
 var routes: RouteState
 var factories: FactorySites
@@ -26,6 +29,8 @@ var _stocks: Dictionary = {}
 var _pending_money: float = 0.0
 ## Hat -> [ileri, geri] son adımdaki akış (birim/dk), panel için.
 var _route_flow: Dictionary = {}
+## Arsa id -> FactoryStatus.
+var _factory_status: Dictionary = {}
 
 
 func _init(config: MapConfig = RegionState.DEFAULT_CONFIG) -> void:
@@ -44,6 +49,24 @@ func stock(point_id: StringName, good: Good) -> float:
 func route_flow(route: MapRoute, direction: MapRoute.Direction) -> float:
 	var flows: Array = _route_flow.get(route, [0.0, 0.0])
 	return flows[direction]
+
+
+func factory_status(plot_id: StringName) -> FactoryStatus:
+	return _factory_status.get(plot_id, FactoryStatus.NO_INPUT)
+
+
+## Geçen tam oyun dakikasında şehirlerden gelen toplam gelir.
+func income_last_minute() -> float:
+	var total: float = 0.0
+	for info: MapPoints.Info in MapPoints.all():
+		if info.kind == MapPoints.Kind.CITY:
+			total += market.revenue_last_minute(info.id)
+	return total
+
+
+## Şu anki dakikalık bakım (araçlar + fabrikalar).
+func upkeep_per_minute() -> int:
+	return routes.total_upkeep_per_minute() + factories.upkeep_per_minute()
 
 
 ## Noktanın hatta verebileceği mallar (kaynak tarafı).
@@ -101,7 +124,7 @@ func step(dt: float) -> void:
 	_produce(dt)
 	_move_goods(dt)
 	_process_factories(dt)
-	_pending_money -= (routes.total_upkeep_per_minute() + factories.upkeep_per_minute()) * dt
+	_pending_money -= upkeep_per_minute() * dt
 	_commit_money()
 	var minute_before: int = floori(clock)
 	clock += dt
@@ -187,9 +210,12 @@ func _process_factories(dt: float) -> void:
 		var batches: float = recipe.outputs_per_minute * dt / recipe.output_amount
 		for i: int in recipe.inputs.size():
 			batches = minf(batches, stock(plot_id, recipe.inputs[i]) / recipe.input_amounts[i])
+		var input_limited: bool = batches <= EPSILON
 		batches = minf(batches, _free_space(plot_id, recipe.output) / recipe.output_amount)
-		if batches <= 0.0:
+		if batches <= EPSILON:
+			_factory_status[plot_id] = FactoryStatus.NO_INPUT if input_limited else FactoryStatus.OUTPUT_FULL
 			continue
+		_factory_status[plot_id] = FactoryStatus.WORKING
 		for i: int in recipe.inputs.size():
 			_add_stock(plot_id, recipe.inputs[i], -batches * recipe.input_amounts[i])
 		_add_stock(plot_id, recipe.output, batches * recipe.output_amount)
