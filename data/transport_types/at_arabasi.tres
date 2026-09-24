@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TransportType" format=3]
+
+[ext_resource type="Script" path="res://data/transport_type.gd" id="1_tt"]
+
+[resource]
+script = ExtResource("1_tt")
+id = &"at_arabasi"
+display_name = "Horse Cart"
+load = 10
+speed = 300
+vehicle_price = 50
+vehicle_upkeep = 1
+route_cost = 20
+available_at_start = true

@@ -6,13 +6,17 @@ extends RefCounted
 ## Komşuluk şartı: kilitli bir bölge yalnızca açık bir bölgeye komşuysa
 ## açılabilir. Açılan bölge bir daha kilitlenmez.
 ## Maliyet bölgeye değil sıraya bağlıdır (bkz. MapConfig).
-## Para şimdilik burada tutulur; fabrika ekonomisine bağlamak ayrı görevdir.
+## Para Wallet'ta tutulur; hat ve araç da aynı cüzdandan harcar.
 
 enum Status { LOCKED, AVAILABLE, UNLOCKED }
 
 const DEFAULT_CONFIG: MapConfig = preload("res://data/map_config.tres")
 
-var money: int = 0
+var wallet: Wallet
+## Kolaylık: cüzdandaki para (eski kullanım `state.money` bozulmasın).
+var money: int:
+	get:
+		return wallet.money
 
 var _config: MapConfig
 ## id -> true. Açık bölgeler (başlangıçta açık olanlar dahil).
@@ -21,9 +25,10 @@ var _unlocked: Dictionary = {}
 var _purchased: int = 0
 
 
-func _init(config: MapConfig = DEFAULT_CONFIG) -> void:
+## `shared_wallet` verilmezse başlangıç parasıyla yeni cüzdan açılır.
+func _init(config: MapConfig = DEFAULT_CONFIG, shared_wallet: Wallet = null) -> void:
 	_config = config
-	money = config.starting_money
+	wallet = shared_wallet if shared_wallet != null else Wallet.new(config.starting_money)
 	for region: RegionData in RegionCatalog.all():
 		if region.starts_unlocked:
 			_unlocked[region.id] = true
@@ -58,7 +63,7 @@ func unlock_block_reason(region_id: StringName) -> String:
 			return "Already unlocked"
 		Status.LOCKED:
 			return "Needs an unlocked neighbor"
-	if money < unlock_cost():
+	if not wallet.can_afford(unlock_cost()):
 		return "Not enough money"
 	return ""
 
@@ -71,7 +76,7 @@ func can_unlock(region_id: StringName) -> bool:
 func unlock(region_id: StringName) -> bool:
 	if not can_unlock(region_id):
 		return false
-	money -= unlock_cost()
+	wallet.spend(unlock_cost())
 	_purchased += 1
 	_unlocked[region_id] = true
 	return true

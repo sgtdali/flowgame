@@ -10,3 +10,6 @@ extends Resource
 @export var starting_money: int = 1000
 @export var first_unlock_cost: int = 500
 @export var unlock_cost_step: int = 250
+## Araç satılınca ya da hat silinince araç fiyatının geri verilen yüzdesi.
+## Hat kurulum ücreti geri verilmez.
+@export var vehicle_refund_percent: int = 50

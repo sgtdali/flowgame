@@ -7,3 +7,4 @@ script = ExtResource("1_cfg")
 starting_money = 1000
 first_unlock_cost = 500
 unlock_cost_step = 250
+vehicle_refund_percent = 50
