@@ -38,8 +38,8 @@ sağlamlaştırmaktır.
   değişiklik önerisi sun.
 - Onaydan sonra yalnızca ilgili güncel dosyayı güncelle. Karar değişmişse eski
   ifadeyi tamamen kaldır; geçmiş, sürüm notu veya arşiv tutma.
-- Açık konu çözüldüğünde kalıcı kararını ilgili konu dosyasına yaz ve
-  `05_ACIK_KONULAR.md` içindeki maddesini tamamen sil.
+- Açık konu çözüldüğünde kalıcı kararını ilgili bölüme yaz ve tasarım
+  belgesindeki *Açık sorular* listesinden maddesini tamamen sil.
 
 ## Sınırlar
 

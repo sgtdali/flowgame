@@ -51,9 +51,10 @@ Harita en fazla 20 sabit bölgeden oluşur ve yalnızca kaynakları, şehirleri 
 - **Kaynak yatakları:** Her bölgede 1–3 kaynak, her biri sabit çıkarım hızına sahip (ör. Demir cevheri 20 birim/dk). Yataklar tükenmez.
 - **Şehir:** Bölgelerin yaklaşık yarısında bir şehir bulunur. Şehirler talep üretir ve büyür (Ekonomi bölümü).
 - **Fabrika slotları:** Her bölgede sınırlı sayıda (2–4) fabrika alanı. Bu kural, tüm üretimi tek bölgeye yığmayı engeller ve lojistiği zorunlu kılar.
-- **Arazi:** Düz, tepelik, dağlık. Arazi hat kurulum maliyetini ve kapasitesini etkiler.
 
-**Bölge açma:** Oyun 3–4 açık bölgeyle başlar. Diğerleri para ile (erişim izni) açılır; bu, paranın oyun ortasındaki ana harcama kalemlerinden biridir.
+**Harita noktaları:** Haritada üç tür nokta vardır: ham madde alanı (maden, orman, tarla; bölgenin kaynak yatakları), fabrika (bölgenin fabrika alanlarına kurulur) ve şehir. Noktalar bölgelerin içindedir; bölge açmak içindeki noktalara erişim verir. Lojistik hatları noktalar arasında kurulur. Noktalar bölge verisinden (kaynak listesi, fabrika alanı sayısı, şehir) otomatik yerleştirilir. Yerleşim bir kez üretilir ve sabittir: her oyunda aynıdır; gerekirse elle düzeltilebilir.
+
+**Bölge açma:** Oyun 1 açık bölgeyle başlar. Kilitli bir bölge yalnızca açık bir bölgeye komşuysa para ile (erişim izni) açılabilir; açılan bölge bir daha kilitlenmez. Bu, paranın oyun ortasındaki ana harcama kalemlerinden biridir.
 
 **Araştırma merkezi:** Haritada fiziksel bir bina. Oyuncu ilkini başlangıç bölgesine kurar; sonradan ikinci bir merkez kurulabilir. Araştırma paketlerini buraya taşımak ayrı bir lojistik karardır.
 
@@ -86,24 +87,28 @@ Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüş
 
 ## Lojistik ve akış modeli
 
-Bölgeler arası taşıma, tek tek araçlar yerine hatlar üzerinde birim/dk akış olarak hesaplanır. Araçlar haritada sadece görsel olarak hareket eder; simülasyonu etkilemez.
+Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
 
-**Hat kurma:** Oyuncu iki bölgeyi seçer ve hattın güzergahını ara bölgelerden geçirerek kendisi belirler. Rota hazır gelmez.
+**Hat kurma:** Oyuncu iki noktayı seçer; hat bu iki noktayı bağlar. Hat yalnızca açık bölgelerdeki noktalar arasında kurulur; hattın çizgisi kilitli bir bölgenin üstünden geçebilir, önemli olan iki ucudur. Mesafe iki nokta arasındaki düz uzaklıktır. Coğrafi parametre (arazi, dağ vb.) yoktur.
+
+**Araç turu:** Her hatta oyuncunun eklediği araçlar çalışır. Araç belirli bir yük taşır ve gidiş-dönüş yapar; hattın kapasitesi = araç sayısı × araç yükü ÷ tur süresi. Uzun hat daha az birim/dk taşır; oyuncu araç ekleyerek telafi eder. Araçlar tek tek simüle edilmez: akış bu formülle soyut olarak hesaplanır, haritadaki araçlar görseldir.
+
+**Yön:** Hat çift yönlüdür; araç dönüşte de yük alır.
+
+**Yük seçimi:** Oyuncu her yön için taşınacak malları ve oranlarını seçer (ör. Tomruk %60, Buğday %40). Bir malın arzı payını dolduramazsa kalan pay diğer mallara geçer.
 
 **Taşıma türleri**
 
-| Tür | Kapasite (birim/dk) | Kurulum maliyeti | Bakım (/dk) | Açılış |
+| Tür | Araç yükü | Hız | Maliyet | Açılış |
 | --- | --- | --- | --- | --- |
-| At arabası | 10 | 100 + 20/bölge | 2 | Başlangıç |
-| Kamyon yolu | 30 | 400 + 60/bölge | 6 | Kademe 1 |
-| Demiryolu | 80 | 1.500 + 200/bölge | 15 | Kademe 2 |
-| Boru hattı (sıvı) | 60 | 800 + 120/bölge | 8 | Kademe 3 |
+| At arabası | Açık | Açık | Açık | Başlangıç |
+| Kamyon yolu | Açık | Açık | Açık | Kademe 1 |
+| Demiryolu | Açık | Açık | Açık | Kademe 2 |
+| Boru hattı (sıvı) | Açık | Açık | Açık | Kademe 3 |
 
 **Akış kuralları**
 
 - Hat kapasitesi dolarsa kaynak tarafında birikir; üretim durmaz, depo dolunca yavaşlar.
-- Dağlık araziden geçen hat kapasitesinin %25'ini kaybeder (tünel araştırmasıyla kalkar).
-- Mesafe gecikmeyi etkiler, kapasiteyi değil: uzun hat geç başlar ama aynı hızda akar.
 
 **Neden bu model:** Transport INC 30 araçtan sonra çöküyordu. Akış hesabı 20 bölge ve yüzlerce bağlantıda bile sabit maliyetlidir.
 
@@ -115,12 +120,14 @@ Bölgeler arası taşıma, tek tek araçlar yerine hatlar üzerinde birim/dk ak�
 
 | Seviye | Talep edilen mallar | Büyüme koşulu |
 | --- | --- | --- |
-| Köy | Kereste, Tahıl | — |
+| Köy | Kereste, Un | — |
 | Kasaba | + Ekmek, Alet | Köy taleplerinin %80'i 5 dk boyunca karşılanır |
 | Şehir | + Mobilya, Konserve | Kasaba taleplerinin %80'i 5 dk boyunca karşılanır |
 | Metropol | + Makine, Elektrikli eşya | Şehir taleplerinin %80'i 5 dk boyunca karşılanır |
 
 **Doygunluk fiyatı:** Talebin %100'üne kadar mal tam fiyattan satılır. Fazlası için fiyat hızla düşer (%100–150 arası yarı fiyat, %150 üstü %10). Bu kural iki şeyi zorunlu kılar: oyuncu farklı mallar üretir ve fazla üretimi doğal olarak araştırma paketi üretimine yönlendirir.
+
+**Ham mal satılmaz:** Ham mal şehre satılamaz; şehirler yalnızca fabrikada işlenmiş mal alır.
 
 **Ceza yok:** Şehir asla seviye kaybetmez ve memnuniyeti zamanla düşmez. Beslenmeyen talep sadece büyümeyi bekletir.
 
@@ -137,7 +144,7 @@ Araştırma, Factorio'daki gibi araştırma paketleriyle yapılır. Paketler fab
 
 ```mermaid
 flowchart LR
-    M1[Kereste + Tahıl] --> P1[Kızıl paket]
+    M1[Kereste + Un] --> P1[Kızıl paket]
     M2[Alet + Ekmek] --> P2[Yeşil paket]
     M3[Mobilya + Konserve] --> P3[Mavi paket]
     M4[Makine + Elektrikli eşya] --> P4[Mor paket]
@@ -152,7 +159,7 @@ flowchart LR
 
 | Paket | Tarif (girdi → 1 paket) | Atölye hızı (paket/dk) | Tarifi açan |
 | --- | --- | --- | --- |
-| Kızıl | 1 Kereste + 1 Tahıl | 10 | Başlangıç |
+| Kızıl | 1 Kereste + 1 Un | 10 | Başlangıç |
 | Yeşil | 1 Alet + 1 Ekmek | 5 | Kademe 1 |
 | Mavi | 1 Mobilya + 1 Konserve | 3 | Kademe 2 |
 | Mor | 1 Makine + 1 Elektrikli eşya | 2 | Kademe 3 |
@@ -161,10 +168,12 @@ flowchart LR
 
 | Kademe | Gereken paketler | Açtığı düğümler |
 | --- | --- | --- |
-| 1 | Kızıl | Ergitici, Değirmen, Fırın tarifleri · Yeşil paket · Kamyon yolu · Fabrika Seviye 2 |
+| 1 | Kızıl | Ergitici, Fırın tarifleri · Yeşil paket · Kamyon yolu · Fabrika Seviye 2 |
 | 2 | Kızıl + Yeşil | Marangoz, Konserve hattı · Mavi paket · Demiryolu · Enerji düğümü · Şablon kaydetme |
-| 3 | Kızıl + Yeşil + Mavi | Makine atölyesi, Elektrik montajı · Mor paket · Boru hattı · Tünel (dağ cezası kalkar) · Fabrika Seviye 3 |
+| 3 | Kızıl + Yeşil + Mavi | Makine atölyesi, Elektrik montajı · Mor paket · Boru hattı · Fabrika Seviye 3 |
 | 4 | Kızıl + Yeşil + Mavi + Mor | Verimlilik yükseltmeleri (+%20 işleyici hızı) · İkinci araştırma merkezi · Para ile hızlandırma |
+
+Başlangıçta açık tarifler: Bıçkıhane (Tomruk → Kereste), Değirmen (Buğday → Un).
 
 **Kurallar**
 
@@ -178,25 +187,24 @@ Bu sayılar prototipte ayarlanacak başlangıç tahminleridir. Temel kural: bir 
 
 **Hammaddeler**
 
-| Kaynak | Yatak başına çıkarım (birim/dk) | Bulunduğu arazi |
-| --- | --- | --- |
-| Kereste | 20 | Orman |
-| Tahıl | 20 | Ova |
-| Demir cevheri | 20 | Tepelik, dağlık |
-| Kömür | 15 | Tepelik |
-| Bakır cevheri | 15 | Dağlık |
+| Kaynak | Yatak başına çıkarım (birim/dk) |
+| --- | --- |
+| Tomruk | 20 |
+| Buğday | 20 |
+| Demir cevheri | 20 |
+| Kömür | 15 |
+| Bakır cevheri | 15 |
 
 **Mallar, tarifler ve şehir fiyatları**
 
 | Mal | Tarif (girdi → 1 birim) | İşleyici hızı (birim/dk) | Şehir fiyatı |
 | --- | --- | --- | --- |
-| Kereste | Hammadde | — | 1 |
-| Tahıl | Hammadde | — | 1 |
+| Kereste | 1 Tomruk | 10 | 1 |
 | Demir külçe | 2 Demir cevheri | 10 | Satılmaz |
-| Un | 2 Tahıl | 10 | Satılmaz |
+| Un | 2 Buğday | 10 | 1 |
 | Ekmek | 1 Un | 10 | 4 |
 | Alet | 1 Demir külçe + 1 Kereste | 10 | 6 |
-| Konserve | 1 Demir külçe + 2 Tahıl | 8 | 8 |
+| Konserve | 1 Demir külçe + 2 Buğday | 8 | 8 |
 | Mobilya | 3 Kereste + 1 Alet | 5 | 18 |
 | Bakır külçe | 2 Bakır cevheri | 8 | Satılmaz |
 | Makine | 2 Demir külçe + 1 Alet + enerji | 5 | 25 |
@@ -224,7 +232,7 @@ Kademedeki diğer düğümler çekirdek maliyetin %50–75'i kadardır.
 | Fabrika Seviye 2 / Seviye 3 | 800 / 2.000 |
 | Fabrika bakımı | 3 /dk (seviye başına) |
 | Bölge erişim izni | 500, sonraki her bölge +250 |
-| Köy talebi | Kereste 10 + Tahıl 10 /dk → en fazla 20 para/dk |
+| Köy talebi | Kereste 10 + Un 10 /dk → en fazla 20 para/dk |
 | Kasaba ek talebi | Ekmek 8 + Alet 5 /dk → en fazla +62 para/dk |
 
 **Hedef oyun süresi:** Prototip döngüsü 1–2 saat; tam oyun Kademe 4 sonuna kadar 15–25 saat.
@@ -238,8 +246,8 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 | Alan | Prototipte | Tam oyunda |
 | --- | --- | --- |
 | Bölge | 5 (2 şehirli) | 20 |
-| Hammadde | Kereste, Tahıl, Demir cevheri | 5 |
-| Mal | Demir külçe, Un, Ekmek, Alet + Kızıl ve Yeşil paket | 11 |
+| Hammadde | Tomruk, Buğday, Demir cevheri | 5 |
+| Mal | Kereste, Un, Demir külçe, Ekmek, Alet + Kızıl ve Yeşil paket | 12 |
 | Araştırma | Kademe 1 ve 2 (6 düğüm) | 4 kademe |
 | Taşıma | At arabası, Kamyon yolu | 4 tür |
 | Şehir seviyesi | Köy, Kasaba | 4 seviye |
@@ -247,12 +255,13 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 
 **Geliştirme sırası**
 
-1. Akış simülasyonu (UI'siz, konsolda birim/dk hesabı)
-2. 5 bölgelik harita, tıklama ve bilgi paneli
-3. Hat kurma ve akışın haritada gösterilmesi
-4. Fabrika içi `GraphEdit` editörü
-5. Şehir talebi, doygunluk fiyatı ve büyüme
-6. Araştırma paketleri, araştırma merkezi ve 6 düğüm
+1. 5 bölgelik harita, tıklama ve bilgi paneli
+2. Harita noktaları (ham madde alanı, fabrika arsası, şehir)
+3. Hat kurma: noktaları bağlama, araç ekleme, kapasite gösterimi, görsel araçlar
+4. Akış simülasyonu, yük seçimi ve sabit fabrika (tek tarifli bina, ör. Tomruk → Kereste)
+5. Fabrika içi `GraphEdit` editörü (sabit fabrikanın yerini alır)
+6. Şehir talebi, doygunluk fiyatı ve büyüme
+7. Araştırma paketleri, araştırma merkezi ve 6 düğüm
 
 **Başarı ölçütü:** 3–5 kişi oynar. Oyuncuların çoğu Kademe 2'ye kendiliğinden ulaşıyor, en az bir kez "şimdi mi araştırsam" diye duraksadığını söylüyor ve 1 saatin sonunda devam etmek istiyorsa döngü tutuyor demektir. Tutmuyorsa önce doygunluk ve araştırma maliyetleri ayarlanır, sonra kapsam büyütülür.
 
@@ -275,3 +284,5 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 - [ ] İsteyene açık senaryo modu (hedefli haritalar) eklenecek mi?
 - [ ] Fiyat modeli: ücretli mi, Upload Labs gibi ücretsiz + destekçi paketi mi? Demo planlanıyor mu?
 - [ ] Mobil hedefleniyor mu? Düğüm editörü dokunmatik ekranda kullanışlı olmalı mı?
+- [ ] Hat ve araç maliyeti: kurulum, bakım, araç başı ücret.
+- [ ] Araştırma merkezi dördüncü nokta türü mü?
