@@ -3,9 +3,13 @@
 [ext_resource type="Script" path="res://features/worldmap/region_view.gd" id="1_view"]
 [ext_resource type="Resource" path="res://data/regions/area1.tres" id="2_area"]
 [ext_resource type="Resource" path="res://data/regions/area2.tres" id="3_area"]
+[ext_resource type="Script" path="res://features/worldmap/map_point.gd" id="3_t8fxm"]
 [ext_resource type="Resource" path="res://data/regions/area3.tres" id="4_area"]
+[ext_resource type="Resource" path="res://data/raw_resources/demir_cevheri.tres" id="4_snabi"]
 [ext_resource type="Resource" path="res://data/regions/area4.tres" id="5_area"]
 [ext_resource type="Resource" path="res://data/regions/area5.tres" id="6_area"]
+[ext_resource type="Resource" path="res://data/raw_resources/tomruk.tres" id="6_emi3y"]
+[ext_resource type="Resource" path="res://data/raw_resources/bugday.tres" id="7_xphyp"]
 
 [node name="Regions" type="Node2D" unique_id=1368752393]
 
@@ -19,10 +23,27 @@ color = Color(0.6859804, 0.50040376, 0.17477232, 1)
 polygon = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160, -60, 120, -300, 0)
 uv = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160, -60, 120, 101.391846, -42.818398)
 
+[node name="Points" type="Node2D" parent="Area5" unique_id=418742238]
+
+[node name="Site1" type="Node2D" parent="Area5/Points" unique_id=30375545]
+position = Vector2(1070, 160)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("4_snabi")
+
+[node name="Plot1" type="Node2D" parent="Area5/Points" unique_id=318090670]
+position = Vector2(1440, 330)
+script = ExtResource("3_t8fxm")
+
+[node name="Plot2" type="Node2D" parent="Area5/Points" unique_id=364892672]
+position = Vector2(940, 430)
+script = ExtResource("3_t8fxm")
+slot_index = 1
+
 [node name="MapBounds" type="ReferenceRect" parent="." unique_id=1052238418]
-mouse_filter = 2
 offset_right = 1600.0
 offset_bottom = 900.0
+mouse_filter = 2
 
 [node name="Area1" type="Area2D" parent="." unique_id=1911169915]
 script = ExtResource("1_view")
@@ -31,6 +52,40 @@ data = ExtResource("2_area")
 [node name="Polygon2D" type="Polygon2D" parent="Area1" unique_id=1348327612]
 polygon = PackedVector2Array(80, 60, 80, 220, 300, 380, 400, 260, 400, 80, 260, 40)
 
+[node name="Points" type="Node2D" parent="Area1" unique_id=1433415062]
+
+[node name="City" type="Node2D" parent="Area1/Points" unique_id=1823123035]
+position = Vector2(250, 230)
+script = ExtResource("3_t8fxm")
+kind = 2
+
+[node name="Site1" type="Node2D" parent="Area1/Points" unique_id=165524421]
+position = Vector2(120, 100)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("6_emi3y")
+
+[node name="Site2" type="Node2D" parent="Area1/Points" unique_id=1306210806]
+position = Vector2(350, 110)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("7_xphyp")
+slot_index = 1
+
+[node name="Plot1" type="Node2D" parent="Area1/Points" unique_id=319446268]
+position = Vector2(240, 90)
+script = ExtResource("3_t8fxm")
+
+[node name="Plot2" type="Node2D" parent="Area1/Points" unique_id=39255794]
+position = Vector2(140, 210)
+script = ExtResource("3_t8fxm")
+slot_index = 1
+
+[node name="Plot3" type="Node2D" parent="Area1/Points" unique_id=1191380782]
+position = Vector2(360, 220)
+script = ExtResource("3_t8fxm")
+slot_index = 2
+
 [node name="Area2" type="Area2D" parent="." unique_id=406375879]
 script = ExtResource("1_view")
 data = ExtResource("3_area")
@@ -38,6 +93,23 @@ data = ExtResource("3_area")
 [node name="Polygon2D" type="Polygon2D" parent="Area2" unique_id=1765392446]
 color = Color(0.16410303, 0.40541887, 0.341716, 1)
 polygon = PackedVector2Array(400, 260, 300, 380, 680, 660, 900, 480, 880, 220, 700, 260)
+
+[node name="Points" type="Node2D" parent="Area2" unique_id=1951830675]
+
+[node name="Site1" type="Node2D" parent="Area2/Points" unique_id=30359015]
+position = Vector2(640, 320)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("4_snabi")
+
+[node name="Plot1" type="Node2D" parent="Area2/Points" unique_id=670568384]
+position = Vector2(690, 600)
+script = ExtResource("3_t8fxm")
+
+[node name="Plot2" type="Node2D" parent="Area2/Points" unique_id=889580495]
+position = Vector2(370, 380)
+script = ExtResource("3_t8fxm")
+slot_index = 1
 
 [node name="Area3" type="Area2D" parent="." unique_id=453688259]
 script = ExtResource("1_view")
@@ -48,6 +120,28 @@ position = Vector2(600, -100)
 color = Color(0.8334625, 0.34926504, 0.48060322, 1)
 polygon = PackedVector2Array(-200, 180, -200, 360, 100, 360, 280, 320, 220, 160, -60, 120)
 
+[node name="Points" type="Node2D" parent="Area3" unique_id=1405805905]
+
+[node name="Site1" type="Node2D" parent="Area3/Points" unique_id=982851940]
+position = Vector2(620, 90)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("6_emi3y")
+
+[node name="Plot1" type="Node2D" parent="Area3/Points" unique_id=69298600]
+position = Vector2(820, 190)
+script = ExtResource("3_t8fxm")
+
+[node name="Plot2" type="Node2D" parent="Area3/Points" unique_id=443939668]
+position = Vector2(440, 220)
+script = ExtResource("3_t8fxm")
+slot_index = 1
+
+[node name="Plot3" type="Node2D" parent="Area3/Points" unique_id=1647180991]
+position = Vector2(680, 220)
+script = ExtResource("3_t8fxm")
+slot_index = 2
+
 [node name="Area4" type="Area2D" parent="." unique_id=734174760]
 script = ExtResource("1_view")
 data = ExtResource("5_area")
@@ -57,3 +151,42 @@ position = Vector2(1280, 500)
 color = Color(0.24620289, 0.57354116, 0.77130586, 1)
 polygon = PackedVector2Array(-380, -20, -600, 160, -320, 280, 40, 220, 220, 160, 220, -20, 220, -140)
 uv = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160, -60, 120, 101.391846, -42.818398)
+
+[node name="Points" type="Node2D" parent="Area4" unique_id=2045410608]
+
+[node name="City" type="Node2D" parent="Area4/Points" unique_id=344617930]
+position = Vector2(1190, 650)
+script = ExtResource("3_t8fxm")
+kind = 2
+
+[node name="Site1" type="Node2D" parent="Area4/Points" unique_id=730738337]
+position = Vector2(760, 650)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("7_xphyp")
+
+[node name="Site2" type="Node2D" parent="Area4/Points" unique_id=532645048]
+position = Vector2(1460, 410)
+script = ExtResource("3_t8fxm")
+kind = 0
+resource = ExtResource("6_emi3y")
+slot_index = 1
+
+[node name="Plot1" type="Node2D" parent="Area4/Points" unique_id=1738903860]
+position = Vector2(970, 510)
+script = ExtResource("3_t8fxm")
+
+[node name="Plot2" type="Node2D" parent="Area4/Points" unique_id=1300598513]
+position = Vector2(1430, 640)
+script = ExtResource("3_t8fxm")
+slot_index = 1
+
+[node name="Plot3" type="Node2D" parent="Area4/Points" unique_id=1139744853]
+position = Vector2(980, 730)
+script = ExtResource("3_t8fxm")
+slot_index = 2
+
+[node name="Plot4" type="Node2D" parent="Area4/Points" unique_id=1056802048]
+position = Vector2(1260, 450)
+script = ExtResource("3_t8fxm")
+slot_index = 3

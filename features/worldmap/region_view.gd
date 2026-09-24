@@ -106,20 +106,26 @@ func _refresh() -> void:
 	z_index = 2 if _selected else (1 if _status == RegionState.Status.AVAILABLE else 0)
 
 
-## Bölge adını en büyük parçanın ortasına yazar.
-func _add_name_label() -> void:
-	if data == null:
-		return
+## Bölge adının yazıldığı yer (yerel koordinat): en büyük parçanın köşe ortalaması.
+## Nokta yerleştirme de bunu kullanır; noktalar adın üstüne gelmesin diye.
+func get_label_position() -> Vector2:
 	var biggest: PackedVector2Array = []
 	for poly: PackedVector2Array in get_polygons():
 		if poly.size() > biggest.size():
 			biggest = poly
 	if biggest.is_empty():
-		return
+		return Vector2.ZERO
 	var center: Vector2 = Vector2.ZERO
 	for point: Vector2 in biggest:
 		center += point
-	center /= biggest.size()
+	return center / biggest.size()
+
+
+## Bölge adını get_label_position()'a yazar.
+func _add_name_label() -> void:
+	if data == null or get_polygons().is_empty():
+		return
+	var center: Vector2 = get_label_position()
 	var label: Label = Label.new()
 	label.text = data.display_name
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
