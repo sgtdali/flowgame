@@ -12,6 +12,14 @@ var b: StringName
 var distance: float
 var transport: TransportType
 var vehicles: int = 0
+## Yük oranları, yön başına: FORWARD (a → b), BACKWARD (b → a).
+## Mal id -> ağırlık (oranlar ağırlıkların toplamına bölünür). Listede olmayan
+## taşınabilir mal DEFAULT_WEIGHT alır: hat kurulunca mallar eşit pay alır.
+var cargo_weights: Array[Dictionary] = [{}, {}]
+
+enum Direction { FORWARD, BACKWARD }
+
+const DEFAULT_WEIGHT: int = 1
 
 
 func _init(point_a: StringName, point_b: StringName, route_distance: float,
@@ -37,6 +45,22 @@ static func capacity_for(vehicle_count: int, route_transport: TransportType,
 
 func upkeep_per_minute() -> int:
 	return vehicles * transport.vehicle_upkeep
+
+
+func source(direction: Direction) -> StringName:
+	return a if direction == Direction.FORWARD else b
+
+
+func destination(direction: Direction) -> StringName:
+	return b if direction == Direction.FORWARD else a
+
+
+func weight(direction: Direction, good_id: StringName) -> int:
+	return cargo_weights[direction].get(good_id, DEFAULT_WEIGHT)
+
+
+func set_weight(direction: Direction, good_id: StringName, value: int) -> void:
+	cargo_weights[direction][good_id] = maxi(value, 0)
 
 
 func connects(point_a: StringName, point_b: StringName) -> bool:

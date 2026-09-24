@@ -2,7 +2,8 @@ class_name Wallet
 extends RefCounted
 
 ## Oyuncunun parası (arayüzsüz). Bölge açma, hat ve araç aynı cüzdandan harcar.
-## int — para her yerde tam sayı.
+## int — para her yerde tam sayı. Bakım parayı eksiye düşürebilir (tasarım:
+## borç); eksideyken can_afford hiçbir alıma izin vermez.
 
 var money: int = 0
 
@@ -24,4 +25,9 @@ func spend(amount: int) -> bool:
 
 
 func refund(amount: int) -> void:
+	money += amount
+
+
+## Gelir (+) ya da bakım (−). Para eksiye inebilir.
+func adjust(amount: int) -> void:
 	money += amount

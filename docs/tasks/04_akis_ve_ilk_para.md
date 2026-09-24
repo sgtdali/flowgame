@@ -83,7 +83,10 @@ Hedef: oyuncu Area1'de **orman → bıçkıhane → City A** zincirini kurup par
    aynı kurulum aynı sonucu verir (belirlilik).
 3. Saat ve hız düğmeleri, fabrika kurma, panellerde stok/üretim/talep, gelir göstergesi,
    araçların oyun saatine bağlanması.
-4. Hat panelinde yük seçimi (her yön için mal oranları).
+4. ~~Hat panelinde yük seçimi (her yön için mal oranları).~~ **Ertelendi** (kullanıcı onaylı):
+   şu an hiçbir hattın bir yönünde birden fazla mal olmuyor (yatak ve sabit fabrika tek
+   mal verir). Oran mantığı simülasyonda hazır ve testli; arayüzü düğüm editörüyle gelir.
+   Hat paneli bu görevde yalnızca her yönde ne taşındığını ve hızını gösterir.
 
 ## Kabul ölçütü
 
