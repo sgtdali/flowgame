@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MapConfig" format=3]
+
+[ext_resource type="Script" path="res://data/map_config.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+starting_money = 1000
+first_unlock_cost = 500
+unlock_cost_step = 250

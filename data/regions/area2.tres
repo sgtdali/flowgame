@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RegionData" format=3]
+
+[ext_resource type="Script" path="res://data/region_data.gd" id="1_region"]
+[ext_resource type="Script" path="res://data/raw_resource.gd" id="1_raw_script"]
+[ext_resource type="Resource" path="res://data/raw_resources/demir_cevheri.tres" id="2"]
+
+[resource]
+script = ExtResource("1_region")
+id = &"area2"
+display_name = "Area 2"
+terrain = 1
+resources = Array[ExtResource("1_raw_script")]([ExtResource("2")])
+factory_slots = 2
+city_name = ""
+neighbors = Array[StringName]([&"area1", &"area3", &"area4", &"area5"])
+starts_unlocked = false
