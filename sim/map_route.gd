@@ -22,11 +22,17 @@ func _init(point_a: StringName, point_b: StringName, route_distance: float,
 	transport = route_transport
 
 
-## Birim/dk: araç sayısı × yük × hız ÷ (2 × mesafe). Yükleme süresi yok.
 func capacity_per_minute() -> float:
-	if distance <= 0.0:
+	return capacity_for(vehicles, transport, distance)
+
+
+## Birim/dk: araç sayısı × yük × hız ÷ (2 × mesafe). Yükleme süresi yok.
+## Kurulmamış bir hattın önizlemesi için de kullanılır.
+static func capacity_for(vehicle_count: int, route_transport: TransportType,
+		route_distance: float) -> float:
+	if route_distance <= 0.0:
 		return 0.0
-	return vehicles * transport.load * transport.speed / (2.0 * distance)
+	return vehicle_count * route_transport.load * route_transport.speed / (2.0 * route_distance)
 
 
 func upkeep_per_minute() -> int:

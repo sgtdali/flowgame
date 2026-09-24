@@ -25,6 +25,8 @@ enum Kind { RESOURCE_SITE, FACTORY_PLOT, CITY }
 ## RegionData.resources içindeki sırasıdır.
 @export var slot_index: int = 0
 
+## Noktalar hatların üstünde çizilsin (hat katmanı z=10, bkz. WorldMap.tscn).
+const POINT_Z_INDEX: int = 20
 ## Tıklama/üzerine gelme yarıçapı (dünya birimi).
 const HIT_RADIUS: float = 18.0
 const SIZE: float = 11.0
@@ -44,6 +46,11 @@ var _hovered: bool = false
 var _selected: bool = false
 
 
+func _ready() -> void:
+	z_as_relative = false
+	z_index = POINT_Z_INDEX
+
+
 func set_dimmed(value: bool) -> void:
 	modulate = Color(1.0, 1.0, 1.0, DIMMED_ALPHA) if value else Color.WHITE
 
@@ -58,6 +65,13 @@ func set_selected(value: bool) -> void:
 	if _selected != value:
 		_selected = value
 		queue_redraw()
+
+
+## Kurallarda (RouteState) kullanılan, sahneden bağımsız kimlik: "area1/City".
+func get_point_id() -> StringName:
+	var view: RegionView = get_region_view()
+	var region_id: String = String(view.data.id) if view != null and view.data != null else "?"
+	return StringName("%s/%s" % [region_id, name])
 
 
 func get_region_view() -> RegionView:

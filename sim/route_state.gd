@@ -44,17 +44,25 @@ func build_cost(transport: TransportType) -> int:
 	return transport.route_cost + transport.vehicle_price
 
 
+## Bu noktadan hat başlatılamıyorsa nedeni; başlatılabiliyorsa "".
+func start_block_reason(point_id: StringName) -> String:
+	var region_id: StringName = region_of(point_id)
+	if not _regions.is_unlocked(region_id):
+		var region: RegionData = RegionCatalog.find_by_id(region_id)
+		var region_name: String = region.display_name if region != null else String(region_id)
+		return "%s is locked" % region_name
+	return ""
+
+
 ## Hat kurulamıyorsa nedeni (arayüzde gösterilir); kurulabiliyorsa "".
 func build_block_reason(point_a: StringName, point_b: StringName,
 		transport: TransportType) -> String:
 	if point_a == point_b:
 		return "Pick a different point"
 	for point_id: StringName in [point_a, point_b]:
-		var region_id: StringName = region_of(point_id)
-		if not _regions.is_unlocked(region_id):
-			var region: RegionData = RegionCatalog.find_by_id(region_id)
-			var region_name: String = region.display_name if region != null else String(region_id)
-			return "%s is locked" % region_name
+		var locked: String = start_block_reason(point_id)
+		if not locked.is_empty():
+			return locked
 	if find(point_a, point_b) != null:
 		return "A route already connects these points"
 	if not transport.available_at_start:

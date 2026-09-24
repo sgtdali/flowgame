@@ -4,7 +4,8 @@ extends Node2D
 ##
 ## Kural hesaplamaz: bölge durumu RegionState'ten gelir. Tıklanan bölge,
 ## bölgelerin CollisionPolygon2D'lerine fizik sorgusuyla bulunur. Noktaya
-## tıklama bölgeye tıklamadan önceliklidir (yarıçap kontrolü).
+## tıklama bölgeye tıklamadan önceliklidir (yarıçap kontrolü). Hat kurma
+## akışı RouteBuilder'dadır; burası yalnızca girdiyi ona yönlendirir.
 
 const MIN_ZOOM: float = 0.6
 const MAX_ZOOM: float = 3.0
@@ -18,8 +19,11 @@ const PAN_MARGIN: float = 300.0
 @onready var info_panel: RegionInfoPanel = $UI/InfoPanel
 @onready var point_panel: PointInfoPanel = $UI/PointPanel
 @onready var money_label: Label = %MoneyLabel
+@onready var hint_label: Label = $UI/TopBar/Margin/HBox/HintLabel
+@onready var route_builder: RouteBuilder = $Routes
 
 var state: RegionState = RegionState.new()
+var routes: RouteState = RouteState.new(state)
 var selected: RegionView = null
 var selected_point: MapPoint = null
 
@@ -28,6 +32,7 @@ var _hovered_point: MapPoint = null
 
 var _panning: bool = false
 var _target_zoom: Vector2 = Vector2.ONE
+var _default_hint: String = ""
 
 
 func _ready() -> void:
@@ -37,6 +42,11 @@ func _ready() -> void:
 	for node: Node in region_map.find_children("*", "MapPoint", true, false):
 		_points.append(node as MapPoint)
 	info_panel.unlock_requested.connect(_on_unlock_requested)
+	point_panel.build_route_requested.connect(_on_build_route_requested)
+	route_builder.routes = routes
+	route_builder.hint_changed.connect(_on_hint_changed)
+	route_builder.route_built.connect(_on_route_built)
+	_default_hint = hint_label.text
 	refresh_statuses()
 	_update_money()
 
@@ -56,6 +66,10 @@ func refresh_statuses() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and key.keycode == KEY_ESCAPE and route_builder.is_building():
+		route_builder.cancel()
+		return
 	var button: InputEventMouseButton = event as InputEventMouseButton
 	if button != null:
 		if button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -64,10 +78,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_zoom_at_mouse(1.0 / ZOOM_STEP)
 		elif button.button_index in [MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
 			_panning = button.pressed
+			if button.pressed and button.button_index == MOUSE_BUTTON_RIGHT and route_builder.is_building():
+				route_builder.cancel()
 		elif button.pressed and button.button_index == MOUSE_BUTTON_LEFT:
 			var world: Vector2 = _event_to_world(button.position)
 			var point: MapPoint = _point_at(world)
-			if point != null:
+			if route_builder.is_building():
+				# Hat kurarken: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
+				if point != null:
+					route_builder.try_finish(point)
+				else:
+					route_builder.cancel()
+			elif point != null:
 				_select_point(point)
 			else:
 				_select(_region_at(world))
@@ -77,7 +99,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		camera.position -= motion.relative / camera.zoom
 		_clamp_camera()
 	elif motion != null:
-		_set_hovered_point(_point_at(_event_to_world(motion.position)))
+		var world: Vector2 = _event_to_world(motion.position)
+		_set_hovered_point(_point_at(world))
+		route_builder.update_preview(world, _hovered_point)
 
 
 ## Olayın ekran konumunu dünya koordinatına çevirir (kamera ve yakınlaştırma dahil).
@@ -124,7 +148,8 @@ func _update_panel() -> void:
 	point_panel.hide()
 	if selected_point != null:
 		var view: RegionView = selected_point.get_region_view()
-		point_panel.show_point(selected_point, state.status(view.data.id))
+		point_panel.show_point(selected_point, state.status(view.data.id),
+				routes.start_block_reason(selected_point.get_point_id()))
 		return
 	if selected == null or selected.data == null:
 		return
@@ -138,6 +163,21 @@ func _on_unlock_requested(region_id: StringName) -> void:
 		refresh_statuses()
 		_update_money()
 		_update_panel()
+
+
+func _on_build_route_requested(point: MapPoint) -> void:
+	_clear_selection()
+	_update_panel()
+	route_builder.start(point)
+
+
+func _on_route_built(_route: MapRoute) -> void:
+	_update_money()
+	hint_label.text = _default_hint
+
+
+func _on_hint_changed(text: String) -> void:
+	hint_label.text = text if not text.is_empty() else _default_hint
 
 
 func _update_money() -> void:
