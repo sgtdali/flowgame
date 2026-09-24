@@ -1,6 +1,10 @@
 [gd_resource type="Resource" script_class="MapConfig" format=3]
 
 [ext_resource type="Script" path="res://data/map_config.gd" id="1_cfg"]
+[ext_resource type="Script" path="res://data/process_recipe.gd" id="2_recipe_script"]
+[ext_resource type="Resource" path="res://data/recipes_map/bickihane.tres" id="3_bickihane"]
+[ext_resource type="Resource" path="res://data/recipes_map/degirmen.tres" id="4_degirmen"]
+[ext_resource type="Resource" path="res://data/city_levels/koy.tres" id="5_koy"]
 
 [resource]
 script = ExtResource("1_cfg")
@@ -8,3 +12,8 @@ starting_money = 1000
 first_unlock_cost = 500
 unlock_cost_step = 250
 vehicle_refund_percent = 50
+factory_cost = 300
+factory_upkeep = 3
+factory_recipes = Array[ExtResource("2_recipe_script")]([ExtResource("3_bickihane"), ExtResource("4_degirmen")])
+point_stock_capacity = 50
+starting_city_level = ExtResource("5_koy")

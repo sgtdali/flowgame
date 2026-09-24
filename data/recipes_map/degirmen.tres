@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ProcessRecipe" format=3]
+
+[ext_resource type="Script" path="res://data/process_recipe.gd" id="1_recipe"]
+[ext_resource type="Script" path="res://data/good.gd" id="2_good"]
+[ext_resource type="Resource" path="res://data/raw_resources/bugday.tres" id="3_in"]
+[ext_resource type="Resource" path="res://data/goods/un.tres" id="4_out"]
+
+[resource]
+script = ExtResource("1_recipe")
+id = &"degirmen"
+display_name = "Mill"
+inputs = Array[ExtResource("2_good")]([ExtResource("3_in")])
+input_amounts = Array[int]([2])
+output = ExtResource("4_out")
+output_amount = 1
+outputs_per_minute = 10.0

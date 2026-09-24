@@ -12,6 +12,7 @@ extends SceneTree
 ##   3. Noktalar birbirine fazla yakın değil (bölge sınırının iki yanı dahil)
 ##   4. Üretim tekrar çalışınca hiçbir şey değişmiyor
 ##   5. Elle kaydırılmış nokta yerinde kalıyor; silinen nokta geri geliyor
+##   6. Kurallardaki nokta kaydı (MapPoints) sahnedeki noktalarla birebir aynı
 
 const PointPlacer := preload("res://tools/point_placer.gd")
 const REGION_MAP_SCENE: String = "res://features/worldmap/RegionMap.tscn"
@@ -22,8 +23,8 @@ const MIN_POINT_DISTANCE: float = 40.0
 var _failures: int = 0
 var _checks: int = 0
 
-## Beklenen kontrol sayısı: 5 bölge + 5 genel.
-const EXPECTED_CHECKS: int = 10
+## Beklenen kontrol sayısı: 5 bölge + 6 genel.
+const EXPECTED_CHECKS: int = 11
 
 
 func _initialize() -> void:
@@ -33,6 +34,7 @@ func _initialize() -> void:
 	_test_points_match_data(views)
 	_test_points_inside_region(views)
 	_test_spacing(views)
+	_test_registry_matches_scene(views)
 	root.free()
 	_test_sync_is_stable()
 	_test_manual_move_kept()
@@ -101,6 +103,28 @@ func _test_spacing(views: Array[RegionView]) -> void:
 				bad.append("%s-%s=%.0f" % [all[i]["name"], all[j]["name"], d])
 	_check("Noktalar birbirine fazla yakin degil (>= %.0f)" % MIN_POINT_DISTANCE,
 			bad.is_empty(), ", ".join(bad))
+
+
+func _test_registry_matches_scene(views: Array[RegionView]) -> void:
+	var scene_points: Dictionary = {}
+	for view: RegionView in views:
+		for point: MapPoint in _points(view):
+			var point_id: String = "%s/%s" % [view.data.id, point.name]
+			scene_points[point_id] = [int(point.kind), point.resource]
+	var registry: Dictionary = {}
+	for info: MapPoints.Info in MapPoints.all():
+		registry[String(info.id)] = [int(info.kind), info.resource]
+	var bad: PackedStringArray = []
+	for point_id: String in scene_points:
+		if not registry.has(point_id):
+			bad.append("kayitta yok: %s" % point_id)
+		elif registry[point_id] != scene_points[point_id]:
+			bad.append("farkli: %s" % point_id)
+	for point_id: String in registry:
+		if not scene_points.has(point_id):
+			bad.append("sahnede yok: %s" % point_id)
+	_check("Nokta kaydi sahneyle ayni (%d nokta)" % registry.size(), bad.is_empty(),
+			", ".join(bad))
 
 
 func _test_sync_is_stable() -> void:

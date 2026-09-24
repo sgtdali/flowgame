@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CityLevel" format=3]
+
+[ext_resource type="Script" path="res://data/city_level.gd" id="1_level"]
+[ext_resource type="Script" path="res://data/good.gd" id="2_good"]
+[ext_resource type="Resource" path="res://data/goods/kereste.tres" id="3_kereste"]
+[ext_resource type="Resource" path="res://data/goods/un.tres" id="4_un"]
+
+[resource]
+script = ExtResource("1_level")
+id = &"koy"
+display_name = "Village"
+demand_goods = Array[ExtResource("2_good")]([ExtResource("3_kereste"), ExtResource("4_un")])
+demand_per_minute = Array[int]([10, 10])
+saturation_thresholds = Array[float]([1.0, 1.5])
+saturation_multipliers = Array[float]([1.0, 0.5, 0.1])
