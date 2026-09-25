@@ -97,9 +97,15 @@ func try_finish(point: MapPoint) -> bool:
 	return true
 
 
-func refresh_views() -> void:
+## Hatların etiketini ve araçlarını akışa göre günceller.
+func refresh_views(sim: MapFlowSim) -> void:
 	for view: RouteView in _views:
-		view.refresh()
+		var cargo: Array[Good] = []
+		var rates: Array[float] = []
+		for direction: MapRoute.Direction in [MapRoute.Direction.FORWARD, MapRoute.Direction.BACKWARD]:
+			cargo.append(sim.main_cargo(view.route, direction))
+			rates.append(sim.route_flow(view.route, direction))
+		view.set_flow(cargo, rates)
 
 
 ## Araçları oyun saatine göre konumlandırır.

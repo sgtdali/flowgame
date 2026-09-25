@@ -41,6 +41,14 @@ const SITE_COLORS: Dictionary = {
 const OUTLINE: Color = Color(0.08, 0.09, 0.1)
 const LABEL_SIZE: int = 14
 const WARNING_COLOR: Color = Color(1.0, 0.8, 0.2)
+## Şehir gelir rozeti.
+const BADGE_COLOR: Color = Color(0.55, 0.85, 0.45)
+const BADGE_SATURATED_COLOR: Color = Color(1.0, 0.6, 0.2)
+const BADGE_FONT_SIZE: int = 13
+const BADGE_PADDING: float = 4.0
+const BADGE_RISE: float = 10.0
+## Bu gelirin (para/dk) altında rozet gösterilmez.
+const INCOME_VISIBLE_MIN: float = 0.05
 const WARNING_SIZE: float = 9.0
 ## Kilitli bölgedeki noktanın görünürlüğü.
 const DIMMED_ALPHA: float = 0.6
@@ -51,6 +59,9 @@ var _selected: bool = false
 var _factory_name: String = ""
 ## Fabrikada sorun var mı (çıkış dolu ya da makineler girdi bekliyor).
 var _warning: bool = false
+## Şehir rozeti: geçen dakikanın geliri ve şehir doydu mu (görev 06, K4).
+var _income: float = 0.0
+var _saturated: bool = false
 
 
 func _ready() -> void:
@@ -66,6 +77,13 @@ func set_factory(factory_name: String) -> void:
 func set_warning(value: bool) -> void:
 	if _warning != value:
 		_warning = value
+		queue_redraw()
+
+
+func set_income(income: float, saturated: bool) -> void:
+	if not is_equal_approx(_income, income) or _saturated != saturated:
+		_income = income
+		_saturated = saturated
 		queue_redraw()
 
 
@@ -137,6 +155,8 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, SIZE + 3.0, Color.WHITE)
 			draw_circle(Vector2.ZERO, SIZE, CITY_COLOR)
 			draw_arc(Vector2.ZERO, SIZE + 3.0, 0.0, TAU, 32, OUTLINE, 2.0)
+			if _income >= INCOME_VISIBLE_MIN:
+				_draw_income_badge()
 		Kind.RESOURCE_SITE:
 			var color: Color = Color.GRAY
 			if resource != null:
@@ -162,6 +182,19 @@ func _draw() -> void:
 				_draw_warning(Vector2(SIZE + 4.0, -SIZE - 4.0))
 
 	_draw_label()
+
+
+## Şehrin üstünde "+10/min"; şehir doyduysa turuncu.
+func _draw_income_badge() -> void:
+	var font: Font = ThemeDB.fallback_font
+	var text: String = "+%s/min" % RouteView.format_rate(_income)
+	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE)
+	var box: Rect2 = Rect2(Vector2(-text_size.x * 0.5 - BADGE_PADDING, -SIZE - BADGE_RISE - text_size.y),
+			Vector2(text_size.x + BADGE_PADDING * 2.0, text_size.y + BADGE_PADDING))
+	draw_rect(box, BADGE_SATURATED_COLOR if _saturated else BADGE_COLOR)
+	draw_rect(box, OUTLINE, false, 1.5)
+	draw_string(font, Vector2(box.position.x + BADGE_PADDING, box.end.y - BADGE_PADDING * 0.5 - font.get_descent(BADGE_FONT_SIZE)),
+			text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE, OUTLINE)
 
 
 ## Sarı üçgen içinde "!" — sorunlu fabrika.

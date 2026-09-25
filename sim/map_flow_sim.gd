@@ -13,6 +13,12 @@ extends RefCounted
 
 ## Kayan nokta karşılaştırma toleransı (taşıma payı dağıtımı ve paranın yuvarlanması).
 const EPSILON: float = 0.000001
+## Hat akışı panelde ve haritada yumuşatılarak gösterilir: fabrika çıktısı tam
+## birimler hâlinde geldiği için anlık akış adım adım 0 ile tam hız arasında
+## gidip gelir. Ortalamanın zaman sabiti (oyun dakikası).
+const FLOW_SMOOTHING_MINUTES: float = 0.25
+## Bu hızın (birim/dk) altındaki ortalama akış "taşımıyor" sayılır.
+const FLOW_VISIBLE_MIN: float = 0.05
 
 var regions: RegionState
 var routes: RouteState
@@ -26,7 +32,7 @@ var _config: MapConfig
 var _stocks: Dictionary = {}
 ## Paraya henüz yansımamış kesirli gelir/bakım.
 var _pending_money: float = 0.0
-## Hat -> [ileri, geri] son adımdaki akış (birim/dk), panel için.
+## Hat -> [ileri, geri]; her biri {Good: yumuşatılmış akış (birim/dk)}.
 var _route_flow: Dictionary = {}
 
 
@@ -46,9 +52,33 @@ func stock(point_id: StringName, good: Good) -> float:
 	return (_stocks.get(point_id, {}) as Dictionary).get(good, 0.0)
 
 
-## Son adımdaki akış hızı (birim/dk).
+## Bu yöndeki akış hızı (birim/dk, yumuşatılmış; bkz. FLOW_SMOOTHING_MINUTES).
 func route_flow(route: MapRoute, direction: MapRoute.Direction) -> float:
-	var flows: Array = _route_flow.get(route, [0.0, 0.0])
+	var total: float = 0.0
+	for amount: float in _goods_flow(route, direction).values():
+		total += amount
+	return total
+
+
+## Bu yönde görünür hızda (FLOW_VISIBLE_MIN üstü) bir şey taşınıyor mu?
+func is_carrying(route: MapRoute, direction: MapRoute.Direction) -> bool:
+	return route_flow(route, direction) >= FLOW_VISIBLE_MIN
+
+
+## Bu yönde en çok taşınan mal; görünür hızda bir şey taşınmıyorsa null.
+func main_cargo(route: MapRoute, direction: MapRoute.Direction) -> Good:
+	var best: Good = null
+	var best_amount: float = FLOW_VISIBLE_MIN
+	for good: Good in _goods_flow(route, direction):
+		var amount: float = _goods_flow(route, direction)[good]
+		if amount >= best_amount:
+			best = good
+			best_amount = amount
+	return best
+
+
+func _goods_flow(route: MapRoute, direction: MapRoute.Direction) -> Dictionary:
+	var flows: Array = _route_flow.get(route, [{}, {}])
 	return flows[direction]
 
 
@@ -143,18 +173,27 @@ func _produce(dt: float) -> void:
 
 
 func _move_goods(dt: float) -> void:
+	var blend: float = minf(1.0, dt / FLOW_SMOOTHING_MINUTES)
 	for route: MapRoute in routes.routes():
-		var flows: Array[float] = [0.0, 0.0]
+		if not _route_flow.has(route):
+			_route_flow[route] = [{}, {}]
 		for direction: MapRoute.Direction in [MapRoute.Direction.FORWARD, MapRoute.Direction.BACKWARD]:
-			flows[direction] = _move_direction(route, direction, dt) / dt
-		_route_flow[route] = flows
+			var moved: Dictionary = _move_direction(route, direction, dt)
+			var average: Dictionary = _route_flow[route][direction]
+			for good: Good in moved:
+				if not average.has(good):
+					average[good] = 0.0
+			for good: Good in average.keys():
+				var rate: float = float(moved.get(good, 0.0)) / dt
+				average[good] = float(average[good]) + (rate - float(average[good])) * blend
 
 
-## Bir yönde bu adımda taşınan toplam miktar.
-func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) -> float:
+## Bir yönde bu adımda taşınan miktarlar: {Good: miktar}.
+func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) -> Dictionary:
+	var moved: Dictionary = {}
 	var options: Array[Good] = cargo_options(route, direction)
 	if options.is_empty():
-		return 0.0
+		return moved
 	var src: StringName = route.source(direction)
 	var dst: StringName = route.destination(direction)
 	var weights: Array[float] = []
@@ -163,7 +202,6 @@ func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) 
 		weights.append(route.weight(direction, good.id))
 		limits.append(minf(stock(src, good), _free_space(dst, good)))
 	var amounts: Array[float] = allocate(route.capacity_per_minute() * dt, weights, limits)
-	var moved: float = 0.0
 	for i: int in options.size():
 		if amounts[i] <= 0.0:
 			continue
@@ -174,7 +212,7 @@ func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) 
 			factories.interior_at(dst).add_input(options[i], amounts[i])
 		else:
 			_add_stock(dst, options[i], amounts[i])
-		moved += amounts[i]
+		moved[options[i]] = amounts[i]
 	return moved
 
 

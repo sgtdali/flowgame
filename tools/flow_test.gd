@@ -13,6 +13,8 @@ extends SceneTree
 ## Görev 05 adım 3: fabrika içi editörle kurulur (FactoryInterior); fabrika her
 ## malı kabul eder ve giriş kapısı kendiliğinden gelir; hatlar yalnızca çıkış
 ## stoğundan alır; dakikalık giren/çıkan; uyarı (çıkış dolu, girdi bekleme).
+## Görev 06 adım 1: hat yönünde en çok taşınan mal ve yumuşatılmış hız; şehrin
+## "doydu" bilgisi.
 
 const MAP_CONFIG: MapConfig = preload("res://data/map_config.tres")
 const CART: TransportType = preload("res://data/transport_types/at_arabasi.tres")
@@ -34,7 +36,7 @@ const CITY: StringName = &"area1/City"
 var _failures: int = 0
 var _checks: int = 0
 
-const EXPECTED_CHECKS: int = 22
+const EXPECTED_CHECKS: int = 24
 
 
 func _initialize() -> void:
@@ -49,6 +51,7 @@ func _initialize() -> void:
 	_test_factory_rules()
 	_test_factory_interior_link()
 	_test_factory_warning()
+	_test_route_display_and_saturation()
 	_test_first_loop_and_determinism()
 
 	print("")
@@ -254,6 +257,32 @@ func _test_first_loop_and_determinism() -> void:
 	_check("Ayni kurulum ayni sonucu veriyor",
 			again.regions.money == sim.regions.money
 			and absf(again.stock(PLOT, LUMBER) - sim.stock(PLOT, LUMBER)) < EPS)
+
+
+func _test_route_display_and_saturation() -> void:
+	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
+	_build_sawmill(sim)
+	var logs_route: MapRoute = sim.routes.build(FOREST, PLOT, 150.0, CART)
+	var lumber_route: MapRoute = sim.routes.build(PLOT, CITY, 150.0, CART)
+	var idle_route: MapRoute = sim.routes.build(FOREST, CITY, 150.0, CART)
+	_run(sim, 5.0)
+	var fwd: MapRoute.Direction = MapRoute.Direction.FORWARD
+	var back: MapRoute.Direction = MapRoute.Direction.BACKWARD
+	_check("Hat yonunde tasinan mal ve duzgun hiz (Logs ileri, Lumber ~10, bos hat bos)",
+			sim.main_cargo(logs_route, fwd) == LOGS and sim.main_cargo(logs_route, back) == null
+			and sim.main_cargo(lumber_route, fwd) == LUMBER
+			and absf(sim.route_flow(lumber_route, fwd) - 10.0) <= 1.0
+			and not sim.is_carrying(idle_route, fwd) and not sim.is_carrying(idle_route, back),
+			"lumber hizi=%.2f" % sim.route_flow(lumber_route, fwd))
+
+	var market: CityMarket = CityMarket.new(MAP_CONFIG)
+	market.sell(CITY, LUMBER, 12.0)
+	market.roll_minute()
+	var saturated: bool = market.saturated_last_minute(CITY)
+	market.sell(CITY, LUMBER, 10.0)
+	market.roll_minute()
+	_check("Sehir talebi asinca 'doydu' yaniyor, sonraki dakika tam talepte sonuyor",
+			saturated and not market.saturated_last_minute(CITY))
 
 
 func _check(label: String, passed: bool, detail: String = "") -> void:

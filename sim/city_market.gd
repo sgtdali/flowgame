@@ -17,6 +17,8 @@ var _sold_last_minute: Dictionary = {}
 ## Şehir id -> geçen dakikanın geliri.
 var _revenue_last_minute: Dictionary = {}
 var _revenue_this_minute: Dictionary = {}
+## Şehir id -> geçen dakika bir mal talebin ilk eşiğini (tam fiyat dilimini) aştı mı.
+var _saturated_last_minute: Dictionary = {}
 
 
 func _init(config: MapConfig = RegionState.DEFAULT_CONFIG) -> void:
@@ -50,6 +52,20 @@ func sold_last_minute(city_id: StringName, good: Good) -> float:
 
 func revenue_last_minute(city_id: StringName) -> float:
 	return _revenue_last_minute.get(city_id, 0.0)
+
+
+## Geçen dakika bir mal talebin tam fiyat dilimini aştı mı (daha ucuza satıldı mı)?
+func saturated_last_minute(city_id: StringName) -> bool:
+	return _saturated_last_minute.get(city_id, false)
+
+
+## Bu dakika `good` için tam fiyat diliminin üstüne çıkıldı mı?
+func _over_full_price(city_id: StringName, good_id: StringName, sold: float) -> bool:
+	var city_level: CityLevel = level(city_id)
+	for good: Good in city_level.demand_goods:
+		if good.id == good_id and not city_level.saturation_thresholds.is_empty():
+			return sold > city_level.saturation_thresholds[0] * city_level.demand_for(good) + 0.000001
+	return false
 
 
 ## Malı satar ve geliri döner. Kabul edilmeyen mal için 0.
@@ -86,6 +102,11 @@ static func price_for(city_level: CityLevel, good: Good, already_sold: float,
 ## Oyun dakikası dolunca çağrılır: doygunluk sıfırlanır.
 func roll_minute() -> void:
 	for city_id: StringName in _levels:
+		var saturated: bool = false
+		for good_id: StringName in (_sold_this_minute[city_id] as Dictionary):
+			if _over_full_price(city_id, good_id, _sold_this_minute[city_id][good_id]):
+				saturated = true
+		_saturated_last_minute[city_id] = saturated
 		_sold_last_minute[city_id] = _sold_this_minute[city_id]
 		_sold_this_minute[city_id] = {}
 		_revenue_last_minute[city_id] = _revenue_this_minute[city_id]

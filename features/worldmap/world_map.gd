@@ -184,10 +184,8 @@ func _refresh_now() -> void:
 	var net: float = snappedf(sim.income_last_minute() - sim.upkeep_per_minute(), 0.1)
 	income_label.text = "Net: %s%s/min (upkeep %d)" % ["+" if net >= 0.0 else "",
 			RouteView.format_rate(net), sim.upkeep_per_minute()]
-	route_builder.refresh_views()
-	for point: MapPoint in _points:
-		if point.kind == MapPoint.Kind.FACTORY_PLOT:
-			point.set_warning(sim.factory_warning(point.get_point_id()))
+	route_builder.refresh_views(sim)
+	MapMarkers.refresh(_points, sim)
 	_panels.show_selection(selected, selected_point, selected_route)
 
 
