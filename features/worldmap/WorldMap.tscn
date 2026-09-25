@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://features/worldmap/map_camera.gd" id="7_camera"]
 [ext_resource type="Script" path="res://features/worldmap/speed_bar.gd" id="8_speed"]
 [ext_resource type="PackedScene" path="res://features/factory/FactoryScreen.tscn" id="9_factory"]
+[ext_resource type="Script" path="res://features/worldmap/good_bar.gd" id="10_good_bar"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -426,13 +427,11 @@ size_flags_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
 text = "-"
 
-[node name="RouteForwardValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+[node name="RouteForwardValue" type="Control" parent="UI/RoutePanel/Margin/VBox/Grid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-autowrap_mode = 3
-text = "-"
+script = ExtResource("10_good_bar")
 
 [node name="RouteBackwardCaption" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
 unique_name_in_owner = true
@@ -441,13 +440,11 @@ size_flags_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.72, 0.7, 1)
 text = "-"
 
-[node name="RouteBackwardValue" type="Label" parent="UI/RoutePanel/Margin/VBox/Grid"]
+[node name="RouteBackwardValue" type="Control" parent="UI/RoutePanel/Margin/VBox/Grid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-autowrap_mode = 3
-text = "-"
+script = ExtResource("10_good_bar")
 
 [node name="VehicleButtons" type="HBoxContainer" parent="UI/RoutePanel/Margin/VBox"]
 layout_mode = 2

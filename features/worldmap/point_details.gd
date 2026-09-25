@@ -1,64 +1,97 @@
 class_name PointDetails
 extends RefCounted
 
-## Nokta panelinde gösterilecek satırları hazırlar (başlık, değer).
-## Yalnızca metin biçimler; sayıları MapFlowSim'den okur, kural hesaplamaz.
+## Nokta panelinde gösterilecek satırları hazırlar. Yalnızca biçimler;
+## sayıları MapFlowSim'den okur, kural hesaplamaz.
+##
+## Satır: {"caption": String, "text": String} ve çubuklu/simgeli satırlarda
+## ayrıca {"goods": Array[Good], "fill": float, "zones", "zone_colors"}
+## (bkz. GoodBar). "goods" anahtarı olmayan satır düz yazıdır.
 
 const EMPTY_FACTORY_TEXT: String = "Empty - open the factory to place machines"
+## Şehir talebi çubuğu: talebin kaç katına kadar çizilir ve bölge renkleri
+## (tam fiyat / yarı fiyat / onda bir). Bölge sınırları şehir seviyesinin
+## doygunluk eşiklerinden gelir.
+const DEMAND_BAR_EXTRA: float = 0.5
+const DEMAND_ZONE_COLORS: Array[Color] = [
+	Color(0.55, 0.85, 0.45), Color(1.0, 0.7, 0.25), Color(0.95, 0.35, 0.3)]
 
 
-## Dönüş: [[başlık, değer], ...]
-static func rows_for(point_id: StringName, sim: MapFlowSim, config: MapConfig) -> Array[PackedStringArray]:
-	var rows: Array[PackedStringArray] = []
+static func rows_for(point_id: StringName, sim: MapFlowSim, config: MapConfig) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
 	var info: MapPoints.Info = MapPoints.find(point_id)
 	if info == null:
 		return rows
 	var capacity: int = config.point_stock_capacity
 	match info.kind:
 		MapPoints.Kind.RESOURCE_SITE:
-			rows.append(_row("Produces", "%s  %d/min" % [info.resource.display_name,
-					info.resource.extraction_per_minute]))
-			rows.append(_row("Stock", _stock_text(sim, point_id, info.resource, capacity)))
+			var goods: Array[Good] = [info.resource]
+			rows.append(_icons("Produces", goods, "%d/min" % info.resource.extraction_per_minute))
+			var stock: float = sim.stock(point_id, info.resource)
+			rows.append(_bar("Stock", goods, stock / capacity, "%d/%d" % [roundi(stock), capacity]))
 		MapPoints.Kind.FACTORY_PLOT:
 			var interior: FactoryInterior = sim.factories.interior_at(point_id)
 			if interior == null:
-				rows.append(_row("Status", "Empty plot"))
+				rows.append(_text("Status", "Empty plot"))
 			else:
 				_factory_rows(rows, interior)
 		MapPoints.Kind.CITY:
 			var level: CityLevel = sim.market.level(point_id)
-			rows.append(_row("Level", level.display_name))
+			rows.append(_text("Level", level.display_name))
 			for good: Good in level.demand_goods:
-				rows.append(_row(good.display_name, "wants %d/min, got %s last min (price %d)" % [
-						level.demand_for(good),
-						RouteView.format_rate(sim.market.sold_last_minute(point_id, good)),
-						good.city_price]))
-			rows.append(_row("Income", "%s last min" % RouteView.format_rate(
+				rows.append(_demand_row(level, good, sim.market.sold_last_minute(point_id, good)))
+			rows.append(_text("Income", "+%s/min" % RouteView.format_rate(
 					sim.market.revenue_last_minute(point_id))))
 	return rows
 
 
-## Fabrika özeti: her mal için giren/çıkan (geçen dakika) ve iki stok; uyarı.
-static func _factory_rows(rows: Array[PackedStringArray], interior: FactoryInterior) -> void:
-	var goods: Array[Good] = interior.summary_goods()
+## Fabrika: her mal için giriş ve çıkış stoğu çubuğu + geçen dakikanın hızı; uyarı.
+static func _factory_rows(rows: Array[Dictionary], interior: FactoryInterior) -> void:
 	if interior.station_count() == 0:
-		rows.append(_row("Status", EMPTY_FACTORY_TEXT))
-	for good: Good in goods:
-		rows.append(_row(good.display_name, "in %s/min, out %s/min
-stock in %d/%d, out %d/%d" % [
-				RouteView.format_rate(interior.input_last_minute(good)),
-				RouteView.format_rate(interior.output_last_minute(good)),
-				floori(interior.input_stock(good)), interior.capacity,
-				floori(interior.output_stock(good)), interior.capacity]))
+		rows.append(_text("Status", EMPTY_FACTORY_TEXT))
+	var capacity: float = float(interior.capacity)
+	for good: Good in interior.summary_goods():
+		var goods: Array[Good] = [good]
+		var stock_in: float = interior.input_stock(good)
+		var stock_out: float = interior.output_stock(good)
+		if interior.input_gate_id(good) != -1:
+			rows.append(_bar("In", goods, stock_in / capacity, "%d  %s/min" % [
+					roundi(stock_in), RouteView.format_rate(interior.input_last_minute(good))]))
+		if stock_out > 0.0 or interior.output_last_minute(good) > 0.0 or interior.output_goods().has(good):
+			rows.append(_bar("Out", goods, stock_out / capacity, "%d  %s/min" % [
+					roundi(stock_out), RouteView.format_rate(interior.output_last_minute(good))]))
 	if interior.output_full():
-		rows.append(_row("Warning", "Output full - build a route out"))
+		rows.append(_text("Warning", "Output full - build a route out"))
 	elif interior.starved_last_minute():
-		rows.append(_row("Warning", "Machines waiting for input"))
+		rows.append(_text("Warning", "Machines waiting for input"))
 
 
-static func _stock_text(sim: MapFlowSim, point_id: StringName, good: Good, capacity: int) -> String:
-	return "%s %d/%d" % [good.display_name, floori(sim.stock(point_id, good)), capacity]
+## Şehir talebi: çubuk talebin (son eşik + DEMAND_BAR_EXTRA) katına kadar;
+## bölgeler doygunluk eşiklerinde biter.
+static func _demand_row(level: CityLevel, good: Good, sold: float) -> Dictionary:
+	var demand: float = level.demand_for(good)
+	var thresholds: Array[float] = []
+	thresholds.assign(level.saturation_thresholds)
+	var top: float = (thresholds.back() if not thresholds.is_empty() else 1.0) + DEMAND_BAR_EXTRA
+	var zones: PackedFloat32Array = PackedFloat32Array()
+	for threshold: float in thresholds:
+		zones.append(threshold / top)
+	zones.append(1.0)
+	var goods: Array[Good] = [good]
+	var row: Dictionary = _bar("Wants", goods, sold / (demand * top) if demand > 0.0 else 0.0,
+			"%s/%d per min" % [RouteView.format_rate(sold), roundi(demand)])
+	row["zones"] = zones
+	row["zone_colors"] = DEMAND_ZONE_COLORS
+	return row
 
 
-static func _row(caption: String, value: String) -> PackedStringArray:
-	return PackedStringArray([caption, value])
+static func _text(caption: String, text: String) -> Dictionary:
+	return {"caption": caption, "text": text}
+
+
+static func _icons(caption: String, goods: Array[Good], text: String) -> Dictionary:
+	return {"caption": caption, "text": text, "goods": goods, "fill": -1.0}
+
+
+static func _bar(caption: String, goods: Array[Good], fill: float, text: String) -> Dictionary:
+	return {"caption": caption, "text": text, "goods": goods, "fill": fill}

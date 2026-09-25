@@ -23,7 +23,6 @@ const REGION_STATUS_TEXT: Dictionary = {
 	RegionState.Status.AVAILABLE: "locked, available",
 	RegionState.Status.LOCKED: "locked",
 }
-const CAPTION_COLOR: Color = Color(0.7, 0.72, 0.7, 1)
 ## Grid'in başındaki sabit "Region" satırı (2 hücre) dinamik satırlardan önce durur.
 const FIXED_GRID_CELLS: int = 2
 
@@ -46,13 +45,13 @@ func _ready() -> void:
 ## `rows`: PointDetails satırları. `route_reason`: hat başlatılamıyorsa nedeni.
 ## `factory_action`: arsadaki fabrika düğmesi; `factory_reason`: kurulamıyorsa nedeni.
 func show_point(point: MapPoint, region_status: RegionState.Status,
-		rows: Array[PackedStringArray], route_reason: String, factory_action: FactoryAction,
+		rows: Array[Dictionary], route_reason: String, factory_action: FactoryAction,
 		factory_reason: String, factory_cost: int) -> void:
 	_point = point
 	title_label.text = point.get_title()
 	kind_label.text = KIND_TEXT[point.kind]
 	region_value.text = "%s (%s)" % [_region_name(point), REGION_STATUS_TEXT[region_status]]
-	_fill_rows(rows)
+	InfoRows.fill(grid, FIXED_GRID_CELLS, rows)
 	_show_factory_button(factory_action, factory_reason, factory_cost)
 	build_button.disabled = not route_reason.is_empty()
 	var reasons: PackedStringArray = []
@@ -64,23 +63,6 @@ func show_point(point: MapPoint, region_status: RegionState.Status,
 	build_reason_label.visible = not reasons.is_empty()
 	show()
 	reset_size()
-
-
-func _fill_rows(rows: Array[PackedStringArray]) -> void:
-	var cells: Array[Node] = grid.get_children()
-	var needed: int = FIXED_GRID_CELLS + rows.size() * 2
-	# Hücre sayısı değişmediyse yalnızca metinleri güncelle (her adımda yeniden kurma).
-	if cells.size() != needed:
-		for i: int in range(FIXED_GRID_CELLS, cells.size()):
-			grid.remove_child(cells[i])
-			cells[i].queue_free()
-		for i: int in rows.size():
-			grid.add_child(_make_label(true))
-			grid.add_child(_make_label(false))
-		cells = grid.get_children()
-	for r: int in rows.size():
-		(cells[FIXED_GRID_CELLS + r * 2] as Label).text = rows[r][0]
-		(cells[FIXED_GRID_CELLS + r * 2 + 1] as Label).text = rows[r][1]
 
 
 ## Arsadaki tek fabrika düğmesi; bir kez kurulur, sonra yalnızca güncellenir.
@@ -111,18 +93,6 @@ func _on_factory_button_pressed() -> void:
 		build_factory_requested.emit(_point)
 	else:
 		open_factory_requested.emit(_point)
-
-
-func _make_label(caption: bool) -> Label:
-	var label: Label = Label.new()
-	if caption:
-		label.add_theme_color_override("font_color", CAPTION_COLOR)
-		label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	else:
-		label.custom_minimum_size = Vector2(210.0, 0.0)
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	return label
 
 
 static func _region_name(point: MapPoint) -> String:

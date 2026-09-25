@@ -41,26 +41,24 @@ func show_selection(region: RegionView, point: MapPoint, route_view: RouteView) 
 func _show_route(view: RouteView) -> void:
 	var route: MapRoute = view.route
 	var routes: RouteState = _sim.routes
-	var flows: Array[PackedStringArray] = []
+	var flows: Array[Dictionary] = []
 	for direction: MapRoute.Direction in [MapRoute.Direction.FORWARD, MapRoute.Direction.BACKWARD]:
 		var start: MapPoint = view.from_point if direction == MapRoute.Direction.FORWARD else view.to_point
 		var end: MapPoint = view.to_point if direction == MapRoute.Direction.FORWARD else view.from_point
-		flows.append(PackedStringArray(["%s -> %s" % [start.get_title(), end.get_title()],
-				_direction_text(route, direction)]))
+		var flow: Dictionary = _direction_flow(route, direction)
+		flow["caption"] = "%s -> %s" % [start.get_title(), end.get_title()]
+		flows.append(flow)
 	_route_panel.show_route(view, routes.add_vehicle_block_reason(route),
 			routes.remove_vehicle_block_reason(route), routes.vehicle_refund(route.transport), flows)
 
 
-## "Logs 10/min" ya da taşınamıyorsa nedeni.
-func _direction_text(route: MapRoute, direction: MapRoute.Direction) -> String:
+## Bu yönde taşınabilecek mallar ve hız; taşınamıyorsa mal yok, metin nedeni.
+func _direction_flow(route: MapRoute, direction: MapRoute.Direction) -> Dictionary:
 	var reason: String = _sim.direction_block_reason(route, direction)
 	if not reason.is_empty():
-		return reason
-	var names: PackedStringArray = []
-	for good: Good in _sim.cargo_options(route, direction):
-		names.append(good.display_name)
-	return "%s  %s/min" % [", ".join(names),
-			RouteView.format_rate(_sim.route_flow(route, direction))]
+		return {"goods": [] as Array[Good], "text": reason}
+	return {"goods": _sim.cargo_options(route, direction),
+			"text": "%s/min" % RouteView.format_rate(_sim.route_flow(route, direction))}
 
 
 func _show_point(point: MapPoint) -> void:
