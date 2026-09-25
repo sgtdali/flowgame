@@ -56,6 +56,21 @@ Harita en fazla 20 sabit bölgeden oluşur ve yalnızca kaynakları, şehirleri 
 
 **Bölge açma:** Oyun 1 açık bölgeyle başlar. Kilitli bir bölge yalnızca açık bir bölgeye komşuysa para ile (erişim izni) açılabilir; açılan bölge bir daha kilitlenmez. Bu, paranın oyun ortasındaki ana harcama kalemlerinden biridir.
 
+**Harita arayüzü: araç çubuğu**
+
+Ekranın altında bir araç çubuğu durur. Oyuncu önce ne yapacağını (aleti), sonra nereye yapacağını seçer.
+
+| Alet | Kısayol | Harita ne gösterir | Tıklayınca |
+| --- | --- | --- | --- |
+| Route | 1 | Hat kurulabilecek noktalar vurgulanır; ilk nokta seçilince fareye kadar önizleme çizgisi ve fiyatı | İki nokta seçilince hat kurulur |
+| Factory | 2 | Kurulabilecek boş arsalarda fiyat etiketi (ör. "+300") | Arsaya fabrika kurulur |
+| Unlock | 3 | Açılabilir bölgelerde fiyat etiketi | Bölge açılır |
+
+- **Alet seçili kalır.** Oyuncu art arda birden çok hat ya da fabrika kurabilir. Esc, sağ tık ya da aynı düğmeye tekrar basmak aleti bırakır.
+- **Geçersiz hedef:** Alet seçiliyken kullanılamayan yer soluk kalır. Oyuncu oraya tıklarsa neden yapılamadığı gösterilir (ör. "Area 2 is locked", "Not enough money").
+- **Alet seçili değilken** tıklamak seçer ve bilgi panelini açar. Paneldeki eylem düğmeleri de kalır, iki yol birlikte çalışır.
+- Araç ekleme ve hat silme hat panelinde kalır. Araştırma geldiğinde çubuğa "Research" eklenir.
+
 **Araştırma merkezi:** Haritada fiziksel bir bina. Oyuncu ilkini başlangıç bölgesine kurar; sonradan ikinci bir merkez kurulabilir. Araştırma paketlerini buraya taşımak ayrı bir lojistik karardır.
 
 **Godot uygulaması:** Her bölge `Area2D` + `Polygon2D` + `CollisionPolygon2D` + `Line2D`; veri `RegionData` Resource'unda. PNG tabanlı ID haritası kullanılmaz.
@@ -320,3 +335,4 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 - [ ] Araştırma merkezi dördüncü nokta türü mü?
 - [ ] Düğüm sınırı kalktı. Fabrika Seviye 2 ve 3 (araştırmada ve maliyet tablosunda geçiyor) artık neyi açıyor?
 - [ ] Fabrika içi tek tek parça simülasyonu kullanıyor. Çok fabrikalı oyunda yavaşlarsa ne yapılacak? (Risk tablosundaki "Büyüyünce yavaşlama" satırıyla ilgili.)
+- [ ] Bölge açmanın ödülü belirsiz: belgedeki tek gerekçe paraya harcama yeri açmak. Seçenekler: her bölgenin "neden açılır"ını ilerlemeye bağlamak, para yerine ilerleme ile açmak, prototipte kilidi kaldırmak.
