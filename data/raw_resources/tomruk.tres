@@ -8,3 +8,5 @@ id = &"tomruk"
 display_name = "Logs"
 extraction_per_minute = 20
 site_kind = 0
+color = Color(0.55, 0.38, 0.22, 1)
+icon_char = "LG"

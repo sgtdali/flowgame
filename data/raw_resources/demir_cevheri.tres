@@ -8,3 +8,5 @@ site_kind = 2
 extraction_per_minute = 20
 id = &"demir_cevheri"
 display_name = "Iron Ore"
+color = Color(0.52, 0.44, 0.42, 1)
+icon_char = "IO"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_block"]
+
+[resource]
+script = ExtResource("1_block")
+id = &"f_splitter"
+display_name = "Splitter"
+category = 6
+accent_color = Color(0.51, 0.48, 0.38, 1)
+icon_char = "SP"
+description = "Splits one flow between two outputs, turn by turn."
+input_capacity = 6
+output_port_count = 2
+output_capacity = 6
+unlocked_at_start = true

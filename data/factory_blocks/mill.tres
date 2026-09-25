@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockType" format=3]
+
+[ext_resource type="Script" path="res://data/block_type.gd" id="1_block"]
+[ext_resource type="Resource" path="res://data/factory_recipes/degirmen.tres" id="2_recipe"]
+
+[resource]
+script = ExtResource("1_block")
+id = &"f_mill"
+display_name = "Mill"
+accent_color = Color(0.8, 0.68, 0.36, 1)
+icon_char = "ML"
+description = "Grinds 2 Wheat into 1 Flour, 10 per minute."
+recipe = ExtResource("2_recipe")
+input_capacity = 4
+output_capacity = 4
+unlocked_at_start = true

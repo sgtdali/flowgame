@@ -7,3 +7,5 @@ script = ExtResource("1_good")
 id = &"kereste"
 display_name = "Lumber"
 city_price = 1
+color = Color(0.78, 0.6, 0.38, 1)
+icon_char = "LB"

@@ -24,3 +24,12 @@ extends Resource
 @export var point_stock_capacity: int = 50
 ## Şehirlerin başlangıç seviyesi (köy).
 @export var starting_city_level: CityLevel
+
+@export_group("Fabrika içi")
+## Fabrika editörünün paletindeki bloklar (işleyici, ayırıcı, depo).
+@export var factory_blocks: Array[BlockType] = []
+## Giriş ve çıkış kapısı şablonları; her malın kapısı bunlardan üretilir.
+@export var gate_in: FactoryGate
+@export var gate_out: FactoryGate
+## Paletteki "Output: <mal>" kapılarının malları.
+@export var factory_goods: Array[Good] = []
