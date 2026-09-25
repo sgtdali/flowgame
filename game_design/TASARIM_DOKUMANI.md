@@ -79,6 +79,13 @@ Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüş
 
 **Kapılar ve hatlar:** Her mal için bir kapı vardır. Fabrikaya kaç hattan gelirse gelsin, aynı mal tek bir giriş kapısında toplanır; çıkış kapıları da mal başınadır. Kapılar haritadaki birim/dk akışı parçalara, fabrikadan çıkan parçaları da yeniden birim/dk akışa çevirir.
 
+**Fabrika stokları:** Fabrikada her mal için iki ayrı stok vardır (her biri yer tutucu 50 birim).
+
+- **Giriş stoğu:** Hatların getirdiği mal buraya konur ve o malın giriş kapısı buradan çeker.
+- **Çıkış stoğu:** Çıkış kapısı malı buraya koyar. Fabrikadan çıkan hatlar yalnızca bu stoktan alır; hangi hatta ne kadar gideceğini haritadaki yük seçimi belirler. Editör hatları bilmez.
+
+Kullanılmayan bir malın giriş stoğu dolunca o mal fabrikaya taşınmaz ve payı diğer mallara geçer. Çıkış stoğu dolunca çıkış kapısı mal almayı bırakır: parçalar içeride kuyruklarda birikir, işleyiciler durur ve haritadaki uyarı işareti yanar. Giriş kapısı doğrudan çıkış kapısına bağlanabilir; böylece fabrika, malları bir hattan diğerine aktaran bir durak olarak da kullanılabilir.
+
 **Kısıtlar (bulmacayı yaratan şeyler)**
 
 - **Bağlantı kapasitesi:** Her bağlantı en fazla belirli bir hız taşır (ör. 30 birim/dk); fazlası için paralel hat gerekir.
@@ -131,7 +138,7 @@ Mesafe harita birimiyle ölçülür (başlangıç bölgesinin içi yaklaşık 10
 
 - Hat kapasitesi dolarsa kaynak tarafında birikir; üretim durmaz, depo dolunca yavaşlar.
 
-**Stok ve kabul:** Her noktada mal başına küçük bir stok vardır (yer tutucu: 50 birim). Yatak ürettiğini kendi stoğuna koyar; stok dolunca üretim durur. Hat bir malı yalnızca varış noktası kabul ediyorsa taşır: fabrika kendi tarifinin girdilerini, şehir talep ettiği malları kabul eder; ham madde alanı ve boş arsa hiçbir şey kabul etmez. Şehrin stok sınırı yoktur; mal gelir gelmez doygunluk fiyatıyla satılır. Hat kurulunca varış noktasının kabul ettiği mallar eşit paylarla seçili gelir. Varış stoku dolu olan mal taşınmaz; payı diğer mallara geçer.
+**Stok ve kabul:** Her noktada mal başına küçük bir stok vardır (yer tutucu: 50 birim). Yatak ürettiğini kendi stoğuna koyar; stok dolunca üretim durur. Hat bir malı yalnızca varış noktası kabul ediyorsa taşır: fabrika her malı kabul eder (geçici sabit fabrika yalnızca tarifinin girdilerini), şehir talep ettiği malları kabul eder; ham madde alanı ve boş arsa hiçbir şey kabul etmez. Şehrin stok sınırı yoktur; mal gelir gelmez doygunluk fiyatıyla satılır. Hat kurulunca varış noktasının kabul ettiği mallar eşit paylarla seçili gelir. Varış stoku dolu olan mal taşınmaz; payı diğer mallara geçer.
 
 **Neden bu model:** Transport INC 30 araçtan sonra çöküyordu. Akış hesabı 20 bölge ve yüzlerce bağlantıda bile sabit maliyetlidir.
 
