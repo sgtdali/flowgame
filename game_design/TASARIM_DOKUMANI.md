@@ -86,6 +86,14 @@ Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüş
 
 **Tekrarı önleme:** Oyuncu kurduğu düğüm grubunu şablon olarak kaydedip başka fabrikaya yapıştırabilir. Bölgelerin farklı kaynak ve enerji koşulları, şablonun her yerde birebir çalışmamasını sağlar.
 
+**Haritadan fabrikaya geçiş**
+
+- **Kurulum:** Arsaya fabrika kurmak yalnızca kurulum bedelini öder; tarif seçilmez. Fabrikanın içi boş gelir.
+- **Giriş kapıları kendiliğinden:** Bir hat fabrikaya mal getirmeye başlayınca o malın giriş kapısı editörde kendiliğinden belirir. İşleyicileri ve çıkış kapılarını oyuncu yerleştirir.
+- **Girip çıkma:** Arsa panelindeki "Open factory" düğmesi editörü tam ekran açar, harita gizlenir. "Back to map" düğmesi ya da Esc ile haritaya dönülür.
+- **Zaman:** Tek bir oyun saati vardır. Oyuncu fabrikanın içindeyken harita, hatlar ve diğer fabrikalar çalışmaya devam eder. Hız düğmeleri editörde de görünür; oyuncu isterse duraklatır.
+- **Haritadaki özet:** Arsa panelinde her mal için giren ve çıkan birim/dk görünür. Girdisi eksik ya da çıkışı dolu fabrikanın haritadaki simgesinde uyarı işareti yanar.
+
 **Godot uygulaması:** Editör için yerleşik `GraphEdit` + `GraphNode` kullanılır; bağlantılar `connection_request` sinyaliyle yönetilir.
 
 **Geçici sabit fabrika:** Düğüm editörü gelene kadar fabrika kurulurken tek bir tarif seçilir (Bıçkıhane: Tomruk → Kereste veya Değirmen: 2 Buğday → Un) ve sonra değişmez. Bu geçici bir çözümdür: kalıcı tasarımda fabrikanın türü yoktur, içini oyuncu düğümlerle kurar.
