@@ -9,5 +9,4 @@ script = ExtResource("1_region")
 id = &"area3"
 display_name = "Area 3"
 resources = Array[ExtResource("1_raw_script")]([ExtResource("2")])
-factory_slots = 3
 neighbors = Array[StringName]([&"area1", &"area2", &"area5"])

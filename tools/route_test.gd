@@ -47,13 +47,13 @@ func _test_basic_flow() -> void:
 	var money: int = regions.money
 
 	_check("Ayni noktaya hat kurulamiyor",
-			not routes.build_block_reason(&"area1/City", &"area1/City", CART).is_empty())
-	var locked_reason: String = routes.build_block_reason(&"area1/City", &"area2/Site1", CART)
+			not routes.build_block_reason(&"area1/City1", &"area1/City1", CART).is_empty())
+	var locked_reason: String = routes.build_block_reason(&"area1/City1", &"area2/Site1", CART)
 	_check("Kilitli bolgedeki noktaya hat kurulamiyor",
-			locked_reason.contains("locked") and routes.build(&"area1/City", &"area2/Site1", 300.0, CART) == null,
+			locked_reason.contains("locked") and routes.build(&"area1/City1", &"area2/Site1", 300.0, CART) == null,
 			"neden='%s'" % locked_reason)
 
-	var first: MapRoute = routes.build(&"area1/Site1", &"area1/City", 150.0, CART)
+	var first: MapRoute = routes.build(&"area1/Site1", &"area1/City1", 150.0, CART)
 	var cost: int = CART.route_cost + CART.vehicle_price
 	_check("Hat kuruluyor, kurulum + 1 arac dusuyor",
 			first != null and first.vehicles == 1 and regions.money == money - cost,
@@ -62,12 +62,12 @@ func _test_basic_flow() -> void:
 			first != null and absf(first.capacity_per_minute() - 10.0) < CAPACITY_EPSILON,
 			"kapasite=%s" % (first.capacity_per_minute() if first != null else -1.0))
 	_check("Ayni iki nokta arasina ikinci hat kurulamiyor (ters sira dahil)",
-			routes.build(&"area1/City", &"area1/Site1", 150.0, CART) == null
+			routes.build(&"area1/City1", &"area1/Site1", 150.0, CART) == null
 			and routes.routes().size() == 1)
 	_check("Arastirilmamis tur kurulamiyor",
-			routes.build_block_reason(&"area1/Plot1", &"area1/City", TRUCK).contains("not researched"))
+			routes.build_block_reason(&"area1/Site2", &"area1/City1", TRUCK).contains("not researched"))
 
-	var second: MapRoute = routes.build(&"area1/Plot1", &"area1/Plot2", 600.0, CART)
+	var second: MapRoute = routes.build(&"area1/Site2", &"area1/Site1", 600.0, CART)
 	for i: int in 3:
 		routes.add_vehicle(second)
 	var expected_money: int = money - cost * 2 - CART.vehicle_price * 3
@@ -102,9 +102,9 @@ func _test_not_enough_money() -> void:
 	var regions: RegionState = RegionState.new(poor)
 	var routes: RouteState = RouteState.new(regions, poor)
 	_check("Para yetmezse hat kurulamiyor, para degismiyor",
-			routes.build(&"area1/Site1", &"area1/City", 150.0, CART) == null
+			routes.build(&"area1/Site1", &"area1/City1", 150.0, CART) == null
 			and regions.money == poor.starting_money
-			and routes.build_block_reason(&"area1/Site1", &"area1/City", CART) == "Not enough money")
+			and routes.build_block_reason(&"area1/Site1", &"area1/City1", CART) == "Not enough money")
 
 
 func _test_unlock_opens_routes() -> void:
@@ -112,7 +112,7 @@ func _test_unlock_opens_routes() -> void:
 	var routes: RouteState = RouteState.new(regions, MAP_CONFIG)
 	regions.unlock(&"area2")
 	var money_after_unlock: int = regions.money
-	var route: MapRoute = routes.build(&"area1/City", &"area2/Site1", 300.0, CART)
+	var route: MapRoute = routes.build(&"area1/City1", &"area2/Site1", 300.0, CART)
 	_check("Bolge acilinca hat kurulabiliyor; bolge ve hat ayni cuzdandan",
 			route != null and regions.money == money_after_unlock - CART.route_cost - CART.vehicle_price
 			and money_after_unlock == MAP_CONFIG.starting_money - MAP_CONFIG.first_unlock_cost,

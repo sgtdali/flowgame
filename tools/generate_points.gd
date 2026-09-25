@@ -7,7 +7,7 @@ extends SceneTree
 ##
 ## Tekrar çalıştırmak güvenlidir: var olan noktaların konumuna dokunmaz
 ## (elle kaydırılmış olabilir), yalnızca eksikleri ekler, fazlaları siler.
-## Bölge verisini (kaynak, fabrika alanı, şehir) değiştirdikten sonra çalıştır.
+## Bölge verisini (kaynaklar, şehirler) değiştirdikten sonra çalıştır.
 ## Çalıştırmadan önce sahneyi Godot'da kaydet; açıkken çalıştırırsan Godot
 ## "dosya değişti" diye sorar, "yeniden yükle" de.
 

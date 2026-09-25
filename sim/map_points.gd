@@ -4,10 +4,12 @@ extends RefCounted
 ## Harita noktalarının kaydı (arayüzsüz): kimlik, tür, hammadde.
 ##
 ## Noktalar bölge verisinden türetilir; adlandırma, çizim sahnesini üreten
-## tools/point_placer.gd ile aynıdır: "<bölge id>/Site<n>", "/Plot<n>", "/City".
+## tools/point_placer.gd ile aynıdır: "<bölge id>/Site<n>", "/City<n>". Fabrikalar
+## burada değil, oyunda kurulunca FactorySites'ta kayıtlıdır ("<bölge id>/Factory<n>").
 ## point_test.gd sahnedeki noktaların bu kayıtla birebir aynı olduğunu doğrular.
 
-enum Kind { RESOURCE_SITE, FACTORY_PLOT, CITY }
+## Sıra sahnedeki MapPoint.Kind ile aynı (sahnede sayı olarak saklanır).
+enum Kind { RESOURCE_SITE, FACTORY, CITY }
 
 
 class Info:
@@ -51,13 +53,11 @@ static func _ensure() -> void:
 	if not _all.is_empty():
 		return
 	for region: RegionData in RegionCatalog.all():
-		if region.has_city():
-			_add(Info.new(_id(region, "City"), region.id, Kind.CITY))
+		for i: int in region.city_names.size():
+			_add(Info.new(_id(region, "City%d" % (i + 1)), region.id, Kind.CITY))
 		for i: int in region.resources.size():
 			_add(Info.new(_id(region, "Site%d" % (i + 1)), region.id, Kind.RESOURCE_SITE,
 					region.resources[i]))
-		for i: int in region.factory_slots:
-			_add(Info.new(_id(region, "Plot%d" % (i + 1)), region.id, Kind.FACTORY_PLOT))
 
 
 static func _add(info: Info) -> void:

@@ -76,13 +76,6 @@ func _direction_flow(route: MapRoute, direction: MapRoute.Direction) -> Dictiona
 func _show_point(point: MapPoint) -> void:
 	var point_id: StringName = point.get_point_id()
 	var view: RegionView = point.get_region_view()
-	var action: PointInfoPanel.FactoryAction = PointInfoPanel.FactoryAction.NONE
-	if point.kind == MapPoint.Kind.FACTORY_PLOT:
-		action = (PointInfoPanel.FactoryAction.OPEN if _sim.factories.has_factory(point_id)
-				else PointInfoPanel.FactoryAction.BUILD)
 	_point_panel.show_point(point, _sim.regions.status(view.data.id),
 			PointDetails.rows_for(point_id, _sim, _config),
-			_sim.routes.start_block_reason(point_id), action,
-			_sim.factories.build_block_reason(point_id)
-					if action == PointInfoPanel.FactoryAction.BUILD else "",
-			_config.factory_cost)
+			_sim.routes.start_block_reason(point_id), point.kind == MapPoint.Kind.FACTORY)

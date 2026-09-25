@@ -20,21 +20,15 @@ const DEMAND_ZONE_COLORS: Array[Color] = [
 static func rows_for(point_id: StringName, sim: MapFlowSim, config: MapConfig) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	var info: MapPoints.Info = MapPoints.find(point_id)
-	if info == null:
-		return rows
 	var capacity: int = config.point_stock_capacity
-	match info.kind:
+	match sim.point_kind(point_id):
 		MapPoints.Kind.RESOURCE_SITE:
 			var goods: Array[Good] = [info.resource]
 			rows.append(_icons("Produces", goods, "%d/min" % info.resource.extraction_per_minute))
 			var stock: float = sim.stock(point_id, info.resource)
 			rows.append(_bar("Stock", goods, stock / capacity, "%d/%d" % [roundi(stock), capacity]))
-		MapPoints.Kind.FACTORY_PLOT:
-			var interior: FactoryInterior = sim.factories.interior_at(point_id)
-			if interior == null:
-				rows.append(_text("Status", "Empty plot"))
-			else:
-				_factory_rows(rows, interior)
+		MapPoints.Kind.FACTORY:
+			_factory_rows(rows, sim.factories.interior_at(point_id))
 		MapPoints.Kind.CITY:
 			var level: CityLevel = sim.market.level(point_id)
 			rows.append(_text("Level", level.display_name))

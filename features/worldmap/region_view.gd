@@ -12,6 +12,7 @@ extends Area2D
 
 @export var data: RegionData
 
+const POINTS_NODE: String = "Points"
 ## Durum renkleri: dolgu ve sınır.
 const FILL_UNLOCKED: Color = Color(0.55, 0.78, 0.5)
 const FILL_AVAILABLE: Color = Color(0.42, 0.46, 0.42)
@@ -126,6 +127,17 @@ func get_label_position() -> Vector2:
 	for point: Vector2 in biggest:
 		center += point
 	return center / biggest.size()
+
+
+## Noktaların (şehir, kaynak, fabrika) durduğu alt düğüm; yoksa oluşturur.
+## Adı tools/point_placer.gd ile aynı.
+func points_root() -> Node2D:
+	var root: Node2D = get_node_or_null(POINTS_NODE) as Node2D
+	if root == null:
+		root = Node2D.new()
+		root.name = POINTS_NODE
+		add_child(root)
+	return root
 
 
 ## Unlock aleti seçiliyken bölge adının altındaki fiyat ("" gizler).

@@ -102,32 +102,33 @@ func upkeep_per_minute() -> int:
 	return routes.total_upkeep_per_minute() + factories.upkeep_per_minute()
 
 
+## Noktanın türü (MapPoints.Kind); bilinmeyen noktada -1. Fabrikalar oyunda
+## kurulduğu için FactorySites'ta, diğer noktalar MapPoints'te kayıtlıdır.
+func point_kind(point_id: StringName) -> int:
+	if factories.has_factory(point_id):
+		return MapPoints.Kind.FACTORY
+	var info: MapPoints.Info = MapPoints.find(point_id)
+	return info.kind if info != null else -1
+
+
 ## Noktanın hatta verebileceği mallar (kaynak tarafı).
 func supplies(point_id: StringName) -> Array[Good]:
 	var out: Array[Good] = []
-	var info: MapPoints.Info = MapPoints.find(point_id)
-	if info == null:
-		return out
-	match info.kind:
+	match point_kind(point_id):
 		MapPoints.Kind.RESOURCE_SITE:
-			out.append(info.resource)
-		MapPoints.Kind.FACTORY_PLOT:
-			var interior: FactoryInterior = factories.interior_at(point_id)
-			if interior != null:
-				out = interior.output_goods()
+			out.append(MapPoints.find(point_id).resource)
+		MapPoints.Kind.FACTORY:
+			out = factories.interior_at(point_id).output_goods()
 	return out
 
 
 ## Nokta bu malı kabul eder mi? (varış tarafı)
 func accepts(point_id: StringName, good: Good) -> bool:
-	var info: MapPoints.Info = MapPoints.find(point_id)
-	if info == null:
-		return false
-	match info.kind:
+	match point_kind(point_id):
 		MapPoints.Kind.CITY:
 			return market.accepts(point_id, good)
-		MapPoints.Kind.FACTORY_PLOT:
-			return factories.has_factory(point_id)  # fabrika her malı kabul eder
+		MapPoints.Kind.FACTORY:
+			return true  # fabrika her malı kabul eder
 	return false
 
 
@@ -206,7 +207,7 @@ func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) 
 		if amounts[i] <= 0.0:
 			continue
 		_take(src, options[i], amounts[i])
-		if MapPoints.find(dst).kind == MapPoints.Kind.CITY:
+		if point_kind(dst) == MapPoints.Kind.CITY:
 			_pending_money += market.sell(dst, options[i], amounts[i])
 		elif factories.has_factory(dst):
 			factories.interior_at(dst).add_input(options[i], amounts[i])
@@ -254,7 +255,7 @@ func _process_factories(dt: float) -> void:
 
 
 func _free_space(point_id: StringName, good: Good) -> float:
-	if MapPoints.find(point_id).kind == MapPoints.Kind.CITY:
+	if point_kind(point_id) == MapPoints.Kind.CITY:
 		return INF
 	var interior: FactoryInterior = factories.interior_at(point_id)
 	if interior != null:

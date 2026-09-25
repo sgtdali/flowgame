@@ -9,8 +9,8 @@ extends Node2D
 ## içi FactoryScreen'de tam ekran açılır; oyun saati o sırada da işler.
 ## Alet seçili değilken tıklama önceliği: nokta → hat → bölge.
 
-## Kurulan fabrikanın haritadaki adı (fabrikanın türü yoktur).
-const FACTORY_NAME: String = "Factory"
+## Kurulan fabrikanın haritadaki adı: kurulma sırası (fabrikanın türü yoktur; görev 08, K3).
+const FACTORY_NAME: String = "Factory %d"
 ## Panellerin ve üst çubuğun yenilenme aralığı (gerçek saniye).
 const UI_REFRESH_SECONDS: float = 0.25
 ## Sağ tuş bundan az kayarak bırakılırsa "sağ tık" sayılır (fazlası kaydırmadır).
@@ -56,7 +56,6 @@ func _ready() -> void:
 	_panels = MapPanels.new(sim, RegionState.DEFAULT_CONFIG, info_panel, point_panel, route_panel)
 	info_panel.unlock_requested.connect(_on_unlock_requested)
 	point_panel.build_route_requested.connect(_on_build_route_requested)
-	point_panel.build_factory_requested.connect(_on_build_factory_requested)
 	point_panel.open_factory_requested.connect(_on_open_factory_requested)
 	factory_screen.setup(RegionState.DEFAULT_CONFIG)
 	factory_screen.closed.connect(_on_factory_closed)
@@ -136,7 +135,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_left_click(world: Vector2) -> void:
 	var point: MapPoint = _picker.point_at(world)
 	# Alet seçiliyken tıklama aleti uygular; seçim ve panel yok (K4).
-	if tools.handle_click(point, _picker.region_at(world)):
+	if tools.handle_click(point, _picker.region_at(world), world):
 		return
 	if route_builder.is_building():
 		# Panelden başlatılan hat: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
@@ -244,10 +243,20 @@ func _on_build_route_requested(point: MapPoint) -> void:
 	route_builder.start(point)
 
 
-func _on_build_factory_requested(point: MapPoint) -> void:
-	if sim.factories.build(point.get_point_id()):
-		point.set_factory(FACTORY_NAME)
-		_refresh_now()
+## Fabrikayı kurar ve tıklanan yere haritada noktasını koyar.
+func _on_build_factory_requested(region: RegionView, world_position: Vector2) -> void:
+	var number: int = sim.factories.next_number()
+	var factory_id: StringName = sim.factories.build(region.data.id)
+	if factory_id.is_empty():
+		return
+	var point: MapPoint = MapPoint.new()
+	point.kind = MapPoint.Kind.FACTORY
+	point.name = String(factory_id).get_slice("/", 1)
+	region.points_root().add_child(point)
+	point.global_position = world_position
+	point.set_factory(FACTORY_NAME % number)
+	_points.append(point)
+	_refresh_now()
 
 
 func _on_open_factory_requested(point: MapPoint) -> void:

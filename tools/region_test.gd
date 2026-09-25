@@ -145,11 +145,8 @@ func _test_value_ranges() -> void:
 			bad.append("%s kaynak=%d" % [region.id, region.resources.size()])
 		if region.resources.has(null):
 			bad.append("%s bos kaynak" % region.id)
-		if region.factory_slots < 2 or region.factory_slots > 4:
-			bad.append("%s fabrika alani=%d" % [region.id, region.factory_slots])
-		if region.has_city():
-			cities += 1
-	_check("Kaynak ve fabrika alani araliklarda", bad.is_empty(), ", ".join(bad))
+		cities += region.city_names.size()
+	_check("Kaynak sayilari araliklarda", bad.is_empty(), ", ".join(bad))
 	_check("Prototipte %d sehir" % PROTOTYPE_CITY_COUNT,
 			cities == PROTOTYPE_CITY_COUNT, "sehir=%d" % cities)
 

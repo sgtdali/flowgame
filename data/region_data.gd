@@ -10,12 +10,11 @@ extends Resource
 
 @export var id: StringName = &""
 @export var display_name: String = "New Region"
-## Bölgedeki kaynak yatakları (1–3). Aynı hammadde iki kez yazılırsa iki yatak demektir.
+## Bölgedeki kaynak yatakları. Aynı hammadde iki kez yazılırsa iki yatak demektir.
 @export var resources: Array[RawResource] = []
-## Kurulabilecek fabrika sayısı (2–4).
-@export var factory_slots: int = 2
-## Boş = bölgede şehir yok.
-@export var city_name: String = ""
+## Bölgedeki şehirlerin adları; sırası nokta kimliğini verir (City1, City2...).
+## Fabrikaların yeri sabit değildir: açık bölgede oyuncunun seçtiği yere kurulur.
+@export var city_names: Array[String] = []
 ## Komşu bölgelerin id'leri. Karşılıklı olmalı ve çizimde gerçekten
 ## değmeli (region_test kontrol eder). Bölge açmada komşuluk şartı bunu kullanır.
 @export var neighbors: Array[StringName] = []
@@ -23,4 +22,4 @@ extends Resource
 
 
 func has_city() -> bool:
-	return not city_name.is_empty()
+	return not city_names.is_empty()

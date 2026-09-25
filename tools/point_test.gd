@@ -7,7 +7,7 @@ extends SceneTree
 ##
 ## Kanıtlar:
 ##   1. Her bölgenin noktaları verisiyle birebir: kaynak başına bir ham madde
-##      alanı (doğru hammadde), fabrika alanı başına bir arsa, şehri varsa bir şehir
+##      alanı (doğru hammadde), şehir adı başına bir şehir (fabrikalar oyunda kurulur)
 ##   2. Her nokta kendi bölgesinin içinde
 ##   3. Noktalar birbirine fazla yakın değil (bölge sınırının iki yanı dahil)
 ##   4. Üretim tekrar çalışınca hiçbir şey değişmiyor
@@ -57,26 +57,26 @@ func _test_points_match_data(views: Array[RegionView]) -> void:
 	for view: RegionView in views:
 		var region: RegionData = view.data
 		var sites: Dictionary = {}
-		var plots: Dictionary = {}
 		var cities: int = 0
+		var others: int = 0
 		var bad: PackedStringArray = []
 		for point: MapPoint in _points(view):
 			match point.kind:
 				MapPoint.Kind.RESOURCE_SITE:
 					sites[point.slot_index] = point.resource
-				MapPoint.Kind.FACTORY_PLOT:
-					plots[point.slot_index] = true
 				MapPoint.Kind.CITY:
 					cities += 1
+				_:
+					others += 1
 		if sites.size() != region.resources.size():
 			bad.append("alan=%d kaynak=%d" % [sites.size(), region.resources.size()])
 		for i: int in region.resources.size():
 			if sites.get(i) != region.resources[i]:
 				bad.append("alan %d yanlis hammadde" % i)
-		if plots.size() != region.factory_slots:
-			bad.append("arsa=%d fabrika alani=%d" % [plots.size(), region.factory_slots])
-		if cities != (1 if region.has_city() else 0):
-			bad.append("sehir=%d" % cities)
+		if others > 0:
+			bad.append("beklenmeyen nokta=%d" % others)
+		if cities != region.city_names.size():
+			bad.append("sehir=%d ad=%d" % [cities, region.city_names.size()])
 		_check("Noktalar veriyle ayni: %s" % view.name, bad.is_empty(), ", ".join(bad))
 
 

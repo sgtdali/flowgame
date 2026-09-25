@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://b01t0fyymgmtf"]
 
-[ext_resource type="Script" uid="uid://cgu4imjs72qtx" path="res://features/worldmap/region_view.gd" id="1_view"]
+[ext_resource type="Script" path="res://features/worldmap/region_view.gd" id="1_view"]
 [ext_resource type="Resource" path="res://data/regions/area1.tres" id="2_area"]
 [ext_resource type="Resource" path="res://data/regions/area2.tres" id="3_area"]
-[ext_resource type="Script" uid="uid://os7x3k5kfb27" path="res://features/worldmap/map_point.gd" id="3_t8fxm"]
+[ext_resource type="Script" path="res://features/worldmap/map_point.gd" id="3_t8fxm"]
 [ext_resource type="Resource" path="res://data/regions/area3.tres" id="4_area"]
 [ext_resource type="Resource" path="res://data/raw_resources/demir_cevheri.tres" id="4_snabi"]
 [ext_resource type="Resource" path="res://data/regions/area4.tres" id="5_area"]
@@ -33,19 +33,6 @@ script = ExtResource("3_t8fxm")
 kind = 0
 resource = ExtResource("4_snabi")
 
-[node name="Plot1" type="Node2D" parent="Area5/Points" unique_id=318090670]
-z_index = 20
-z_as_relative = false
-position = Vector2(1440, 330)
-script = ExtResource("3_t8fxm")
-
-[node name="Plot2" type="Node2D" parent="Area5/Points" unique_id=364892672]
-z_index = 20
-z_as_relative = false
-position = Vector2(940, 430)
-script = ExtResource("3_t8fxm")
-slot_index = 1
-
 [node name="MapBounds" type="ReferenceRect" parent="." unique_id=1052238418]
 offset_right = 1600.0
 offset_bottom = 900.0
@@ -60,12 +47,11 @@ polygon = PackedVector2Array(80, 60, 80, 220, 300, 380, 400, 260, 400, 80, 260, 
 
 [node name="Points" type="Node2D" parent="Area1" unique_id=1433415062]
 
-[node name="City" type="Node2D" parent="Area1/Points" unique_id=1823123035]
+[node name="City1" type="Node2D" parent="Area1/Points" unique_id=1823123035]
 z_index = 20
 z_as_relative = false
 position = Vector2(250, 230)
 script = ExtResource("3_t8fxm")
-kind = 2
 
 [node name="Site1" type="Node2D" parent="Area1/Points" unique_id=165524421]
 z_index = 20
@@ -84,26 +70,6 @@ kind = 0
 resource = ExtResource("7_xphyp")
 slot_index = 1
 
-[node name="Plot1" type="Node2D" parent="Area1/Points" unique_id=319446268]
-z_index = 20
-z_as_relative = false
-position = Vector2(240, 90)
-script = ExtResource("3_t8fxm")
-
-[node name="Plot2" type="Node2D" parent="Area1/Points" unique_id=39255794]
-z_index = 20
-z_as_relative = false
-position = Vector2(140, 210)
-script = ExtResource("3_t8fxm")
-slot_index = 1
-
-[node name="Plot3" type="Node2D" parent="Area1/Points" unique_id=1191380782]
-z_index = 20
-z_as_relative = false
-position = Vector2(360, 220)
-script = ExtResource("3_t8fxm")
-slot_index = 2
-
 [node name="Area2" type="Area2D" parent="." unique_id=406375879]
 script = ExtResource("1_view")
 data = ExtResource("3_area")
@@ -121,19 +87,6 @@ position = Vector2(640, 320)
 script = ExtResource("3_t8fxm")
 kind = 0
 resource = ExtResource("4_snabi")
-
-[node name="Plot1" type="Node2D" parent="Area2/Points" unique_id=670568384]
-z_index = 20
-z_as_relative = false
-position = Vector2(690, 600)
-script = ExtResource("3_t8fxm")
-
-[node name="Plot2" type="Node2D" parent="Area2/Points" unique_id=889580495]
-z_index = 20
-z_as_relative = false
-position = Vector2(370, 380)
-script = ExtResource("3_t8fxm")
-slot_index = 1
 
 [node name="Area3" type="Area2D" parent="." unique_id=453688259]
 script = ExtResource("1_view")
@@ -154,26 +107,6 @@ script = ExtResource("3_t8fxm")
 kind = 0
 resource = ExtResource("6_emi3y")
 
-[node name="Plot1" type="Node2D" parent="Area3/Points" unique_id=69298600]
-z_index = 20
-z_as_relative = false
-position = Vector2(820, 190)
-script = ExtResource("3_t8fxm")
-
-[node name="Plot2" type="Node2D" parent="Area3/Points" unique_id=443939668]
-z_index = 20
-z_as_relative = false
-position = Vector2(440, 220)
-script = ExtResource("3_t8fxm")
-slot_index = 1
-
-[node name="Plot3" type="Node2D" parent="Area3/Points" unique_id=1647180991]
-z_index = 20
-z_as_relative = false
-position = Vector2(680, 220)
-script = ExtResource("3_t8fxm")
-slot_index = 2
-
 [node name="Area4" type="Area2D" parent="." unique_id=734174760]
 script = ExtResource("1_view")
 data = ExtResource("5_area")
@@ -186,12 +119,11 @@ uv = PackedVector2Array(-400, 20, -340, 180, -320, 440, 280, 320, 220, 160, -60,
 
 [node name="Points" type="Node2D" parent="Area4" unique_id=2045410608]
 
-[node name="City" type="Node2D" parent="Area4/Points" unique_id=344617930]
+[node name="City1" type="Node2D" parent="Area4/Points" unique_id=344617930]
 z_index = 20
 z_as_relative = false
 position = Vector2(1190, 650)
 script = ExtResource("3_t8fxm")
-kind = 2
 
 [node name="Site1" type="Node2D" parent="Area4/Points" unique_id=730738337]
 z_index = 20
@@ -209,30 +141,3 @@ script = ExtResource("3_t8fxm")
 kind = 0
 resource = ExtResource("6_emi3y")
 slot_index = 1
-
-[node name="Plot1" type="Node2D" parent="Area4/Points" unique_id=1738903860]
-z_index = 20
-z_as_relative = false
-position = Vector2(970, 510)
-script = ExtResource("3_t8fxm")
-
-[node name="Plot2" type="Node2D" parent="Area4/Points" unique_id=1300598513]
-z_index = 20
-z_as_relative = false
-position = Vector2(1430, 640)
-script = ExtResource("3_t8fxm")
-slot_index = 1
-
-[node name="Plot3" type="Node2D" parent="Area4/Points" unique_id=1139744853]
-z_index = 20
-z_as_relative = false
-position = Vector2(980, 730)
-script = ExtResource("3_t8fxm")
-slot_index = 2
-
-[node name="Plot4" type="Node2D" parent="Area4/Points" unique_id=1056802048]
-z_index = 20
-z_as_relative = false
-position = Vector2(1260, 450)
-script = ExtResource("3_t8fxm")
-slot_index = 3

@@ -45,16 +45,15 @@ static func _sync_region(view: RegionView, scene_root: Node, report: Dictionary)
 		view.add_child(points_root)
 		points_root.owner = scene_root
 
-	# İstenen noktalar, yerleştirme sırasıyla: şehir, ham madde alanları, arsalar.
+	# İstenen noktalar, yerleştirme sırasıyla: şehirler, ham madde alanları.
+	# Fabrikalar burada yok: oyunda oyuncunun seçtiği yere kurulur.
 	var wanted: Array[Dictionary] = []
-	if region.has_city():
-		wanted.append({"kind": MapPoint.Kind.CITY, "slot": 0, "resource": null, "name": "City"})
+	for i: int in region.city_names.size():
+		wanted.append({"kind": MapPoint.Kind.CITY, "slot": i, "resource": null,
+				"name": "City%d" % (i + 1)})
 	for i: int in region.resources.size():
 		wanted.append({"kind": MapPoint.Kind.RESOURCE_SITE, "slot": i,
 				"resource": region.resources[i], "name": "Site%d" % (i + 1)})
-	for i: int in region.factory_slots:
-		wanted.append({"kind": MapPoint.Kind.FACTORY_PLOT, "slot": i, "resource": null,
-				"name": "Plot%d" % (i + 1)})
 	var wanted_keys: Dictionary = {}
 	for want: Dictionary in wanted:
 		wanted_keys[point_key(want["kind"], want["slot"])] = want
@@ -73,6 +72,7 @@ static func _sync_region(view: RegionView, scene_root: Node, report: Dictionary)
 			continue
 		existing[key] = point
 		point.resource = wanted_keys[key]["resource"]
+		point.name = wanted_keys[key]["name"]
 		report["kept"] += 1
 
 	var placed: Array[Vector2] = []

@@ -24,7 +24,6 @@ const STATUS_COLOR: Dictionary = {
 @onready var status_label: Label = %StatusLabel
 @onready var resources_value: Label = %ResourcesValue
 @onready var city_value: Label = %CityValue
-@onready var slots_value: Label = %SlotsValue
 @onready var neighbors_value: Label = %NeighborsValue
 @onready var cost_caption: Label = %CostCaption
 @onready var cost_value: Label = %CostValue
@@ -47,8 +46,7 @@ func show_region(region: RegionData, status: RegionState.Status, cost: int,
 	status_label.text = STATUS_TEXT[status]
 	status_label.add_theme_color_override("font_color", STATUS_COLOR[status])
 	resources_value.text = _resources_text(region)
-	city_value.text = region.city_name if region.has_city() else "None"
-	slots_value.text = str(region.factory_slots)
+	city_value.text = ", ".join(region.city_names) if region.has_city() else "None"
 	neighbors_value.text = _neighbors_text(region)
 	var locked: bool = status != RegionState.Status.UNLOCKED
 	cost_caption.visible = locked

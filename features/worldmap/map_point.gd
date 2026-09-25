@@ -10,9 +10,10 @@ extends Node2D
 ## Hangi bölgeye ait olduğu sahnedeki yerinden bellidir (get_region_view).
 ## Kural hesaplamaz: soluk/seçili durumu WorldMap verir.
 
-enum Kind { RESOURCE_SITE, FACTORY_PLOT, CITY }
+## Sıra MapPoints.Kind ile aynı (sahnede sayı olarak saklanır).
+enum Kind { RESOURCE_SITE, FACTORY, CITY }
 
-@export var kind: Kind = Kind.FACTORY_PLOT:
+@export var kind: Kind = Kind.CITY:
 	set(value):
 		kind = value
 		queue_redraw()
@@ -31,7 +32,6 @@ const POINT_Z_INDEX: int = 20
 const HIT_RADIUS: float = 18.0
 const SIZE: float = 11.0
 const CITY_COLOR: Color = Color(0.86, 0.3, 0.26)
-const PLOT_COLOR: Color = Color(0.2, 0.22, 0.24, 0.75)
 const FACTORY_COLOR: Color = Color(0.85, 0.55, 0.25)
 const SITE_COLORS: Dictionary = {
 	RawResource.SiteKind.FOREST: Color(0.22, 0.62, 0.3),
@@ -167,16 +167,14 @@ func get_title() -> String:
 		Kind.CITY:
 			# Editörde (tool) RegionData'nın fonksiyonları çağrılamaz; alanı okunur.
 			var view: RegionView = get_region_view()
-			if view != null and view.data != null and not view.data.city_name.is_empty():
-				return view.data.city_name
+			if view != null and view.data != null and slot_index < view.data.city_names.size():
+				return view.data.city_names[slot_index]
 			return "City"
 		Kind.RESOURCE_SITE:
 			if resource != null:
 				return RawResource.site_name(resource.site_kind)
 			return "Resource Site"
-	if not _factory_name.is_empty():
-		return _factory_name
-	return "Plot %d" % (slot_index + 1)
+	return _factory_name if not _factory_name.is_empty() else "Factory"
 
 
 ## "Forest (Area 1)" — ipuçlarında ve hat panelinde.
@@ -212,17 +210,13 @@ func _draw() -> void:
 			draw_colored_polygon(diamond, color)
 			diamond.append(diamond[0])
 			draw_polyline(diamond, OUTLINE, 2.0)
-		Kind.FACTORY_PLOT:
+		Kind.FACTORY:
+			# Fabrika: dolu kare + çatı.
 			var rect: Rect2 = Rect2(Vector2(-SIZE, -SIZE), Vector2(SIZE, SIZE) * 2.0)
-			if _factory_name.is_empty():
-				draw_rect(rect, PLOT_COLOR)
-				draw_rect(rect, Color.WHITE, false, 2.0)
-			else:
-				# Kurulu fabrika: dolu kare + çatı.
-				draw_rect(rect.grow(2.0), FACTORY_COLOR)
-				draw_rect(rect.grow(2.0), OUTLINE, false, 2.0)
-				draw_colored_polygon(PackedVector2Array([Vector2(-SIZE, -SIZE),
-						Vector2(0.0, -SIZE - 8.0), Vector2(SIZE, -SIZE)]), FACTORY_COLOR.darkened(0.3))
+			draw_rect(rect.grow(2.0), FACTORY_COLOR)
+			draw_rect(rect.grow(2.0), OUTLINE, false, 2.0)
+			draw_colored_polygon(PackedVector2Array([Vector2(-SIZE, -SIZE),
+					Vector2(0.0, -SIZE - 8.0), Vector2(SIZE, -SIZE)]), FACTORY_COLOR.darkened(0.3))
 			if _warning:
 				PointMarks.draw_warning(self, Vector2(SIZE + 4.0, -SIZE - 4.0))
 

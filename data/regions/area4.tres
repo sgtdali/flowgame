@@ -10,6 +10,5 @@ script = ExtResource("1_region")
 id = &"area4"
 display_name = "Area 4"
 resources = Array[ExtResource("1_raw_script")]([ExtResource("2"), ExtResource("3")])
-factory_slots = 4
-city_name = "City B"
+city_names = Array[String](["City B"])
 neighbors = Array[StringName]([&"area2", &"area5"])

@@ -29,9 +29,11 @@ const DT: float = 1.0 / 60.0
 const EPS: float = 0.01
 
 const FOREST: StringName = &"area1/Site1"
-const PLOT: StringName = &"area1/Plot1"
-const PLOT2: StringName = &"area1/Plot2"
-const CITY: StringName = &"area1/City"
+## Fabrikalar bölgeye kurulur; kimliği kurulma sırasıdır (Factory1, Factory2...).
+const AREA: StringName = &"area1"
+const PLOT: StringName = &"area1/Factory1"
+const PLOT2: StringName = &"area1/Factory2"
+const CITY: StringName = &"area1/City1"
 
 var _failures: int = 0
 var _checks: int = 0
@@ -75,7 +77,7 @@ func _run(sim: MapFlowSim, minutes: float) -> void:
 ## Arsaya fabrika kurar; içine Logs in → Sawmill → Output: Lumber döşer.
 ## Dönüş: Sawmill'in istasyon id'si (kurulamazsa -1).
 func _build_sawmill(sim: MapFlowSim, plot: StringName = PLOT) -> int:
-	if not sim.factories.build(plot):
+	if sim.factories.build(RouteState.region_of(plot)) != plot:
 		return -1
 	var interior: FactoryInterior = sim.factories.interior_at(plot)
 	var gate: int = interior.ensure_input_gate(LOGS)
@@ -189,25 +191,26 @@ func _test_locked_region_idle() -> void:
 func _test_factory_rules() -> void:
 	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
 	var money: int = sim.regions.money
-	var ok: bool = sim.factories.build(PLOT)
+	var ok: bool = sim.factories.build(AREA) == PLOT
 	_check("Fabrika kuruluyor, fiyati dusuyor",
 			ok and sim.regions.money == money - MAP_CONFIG.factory_cost)
-	_check("Arsa disina, kilitli bolgeye, ayni arsaya ikinci kez kurulamiyor",
-			not sim.factories.build_block_reason(FOREST).is_empty()
-			and sim.factories.build_block_reason(&"area2/Plot1").contains("locked")
-			and not sim.factories.build(PLOT))
+	_check("Bolge disina ve kilitli bolgeye kurulamiyor; ayni bolgeye ikincisi Factory2",
+			not sim.factories.build_block_reason(&"nowhere").is_empty()
+			and sim.factories.build_block_reason(&"area2").contains("locked")
+			and sim.factories.build(&"area2").is_empty()
+			and sim.factories.build(AREA) == PLOT2)
 
 
 func _test_factory_interior_link() -> void:
 	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
 	var before: bool = sim.accepts(PLOT, WHEAT)
-	sim.factories.build(PLOT)
-	sim.factories.build(PLOT2)
+	sim.factories.build(AREA)
+	sim.factories.build(AREA)
 	sim.routes.build(FOREST, PLOT, 150.0, CART)
 	sim.routes.build(PLOT, PLOT2, 150.0, CART)
 	_run(sim, 3.0)
 	var inside: FactoryInterior = sim.factories.interior_at(PLOT)
-	_check("Bos arsa kabul etmiyor; fabrika her mali kabul ediyor, giris kapisi geliyor",
+	_check("Kurulmamis fabrika kabul etmiyor; fabrika her mali kabul ediyor, giris kapisi geliyor",
 			not before and sim.accepts(PLOT, WHEAT) and sim.accepts(PLOT, LOGS)
 			and inside.input_stock(LOGS) > 20.0 and inside.input_gate_id(LOGS) != -1,
 			"giris stogu=%.1f" % inside.input_stock(LOGS))
@@ -231,7 +234,7 @@ func _test_factory_warning() -> void:
 	var starved: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
 	_build_sawmill(starved)
 	var empty: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
-	empty.factories.build(PLOT)
+	empty.factories.build(AREA)
 	var chain: MapFlowSim = _sawmill_chain()
 	for sim: MapFlowSim in [blocked, starved, empty, chain]:
 		_run(sim, 8.0)

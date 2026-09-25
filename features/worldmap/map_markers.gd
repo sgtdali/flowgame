@@ -17,7 +17,7 @@ static func refresh(points: Array[MapPoint], sim: MapFlowSim, capacity: int) -> 
 					var unlocked: bool = info != null and sim.regions.is_unlocked(info.region_id)
 					point.set_stock(sim.stock(point_id, point.resource) / float(capacity) if unlocked else -1.0)
 					point.set_goods([point.resource] as Array[Good])
-			MapPoint.Kind.FACTORY_PLOT:
+			MapPoint.Kind.FACTORY:
 				var interior: FactoryInterior = sim.factories.interior_at(point_id)
 				point.set_warning(sim.factory_warning(point_id))
 				point.set_stock(interior.fullest_output() if interior != null else -1.0)

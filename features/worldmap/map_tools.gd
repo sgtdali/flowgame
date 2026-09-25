@@ -11,7 +11,8 @@ extends RefCounted
 enum Tool { NONE, ROUTE, FACTORY, UNLOCK }
 
 signal tool_changed(tool: Tool)
-signal factory_requested(point: MapPoint)
+## Fabrika kurulacak bölge ve dünya konumu.
+signal factory_requested(region: RegionView, world_position: Vector2)
 signal unlock_requested(region_id: StringName)
 ## Hedef kullanılamadı; nedeni.
 signal rejected(reason: String)
@@ -20,7 +21,7 @@ const SHORTCUTS: Dictionary = {KEY_1: Tool.ROUTE, KEY_2: Tool.FACTORY, KEY_3: To
 ## Alet seçiliyken, başka bir şey yapılmıyorsa üst çubukta görünen ipucu.
 const IDLE_HINTS: Dictionary = {
 	Tool.ROUTE: "Route: click a point to start a route. Esc or right-click to stop.",
-	Tool.FACTORY: "Factory: click an empty plot to build. Esc or right-click to stop.",
+	Tool.FACTORY: "Factory: click an empty spot in an unlocked region. Esc or right-click to stop.",
 	Tool.UNLOCK: "Unlock: click a region to buy access. Esc or right-click to stop.",
 }
 
@@ -81,12 +82,12 @@ func step_back() -> bool:
 
 
 ## Alet açıkken sol tık. Alet yoksa false döner (WorldMap seçim yapar).
-func handle_click(point: MapPoint, region: RegionView) -> bool:
+func handle_click(point: MapPoint, region: RegionView, world_position: Vector2) -> bool:
 	match tool:
 		Tool.ROUTE:
 			_click_route(point)
 		Tool.FACTORY:
-			_click_factory(point)
+			_click_factory(point, region, world_position)
 		Tool.UNLOCK:
 			_click_unlock(region)
 		_:
@@ -110,12 +111,17 @@ func _click_route(point: MapPoint) -> void:
 		rejected.emit(reason)
 
 
-func _click_factory(point: MapPoint) -> void:
-	if point == null:
+## Boş bir yere tıklanmalı: bir noktanın üstüne fabrika kurulmaz (görev 08, K2).
+func _click_factory(point: MapPoint, region: RegionView, world_position: Vector2) -> void:
+	if point != null:
+		rejected.emit("Pick an empty spot, not %s" % point.get_title())
 		return
-	var reason: String = _sim.factories.build_block_reason(point.get_point_id())
+	if region == null or region.data == null:
+		rejected.emit("Factories can only be built inside a region")
+		return
+	var reason: String = _sim.factories.build_block_reason(region.data.id)
 	if reason.is_empty():
-		factory_requested.emit(point)
+		factory_requested.emit(region, world_position)
 	else:
 		rejected.emit(reason)
 
