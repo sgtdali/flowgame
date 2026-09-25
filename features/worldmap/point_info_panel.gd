@@ -8,6 +8,10 @@ extends PanelContainer
 
 signal build_route_requested(point: MapPoint)
 signal build_factory_requested(point: MapPoint)
+signal open_factory_requested(point: MapPoint)
+
+## Arsa panelindeki fabrika düğmesi: yok / "Build factory" / "Open factory".
+enum FactoryAction { NONE, BUILD, OPEN }
 
 const KIND_TEXT: Dictionary = {
 	MapPoint.Kind.RESOURCE_SITE: "Resource site",
@@ -40,22 +44,21 @@ func _ready() -> void:
 
 
 ## `rows`: PointDetails satırları. `route_reason`: hat başlatılamıyorsa nedeni.
-## `offer_factory`: boş arsada fabrika kurma butonu gösterilsin mi;
-## `factory_reason`: kurulamıyorsa nedeni.
+## `factory_action`: arsadaki fabrika düğmesi; `factory_reason`: kurulamıyorsa nedeni.
 func show_point(point: MapPoint, region_status: RegionState.Status,
-		rows: Array[PackedStringArray], route_reason: String, offer_factory: bool,
+		rows: Array[PackedStringArray], route_reason: String, factory_action: FactoryAction,
 		factory_reason: String, factory_cost: int) -> void:
 	_point = point
 	title_label.text = point.get_title()
 	kind_label.text = KIND_TEXT[point.kind]
 	region_value.text = "%s (%s)" % [_region_name(point), REGION_STATUS_TEXT[region_status]]
 	_fill_rows(rows)
-	_show_factory_offer(offer_factory, factory_reason, factory_cost)
+	_show_factory_button(factory_action, factory_reason, factory_cost)
 	build_button.disabled = not route_reason.is_empty()
 	var reasons: PackedStringArray = []
 	if not route_reason.is_empty():
 		reasons.append(route_reason)
-	if offer_factory and not factory_reason.is_empty() and not reasons.has(factory_reason):
+	if factory_action == FactoryAction.BUILD and not factory_reason.is_empty() and not reasons.has(factory_reason):
 		reasons.append(factory_reason)
 	build_reason_label.text = "\n".join(reasons)
 	build_reason_label.visible = not reasons.is_empty()
@@ -80,20 +83,34 @@ func _fill_rows(rows: Array[PackedStringArray]) -> void:
 		(cells[FIXED_GRID_CELLS + r * 2 + 1] as Label).text = rows[r][1]
 
 
-## Boş arsada tek "Build factory" butonu; buton bir kez kurulur, sonra yalnızca güncellenir.
-func _show_factory_offer(offer: bool, reason: String, cost: int) -> void:
-	factory_box.visible = offer
-	if not offer:
+## Arsadaki tek fabrika düğmesi; bir kez kurulur, sonra yalnızca güncellenir.
+func _show_factory_button(action: FactoryAction, reason: String, cost: int) -> void:
+	factory_box.visible = action != FactoryAction.NONE
+	if action == FactoryAction.NONE:
 		return
 	var button: Button = factory_box.get_child(0) as Button if factory_box.get_child_count() > 0 else null
 	if button == null:
 		button = Button.new()
 		button.custom_minimum_size = Vector2(0.0, 36.0)
-		button.pressed.connect(func() -> void: build_factory_requested.emit(_point))
+		button.pressed.connect(_on_factory_button_pressed)
 		factory_box.add_child(button)
-	button.text = "Build factory (%d)" % cost
-	button.tooltip_text = "An empty factory. Open it to place machines inside."
-	button.disabled = not reason.is_empty()
+	if action == FactoryAction.BUILD:
+		button.text = "Build factory (%d)" % cost
+		button.tooltip_text = "An empty factory. Open it to place machines inside."
+		button.disabled = not reason.is_empty()
+	else:
+		button.text = "Open factory"
+		button.tooltip_text = "Place machines and connect them inside the factory."
+		button.disabled = false
+	button.set_meta(&"action", action)
+
+
+func _on_factory_button_pressed() -> void:
+	var button: Button = factory_box.get_child(0) as Button
+	if button.get_meta(&"action") == FactoryAction.BUILD:
+		build_factory_requested.emit(_point)
+	else:
+		open_factory_requested.emit(_point)
 
 
 func _make_label(caption: bool) -> Label:

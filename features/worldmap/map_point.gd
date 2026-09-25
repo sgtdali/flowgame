@@ -40,13 +40,17 @@ const SITE_COLORS: Dictionary = {
 }
 const OUTLINE: Color = Color(0.08, 0.09, 0.1)
 const LABEL_SIZE: int = 14
+const WARNING_COLOR: Color = Color(1.0, 0.8, 0.2)
+const WARNING_SIZE: float = 9.0
 ## Kilitli bölgedeki noktanın görünürlüğü.
 const DIMMED_ALPHA: float = 0.6
 
 var _hovered: bool = false
 var _selected: bool = false
-## Arsaya fabrika kurulduysa adı (ör. "Sawmill"); boşsa arsa boş.
+## Arsaya fabrika kurulduysa adı (ör. "Factory"); boşsa arsa boş.
 var _factory_name: String = ""
+## Fabrikada sorun var mı (çıkış dolu ya da makineler girdi bekliyor).
+var _warning: bool = false
 
 
 func _ready() -> void:
@@ -57,6 +61,12 @@ func _ready() -> void:
 func set_factory(factory_name: String) -> void:
 	_factory_name = factory_name
 	queue_redraw()
+
+
+func set_warning(value: bool) -> void:
+	if _warning != value:
+		_warning = value
+		queue_redraw()
 
 
 func set_dimmed(value: bool) -> void:
@@ -148,8 +158,22 @@ func _draw() -> void:
 				draw_rect(rect.grow(2.0), OUTLINE, false, 2.0)
 				draw_colored_polygon(PackedVector2Array([Vector2(-SIZE, -SIZE),
 						Vector2(0.0, -SIZE - 8.0), Vector2(SIZE, -SIZE)]), FACTORY_COLOR.darkened(0.3))
+			if _warning:
+				_draw_warning(Vector2(SIZE + 4.0, -SIZE - 4.0))
 
 	_draw_label()
+
+
+## Sarı üçgen içinde "!" — sorunlu fabrika.
+func _draw_warning(center: Vector2) -> void:
+	var s: float = WARNING_SIZE
+	var triangle: PackedVector2Array = [center + Vector2(0.0, -s), center + Vector2(s, s * 0.8),
+			center + Vector2(-s, s * 0.8)]
+	draw_colored_polygon(triangle, WARNING_COLOR)
+	triangle.append(triangle[0])
+	draw_polyline(triangle, OUTLINE, 2.0)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-s, s * 0.6), "!",
+			HORIZONTAL_ALIGNMENT_CENTER, s * 2.0, int(s * 1.4), OUTLINE)
 
 
 func _draw_label() -> void:

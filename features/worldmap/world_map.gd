@@ -4,7 +4,8 @@ extends Node2D
 ##
 ## Kural hesaplamaz: bütün kurallar ve sayılar MapFlowSim'dedir (bölge, hat,
 ## fabrika, şehir). Panelleri MapPanels doldurur; hat kurma akışı RouteBuilder'da,
-## kaydırma/yakınlaştırma MapCamera'da, oyun hızı SpeedBar'dadır.
+## kaydırma/yakınlaştırma MapCamera'da, oyun hızı SpeedBar'dadır. Fabrikanın
+## içi FactoryScreen'de tam ekran açılır; oyun saati o sırada da işler.
 ## Tıklama önceliği: nokta → hat → bölge. Tıklanan bölge, bölgelerin
 ## CollisionPolygon2D'lerine fizik sorgusuyla bulunur.
 
@@ -26,6 +27,7 @@ const UI_REFRESH_SECONDS: float = 0.25
 @onready var hint_label: Label = $UI/TopBar/Margin/HBox/HintLabel
 @onready var speed_bar: SpeedBar = %SpeedBar
 @onready var route_builder: RouteBuilder = $Routes
+@onready var factory_screen: FactoryScreen = $UI/FactoryScreen
 
 var sim: MapFlowSim = MapFlowSim.new()
 var state: RegionState = sim.regions
@@ -52,6 +54,9 @@ func _ready() -> void:
 	info_panel.unlock_requested.connect(_on_unlock_requested)
 	point_panel.build_route_requested.connect(_on_build_route_requested)
 	point_panel.build_factory_requested.connect(_on_build_factory_requested)
+	point_panel.open_factory_requested.connect(_on_open_factory_requested)
+	factory_screen.setup(RegionState.DEFAULT_CONFIG)
+	factory_screen.closed.connect(_on_factory_closed)
 	route_panel.add_vehicle_requested.connect(func(route: MapRoute) -> void:
 		if routes.add_vehicle(route): _refresh_now())
 	route_panel.remove_vehicle_requested.connect(func(route: MapRoute) -> void:
@@ -87,6 +92,8 @@ func refresh_statuses() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if factory_screen.is_open():
+		return
 	var key: InputEventKey = event as InputEventKey
 	if key != null and key.pressed and key.keycode == KEY_ESCAPE and route_builder.is_building():
 		route_builder.cancel()
@@ -178,6 +185,9 @@ func _refresh_now() -> void:
 	income_label.text = "Net: %s%s/min (upkeep %d)" % ["+" if net >= 0.0 else "",
 			RouteView.format_rate(net), sim.upkeep_per_minute()]
 	route_builder.refresh_views()
+	for point: MapPoint in _points:
+		if point.kind == MapPoint.Kind.FACTORY_PLOT:
+			point.set_warning(sim.factory_warning(point.get_point_id()))
 	_panels.show_selection(selected, selected_point, selected_route)
 
 
@@ -197,6 +207,24 @@ func _on_build_factory_requested(point: MapPoint) -> void:
 	if sim.factories.build(point.get_point_id()):
 		point.set_factory(FACTORY_NAME)
 		_refresh_now()
+
+
+func _on_open_factory_requested(point: MapPoint) -> void:
+	var interior: FactoryInterior = sim.factories.interior_at(point.get_point_id())
+	if interior == null:
+		return
+	if route_builder.is_building():
+		route_builder.cancel()
+	_clear_selection()
+	_refresh_now()
+	# Harita arkada gizli kalır; kamera fareyle kaymasın.
+	camera.set_process_unhandled_input(false)
+	factory_screen.open(interior, point.describe())
+
+
+func _on_factory_closed() -> void:
+	camera.set_process_unhandled_input(true)
+	_refresh_now()
 
 
 func _on_remove_route_requested(route: MapRoute) -> void:

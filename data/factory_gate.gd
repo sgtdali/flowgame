@@ -8,6 +8,8 @@ extends BlockType
 ## kapısı `for_good` ile şablondan üretilir.
 ##   IN  → giriş stoğundaki malı editöre verir (kaynak gibi: girişi yok).
 ##   OUT → editörden gelen malı çıkış stoğuna koyar (bitiş gibi: çıkışı yok).
+##         Şablonun kategorisi RESEARCH'tür: eski oyunda SINK satış ve
+##         "Collect" düğmesi demek; RESEARCH yalnızca "çıkışsız yutan" demek.
 ## Kapının davranışı fabrika içi simülasyondadır; burada yalnızca veri var.
 
 enum Direction { IN, OUT }
