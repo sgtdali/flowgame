@@ -66,6 +66,7 @@ func _ready() -> void:
 		if routes.remove_vehicle(route): _refresh_now())
 	route_panel.remove_route_requested.connect(_on_remove_route_requested)
 	route_builder.routes = routes
+	route_builder.map_scale = region_map.global_scale.x
 	route_builder.hint_changed.connect(_show_hint)
 	route_builder.route_built.connect(func(_route: MapRoute) -> void:
 		_show_hint("")

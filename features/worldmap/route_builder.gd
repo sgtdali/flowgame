@@ -17,6 +17,9 @@ const PREVIEW_BLOCKED: Color = Color(0.95, 0.4, 0.35, 0.85)
 const PREVIEW_IDLE: Color = Color(1.0, 1.0, 1.0, 0.6)
 
 var routes: RouteState
+## Haritanın ekrandaki ölçeği (WorldMap'te RegionMap.scale). Hat mesafesi
+## ekran uzunluğuyla değil harita birimiyle ölçülür; ölçek büyüyünce kapasite değişmesin.
+var map_scale: float = 1.0
 var _start: MapPoint = null
 var _preview: Line2D
 var _views: Array[RouteView] = []
@@ -74,7 +77,7 @@ func update_preview(world_mouse: Vector2, hovered: MapPoint) -> void:
 	if reason.is_empty():
 		_preview.default_color = PREVIEW_OK
 		var capacity: float = MapRoute.capacity_for(1, DEFAULT_TRANSPORT,
-				_start.global_position.distance_to(hovered.global_position))
+				map_distance(_start, hovered))
 		hint_changed.emit("Build route to %s: cost %d, %s/min with 1 %s" % [
 				hovered.describe(), routes.build_cost(DEFAULT_TRANSPORT),
 				RouteView.format_rate(capacity), DEFAULT_TRANSPORT.display_name.to_lower()])
@@ -88,7 +91,7 @@ func update_preview(world_mouse: Vector2, hovered: MapPoint) -> void:
 func try_finish(point: MapPoint) -> bool:
 	if _start == null or point == null:
 		return false
-	var distance: float = _start.global_position.distance_to(point.global_position)
+	var distance: float = map_distance(_start, point)
 	var route: MapRoute = routes.build(_start.get_point_id(), point.get_point_id(),
 			distance, DEFAULT_TRANSPORT)
 	if route == null:
@@ -100,6 +103,11 @@ func try_finish(point: MapPoint) -> bool:
 	_preview.visible = false
 	route_built.emit(route)
 	return true
+
+
+## İki nokta arasındaki düz mesafe, harita biriminde.
+func map_distance(a: MapPoint, b: MapPoint) -> float:
+	return a.global_position.distance_to(b.global_position) / maxf(map_scale, 0.001)
 
 
 ## Hatların etiketini ve araçlarını akışa göre günceller.
