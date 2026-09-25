@@ -10,9 +10,8 @@ const AREA1 := preload("res://data/regions/area1.tres")
 const AREA2 := preload("res://data/regions/area2.tres")
 const AREA3 := preload("res://data/regions/area3.tres")
 const AREA4 := preload("res://data/regions/area4.tres")
-const AREA5 := preload("res://data/regions/area5.tres")
 
-const _ALL: Array = [AREA1, AREA2, AREA3, AREA4, AREA5]
+const _ALL: Array = [AREA1, AREA2, AREA3, AREA4]
 
 ## id -> RegionData. İlk erişimde kurulur.
 static var _by_id: Dictionary = {}

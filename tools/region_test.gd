@@ -11,8 +11,8 @@ extends SceneTree
 ##   3. Bölgeler birbirinin üstüne binmiyor
 ##   4. Komşuluklar karşılıklı ve çizimde gerçekten değenlerle birebir aynı
 ##   5. Tam 1 başlangıç bölgesi var
-##   6. Değerler tasarım belgesindeki aralıklarda (kaynak 1–3, fabrika alanı 2–4,
-##      prototipte 2 şehir) ve para ayarları geçerli
+##   6. Değerler tasarım belgesindeki aralıklarda (bölge başına 4–6 kaynak ve
+##      2–3 şehir, prototipte 10 şehir) ve para ayarları geçerli
 ##   7. Bölge açma kuralları (RegionState): komşuluk şartı, para yetmezliği,
 ##      para düşer, maliyet sırayla artar, açılan bölge kalıcı
 
@@ -22,15 +22,18 @@ const MAP_CONFIG: MapConfig = preload("res://data/map_config.tres")
 const OVERLAP_TOLERANCE: float = 1.0
 ## "Değiyor" kontrolünde poligonların genişletildiği pay (px).
 const TOUCH_MARGIN: float = 1.0
-## Prototip kapsamı: 5 bölgenin 2'sinde şehir (tasarım belgesi).
-const PROTOTYPE_CITY_COUNT: int = 2
+## Prototip kapsamı: 4 geniş bölge, bölge başına 4–6 kaynak ve 2–3 şehir,
+## toplam 10 şehir (tasarım belgesi, görev 08).
+const PROTOTYPE_CITY_COUNT: int = 10
+const RESOURCES_PER_REGION: Vector2i = Vector2i(4, 6)
+const CITIES_PER_REGION: Vector2i = Vector2i(2, 3)
 
 var _failures: int = 0
 var _checks: int = 0
 
-## Beklenen kontrol sayısı: 5 bölge × 2 + 8 genel + 10 bölge açma.
+## Beklenen kontrol sayısı: 4 bölge × 2 + 8 genel + 10 bölge açma.
 ## Derleme hatasında sessizce "geçti" demesin diye (bkz. sim_test.gd).
-const EXPECTED_CHECKS: int = 28
+const EXPECTED_CHECKS: int = 26
 
 
 func _initialize() -> void:
@@ -141,8 +144,10 @@ func _test_value_ranges() -> void:
 	var bad: PackedStringArray = []
 	var cities: int = 0
 	for region: RegionData in RegionCatalog.all():
-		if region.resources.size() < 1 or region.resources.size() > 3:
+		if region.resources.size() < RESOURCES_PER_REGION.x or region.resources.size() > RESOURCES_PER_REGION.y:
 			bad.append("%s kaynak=%d" % [region.id, region.resources.size()])
+		if region.city_names.size() < CITIES_PER_REGION.x or region.city_names.size() > CITIES_PER_REGION.y:
+			bad.append("%s sehir=%d" % [region.id, region.city_names.size()])
 		if region.resources.has(null):
 			bad.append("%s bos kaynak" % region.id)
 		cities += region.city_names.size()
@@ -164,7 +169,7 @@ func _test_unlock_rules() -> void:
 	_check("Baslangic parasi ayardan geliyor", start_money == MAP_CONFIG.starting_money,
 			"para=%d" % start_money)
 
-	# area4'ün açık komşusu yok (komşuları area2, area5).
+	# area4'ün açık komşusu yok (komşuları area2, area3).
 	var locked_ok: bool = state.unlock(&"area4")
 	_check("Komsusu kapali bolge acilamiyor, para dusmuyor",
 			not locked_ok and state.money == start_money
@@ -181,7 +186,7 @@ func _test_unlock_rules() -> void:
 			"maliyet=%d" % state.unlock_cost())
 	_check("Yeni komsular acilabilir oldu",
 			state.status(&"area4") == RegionState.Status.AVAILABLE
-			and state.status(&"area5") == RegionState.Status.AVAILABLE)
+			and state.status(&"area3") == RegionState.Status.AVAILABLE)
 
 	# 1.000 − 500 = 500 kaldı, sonraki 750: yetmez.
 	var money_before: int = state.money
@@ -204,15 +209,15 @@ func _test_unlock_cost_sequence() -> void:
 	rich.unlock_cost_step = MAP_CONFIG.unlock_cost_step
 	var state: RegionState = RegionState.new(rich)
 	var paid: Array[int] = []
-	# Komşuluk sırasıyla: area1 açık → area2 → area4 → area5 → area3.
-	for region_id: StringName in [&"area2", &"area4", &"area5", &"area3"]:
+	# Komşuluk sırasıyla: area1 açık → area2 → area4 → area3.
+	for region_id: StringName in [&"area2", &"area4", &"area3"]:
 		var before: int = state.money
 		state.unlock(region_id)
 		paid.append(before - state.money)
 	var expected: Array[int] = []
-	for i: int in 4:
+	for i: int in 3:
 		expected.append(rich.first_unlock_cost + rich.unlock_cost_step * i)
-	_check("Maliyet sirasi 500, 750, 1000, 1250", paid == expected,
+	_check("Maliyet sirasi 500, 750, 1000", paid == expected,
 			"odenen=%s beklenen=%s" % [paid, expected])
 	var all_open: bool = true
 	for region: RegionData in RegionCatalog.all():

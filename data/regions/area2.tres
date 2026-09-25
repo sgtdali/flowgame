@@ -1,12 +1,15 @@
 [gd_resource type="Resource" script_class="RegionData" format=3 uid="uid://dispmyjpkky0e"]
 
-[ext_resource type="Script" uid="uid://bfgjo4ahrw6mv" path="res://data/raw_resource.gd" id="1_raw_script"]
-[ext_resource type="Script" uid="uid://c148oaregplq3" path="res://data/region_data.gd" id="1_region"]
-[ext_resource type="Resource" uid="uid://djgo8mjralfof" path="res://data/raw_resources/demir_cevheri.tres" id="2"]
+[ext_resource type="Script" path="res://data/raw_resource.gd" id="1_raw_script"]
+[ext_resource type="Script" path="res://data/region_data.gd" id="1_region"]
+[ext_resource type="Resource" path="res://data/raw_resources/tomruk.tres" id="tomruk"]
+[ext_resource type="Resource" path="res://data/raw_resources/bugday.tres" id="bugday"]
+[ext_resource type="Resource" path="res://data/raw_resources/demir_cevheri.tres" id="demir"]
 
 [resource]
 script = ExtResource("1_region")
 id = &"area2"
 display_name = "Area 2"
-resources = Array[ExtResource("1_raw_script")]([ExtResource("2")])
-neighbors = Array[StringName]([&"area1", &"area3", &"area4", &"area5"])
+resources = Array[ExtResource("1_raw_script")]([ExtResource("tomruk"), ExtResource("bugday"), ExtResource("bugday"), ExtResource("demir"), ExtResource("demir")])
+city_names = Array[String](["Carden", "Dunmore", "Elmstead"])
+neighbors = Array[StringName]([&"area1", &"area3", &"area4"])

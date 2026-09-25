@@ -3,12 +3,12 @@ extends RefCounted
 ## Bölge verisine göre çizim sahnesindeki noktaları eşitler (bkz. generate_points.gd).
 ##
 ## Kurallar (görev 02):
-##   - Her bölgede: kaynak başına bir ham madde alanı, fabrika alanı başına bir
-##     arsa, şehri varsa bir şehir.
+##   - Her bölgede: kaynak başına bir ham madde alanı, şehir adı başına bir şehir.
+##     Fabrikalar burada değil, oyunda oyuncunun seçtiği yere kurulur (görev 08).
 ##   - Var olan noktanın KONUMUNA dokunulmaz (elle kaydırılmış olabilir);
 ##     yalnızca eksikler eklenir, fazlalar silinir.
 ##   - Yeni nokta: bölge içinde, kenardan EDGE_MARGIN uzakta, bölge adının
-##     üstünde değil. Şehir bölge adına en yakın yere; diğerleri var olan
+##     üstünde değil. İlk şehir bölge adına en yakın yere; diğerleri var olan
 ##     noktalardan en uzak yere (en uzak nokta seçimi). Rastgelelik yok.
 
 const EDGE_MARGIN: float = 40.0
@@ -85,7 +85,8 @@ static func _sync_region(view: RegionView, scene_root: Node, report: Dictionary)
 		var key: String = point_key(want["kind"], want["slot"])
 		if existing.has(key):
 			continue
-		var pos: Vector2 = _pick(candidates, placed, label_pos, want["kind"] == MapPoint.Kind.CITY)
+		var first_city: bool = want["kind"] == MapPoint.Kind.CITY and want["slot"] == 0
+		var pos: Vector2 = _pick(candidates, placed, label_pos, first_city)
 		var spacing: float = _min_distance(pos, placed)
 		if spacing < MIN_SPACING:
 			report["warnings"].append("%s/%s: en yakin noktaya %.0f px (hedef %.0f)" % [
@@ -129,7 +130,7 @@ static func _candidates(view: RegionView) -> Array[Vector2]:
 	return out
 
 
-## Şehir: bölge adına en yakın aday. Diğerleri: yerleşmiş noktalara en uzak aday
+## İlk şehir: bölge adına en yakın aday. Diğerleri: yerleşmiş noktalara en uzak aday
 ## (hiç nokta yoksa bölge adına en yakın). Eşitlikte ilk aday — sonuç hep aynı.
 static func _pick(candidates: Array[Vector2], placed: Array[Vector2], label_pos: Vector2,
 		near_label: bool) -> Vector2:
