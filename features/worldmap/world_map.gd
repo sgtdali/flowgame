@@ -4,17 +4,17 @@ extends Node2D
 ##
 ## Kural hesaplamaz: bütün kurallar ve sayılar MapFlowSim'dedir (bölge, hat,
 ## fabrika, şehir). Panelleri MapPanels doldurur; hat kurma akışı RouteBuilder'da,
+## araç çubuğu aletleri MapTools'ta, "fare neyin üstünde" MapPicker'da,
 ## kaydırma/yakınlaştırma MapCamera'da, oyun hızı SpeedBar'dadır. Fabrikanın
 ## içi FactoryScreen'de tam ekran açılır; oyun saati o sırada da işler.
-## Tıklama önceliği: nokta → hat → bölge. Tıklanan bölge, bölgelerin
-## CollisionPolygon2D'lerine fizik sorgusuyla bulunur.
+## Alet seçili değilken tıklama önceliği: nokta → hat → bölge.
 
-## Hat çizgisine bu kadar yakın tıklama hattı seçer (dünya birimi).
-const ROUTE_HIT_DISTANCE: float = 10.0
 ## Kurulan fabrikanın haritadaki adı (fabrikanın türü yoktur).
 const FACTORY_NAME: String = "Factory"
 ## Panellerin ve üst çubuğun yenilenme aralığı (gerçek saniye).
 const UI_REFRESH_SECONDS: float = 0.25
+## Sağ tuş bundan az kayarak bırakılırsa "sağ tık" sayılır (fazlası kaydırmadır).
+const RIGHT_CLICK_SLOP: float = 6.0
 
 @onready var camera: MapCamera = $Camera2D
 @onready var region_map: Node2D = $RegionMap
@@ -27,28 +27,32 @@ const UI_REFRESH_SECONDS: float = 0.25
 @onready var route_builder: RouteBuilder = $Routes
 @onready var factory_screen: FactoryScreen = $UI/FactoryScreen
 @onready var hover_card: HoverCard = $UI/HoverCard
+@onready var tool_bar: ToolBar = $UI/ToolBar
 
 var sim: MapFlowSim = MapFlowSim.new()
 var state: RegionState = sim.regions
 var routes: RouteState = sim.routes
+var tools: MapTools
 var selected: RegionView = null
 var selected_point: MapPoint = null
 var selected_route: RouteView = null
 
 var _panels: MapPanels
+var _picker: MapPicker
 var _points: Array[MapPoint] = []
 var _hovered_point: MapPoint = null
 var _hovered_route: RouteView = null
 var _ui_timer: float = 0.0
+var _right_press_position: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
 	# Area2D'lerin fare üzerine gelme sinyalleri için gerekli.
 	get_viewport().physics_object_picking = true
+	_picker = MapPicker.new(self, region_map, route_builder)
+	_points = _picker.points
 	camera.map_rect = map_bounds.get_global_rect()
-	camera.focus_rect(_start_rect())
-	for node: Node in region_map.find_children("*", "MapPoint", true, false):
-		_points.append(node as MapPoint)
+	camera.focus_rect(_picker.regions_rect(_unlocked_ids()))
 	_panels = MapPanels.new(sim, RegionState.DEFAULT_CONFIG, info_panel, point_panel, route_panel)
 	info_panel.unlock_requested.connect(_on_unlock_requested)
 	point_panel.build_route_requested.connect(_on_build_route_requested)
@@ -62,10 +66,16 @@ func _ready() -> void:
 		if routes.remove_vehicle(route): _refresh_now())
 	route_panel.remove_route_requested.connect(_on_remove_route_requested)
 	route_builder.routes = routes
-	route_builder.hint_changed.connect(top_bar.show_hint)
+	route_builder.hint_changed.connect(_show_hint)
 	route_builder.route_built.connect(func(_route: MapRoute) -> void:
-		top_bar.show_hint("")
+		_show_hint("")
 		_refresh_now())
+	tools = MapTools.new(sim, route_builder)
+	tools.tool_changed.connect(_on_tool_changed)
+	tools.factory_requested.connect(_on_build_factory_requested)
+	tools.unlock_requested.connect(_on_unlock_requested)
+	tools.rejected.connect(top_bar.show_hint)
+	tool_bar.tool_pressed.connect(tools.toggle)
 	speed_bar.advanced.connect(sim.step)
 	refresh_statuses()
 	_refresh_now()
@@ -79,7 +89,7 @@ func _process(delta: float) -> void:
 
 
 func refresh_statuses() -> void:
-	for view: RegionView in _views():
+	for view: RegionView in _picker.views():
 		if view.data != null:
 			view.set_status(state.status(view.data.id))
 	# Kilitli bölgenin noktaları görünür ama soluk.
@@ -92,32 +102,43 @@ func _unhandled_input(event: InputEvent) -> void:
 	if factory_screen.is_open():
 		return
 	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and key.keycode == KEY_ESCAPE and route_builder.is_building():
-		route_builder.cancel()
+	if key != null:
+		if tools.handle_key(key):
+			get_viewport().set_input_as_handled()
+		elif key.pressed and key.keycode == KEY_ESCAPE and route_builder.is_building():
+			route_builder.cancel()
 		return
 	var button: InputEventMouseButton = event as InputEventMouseButton
 	if button != null:
-		if button.pressed and button.button_index == MOUSE_BUTTON_RIGHT and route_builder.is_building():
-			route_builder.cancel()
+		if button.button_index == MOUSE_BUTTON_RIGHT:
+			# Sağ tuşla sürüklemek haritayı kaydırır; yalnızca yerinde tıklamak geri adımdır.
+			if button.pressed:
+				_right_press_position = button.position
+			elif button.position.distance_to(_right_press_position) <= RIGHT_CLICK_SLOP:
+				if not tools.step_back() and route_builder.is_building():
+					route_builder.cancel()
 		elif button.pressed and button.button_index == MOUSE_BUTTON_LEFT:
-			_on_left_click(_event_to_world(button.position))
+			_on_left_click(_picker.to_world(button.position))
 		return
 	var motion: InputEventMouseMotion = event as InputEventMouseMotion
 	if motion != null:
-		var world: Vector2 = _event_to_world(motion.position)
-		_set_hovered_point(_point_at(world))
+		var world: Vector2 = _picker.to_world(motion.position)
+		_set_hovered_point(_picker.point_at(world))
 		route_builder.update_preview(world, _hovered_point)
 		var hover_route: RouteView = null
 		if _hovered_point == null and not route_builder.is_building():
-			hover_route = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
+			hover_route = _picker.route_at(world)
 		_set_hovered_route(hover_route)
 		_update_hover_card()
 
 
 func _on_left_click(world: Vector2) -> void:
-	var point: MapPoint = _point_at(world)
+	var point: MapPoint = _picker.point_at(world)
+	# Alet seçiliyken tıklama aleti uygular; seçim ve panel yok (K4).
+	if tools.handle_click(point, _picker.region_at(world)):
+		return
 	if route_builder.is_building():
-		# Hat kurarken: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
+		# Panelden başlatılan hat: noktaya tıklamak kurar, boşluğa tıklamak iptal eder.
 		if point != null:
 			route_builder.try_finish(point)
 		else:
@@ -128,19 +149,14 @@ func _on_left_click(world: Vector2) -> void:
 		selected_point = point
 		point.set_selected(true)
 	else:
-		selected_route = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
+		selected_route = _picker.route_at(world)
 		if selected_route != null:
 			selected_route.set_selected(true)
 		else:
-			selected = _region_at(world)
+			selected = _picker.region_at(world)
 			if selected != null:
 				selected.set_selected(true)
 	_refresh_now()
-
-
-## Olayın ekran konumunu dünya koordinatına çevirir (kamera ve yakınlaştırma dahil).
-func _event_to_world(screen_position: Vector2) -> Vector2:
-	return get_canvas_transform().affine_inverse() * screen_position
 
 
 func _clear_selection() -> void:
@@ -199,6 +215,19 @@ func _update_hover_card() -> void:
 		hover_card.hide()
 
 
+## Üst çubuğun ortası: hat kurma ipucu; yoksa seçili aletin ipucu.
+func _show_hint(text: String) -> void:
+	top_bar.show_hint(text if not text.is_empty() else tools.idle_hint())
+
+
+func _on_tool_changed(tool: MapTools.Tool) -> void:
+	tool_bar.show_tool(tool)
+	if tool != MapTools.Tool.NONE:
+		_clear_selection()
+		_refresh_now()
+	_show_hint("")
+
+
 func _on_unlock_requested(region_id: StringName) -> void:
 	if state.unlock(region_id):
 		refresh_statuses()
@@ -221,17 +250,20 @@ func _on_open_factory_requested(point: MapPoint) -> void:
 	var interior: FactoryInterior = sim.factories.interior_at(point.get_point_id())
 	if interior == null:
 		return
+	tools.set_tool(MapTools.Tool.NONE)
 	if route_builder.is_building():
 		route_builder.cancel()
 	_clear_selection()
 	_refresh_now()
-	# Harita arkada gizli kalır; kamera fareyle kaymasın.
+	# Harita arkada gizli kalır; kamera fareyle kaymasın, alt çubuk görünmesin.
 	camera.set_process_unhandled_input(false)
+	tool_bar.hide()
 	factory_screen.open(interior, point.describe())
 
 
 func _on_factory_closed() -> void:
 	camera.set_process_unhandled_input(true)
+	tool_bar.show()
 	_refresh_now()
 
 
@@ -245,48 +277,9 @@ func _on_remove_route_requested(route: MapRoute) -> void:
 	_refresh_now()
 
 
-## Dünya noktasına en yakın, HIT_RADIUS içindeki nokta.
-func _point_at(world_point: Vector2) -> MapPoint:
-	var best: MapPoint = null
-	var best_distance: float = MapPoint.HIT_RADIUS
-	for point: MapPoint in _points:
-		var distance: float = point.global_position.distance_to(world_point)
-		if distance <= best_distance:
-			best = point
-			best_distance = distance
-	return best
-
-
-func _region_at(world_point: Vector2) -> RegionView:
-	var query: PhysicsPointQueryParameters2D = PhysicsPointQueryParameters2D.new()
-	query.position = world_point
-	query.collide_with_areas = true
-	query.collide_with_bodies = false
-	for hit: Dictionary in get_world_2d().direct_space_state.intersect_point(query):
-		var view: RegionView = hit["collider"] as RegionView
-		if view != null:
-			return view
-	return null
-
-
-## Başlangıçta açık bölgelerin dünya koordinatında kapladığı alan.
-func _start_rect() -> Rect2:
-	var vertices: PackedVector2Array = []
-	for view: RegionView in _views():
-		if view.data != null and state.is_unlocked(view.data.id):
-			for poly: PackedVector2Array in view.get_polygons():
-				vertices.append_array(view.global_transform * poly)
-	if vertices.is_empty():
-		return Rect2()
-	var rect: Rect2 = Rect2(vertices[0], Vector2.ZERO)
-	for vertex: Vector2 in vertices:
-		rect = rect.expand(vertex)
-	return rect
-
-
-func _views() -> Array[RegionView]:
-	var out: Array[RegionView] = []
-	for child: Node in region_map.get_children():
-		if child is RegionView:
-			out.append(child)
+func _unlocked_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for region: RegionData in RegionCatalog.all():
+		if state.is_unlocked(region.id):
+			out.append(region.id)
 	return out
