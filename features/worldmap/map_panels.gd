@@ -41,15 +41,27 @@ func show_selection(region: RegionView, point: MapPoint, route_view: RouteView) 
 func _show_route(view: RouteView) -> void:
 	var route: MapRoute = view.route
 	var routes: RouteState = _sim.routes
+	_route_panel.show_route(view, routes.add_vehicle_block_reason(route),
+			routes.remove_vehicle_block_reason(route), routes.vehicle_refund(route.transport),
+			route_rows(view))
+
+
+## Hattın iki yönü: {caption "A -> B", goods, text} (panel ve özet kutusu).
+func route_rows(view: RouteView) -> Array[Dictionary]:
 	var flows: Array[Dictionary] = []
 	for direction: MapRoute.Direction in [MapRoute.Direction.FORWARD, MapRoute.Direction.BACKWARD]:
 		var start: MapPoint = view.from_point if direction == MapRoute.Direction.FORWARD else view.to_point
 		var end: MapPoint = view.to_point if direction == MapRoute.Direction.FORWARD else view.from_point
-		var flow: Dictionary = _direction_flow(route, direction)
+		var flow: Dictionary = _direction_flow(view.route, direction)
 		flow["caption"] = "%s -> %s" % [start.get_title(), end.get_title()]
+		flow["fill"] = -1.0
 		flows.append(flow)
-	_route_panel.show_route(view, routes.add_vehicle_block_reason(route),
-			routes.remove_vehicle_block_reason(route), routes.vehicle_refund(route.transport), flows)
+	return flows
+
+
+## Noktanın özet satırları (panelle aynı).
+func point_rows(point: MapPoint) -> Array[Dictionary]:
+	return PointDetails.rows_for(point.get_point_id(), _sim, _config)
 
 
 ## Bu yönde taşınabilecek mallar ve hız; taşınamıyorsa mal yok, metin nedeni.

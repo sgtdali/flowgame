@@ -28,6 +28,7 @@ const UI_REFRESH_SECONDS: float = 0.25
 @onready var speed_bar: SpeedBar = %SpeedBar
 @onready var route_builder: RouteBuilder = $Routes
 @onready var factory_screen: FactoryScreen = $UI/FactoryScreen
+@onready var hover_card: HoverCard = $UI/HoverCard
 
 var sim: MapFlowSim = MapFlowSim.new()
 var state: RegionState = sim.regions
@@ -114,6 +115,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _hovered_point == null and not route_builder.is_building():
 			hover_route = route_builder.route_at(world, ROUTE_HIT_DISTANCE)
 		_set_hovered_route(hover_route)
+		_update_hover_card()
 
 
 func _on_left_click(world: Vector2) -> void:
@@ -187,6 +189,21 @@ func _refresh_now() -> void:
 	route_builder.refresh_views(sim)
 	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
 	_panels.show_selection(selected, selected_point, selected_route)
+	_update_hover_card()
+
+
+## Üzerine gelinen nokta ya da hattın özet kutusu (görev 06, K8).
+func _update_hover_card() -> void:
+	var mouse: Vector2 = get_viewport().get_mouse_position()
+	if factory_screen.is_open() or route_builder.is_building():
+		hover_card.hide()
+	elif _hovered_point != null:
+		hover_card.show_rows(_hovered_point.describe(), _panels.point_rows(_hovered_point), mouse)
+	elif _hovered_route != null and is_instance_valid(_hovered_route):
+		hover_card.show_rows("%s - %s" % [_hovered_route.from_point.get_title(),
+				_hovered_route.to_point.get_title()], _panels.route_rows(_hovered_route), mouse)
+	else:
+		hover_card.hide()
 
 
 func _on_unlock_requested(region_id: StringName) -> void:

@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://features/worldmap/speed_bar.gd" id="8_speed"]
 [ext_resource type="PackedScene" path="res://features/factory/FactoryScreen.tscn" id="9_factory"]
 [ext_resource type="Script" path="res://features/worldmap/good_bar.gd" id="10_good_bar"]
+[ext_resource type="Script" path="res://features/worldmap/hover_card.gd" id="11_hover"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -478,3 +479,9 @@ theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 1)
 text = "-"
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="HoverCard" type="PanelContainer" parent="UI"]
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("11_hover")
