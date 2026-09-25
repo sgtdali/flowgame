@@ -4,7 +4,7 @@ Sep 23, 2026 · @tayfun
 
 ## Özet
 
-flowgame, 20 bölgelik sabit bir haritada kaynakları şehirlere taşıyan ve fabrikaların içini düğüm grafiğiyle kuran, zaman baskısı olmayan bir üretim-lojistik sandbox'ıdır. Harita katmanı Transport INC'den, fabrika içi Upload Labs'tan, araştırma mantığı Factorio'nun bilim paketlerinden esinlenir.
+flowgame, birkaç geniş bölgeye ayrılmış büyük, sabit bir haritada kaynakları şehirlere taşıyan ve fabrikaların içini düğüm grafiğiyle kuran, zaman baskısı olmayan bir üretim-lojistik sandbox'ıdır. Harita katmanı Transport INC'den ve (serbest fabrika yeriyle) Transport Fever'dan, fabrika içi Upload Labs'tan, araştırma mantığı Factorio'nun bilim paketlerinden esinlenir.
 
 **Oyuncu fantezisi:** "Boş bir bölgeden başlayıp akan, kendi kendini besleyen bir sanayi ağı kurdum."
 
@@ -44,17 +44,19 @@ flowchart LR
 
 ## Harita katmanı
 
-Harita en fazla 20 sabit bölgeden oluşur ve yalnızca kaynakları, şehirleri ve aradaki mesafeyi taşır; siyaset, sahiplik ya da düşman yoktur.
+Harita büyük ve sabittir; birkaç geniş bölgeye ayrılır. Yalnızca kaynakları, şehirleri ve aradaki mesafeyi taşır; siyaset, sahiplik ya da düşman yoktur.
+
+**Ölçek:** Harita 12×12 km'dir. 1 harita birimi = 10 m (harita 1.200 × 1.200 birim). Mesafe oyuncuya km olarak gösterilir. Taşıma hızları gerçekçi değil, oyun değeridir; oyuncu hızı değil, hattın kapasitesini (birim/dk) görür.
 
 **Bölge içeriği**
 
-- **Kaynak yatakları:** Her bölgede 1–3 kaynak, her biri sabit çıkarım hızına sahip (ör. Demir cevheri 20 birim/dk). Yataklar tükenmez.
-- **Şehir:** Bölgelerin yaklaşık yarısında bir şehir bulunur. Şehirler talep üretir ve büyür (Ekonomi bölümü).
-- **Fabrika slotları:** Her bölgede sınırlı sayıda (2–4) fabrika alanı. Bu kural, tüm üretimi tek bölgeye yığmayı engeller ve lojistiği zorunlu kılar.
+- **Kaynak yatakları:** Her bölgede birden çok kaynak yatağı; yerleri sabittir. Her biri sabit çıkarım hızına sahip (ör. Demir cevheri 20 birim/dk). Yataklar tükenmez.
+- **Şehir:** Her bölgede birden çok şehir bulunur. Şehirler talep üretir ve büyür (Ekonomi bölümü).
+- **Fabrika yeri:** Fabrika açık bir bölgenin içinde, oyuncunun seçtiği herhangi bir yere kurulur; sabit arsa yoktur. Yeri dengeleyen yalnızca mesafedir: kaynaklar ve şehirler birbirinden uzaktır, fabrika nereye konursa konsun bir yol uzun kalır; hangisinin uzun olacağı oyuncunun kararıdır.
 
-**Harita noktaları:** Haritada üç tür nokta vardır: ham madde alanı (maden, orman, tarla; bölgenin kaynak yatakları), fabrika (bölgenin fabrika alanlarına kurulur) ve şehir. Noktalar bölgelerin içindedir; bölge açmak içindeki noktalara erişim verir. Lojistik hatları noktalar arasında kurulur. Noktalar bölge verisinden (kaynak listesi, fabrika alanı sayısı, şehir) otomatik yerleştirilir. Yerleşim bir kez üretilir ve sabittir: her oyunda aynıdır; gerekirse elle düzeltilebilir.
+**Harita noktaları:** Haritada üç tür nokta vardır: ham madde alanı (maden, orman, tarla; bölgenin kaynak yatakları), fabrika (oyuncunun seçtiği yere kurulur) ve şehir. Noktalar bölgelerin içindedir; bölge açmak içindeki noktalara erişim verir. Lojistik hatları noktalar arasında kurulur. Ham madde alanları ve şehirler haritaya elle yerleştirilir ve sabittir; her oyunda aynıdır.
 
-**Bölge açma:** Oyun 1 açık bölgeyle başlar. Kilitli bir bölge yalnızca açık bir bölgeye komşuysa para ile (erişim izni) açılabilir; açılan bölge bir daha kilitlenmez. Bu, paranın oyun ortasındaki ana harcama kalemlerinden biridir.
+**Bölge açma:** Oyun 1 açık bölgeyle başlar. Kilitli bir bölge yalnızca açık bir bölgeye komşuysa para ile (erişim izni) açılabilir; açılan bölge bir daha kilitlenmez. Bu, paranın oyun ortasındaki ana harcama kalemlerinden biridir. Fabrika yalnızca açık bölgeye kurulur.
 
 **Harita arayüzü: araç çubuğu**
 
@@ -63,7 +65,7 @@ Ekranın altında bir araç çubuğu durur. Oyuncu önce ne yapacağını (aleti
 | Alet | Kısayol | Harita ne gösterir | Tıklayınca |
 | --- | --- | --- | --- |
 | Route | 1 | Hat kurulabilecek noktalar vurgulanır; ilk nokta seçilince fareye kadar önizleme çizgisi ve fiyatı | İki nokta seçilince hat kurulur |
-| Factory | 2 | Kurulabilecek boş arsalarda fiyat etiketi (ör. "+300") | Arsaya fabrika kurulur |
+| Factory | 2 | Kurulabilecek alan (açık bölgeler) vurgulanır, fiyat imlecin yanında | Tıklanan yere fabrika kurulur |
 | Unlock | 3 | Açılabilir bölgelerde fiyat etiketi | Bölge açılır |
 
 - **Alet seçili kalır.** Oyuncu art arda birden çok hat ya da fabrika kurabilir. Esc, sağ tık ya da aynı düğmeye tekrar basmak aleti bırakır.
@@ -118,15 +120,13 @@ Kullanılmayan bir malın giriş stoğu dolunca o mal fabrikaya taşınmaz ve pa
 
 **Godot uygulaması:** Editör için yerleşik `GraphEdit` + `GraphNode` kullanılır; bağlantılar `connection_request` sinyaliyle yönetilir.
 
-**Geçici sabit fabrika:** Düğüm editörü gelene kadar fabrika kurulurken tek bir tarif seçilir (Bıçkıhane: Tomruk → Kereste veya Değirmen: 2 Buğday → Un) ve sonra değişmez. Bu geçici bir çözümdür: kalıcı tasarımda fabrikanın türü yoktur, içini oyuncu düğümlerle kurar.
-
 ## Lojistik ve akış modeli
 
 Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
 
 **Oyun saati:** 1 oyun dakikası = 1 gerçek dakika. Oyuncu hızı Duraklat / x1 / x2 / x4 ile değiştirebilir.
 
-**Hat kurma:** Oyuncu iki noktayı seçer; hat bu iki noktayı bağlar. Hat yalnızca açık bölgelerdeki noktalar arasında kurulur; hattın çizgisi kilitli bir bölgenin üstünden geçebilir, önemli olan iki ucudur. Mesafe iki nokta arasındaki düz uzaklıktır. Coğrafi parametre (arazi, dağ vb.) yoktur.
+**Hat kurma:** Oyuncu iki noktayı seçer; hat bu iki noktayı bağlar. Hat yalnızca açık bölgelerdeki noktalar arasında kurulur; hattın çizgisi kilitli bir bölgenin üstünden geçebilir, önemli olan iki ucudur. Mesafe iki nokta arasındaki düz uzaklıktır. Coğrafi parametre (arazi, dağ vb.) yoktur. Altyapı yoktur: yol ve ray çizilmez, hat iki nokta arasında soyut bir çizgidir.
 
 **Araç turu:** Her hatta oyuncunun eklediği araçlar çalışır. Araç belirli bir yük taşır ve gidiş-dönüş yapar; hattın kapasitesi = araç sayısı × araç yükü ÷ tur süresi. Uzun hat daha az birim/dk taşır; oyuncu araç ekleyerek telafi eder. Araçlar tek tek simüle edilmez: akış bu formülle soyut olarak hesaplanır, haritadaki araçlar görseldir. Kapasite = araç yükü × hız ÷ (2 × mesafe); yükleme süresi yoktur.
 
@@ -147,15 +147,15 @@ Noktalar arası taşıma, hatlar üzerinde birim/dk akış olarak hesaplanır.
 | Demiryolu | Açık | Açık | Açık | Açık | Açık | Kademe 2 |
 | Boru hattı (sıvı) | Açık | Açık | Açık | Açık | Açık | Kademe 3 |
 
-Mesafe harita birimiyle ölçülür (başlangıç bölgesinin içi yaklaşık 100–200, haritanın bir ucundan öbürüne yaklaşık 1.400).
+Mesafe harita birimiyle ölçülür (1 birim = 10 m; bir bölgenin içinde şehirler arası tipik mesafe 200–300 birim, haritanın bir ucundan öbürüne 1.200 birim).
 
 **Akış kuralları**
 
 - Hat kapasitesi dolarsa kaynak tarafında birikir; üretim durmaz, depo dolunca yavaşlar.
 
-**Stok ve kabul:** Her noktada mal başına küçük bir stok vardır (yer tutucu: 50 birim). Yatak ürettiğini kendi stoğuna koyar; stok dolunca üretim durur. Hat bir malı yalnızca varış noktası kabul ediyorsa taşır: fabrika her malı kabul eder (geçici sabit fabrika yalnızca tarifinin girdilerini), şehir talep ettiği malları kabul eder; ham madde alanı ve boş arsa hiçbir şey kabul etmez. Şehrin stok sınırı yoktur; mal gelir gelmez doygunluk fiyatıyla satılır. Hat kurulunca varış noktasının kabul ettiği mallar eşit paylarla seçili gelir. Varış stoku dolu olan mal taşınmaz; payı diğer mallara geçer.
+**Stok ve kabul:** Her noktada mal başına küçük bir stok vardır (yer tutucu: 50 birim). Yatak ürettiğini kendi stoğuna koyar; stok dolunca üretim durur. Hat bir malı yalnızca varış noktası kabul ediyorsa taşır: fabrika her malı kabul eder, şehir talep ettiği malları kabul eder; ham madde alanı hiçbir şey kabul etmez. Şehrin stok sınırı yoktur; mal gelir gelmez doygunluk fiyatıyla satılır. Hat kurulunca varış noktasının kabul ettiği mallar eşit paylarla seçili gelir. Varış stoku dolu olan mal taşınmaz; payı diğer mallara geçer.
 
-**Neden bu model:** Transport INC 30 araçtan sonra çöküyordu. Akış hesabı 20 bölge ve yüzlerce bağlantıda bile sabit maliyetlidir.
+**Neden bu model:** Transport INC 30 araçtan sonra çöküyordu. Akış hesabı büyük haritada ve yüzlerce bağlantıda bile sabit maliyetlidir.
 
 ## Ekonomi ve şehir talebi
 
@@ -292,7 +292,7 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 
 | Alan | Prototipte | Tam oyunda |
 | --- | --- | --- |
-| Bölge | 5 (2 şehirli) | 20 |
+| Bölge | 4 geniş bölge (her biri yaklaşık 6×6 km); bölge başına 2–3 şehir (toplam yaklaşık 10) ve 4–6 kaynak yatağı; başlangıç bölgesinde 2 köy, yakında orman ve tarla, biraz uzakta demir | Açık soru |
 | Hammadde | Tomruk, Buğday, Demir cevheri | 5 |
 | Mal | Kereste, Un, Demir külçe, Ekmek, Alet + Kızıl ve Yeşil paket | 12 |
 | Araştırma | Kademe 1 ve 2 (6 düğüm) | 4 kademe |
@@ -307,8 +307,9 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 3. Hat kurma: noktaları bağlama, araç ekleme, kapasite gösterimi, görsel araçlar
 4. Akış simülasyonu, yük seçimi, geçici sabit fabrika, köy talebi ve doygunluk fiyatı
 5. Fabrika içi `GraphEdit` editörü (sabit fabrikanın yerini alır)
-6. Şehir büyümesi (köy → kasaba) ve kasaba talebi
-7. Araştırma paketleri, araştırma merkezi ve 6 düğüm
+6. Büyük harita ve serbest fabrika yeri
+7. Şehir büyümesi (köy → kasaba) ve kasaba talebi
+8. Araştırma paketleri, araştırma merkezi ve 6 düğüm
 
 **Başarı ölçütü:** 3–5 kişi oynar. Oyuncuların çoğu Kademe 2'ye kendiliğinden ulaşıyor, en az bir kez "şimdi mi araştırsam" diye duraksadığını söylüyor ve 1 saatin sonunda devam etmek istiyorsa döngü tutuyor demektir. Tutmuyorsa önce doygunluk ve araştırma maliyetleri ayarlanır, sonra kapsam büyütülür.
 
@@ -335,4 +336,5 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 - [ ] Araştırma merkezi dördüncü nokta türü mü?
 - [ ] Düğüm sınırı kalktı. Fabrika Seviye 2 ve 3 (araştırmada ve maliyet tablosunda geçiyor) artık neyi açıyor?
 - [ ] Fabrika içi tek tek parça simülasyonu kullanıyor. Çok fabrikalı oyunda yavaşlarsa ne yapılacak? (Risk tablosundaki "Büyüyünce yavaşlama" satırıyla ilgili.)
+- [ ] Tam oyunda haritanın boyutu ve bölge sayısı?
 - [ ] Bölge açmanın ödülü belirsiz: belgedeki tek gerekçe paraya harcama yeri açmak. Seçenekler: her bölgenin "neden açılır"ını ilerlemeye bağlamak, para yerine ilerleme ile açmak, prototipte kilidi kaldırmak.
