@@ -15,11 +15,9 @@ extends Resource
 @export var vehicle_refund_percent: int = 50
 
 @export_group("Fabrika ve şehir")
-## Geçici sabit fabrika: kurulum fiyatı ve dakikalık bakımı.
+## Fabrika: kurulum fiyatı ve dakikalık bakımı.
 @export var factory_cost: int = 300
 @export var factory_upkeep: int = 3
-## Arsaya fabrika kurarken seçilebilecek tarifler.
-@export var factory_recipes: Array[ProcessRecipe] = []
 ## Her noktada mal başına stok sınırı (şehirde sınır yok).
 @export var point_stock_capacity: int = 50
 ## Şehirlerin başlangıç seviyesi (köy).

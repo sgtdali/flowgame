@@ -1,9 +1,6 @@
 [gd_resource type="Resource" script_class="MapConfig" format=3 uid="uid://q2q146u6pnh5"]
 
 [ext_resource type="Script" uid="uid://lfnihpal7k7g" path="res://data/map_config.gd" id="1_cfg"]
-[ext_resource type="Script" path="res://data/process_recipe.gd" id="2_recipe_script"]
-[ext_resource type="Resource" path="res://data/recipes_map/bickihane.tres" id="3_bickihane"]
-[ext_resource type="Resource" path="res://data/recipes_map/degirmen.tres" id="4_degirmen"]
 [ext_resource type="Resource" path="res://data/city_levels/koy.tres" id="5_koy"]
 [ext_resource type="Script" path="res://data/block_type.gd" id="6_block_script"]
 [ext_resource type="Resource" path="res://data/factory_blocks/sawmill.tres" id="7_sawmill"]
@@ -20,7 +17,6 @@
 
 [resource]
 script = ExtResource("1_cfg")
-factory_recipes = Array[ExtResource("2_recipe_script")]([ExtResource("3_bickihane"), ExtResource("4_degirmen")])
 starting_city_level = ExtResource("5_koy")
 factory_blocks = Array[ExtResource("6_block_script")]([ExtResource("7_sawmill"), ExtResource("8_mill"), ExtResource("9_splitter"), ExtResource("10_depot")])
 gate_in = ExtResource("11_gate_in")

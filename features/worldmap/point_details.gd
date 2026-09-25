@@ -4,11 +4,7 @@ extends RefCounted
 ## Nokta panelinde gösterilecek satırları hazırlar (başlık, değer).
 ## Yalnızca metin biçimler; sayıları MapFlowSim'den okur, kural hesaplamaz.
 
-const FACTORY_STATUS_TEXT: Dictionary = {
-	MapFlowSim.FactoryStatus.WORKING: "Working",
-	MapFlowSim.FactoryStatus.NO_INPUT: "Waiting for input",
-	MapFlowSim.FactoryStatus.OUTPUT_FULL: "Output full - build a route out",
-}
+const EMPTY_FACTORY_TEXT: String = "Empty - open the factory to place machines"
 
 
 ## Dönüş: [[başlık, değer], ...]
@@ -24,15 +20,11 @@ static func rows_for(point_id: StringName, sim: MapFlowSim, config: MapConfig) -
 					info.resource.extraction_per_minute]))
 			rows.append(_row("Stock", _stock_text(sim, point_id, info.resource, capacity)))
 		MapPoints.Kind.FACTORY_PLOT:
-			var recipe: ProcessRecipe = sim.factories.recipe_at(point_id)
-			if recipe == null:
+			var interior: FactoryInterior = sim.factories.interior_at(point_id)
+			if interior == null:
 				rows.append(_row("Status", "Empty plot"))
 			else:
-				rows.append(_row("Recipe", recipe_text(recipe)))
-				for good: Good in recipe.inputs:
-					rows.append(_row("Input", _stock_text(sim, point_id, good, capacity)))
-				rows.append(_row("Output", _stock_text(sim, point_id, recipe.output, capacity)))
-				rows.append(_row("Status", FACTORY_STATUS_TEXT[sim.factory_status(point_id)]))
+				_factory_rows(rows, interior)
 		MapPoints.Kind.CITY:
 			var level: CityLevel = sim.market.level(point_id)
 			rows.append(_row("Level", level.display_name))
@@ -46,14 +38,22 @@ static func rows_for(point_id: StringName, sim: MapFlowSim, config: MapConfig) -
 	return rows
 
 
-## "Sawmill: 1 Logs -> 1 Lumber, 10/min"
-static func recipe_text(recipe: ProcessRecipe) -> String:
-	var parts: PackedStringArray = []
-	for i: int in recipe.inputs.size():
-		parts.append("%d %s" % [recipe.input_amounts[i], recipe.inputs[i].display_name])
-	return "%s: %s -> %d %s, %s/min" % [recipe.display_name, " + ".join(parts),
-			recipe.output_amount, recipe.output.display_name,
-			RouteView.format_rate(recipe.outputs_per_minute)]
+## Fabrika özeti: her mal için giren/çıkan (geçen dakika) ve iki stok; uyarı.
+static func _factory_rows(rows: Array[PackedStringArray], interior: FactoryInterior) -> void:
+	var goods: Array[Good] = interior.summary_goods()
+	if interior.station_count() == 0:
+		rows.append(_row("Status", EMPTY_FACTORY_TEXT))
+	for good: Good in goods:
+		rows.append(_row(good.display_name, "in %s/min, out %s/min
+stock in %d/%d, out %d/%d" % [
+				RouteView.format_rate(interior.input_last_minute(good)),
+				RouteView.format_rate(interior.output_last_minute(good)),
+				floori(interior.input_stock(good)), interior.capacity,
+				floori(interior.output_stock(good)), interior.capacity]))
+	if interior.output_full():
+		rows.append(_row("Warning", "Output full - build a route out"))
+	elif interior.starved_last_minute():
+		rows.append(_row("Warning", "Machines waiting for input"))
 
 
 static func _stock_text(sim: MapFlowSim, point_id: StringName, good: Good, capacity: int) -> String:

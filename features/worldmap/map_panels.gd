@@ -66,11 +66,10 @@ func _direction_text(route: MapRoute, direction: MapRoute.Direction) -> String:
 func _show_point(point: MapPoint) -> void:
 	var point_id: StringName = point.get_point_id()
 	var view: RegionView = point.get_region_view()
-	var offers: Array[Dictionary] = []
-	if point.kind == MapPoint.Kind.FACTORY_PLOT and _sim.factories.recipe_at(point_id) == null:
-		for recipe: ProcessRecipe in _config.factory_recipes:
-			offers.append({"recipe": recipe,
-					"reason": _sim.factories.build_block_reason(point_id, recipe)})
+	var offer_factory: bool = (point.kind == MapPoint.Kind.FACTORY_PLOT
+			and not _sim.factories.has_factory(point_id))
 	_point_panel.show_point(point, _sim.regions.status(view.data.id),
 			PointDetails.rows_for(point_id, _sim, _config),
-			_sim.routes.start_block_reason(point_id), offers, _config.factory_cost)
+			_sim.routes.start_block_reason(point_id), offer_factory,
+			_sim.factories.build_block_reason(point_id) if offer_factory else "",
+			_config.factory_cost)

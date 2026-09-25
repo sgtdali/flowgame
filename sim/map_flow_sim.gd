@@ -3,17 +3,16 @@ extends RefCounted
 
 ## Harita katmanının akış simülasyonu (arayüzsüz).
 ##
-## Her adım (dt oyun dakikası) sırasıyla: yataklar üretir → hatlar taşır →
-## fabrikalar işler → şehre gelen mal satılır → bakım düşer.
+## Her adım (dt oyun dakikası) sırasıyla: yataklar üretir → hatlar taşır
+## (şehre gelen mal satılır) → fabrikaların içi aynı süre koşar → bakım düşer.
+## Fabrikanın stokları FactoryInterior'dadır: hatlar giriş stoğuna koyar,
+## çıkış stoğundan alır (görev 05).
 ## Tasarım: 1 oyun dakikası = 1 gerçek dakika (hızı arayüz ayarlar);
 ## mal hatta beklemez (görev 04, K1); aynı kaynaktan çeken hatlarda önce kurulan
 ## önce alır (K3); para tam sayı, kesirler birikir (K5).
 
 ## Kayan nokta karşılaştırma toleransı (taşıma payı dağıtımı ve paranın yuvarlanması).
 const EPSILON: float = 0.000001
-
-## Fabrikanın son adımdaki durumu (panelde gösterilir).
-enum FactoryStatus { WORKING, NO_INPUT, OUTPUT_FULL }
 
 var regions: RegionState
 var routes: RouteState
@@ -23,14 +22,12 @@ var market: CityMarket
 var clock: float = 0.0
 
 var _config: MapConfig
-## Nokta id -> {Good: miktar}. Şehirlerin stoğu yoktur.
+## Nokta id -> {Good: miktar}. Şehirlerin stoğu yoktur; fabrikalarınki içeridedir.
 var _stocks: Dictionary = {}
 ## Paraya henüz yansımamış kesirli gelir/bakım.
 var _pending_money: float = 0.0
 ## Hat -> [ileri, geri] son adımdaki akış (birim/dk), panel için.
 var _route_flow: Dictionary = {}
-## Arsa id -> FactoryStatus.
-var _factory_status: Dictionary = {}
 
 
 func _init(config: MapConfig = RegionState.DEFAULT_CONFIG) -> void:
@@ -41,7 +38,11 @@ func _init(config: MapConfig = RegionState.DEFAULT_CONFIG) -> void:
 	market = CityMarket.new(config)
 
 
+## Noktanın hatta verebileceği stok; fabrikada çıkış stoğu.
 func stock(point_id: StringName, good: Good) -> float:
+	var interior: FactoryInterior = factories.interior_at(point_id)
+	if interior != null:
+		return interior.output_stock(good)
 	return (_stocks.get(point_id, {}) as Dictionary).get(good, 0.0)
 
 
@@ -51,8 +52,10 @@ func route_flow(route: MapRoute, direction: MapRoute.Direction) -> float:
 	return flows[direction]
 
 
-func factory_status(plot_id: StringName) -> FactoryStatus:
-	return _factory_status.get(plot_id, FactoryStatus.NO_INPUT)
+## Fabrikanın haritada uyarı işareti yanmalı mı? (fabrika yoksa false)
+func factory_warning(plot_id: StringName) -> bool:
+	var interior: FactoryInterior = factories.interior_at(plot_id)
+	return interior != null and interior.has_warning()
 
 
 ## Geçen tam oyun dakikasında şehirlerden gelen toplam gelir.
@@ -79,9 +82,9 @@ func supplies(point_id: StringName) -> Array[Good]:
 		MapPoints.Kind.RESOURCE_SITE:
 			out.append(info.resource)
 		MapPoints.Kind.FACTORY_PLOT:
-			var recipe: ProcessRecipe = factories.recipe_at(point_id)
-			if recipe != null:
-				out.append(recipe.output)
+			var interior: FactoryInterior = factories.interior_at(point_id)
+			if interior != null:
+				out = interior.output_goods()
 	return out
 
 
@@ -94,8 +97,7 @@ func accepts(point_id: StringName, good: Good) -> bool:
 		MapPoints.Kind.CITY:
 			return market.accepts(point_id, good)
 		MapPoints.Kind.FACTORY_PLOT:
-			var recipe: ProcessRecipe = factories.recipe_at(point_id)
-			return recipe != null and recipe.inputs.has(good)
+			return factories.has_factory(point_id)  # fabrika her malı kabul eder
 	return false
 
 
@@ -130,6 +132,8 @@ func step(dt: float) -> void:
 	clock += dt
 	if floori(clock) > minute_before:
 		market.roll_minute()
+		for plot_id: StringName in factories.plots():
+			factories.interior_at(plot_id).roll_minute()
 
 
 func _produce(dt: float) -> void:
@@ -163,9 +167,11 @@ func _move_direction(route: MapRoute, direction: MapRoute.Direction, dt: float) 
 	for i: int in options.size():
 		if amounts[i] <= 0.0:
 			continue
-		_add_stock(src, options[i], -amounts[i])
+		_take(src, options[i], amounts[i])
 		if MapPoints.find(dst).kind == MapPoints.Kind.CITY:
 			_pending_money += market.sell(dst, options[i], amounts[i])
+		elif factories.has_factory(dst):
+			factories.interior_at(dst).add_input(options[i], amounts[i])
 		else:
 			_add_stock(dst, options[i], amounts[i])
 		moved += amounts[i]
@@ -206,25 +212,24 @@ static func allocate(budget: float, weights: Array[float], limits: Array[float])
 
 func _process_factories(dt: float) -> void:
 	for plot_id: StringName in factories.plots():
-		var recipe: ProcessRecipe = factories.recipe_at(plot_id)
-		var batches: float = recipe.outputs_per_minute * dt / recipe.output_amount
-		for i: int in recipe.inputs.size():
-			batches = minf(batches, stock(plot_id, recipe.inputs[i]) / recipe.input_amounts[i])
-		var input_limited: bool = batches <= EPSILON
-		batches = minf(batches, _free_space(plot_id, recipe.output) / recipe.output_amount)
-		if batches <= EPSILON:
-			_factory_status[plot_id] = FactoryStatus.NO_INPUT if input_limited else FactoryStatus.OUTPUT_FULL
-			continue
-		_factory_status[plot_id] = FactoryStatus.WORKING
-		for i: int in recipe.inputs.size():
-			_add_stock(plot_id, recipe.inputs[i], -batches * recipe.input_amounts[i])
-		_add_stock(plot_id, recipe.output, batches * recipe.output_amount)
+		factories.interior_at(plot_id).advance(dt)
 
 
 func _free_space(point_id: StringName, good: Good) -> float:
 	if MapPoints.find(point_id).kind == MapPoints.Kind.CITY:
 		return INF
+	var interior: FactoryInterior = factories.interior_at(point_id)
+	if interior != null:
+		return interior.input_space(good)
 	return maxf(_config.point_stock_capacity - stock(point_id, good), 0.0)
+
+
+func _take(point_id: StringName, good: Good, amount: float) -> void:
+	var interior: FactoryInterior = factories.interior_at(point_id)
+	if interior != null:
+		interior.take_output(good, amount)
+	else:
+		_add_stock(point_id, good, -amount)
 
 
 func _add_stock(point_id: StringName, good: Good, amount: float) -> void:

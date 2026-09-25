@@ -10,6 +10,8 @@ extends Node2D
 
 ## Hat çizgisine bu kadar yakın tıklama hattı seçer (dünya birimi).
 const ROUTE_HIT_DISTANCE: float = 10.0
+## Kurulan fabrikanın haritadaki adı (fabrikanın türü yoktur).
+const FACTORY_NAME: String = "Factory"
 ## Panellerin ve üst çubuğun yenilenme aralığı (gerçek saniye).
 const UI_REFRESH_SECONDS: float = 0.25
 
@@ -191,9 +193,9 @@ func _on_build_route_requested(point: MapPoint) -> void:
 	route_builder.start(point)
 
 
-func _on_build_factory_requested(point: MapPoint, recipe: ProcessRecipe) -> void:
-	if sim.factories.build(point.get_point_id(), recipe):
-		point.set_factory(recipe.display_name)
+func _on_build_factory_requested(point: MapPoint) -> void:
+	if sim.factories.build(point.get_point_id()):
+		point.set_factory(FACTORY_NAME)
 		_refresh_now()
 
 

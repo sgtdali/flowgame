@@ -10,11 +10,15 @@ extends SceneTree
 ## aktarımı; fabrika tarif hızında işler, girdi yoksa durur; köy satışı ve
 ## doygunluk; bakım düşer; para eksiye iner ve alımı engeller; kilitli bölge
 ## üretmez; fabrika kurma kuralları; belirlilik; ilk para döngüsü kâr eder.
+## Görev 05 adım 3: fabrika içi editörle kurulur (FactoryInterior); fabrika her
+## malı kabul eder ve giriş kapısı kendiliğinden gelir; hatlar yalnızca çıkış
+## stoğundan alır; dakikalık giren/çıkan; uyarı (çıkış dolu, girdi bekleme).
 
 const MAP_CONFIG: MapConfig = preload("res://data/map_config.tres")
 const CART: TransportType = preload("res://data/transport_types/at_arabasi.tres")
-const SAWMILL: ProcessRecipe = preload("res://data/recipes_map/bickihane.tres")
+const SAWMILL: BlockType = preload("res://data/factory_blocks/sawmill.tres")
 const LOGS: RawResource = preload("res://data/raw_resources/tomruk.tres")
+const WHEAT: RawResource = preload("res://data/raw_resources/bugday.tres")
 const LUMBER: Good = preload("res://data/goods/kereste.tres")
 const FLOUR: Good = preload("res://data/goods/un.tres")
 const VILLAGE: CityLevel = preload("res://data/city_levels/koy.tres")
@@ -24,12 +28,13 @@ const EPS: float = 0.01
 
 const FOREST: StringName = &"area1/Site1"
 const PLOT: StringName = &"area1/Plot1"
+const PLOT2: StringName = &"area1/Plot2"
 const CITY: StringName = &"area1/City"
 
 var _failures: int = 0
 var _checks: int = 0
 
-const EXPECTED_CHECKS: int = 18
+const EXPECTED_CHECKS: int = 22
 
 
 func _initialize() -> void:
@@ -42,6 +47,8 @@ func _initialize() -> void:
 	_test_upkeep_and_debt()
 	_test_locked_region_idle()
 	_test_factory_rules()
+	_test_factory_interior_link()
+	_test_factory_warning()
 	_test_first_loop_and_determinism()
 
 	print("")
@@ -62,10 +69,24 @@ func _run(sim: MapFlowSim, minutes: float) -> void:
 		sim.step(DT)
 
 
+## Arsaya fabrika kurar; içine Logs in → Sawmill → Output: Lumber döşer.
+## Dönüş: Sawmill'in istasyon id'si (kurulamazsa -1).
+func _build_sawmill(sim: MapFlowSim, plot: StringName = PLOT) -> int:
+	if not sim.factories.build(plot):
+		return -1
+	var interior: FactoryInterior = sim.factories.interior_at(plot)
+	var gate: int = interior.ensure_input_gate(LOGS)
+	var saw: int = interior.add_station(SAWMILL)
+	var out: int = interior.add_output_gate(LUMBER)
+	if not (interior.connect_stations(gate, 0, saw, 0) and interior.connect_stations(saw, 0, out, 0)):
+		return -1
+	return saw
+
+
 ## Orman → arsa (Sawmill) → köy, iki hat da 150 birim / 1 araç = 10/dk.
 func _sawmill_chain(config: MapConfig = MAP_CONFIG) -> MapFlowSim:
 	var sim: MapFlowSim = MapFlowSim.new(config)
-	sim.factories.build(PLOT, SAWMILL)
+	_build_sawmill(sim)
 	sim.routes.build(FOREST, PLOT, 150.0, CART)
 	sim.routes.build(PLOT, CITY, 150.0, CART)
 	return sim
@@ -83,19 +104,20 @@ func _test_production() -> void:
 
 func _test_route_capacity_and_factory() -> void:
 	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
-	sim.factories.build(PLOT, SAWMILL)
+	_build_sawmill(sim)
 	var route: MapRoute = sim.routes.build(FOREST, PLOT, 300.0, CART)  # 5/dk
 	_run(sim, 10.0)
 	var flow: float = sim.route_flow(route, MapRoute.Direction.FORWARD)
 	_check("Hat kapasitesini asmiyor (300 birim, 1 arac = 5/dk)", absf(flow - 5.0) < EPS,
 			"akis=%.2f" % flow)
 	# Girdi 5/dk geliyor, Sawmill 10/dk isleyebilir → cikti girdi kadar.
+	# Parçalar içeride birkaç birim yolda olabilir.
 	_check("Fabrika girdisi kadar isliyor (10 dk -> ~50, stok siniri 50)",
-			absf(sim.stock(PLOT, LUMBER) - 50.0) < 0.5,
+			sim.stock(PLOT, LUMBER) > 47.0 and sim.stock(PLOT, LUMBER) <= 50.0,
 			"lumber=%.2f" % sim.stock(PLOT, LUMBER))
 
 	var idle: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
-	idle.factories.build(PLOT, SAWMILL)
+	_build_sawmill(idle)
 	_run(idle, 3.0)
 	_check("Girdisi olmayan fabrika uretmiyor", idle.stock(PLOT, LUMBER) < EPS)
 
@@ -143,7 +165,7 @@ func _test_upkeep_and_debt() -> void:
 	var poor: MapConfig = MAP_CONFIG.duplicate()
 	poor.starting_money = MAP_CONFIG.factory_cost + CART.route_cost + CART.vehicle_price
 	var sim: MapFlowSim = MapFlowSim.new(poor)
-	sim.factories.build(PLOT, SAWMILL)
+	_build_sawmill(sim)
 	sim.routes.build(FOREST, PLOT, 150.0, CART)
 	var upkeep: int = MAP_CONFIG.factory_upkeep + CART.vehicle_upkeep
 	_run(sim, 10.0)
@@ -164,13 +186,57 @@ func _test_locked_region_idle() -> void:
 func _test_factory_rules() -> void:
 	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
 	var money: int = sim.regions.money
-	var ok: bool = sim.factories.build(PLOT, SAWMILL)
+	var ok: bool = sim.factories.build(PLOT)
 	_check("Fabrika kuruluyor, fiyati dusuyor",
 			ok and sim.regions.money == money - MAP_CONFIG.factory_cost)
 	_check("Arsa disina, kilitli bolgeye, ayni arsaya ikinci kez kurulamiyor",
-			not sim.factories.build_block_reason(FOREST, SAWMILL).is_empty()
-			and sim.factories.build_block_reason(&"area2/Plot1", SAWMILL).contains("locked")
-			and not sim.factories.build(PLOT, SAWMILL))
+			not sim.factories.build_block_reason(FOREST).is_empty()
+			and sim.factories.build_block_reason(&"area2/Plot1").contains("locked")
+			and not sim.factories.build(PLOT))
+
+
+func _test_factory_interior_link() -> void:
+	var sim: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
+	var before: bool = sim.accepts(PLOT, WHEAT)
+	sim.factories.build(PLOT)
+	sim.factories.build(PLOT2)
+	sim.routes.build(FOREST, PLOT, 150.0, CART)
+	sim.routes.build(PLOT, PLOT2, 150.0, CART)
+	_run(sim, 3.0)
+	var inside: FactoryInterior = sim.factories.interior_at(PLOT)
+	_check("Bos arsa kabul etmiyor; fabrika her mali kabul ediyor, giris kapisi geliyor",
+			not before and sim.accepts(PLOT, WHEAT) and sim.accepts(PLOT, LOGS)
+			and inside.input_stock(LOGS) > 20.0 and inside.input_gate_id(LOGS) != -1,
+			"giris stogu=%.1f" % inside.input_stock(LOGS))
+	_check("Giris stogundaki mal disari cikmiyor (yalnizca cikis stogundan)",
+			sim.factories.interior_at(PLOT2).station_count() == 0
+			and sim.supplies(PLOT).is_empty())
+
+	var chain: MapFlowSim = _sawmill_chain()
+	_run(chain, 5.0)
+	var saw: FactoryInterior = chain.factories.interior_at(PLOT)
+	_check("Dakikalik giren/cikan olculuyor (Logs ~10 giris, Lumber ~10 cikis)",
+			absf(saw.input_last_minute(LOGS) - 10.0) <= 1.0
+			and absf(saw.output_last_minute(LUMBER) - 10.0) <= 1.0,
+			"giris=%.1f cikis=%.1f" % [saw.input_last_minute(LOGS), saw.output_last_minute(LUMBER)])
+
+
+func _test_factory_warning() -> void:
+	var blocked: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
+	_build_sawmill(blocked)
+	blocked.routes.build(FOREST, PLOT, 150.0, CART)
+	var starved: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
+	_build_sawmill(starved)
+	var empty: MapFlowSim = MapFlowSim.new(MAP_CONFIG)
+	empty.factories.build(PLOT)
+	var chain: MapFlowSim = _sawmill_chain()
+	for sim: MapFlowSim in [blocked, starved, empty, chain]:
+		_run(sim, 8.0)
+	_check("Uyari: cikisi dolan ve girdi bekleyen yanar; bos ve calisan fabrika yanmaz",
+			blocked.factory_warning(PLOT) and starved.factory_warning(PLOT)
+			and not empty.factory_warning(PLOT) and not chain.factory_warning(PLOT),
+			"dolu=%s bekleyen=%s bos=%s zincir=%s" % [blocked.factory_warning(PLOT),
+			starved.factory_warning(PLOT), empty.factory_warning(PLOT), chain.factory_warning(PLOT)])
 
 
 func _test_first_loop_and_determinism() -> void:
