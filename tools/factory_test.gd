@@ -27,7 +27,7 @@ const DT: float = 1.0 / 60.0
 var _failures: int = 0
 var _checks: int = 0
 
-const EXPECTED_CHECKS: int = 19
+const EXPECTED_CHECKS: int = 20
 
 
 func _initialize() -> void:
@@ -140,6 +140,9 @@ func _test_output_full() -> void:
 			"stok=%.1f" % factory.output_stock(LUMBER))
 	_check("Cikis dolunca Sawmill tikaniyor", saw.status == SimStation.Status.BLOCKED,
 			"durum=%s" % SimStation.status_name(saw.status))
+	_check("En dolu cikis stogu haritadaki cubuga 1.0 veriyor; cikissiz fabrika -1",
+			is_equal_approx(factory.fullest_output(), 1.0)
+			and FactoryInterior.new(MAP_CONFIG).fullest_output() < 0.0)
 	factory.take_output(LUMBER, 20.0)
 	_run(factory, 0.5, [LOGS])
 	_check("Cikis bosalinca Sawmill yeniden calisiyor",

@@ -98,6 +98,16 @@ func has_warning() -> bool:
 	return output_full() or _starved_last_minute
 
 
+## En dolu çıkış stoğunun doluluğu (0–1); çıkışı olmayan fabrikada -1.
+func fullest_output() -> float:
+	if output_goods().is_empty():
+		return -1.0
+	var best: float = 0.0
+	for good: Good in output_goods():
+		best = maxf(best, output_stock(good) / float(capacity))
+	return best
+
+
 ## Herhangi bir malın çıkış stoğu dolu mu?
 func output_full() -> bool:
 	for good: Good in _output_stock.keys():

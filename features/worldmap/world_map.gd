@@ -185,7 +185,7 @@ func _refresh_now() -> void:
 	income_label.text = "Net: %s%s/min (upkeep %d)" % ["+" if net >= 0.0 else "",
 			RouteView.format_rate(net), sim.upkeep_per_minute()]
 	route_builder.refresh_views(sim)
-	MapMarkers.refresh(_points, sim)
+	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
 	_panels.show_selection(selected, selected_point, selected_route)
 
 

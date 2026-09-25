@@ -49,6 +49,19 @@ const BADGE_PADDING: float = 4.0
 const BADGE_RISE: float = 10.0
 ## Bu gelirin (para/dk) altında rozet gösterilmez.
 const INCOME_VISIBLE_MIN: float = 0.05
+## Stok çubuğu (noktanın hemen altında) ve dolunca rengi.
+const STOCK_BAR_SIZE: Vector2 = Vector2(34.0, 5.0)
+const STOCK_BAR_GAP: float = 5.0
+const STOCK_BAR_BACK: Color = Color(0.08, 0.09, 0.1, 0.8)
+const STOCK_BAR_FILL: Color = Color(0.55, 0.85, 0.45)
+const STOCK_BAR_FULL: Color = Color(0.95, 0.3, 0.25)
+## Bu doluluktan sonrası "dolu" sayılır (üretim durur).
+const STOCK_FULL_RATIO: float = 0.999
+## Noktanın sağındaki mal simgeleri.
+const GOOD_ICON_SIZE: float = 16.0
+const GOOD_ICON_GAP: float = 3.0
+## Adın, stok çubuğu yer alsın diye aşağı kayması.
+const LABEL_DROP: float = 8.0
 const WARNING_SIZE: float = 9.0
 ## Kilitli bölgedeki noktanın görünürlüğü.
 const DIMMED_ALPHA: float = 0.6
@@ -62,6 +75,10 @@ var _warning: bool = false
 ## Şehir rozeti: geçen dakikanın geliri ve şehir doydu mu (görev 06, K4).
 var _income: float = 0.0
 var _saturated: bool = false
+## Stok doluluğu 0–1; negatifse çubuk yok (görev 06, K5).
+var _stock_fill: float = -1.0
+## Noktanın sağında simgesi gösterilen mallar (yatakta hammadde, fabrikada çıktılar).
+var _goods: Array[Good] = []
 
 
 func _ready() -> void:
@@ -84,6 +101,19 @@ func set_income(income: float, saturated: bool) -> void:
 	if not is_equal_approx(_income, income) or _saturated != saturated:
 		_income = income
 		_saturated = saturated
+		queue_redraw()
+
+
+## `fill`: 0–1 doluluk; negatifse çubuk gizlenir.
+func set_stock(fill: float) -> void:
+	if not is_equal_approx(_stock_fill, fill):
+		_stock_fill = fill
+		queue_redraw()
+
+
+func set_goods(goods: Array[Good]) -> void:
+	if goods != _goods:
+		_goods = goods
 		queue_redraw()
 
 
@@ -181,7 +211,28 @@ func _draw() -> void:
 			if _warning:
 				_draw_warning(Vector2(SIZE + 4.0, -SIZE - 4.0))
 
+	_draw_goods()
+	_draw_stock_bar()
 	_draw_label()
+
+
+## Noktanın sağında mal simgeleri. Editörde çizilmez (veri oyunda gelir).
+func _draw_goods() -> void:
+	var x: float = SIZE + 6.0
+	for good: Good in _goods:
+		GoodIcon.draw(self, Vector2(x, -GOOD_ICON_SIZE * 0.5), good, GOOD_ICON_SIZE)
+		x += GOOD_ICON_SIZE + GOOD_ICON_GAP
+
+
+func _draw_stock_bar() -> void:
+	if _stock_fill < 0.0:
+		return
+	var back: Rect2 = Rect2(Vector2(-STOCK_BAR_SIZE.x * 0.5, SIZE + STOCK_BAR_GAP), STOCK_BAR_SIZE)
+	draw_rect(back, STOCK_BAR_BACK)
+	var fill: float = clampf(_stock_fill, 0.0, 1.0)
+	var bar: Rect2 = Rect2(back.position, Vector2(back.size.x * fill, back.size.y))
+	draw_rect(bar, STOCK_BAR_FULL if fill >= STOCK_FULL_RATIO else STOCK_BAR_FILL)
+	draw_rect(back, OUTLINE, false, 1.0)
 
 
 ## Şehrin üstünde "+10/min"; şehir doyduysa turuncu.
@@ -213,6 +264,6 @@ func _draw_label() -> void:
 	var font: Font = ThemeDB.fallback_font
 	var text: String = get_title()
 	var width: float = 160.0
-	var pos: Vector2 = Vector2(-width * 0.5, SIZE + 20.0)
+	var pos: Vector2 = Vector2(-width * 0.5, SIZE + 20.0 + (LABEL_DROP if _stock_fill >= 0.0 else 0.0))
 	draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, width, LABEL_SIZE, 5, OUTLINE)
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, width, LABEL_SIZE, Color.WHITE)
