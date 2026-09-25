@@ -5,11 +5,13 @@ extends Camera2D
 ## yakınlaştırma. Olayları "işlendi" diye işaretlemez; WorldMap de aynı sağ
 ## tıkı (hat kurmayı iptal) kullanabilir.
 
-const MIN_ZOOM: float = 0.6
+const MIN_ZOOM: float = 0.4
 const MAX_ZOOM: float = 3.0
 const ZOOM_STEP: float = 1.15
 ## Kamera haritadan en fazla bu kadar dışarı kayabilir (dünya birimi).
 const PAN_MARGIN: float = 300.0
+## Başlangıç bölgesine odaklanırken ekranın ne kadarını doldursun.
+const FOCUS_FILL: float = 0.8
 
 ## Haritanın kapladığı alan (dünya koordinatı); WorldMap ayarlar.
 var map_rect: Rect2 = Rect2()
@@ -40,6 +42,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if motion != null and _panning:
 		position -= motion.relative / zoom
 		_clamp()
+
+
+## Kamerayı `rect`e ortalar ve ekranı büyük ölçüde dolduracak kadar yakınlaşır.
+func focus_rect(rect: Rect2) -> void:
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+	var view: Vector2 = get_viewport_rect().size
+	var fit: float = minf(view.x / rect.size.x, view.y / rect.size.y) * FOCUS_FILL
+	var value: float = clampf(fit, MIN_ZOOM, MAX_ZOOM)
+	zoom = Vector2(value, value)
+	_target_zoom = zoom
+	position = rect.get_center()
+	_clamp()
 
 
 func _zoom_at(screen_position: Vector2, factor: float) -> void:

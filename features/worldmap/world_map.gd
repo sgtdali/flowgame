@@ -22,9 +22,7 @@ const UI_REFRESH_SECONDS: float = 0.25
 @onready var info_panel: RegionInfoPanel = $UI/InfoPanel
 @onready var point_panel: PointInfoPanel = $UI/PointPanel
 @onready var route_panel: RouteInfoPanel = $UI/RoutePanel
-@onready var money_label: Label = %MoneyLabel
-@onready var income_label: Label = %IncomeLabel
-@onready var hint_label: Label = $UI/TopBar/Margin/HBox/HintLabel
+@onready var top_bar: MapTopBar = $UI/TopBar
 @onready var speed_bar: SpeedBar = %SpeedBar
 @onready var route_builder: RouteBuilder = $Routes
 @onready var factory_screen: FactoryScreen = $UI/FactoryScreen
@@ -41,14 +39,14 @@ var _panels: MapPanels
 var _points: Array[MapPoint] = []
 var _hovered_point: MapPoint = null
 var _hovered_route: RouteView = null
-var _default_hint: String = ""
 var _ui_timer: float = 0.0
 
 
 func _ready() -> void:
 	# Area2D'lerin fare üzerine gelme sinyalleri için gerekli.
 	get_viewport().physics_object_picking = true
-	camera.map_rect = Rect2(map_bounds.position, map_bounds.size)
+	camera.map_rect = map_bounds.get_global_rect()
+	camera.focus_rect(_start_rect())
 	for node: Node in region_map.find_children("*", "MapPoint", true, false):
 		_points.append(node as MapPoint)
 	_panels = MapPanels.new(sim, RegionState.DEFAULT_CONFIG, info_panel, point_panel, route_panel)
@@ -64,13 +62,11 @@ func _ready() -> void:
 		if routes.remove_vehicle(route): _refresh_now())
 	route_panel.remove_route_requested.connect(_on_remove_route_requested)
 	route_builder.routes = routes
-	route_builder.hint_changed.connect(func(text: String) -> void:
-		hint_label.text = text if not text.is_empty() else _default_hint)
+	route_builder.hint_changed.connect(top_bar.show_hint)
 	route_builder.route_built.connect(func(_route: MapRoute) -> void:
-		hint_label.text = _default_hint
+		top_bar.show_hint("")
 		_refresh_now())
 	speed_bar.advanced.connect(sim.step)
-	_default_hint = hint_label.text
 	refresh_statuses()
 	_refresh_now()
 
@@ -182,10 +178,7 @@ func _set_hovered_point(point: MapPoint) -> void:
 ## Üst çubuğu, hat etiketlerini ve açık paneli şimdi yeniler.
 func _refresh_now() -> void:
 	_ui_timer = 0.0
-	money_label.text = "Money: %s" % RegionInfoPanel.format_money(state.money)
-	var net: float = snappedf(sim.income_last_minute() - sim.upkeep_per_minute(), 0.1)
-	income_label.text = "Net: %s%s/min (upkeep %d)" % ["+" if net >= 0.0 else "",
-			RouteView.format_rate(net), sim.upkeep_per_minute()]
+	top_bar.refresh(sim)
 	route_builder.refresh_views(sim)
 	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
 	_panels.show_selection(selected, selected_point, selected_route)
@@ -274,6 +267,21 @@ func _region_at(world_point: Vector2) -> RegionView:
 		if view != null:
 			return view
 	return null
+
+
+## Başlangıçta açık bölgelerin dünya koordinatında kapladığı alan.
+func _start_rect() -> Rect2:
+	var vertices: PackedVector2Array = []
+	for view: RegionView in _views():
+		if view.data != null and state.is_unlocked(view.data.id):
+			for poly: PackedVector2Array in view.get_polygons():
+				vertices.append_array(view.global_transform * poly)
+	if vertices.is_empty():
+		return Rect2()
+	var rect: Rect2 = Rect2(vertices[0], Vector2.ZERO)
+	for vertex: Vector2 in vertices:
+		rect = rect.expand(vertex)
+	return rect
 
 
 func _views() -> Array[RegionView]:

@@ -84,6 +84,10 @@ var _goods: Array[Good] = []
 func _ready() -> void:
 	z_as_relative = false
 	z_index = POINT_Z_INDEX
+	# Harita oyunda ölçeklenir (WorldMap'te RegionMap.scale); nokta, simge ve
+	# yazılar yine aynı boyda kalsın. Konum ölçekle birlikte açılır.
+	if not Engine.is_editor_hint():
+		global_scale = Vector2.ONE
 
 
 func set_factory(factory_name: String) -> void:

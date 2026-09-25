@@ -57,6 +57,12 @@ seçilmedi), öğretici/hedef sistemi, renk ve animasyon çalışması.
 2. **Mal simgesi ve stok çubukları:** K5, K6 (haritada).
 3. **Paneller:** K6, K7 (nokta, şehir, hat panelleri).
 4. **Üzerine gelince özet:** K8.
+5. **Üst çubuk** (sonradan eklendi, kullanıcı onaylı): soldan sağa `Para · Net · Sonraki hedef`
+   … `Oyun saati · Hız`. Net tek renkli sayı (yeşil artı, kırmızı eksi, gri sıfır); gelir ve
+   bakım ayrıntısı üzerine gelince. Sonraki hedef: bir sonraki bölge izninin fiyatı
+   (`Next region: 500`), para yetiyorsa yeşil; tüm bölgeler açıksa gizli. Oyun saati
+   dakika:saniye. Kalıcı kontrol ipucu kalkar: ortadaki yazı yalnızca gerektiğinde (hat
+   kurarken) görünür; kontroller bir "?" düğmesinin ipucunda.
 
 ## Kabul ölçütü
 

@@ -101,7 +101,8 @@ func _refresh() -> void:
 		shape.color = fill
 	for border: Line2D in _borders:
 		border.default_color = border_color
-		border.width = width
+		# Harita ölçeklendiğinde (WorldMap'te RegionMap.scale) sınır inceliği aynı kalsın.
+		border.width = width / _map_scale()
 	# Kalın sınırlar komşunun sınırının altında kalmasın.
 	z_index = 2 if _selected else (1 if _status == RegionState.Status.AVAILABLE else 0)
 
@@ -127,13 +128,21 @@ func _add_name_label() -> void:
 		return
 	var center: Vector2 = get_label_position()
 	var label: Label = Label.new()
+	# Harita ölçeklense de yazı aynı boyda ve keskin kalsın.
+	var inverse: float = 1.0 / _map_scale()
+	label.scale = Vector2(inverse, inverse)
 	label.text = data.display_name
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.custom_minimum_size = Vector2(200.0, 0.0)
-	label.position = center - Vector2(100.0, 14.0)
+	label.position = center - Vector2(100.0, 14.0) * inverse
 	label.add_theme_font_size_override("font_size", 22)
 	label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0))
 	label.add_theme_constant_override("outline_size", 6)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
+
+
+## Haritanın dünya ölçeği (çizim koordinatından dünyaya).
+func _map_scale() -> float:
+	return maxf(global_scale.x, 0.001)
