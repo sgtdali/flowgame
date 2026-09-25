@@ -197,28 +197,30 @@ func _refresh_now() -> void:
 	top_bar.refresh(sim)
 	route_builder.refresh_views(sim)
 	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
-	ToolHighlights.refresh(tools.tool, _points, _picker.views(), sim, RegionState.DEFAULT_CONFIG)
+	_refresh_highlights()
 	_panels.show_selection(selected, selected_point, selected_route)
 	_update_hover_card()
 
 
 ## Üzerine gelinen nokta ya da hattın özet kutusu (görev 06, K8).
 func _update_hover_card() -> void:
-	var mouse: Vector2 = get_viewport().get_mouse_position()
 	if factory_screen.is_open() or route_builder.is_building():
 		hover_card.hide()
-	elif _hovered_point != null:
-		hover_card.show_rows(_hovered_point.describe(), _panels.point_rows(_hovered_point), mouse)
-	elif _hovered_route != null and is_instance_valid(_hovered_route):
-		hover_card.show_rows("%s - %s" % [_hovered_route.from_point.get_title(),
-				_hovered_route.to_point.get_title()], _panels.route_rows(_hovered_route), mouse)
 	else:
-		hover_card.hide()
+		hover_card.show_for(_hovered_point, _hovered_route, _panels,
+				get_viewport().get_mouse_position())
 
 
-## Üst çubuğun ortası: hat kurma ipucu; yoksa seçili aletin ipucu.
+## Üst çubuğun ortası: hat kurma ipucu; yoksa seçili aletin ipucu. Hat kurma
+## başlayıp bitince de çağrılır; vurgular o an güncellensin.
 func _show_hint(text: String) -> void:
 	top_bar.show_hint(text if not text.is_empty() else tools.idle_hint())
+	_refresh_highlights()
+
+
+func _refresh_highlights() -> void:
+	ToolHighlights.refresh(tools.tool, route_builder.start_point(), _points, _picker.views(),
+			sim, RegionState.DEFAULT_CONFIG)
 
 
 func _on_tool_changed(tool: MapTools.Tool) -> void:

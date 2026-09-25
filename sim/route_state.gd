@@ -55,8 +55,9 @@ func start_block_reason(point_id: StringName) -> String:
 
 
 ## Hat kurulamıyorsa nedeni (arayüzde gösterilir); kurulabiliyorsa "".
+## `ignore_money`: yalnızca para eksikse "" döner (arayüz vurgusu için).
 func build_block_reason(point_a: StringName, point_b: StringName,
-		transport: TransportType) -> String:
+		transport: TransportType, ignore_money: bool = false) -> String:
 	if point_a == point_b:
 		return "Pick a different point"
 	for point_id: StringName in [point_a, point_b]:
@@ -67,7 +68,7 @@ func build_block_reason(point_a: StringName, point_b: StringName,
 		return "A route already connects these points"
 	if not transport.available_at_start:
 		return "%s is not researched yet" % transport.display_name
-	if not _wallet.can_afford(build_cost(transport)):
+	if not ignore_money and not _wallet.can_afford(build_cost(transport)):
 		return "Not enough money"
 	return ""
 

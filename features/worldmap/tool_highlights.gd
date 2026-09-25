@@ -3,21 +3,31 @@ extends RefCounted
 
 ## Seçili alete göre haritayı işaretler (görev 07): Factory'de kurulabilir boş
 ## arsalara fiyat etiketi, diğer noktalar soluk; Unlock'ta açılabilir bölgelere
-## fiyat. Para yetmiyorsa etiket kırmızı (K2). Kural hesaplamaz: neyin
+## fiyat. Para yetmiyorsa etiket kırmızı (K2). Hat kurulurken (Route aleti ya da
+## panelden) önce hat başlatılabilen, ilk nokta seçilince ona bağlanabilen
+## noktalar normal, diğerleri soluk (K5). Kural hesaplamaz: neyin
 ## kullanılabildiğini FactorySites / RegionState söyler.
 
 const FACTORY_TAG: String = "Build %d"
 const UNLOCK_TAG: String = "Unlock %d"
 
 
-static func refresh(tool: MapTools.Tool, points: Array[MapPoint], views: Array[RegionView],
-		sim: MapFlowSim, config: MapConfig) -> void:
+## `route_start`: yarım hattın ilk noktası (yoksa null).
+static func refresh(tool: MapTools.Tool, route_start: MapPoint, points: Array[MapPoint],
+		views: Array[RegionView], sim: MapFlowSim, config: MapConfig) -> void:
 	for point: MapPoint in points:
-		match tool:
-			MapTools.Tool.FACTORY:
-				_mark_factory_plot(point, sim, config)
-			_:
-				point.set_tool_mark("", true, false)
+		if route_start != null:
+			var usable: bool = point == route_start or sim.routes.build_block_reason(
+					route_start.get_point_id(), point.get_point_id(), RouteBuilder.DEFAULT_TRANSPORT,
+					true).is_empty()
+			point.set_tool_mark("", true, not usable)
+		elif tool == MapTools.Tool.ROUTE:
+			point.set_tool_mark("", true,
+					not sim.routes.start_block_reason(point.get_point_id()).is_empty())
+		elif tool == MapTools.Tool.FACTORY:
+			_mark_factory_plot(point, sim, config)
+		else:
+			point.set_tool_mark("", true, false)
 	for view: RegionView in views:
 		if view.data == null:
 			continue

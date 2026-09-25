@@ -37,6 +37,11 @@ func is_building() -> bool:
 	return _start != null
 
 
+## Yarım hattın ilk noktası (hat kurulmuyorsa null).
+func start_point() -> MapPoint:
+	return _start
+
+
 func start(point: MapPoint) -> void:
 	_start = point
 	_preview.visible = true
