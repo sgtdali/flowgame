@@ -64,6 +64,8 @@ Harita en fazla 20 sabit bölgeden oluşur ve yalnızca kaynakları, şehirleri 
 
 Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüşür: oyuncu makineleri düğüm olarak yerleştirir ve çıkışları girişlere bağlar. Idle değil; kurulan sistem sabit hızda çalışır, oyuncu tıklayarak üretim yapmaz.
 
+**Mevcut editör:** Fabrika içi sıfırdan yazılmaz. Iron & Ember'in düğüm editörü ve parça simülasyonu kullanılır: mallar düğümler arasında tek tek, kuyruklarda bekleyen parçalar olarak akar. Ondan yalnızca genel bloklar alınır (işleyici, ayırıcı, depo, jeneratör). Maden, satış ve ticaret blokları (Iron Mine, Collector, Trade Depot, Trade Network, Power Exchange) alınmaz, çünkü o işleri harita yapar. Tarifler yeni oyunun mallarıyla kurulur.
+
 **Düğüm tipleri**
 
 | Düğüm | Görevi | Örnek |
@@ -75,9 +77,10 @@ Her fabrika açıldığında Upload Labs tarzı bir düğüm editorüne dönüş
 | Depo | Tampon; akış dalgalanmasını emer | 200 birim kapasite |
 | Çıkış kapısı | Malı hatta verir | Aletler → Şehir X |
 
+**Kapılar ve hatlar:** Her mal için bir kapı vardır. Fabrikaya kaç hattan gelirse gelsin, aynı mal tek bir giriş kapısında toplanır; çıkış kapıları da mal başınadır. Kapılar haritadaki birim/dk akışı parçalara, fabrikadan çıkan parçaları da yeniden birim/dk akışa çevirir.
+
 **Kısıtlar (bulmacayı yaratan şeyler)**
 
-- **Alan:** Fabrika seviyesine göre sınırlı düğüm sayısı (Seviye 1: 6 düğüm, Seviye 3: 16 düğüm).
 - **Bağlantı kapasitesi:** Her bağlantı en fazla belirli bir hız taşır (ör. 30 birim/dk); fazlası için paralel hat gerekir.
 - **Enerji:** Seviye 2'den itibaren işleyiciler enerji ister; enerji üretimi de bir düğümdür (kömür → enerji).
 
@@ -300,3 +303,5 @@ Prototip tek bir soruyu cevaplar: "sat mı, araştır mı" kararı ve fabrika i�
 - [ ] Mobil hedefleniyor mu? Düğüm editörü dokunmatik ekranda kullanışlı olmalı mı?
 - [ ] Erken ekonomi çok sıkışık: köy en fazla 20 para/dk getiriyor, iki fabrikanın bakımı 6/dk tutuyor ve ilk bölge izni 500; ilk bölge yaklaşık 50 dakikada açılabiliyor. Köy fiyatları, fabrika bakımı ya da bölge izni, akış simülasyonu çalışınca gerçek sayılarla ayarlanacak.
 - [ ] Araştırma merkezi dördüncü nokta türü mü?
+- [ ] Düğüm sınırı kalktı. Fabrika Seviye 2 ve 3 (araştırmada ve maliyet tablosunda geçiyor) artık neyi açıyor?
+- [ ] Fabrika içi tek tek parça simülasyonu kullanıyor. Çok fabrikalı oyunda yavaşlarsa ne yapılacak? (Risk tablosundaki "Büyüyünce yavaşlama" satırıyla ilgili.)
