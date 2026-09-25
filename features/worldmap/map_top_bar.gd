@@ -11,6 +11,10 @@ const ZERO_COLOR: Color = Color(0.7, 0.72, 0.7)
 const GOAL_READY_COLOR: Color = Color(0.55, 0.9, 0.45)
 const GOAL_WAIT_COLOR: Color = Color(0.8, 0.82, 0.8)
 const CLOCK_EPSILON: float = 0.001
+## Reddedilen işlemin nedeni bu kadar süre kırmızı görünür (gerçek saniye; görev 07, K3).
+const ERROR_SECONDS: float = 3.0
+const ERROR_COLOR: Color = Color(1.0, 0.45, 0.4)
+const HINT_COLOR: Color = Color(0.75, 0.9, 1.0)
 const HELP_TEXT: String = """Click a region or point to select it.
 Hover over a point or route to see a summary.
 Right/middle drag: pan the map.  Wheel: zoom.
@@ -23,6 +27,10 @@ Delete removes, right-click a wire end to disconnect, Esc goes back."""
 @onready var hint_label: Label = %HintLabel
 @onready var clock_label: Label = %ClockLabel
 @onready var help_button: Button = %HelpButton
+
+## Kalıcı ipucu (hata süresi bitince geri gelir) ve kalan hata süresi.
+var _hint: String = ""
+var _error_left: float = 0.0
 
 
 func _ready() -> void:
@@ -64,4 +72,24 @@ func refresh(sim: MapFlowSim) -> void:
 
 ## O an gereken ipucu (ör. hat kurarken); boşsa ortası boş kalır.
 func show_hint(text: String) -> void:
+	_hint = text
+	if _error_left <= 0.0:
+		_show(text, HINT_COLOR)
+
+
+## Bir işlemin neden yapılamadığını birkaç saniye kırmızı gösterir, sonra ipucuna döner.
+func show_error(text: String) -> void:
+	_error_left = ERROR_SECONDS
+	_show(text, ERROR_COLOR)
+
+
+func _process(delta: float) -> void:
+	if _error_left > 0.0:
+		_error_left -= delta
+		if _error_left <= 0.0:
+			_show(_hint, HINT_COLOR)
+
+
+func _show(text: String, color: Color) -> void:
 	hint_label.text = text
+	hint_label.add_theme_color_override(&"font_color", color)

@@ -55,7 +55,8 @@ func unlock_cost() -> int:
 
 
 ## Bölge şu an açılamıyorsa nedeni (arayüzde gösterilir); açılabiliyorsa "".
-func unlock_block_reason(region_id: StringName) -> String:
+## `ignore_money`: yalnızca para eksikse "" döner (arayüz fiyatı kırmızı gösterir).
+func unlock_block_reason(region_id: StringName, ignore_money: bool = false) -> String:
 	if RegionCatalog.find_by_id(region_id) == null:
 		return "Unknown region"
 	match status(region_id):
@@ -63,7 +64,7 @@ func unlock_block_reason(region_id: StringName) -> String:
 			return "Already unlocked"
 		Status.LOCKED:
 			return "Needs an unlocked neighbor"
-	if not wallet.can_afford(unlock_cost()):
+	if not ignore_money and not wallet.can_afford(unlock_cost()):
 		return "Not enough money"
 	return ""
 

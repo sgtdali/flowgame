@@ -25,12 +25,18 @@ const BORDER_WIDTH_AVAILABLE: float = 5.0
 const BORDER_WIDTH_SELECTED: float = 8.0
 ## Fare üzerindeyken dolgunun beyaza doğru açılma oranı.
 const HOVER_LIGHTEN: float = 0.18
+## Unlock aleti fiyat etiketi (bölge adının altında): yetiyorsa açık, yetmiyorsa kırmızı.
+const TAG_FONT_SIZE: int = 20
+const TAG_COLOR: Color = Color(1.0, 0.9, 0.45)
+const TAG_EXPENSIVE_COLOR: Color = Color(1.0, 0.45, 0.4)
+const TAG_DROP: float = 26.0
 
 var _status: RegionState.Status = RegionState.Status.LOCKED
 var _hovered: bool = false
 var _selected: bool = false
 var _shapes: Array[Polygon2D] = []
 var _borders: Array[Line2D] = []
+var _tag_label: Label = null
 
 
 ## Bölgenin parçaları, bu düğümün yerel koordinatında.
@@ -122,25 +128,40 @@ func get_label_position() -> Vector2:
 	return center / biggest.size()
 
 
+## Unlock aleti seçiliyken bölge adının altındaki fiyat ("" gizler).
+func set_tool_tag(text: String, affordable: bool) -> void:
+	if _tag_label == null:
+		if text.is_empty():
+			return
+		_tag_label = _make_label(TAG_FONT_SIZE, TAG_DROP)
+	_tag_label.text = text
+	_tag_label.visible = not text.is_empty()
+	_tag_label.add_theme_color_override("font_color", TAG_COLOR if affordable else TAG_EXPENSIVE_COLOR)
+
+
 ## Bölge adını get_label_position()'a yazar.
 func _add_name_label() -> void:
 	if data == null or get_polygons().is_empty():
 		return
-	var center: Vector2 = get_label_position()
-	var label: Label = Label.new()
-	# Harita ölçeklense de yazı aynı boyda ve keskin kalsın.
+	_make_label(22, 0.0).text = data.display_name
+
+
+## Bölge adı konumunda (`drop` kadar aşağıda) ortalı, dış çizgili yazı.
+## Harita ölçeklense de yazı aynı boyda ve keskin kalır.
+func _make_label(font_size: int, drop: float) -> Label:
 	var inverse: float = 1.0 / _map_scale()
+	var label: Label = Label.new()
 	label.scale = Vector2(inverse, inverse)
-	label.text = data.display_name
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.custom_minimum_size = Vector2(200.0, 0.0)
-	label.position = center - Vector2(100.0, 14.0) * inverse
-	label.add_theme_font_size_override("font_size", 22)
+	label.position = get_label_position() + (Vector2(-100.0, drop - 14.0)) * inverse
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0))
 	label.add_theme_constant_override("outline_size", 6)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
+	return label
 
 
 ## Haritanın dünya ölçeği (çizim koordinatından dünyaya).

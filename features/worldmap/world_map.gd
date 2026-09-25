@@ -74,7 +74,7 @@ func _ready() -> void:
 	tools.tool_changed.connect(_on_tool_changed)
 	tools.factory_requested.connect(_on_build_factory_requested)
 	tools.unlock_requested.connect(_on_unlock_requested)
-	tools.rejected.connect(top_bar.show_hint)
+	tools.rejected.connect(top_bar.show_error)
 	tool_bar.tool_pressed.connect(tools.toggle)
 	speed_bar.advanced.connect(sim.step)
 	refresh_statuses()
@@ -197,6 +197,7 @@ func _refresh_now() -> void:
 	top_bar.refresh(sim)
 	route_builder.refresh_views(sim)
 	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
+	ToolHighlights.refresh(tools.tool, _points, _picker.views(), sim, RegionState.DEFAULT_CONFIG)
 	_panels.show_selection(selected, selected_point, selected_route)
 	_update_hover_card()
 
@@ -224,7 +225,7 @@ func _on_tool_changed(tool: MapTools.Tool) -> void:
 	tool_bar.show_tool(tool)
 	if tool != MapTools.Tool.NONE:
 		_clear_selection()
-		_refresh_now()
+	_refresh_now()
 	_show_hint("")
 
 

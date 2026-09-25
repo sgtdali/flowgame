@@ -42,7 +42,8 @@ func upkeep_per_minute() -> int:
 
 
 ## Kurulamıyorsa nedeni (arayüzde gösterilir); kurulabiliyorsa "".
-func build_block_reason(plot_id: StringName) -> String:
+## `ignore_money`: yalnızca para eksikse "" döner (arayüz fiyatı kırmızı gösterir).
+func build_block_reason(plot_id: StringName, ignore_money: bool = false) -> String:
 	var info: MapPoints.Info = MapPoints.find(plot_id)
 	if info == null or info.kind != MapPoints.Kind.FACTORY_PLOT:
 		return "Factories can only be built on plots"
@@ -51,7 +52,7 @@ func build_block_reason(plot_id: StringName) -> String:
 		return "%s is locked" % (region.display_name if region != null else String(info.region_id))
 	if _factories.has(plot_id):
 		return "A factory is already built here"
-	if not _regions.wallet.can_afford(_config.factory_cost):
+	if not ignore_money and not _regions.wallet.can_afford(_config.factory_cost):
 		return "Not enough money"
 	return ""
 

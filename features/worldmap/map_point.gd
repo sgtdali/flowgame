@@ -40,29 +40,18 @@ const SITE_COLORS: Dictionary = {
 }
 const OUTLINE: Color = Color(0.08, 0.09, 0.1)
 const LABEL_SIZE: int = 14
-const WARNING_COLOR: Color = Color(1.0, 0.8, 0.2)
 ## Şehir gelir rozeti.
 const BADGE_COLOR: Color = Color(0.55, 0.85, 0.45)
 const BADGE_SATURATED_COLOR: Color = Color(1.0, 0.6, 0.2)
-const BADGE_FONT_SIZE: int = 13
-const BADGE_PADDING: float = 4.0
-const BADGE_RISE: float = 10.0
 ## Bu gelirin (para/dk) altında rozet gösterilmez.
 const INCOME_VISIBLE_MIN: float = 0.05
-## Stok çubuğu (noktanın hemen altında) ve dolunca rengi.
-const STOCK_BAR_SIZE: Vector2 = Vector2(34.0, 5.0)
-const STOCK_BAR_GAP: float = 5.0
-const STOCK_BAR_BACK: Color = Color(0.08, 0.09, 0.1, 0.8)
-const STOCK_BAR_FILL: Color = Color(0.55, 0.85, 0.45)
-const STOCK_BAR_FULL: Color = Color(0.95, 0.3, 0.25)
-## Bu doluluktan sonrası "dolu" sayılır (üretim durur).
-const STOCK_FULL_RATIO: float = 0.999
-## Noktanın sağındaki mal simgeleri.
-const GOOD_ICON_SIZE: float = 16.0
-const GOOD_ICON_GAP: float = 3.0
+## Alet fiyat etiketi: yetiyorsa açık, yetmiyorsa kırmızı (görev 07, K2).
+const TAG_COLOR: Color = Color(0.95, 0.95, 0.9)
+const TAG_EXPENSIVE_COLOR: Color = Color(0.95, 0.4, 0.35)
+## Alet seçiliyken kullanılamayan noktanın görünürlüğü.
+const UNUSABLE_ALPHA: float = 0.3
 ## Adın, stok çubuğu yer alsın diye aşağı kayması.
 const LABEL_DROP: float = 8.0
-const WARNING_SIZE: float = 9.0
 ## Kilitli bölgedeki noktanın görünürlüğü.
 const DIMMED_ALPHA: float = 0.6
 
@@ -79,6 +68,11 @@ var _saturated: bool = false
 var _stock_fill: float = -1.0
 ## Noktanın sağında simgesi gösterilen mallar (yatakta hammadde, fabrikada çıktılar).
 var _goods: Array[Good] = []
+## Alet etiketi ("" yoksa), parası yetiyor mu, alet açıkken kullanılamaz mı.
+var _tag: String = ""
+var _tag_affordable: bool = true
+var _unusable: bool = false
+var _dimmed: bool = false
 
 
 func _ready() -> void:
@@ -122,7 +116,23 @@ func set_goods(goods: Array[Good]) -> void:
 
 
 func set_dimmed(value: bool) -> void:
-	modulate = Color(1.0, 1.0, 1.0, DIMMED_ALPHA) if value else Color.WHITE
+	_dimmed = value
+	_apply_alpha()
+
+
+## Seçili aletin bu noktadaki işareti: fiyat etiketi ya da "kullanılamaz" soluğu.
+func set_tool_mark(tag: String, affordable: bool, unusable: bool) -> void:
+	if tag != _tag or affordable != _tag_affordable or unusable != _unusable:
+		_tag = tag
+		_tag_affordable = affordable
+		_unusable = unusable
+		_apply_alpha()
+		queue_redraw()
+
+
+func _apply_alpha() -> void:
+	var alpha: float = UNUSABLE_ALPHA if _unusable else (DIMMED_ALPHA if _dimmed else 1.0)
+	modulate = Color(1.0, 1.0, 1.0, alpha)
 
 
 func set_hovered(value: bool) -> void:
@@ -190,7 +200,8 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, SIZE, CITY_COLOR)
 			draw_arc(Vector2.ZERO, SIZE + 3.0, 0.0, TAU, 32, OUTLINE, 2.0)
 			if _income >= INCOME_VISIBLE_MIN:
-				_draw_income_badge()
+				PointMarks.draw_badge(self, SIZE, "+%s/min" % RouteView.format_rate(_income),
+						BADGE_SATURATED_COLOR if _saturated else BADGE_COLOR)
 		Kind.RESOURCE_SITE:
 			var color: Color = Color.GRAY
 			if resource != null:
@@ -213,55 +224,15 @@ func _draw() -> void:
 				draw_colored_polygon(PackedVector2Array([Vector2(-SIZE, -SIZE),
 						Vector2(0.0, -SIZE - 8.0), Vector2(SIZE, -SIZE)]), FACTORY_COLOR.darkened(0.3))
 			if _warning:
-				_draw_warning(Vector2(SIZE + 4.0, -SIZE - 4.0))
+				PointMarks.draw_warning(self, Vector2(SIZE + 4.0, -SIZE - 4.0))
 
-	_draw_goods()
-	_draw_stock_bar()
+	if not _goods.is_empty():
+		PointMarks.draw_goods(self, SIZE, _goods)
+	if _stock_fill >= 0.0:
+		PointMarks.draw_stock_bar(self, SIZE, _stock_fill)
+	if not _tag.is_empty():
+		PointMarks.draw_badge(self, SIZE, _tag, TAG_COLOR if _tag_affordable else TAG_EXPENSIVE_COLOR)
 	_draw_label()
-
-
-## Noktanın sağında mal simgeleri. Editörde çizilmez (veri oyunda gelir).
-func _draw_goods() -> void:
-	var x: float = SIZE + 6.0
-	for good: Good in _goods:
-		GoodIcon.draw(self, Vector2(x, -GOOD_ICON_SIZE * 0.5), good, GOOD_ICON_SIZE)
-		x += GOOD_ICON_SIZE + GOOD_ICON_GAP
-
-
-func _draw_stock_bar() -> void:
-	if _stock_fill < 0.0:
-		return
-	var back: Rect2 = Rect2(Vector2(-STOCK_BAR_SIZE.x * 0.5, SIZE + STOCK_BAR_GAP), STOCK_BAR_SIZE)
-	draw_rect(back, STOCK_BAR_BACK)
-	var fill: float = clampf(_stock_fill, 0.0, 1.0)
-	var bar: Rect2 = Rect2(back.position, Vector2(back.size.x * fill, back.size.y))
-	draw_rect(bar, STOCK_BAR_FULL if fill >= STOCK_FULL_RATIO else STOCK_BAR_FILL)
-	draw_rect(back, OUTLINE, false, 1.0)
-
-
-## Şehrin üstünde "+10/min"; şehir doyduysa turuncu.
-func _draw_income_badge() -> void:
-	var font: Font = ThemeDB.fallback_font
-	var text: String = "+%s/min" % RouteView.format_rate(_income)
-	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE)
-	var box: Rect2 = Rect2(Vector2(-text_size.x * 0.5 - BADGE_PADDING, -SIZE - BADGE_RISE - text_size.y),
-			Vector2(text_size.x + BADGE_PADDING * 2.0, text_size.y + BADGE_PADDING))
-	draw_rect(box, BADGE_SATURATED_COLOR if _saturated else BADGE_COLOR)
-	draw_rect(box, OUTLINE, false, 1.5)
-	draw_string(font, Vector2(box.position.x + BADGE_PADDING, box.end.y - BADGE_PADDING * 0.5 - font.get_descent(BADGE_FONT_SIZE)),
-			text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE, OUTLINE)
-
-
-## Sarı üçgen içinde "!" — sorunlu fabrika.
-func _draw_warning(center: Vector2) -> void:
-	var s: float = WARNING_SIZE
-	var triangle: PackedVector2Array = [center + Vector2(0.0, -s), center + Vector2(s, s * 0.8),
-			center + Vector2(-s, s * 0.8)]
-	draw_colored_polygon(triangle, WARNING_COLOR)
-	triangle.append(triangle[0])
-	draw_polyline(triangle, OUTLINE, 2.0)
-	draw_string(ThemeDB.fallback_font, center + Vector2(-s, s * 0.6), "!",
-			HORIZONTAL_ALIGNMENT_CENTER, s * 2.0, int(s * 1.4), OUTLINE)
 
 
 func _draw_label() -> void:
