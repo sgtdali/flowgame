@@ -13,6 +13,9 @@ extends Resource
 ## Araç satılınca ya da hat silinince araç fiyatının geri verilen yüzdesi.
 ## Hat kurulum ücreti geri verilmez.
 @export var vehicle_refund_percent: int = 50
+## Bir harita biriminin metre karşılığı (harita 12×12 km = 1.200 birim).
+## Yalnızca gösterim içindir: mesafe oyuncuya km olarak yazılır.
+@export var meters_per_unit: float = 10.0
 
 @export_group("Fabrika ve şehir")
 ## Fabrika: kurulum fiyatı ve dakikalık bakımı.

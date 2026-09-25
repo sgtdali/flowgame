@@ -1,8 +1,9 @@
 class_name ToolHighlights
 extends RefCounted
 
-## Seçili alete göre haritayı işaretler (görev 07): Factory'de noktalar soluk
-## (fabrika boş yere kurulur); Unlock'ta açılabilir bölgelere
+## Seçili alete göre haritayı işaretler (görev 07, 08): Factory'de fabrika
+## kurulabilen (açık) bölgeler açık renkte, noktalar soluk (fabrika boş yere
+## kurulur); Unlock'ta açılabilir bölgelere
 ## fiyat. Para yetmiyorsa etiket kırmızı (K2). Hat kurulurken (Route aleti ya da
 ## panelden) önce hat başlatılabilen, ilk nokta seçilince ona bağlanabilen
 ## noktalar normal, diğerleri soluk (K5). Kural hesaplamaz: neyin
@@ -13,7 +14,7 @@ const UNLOCK_TAG: String = "Unlock %d"
 
 ## `route_start`: yarım hattın ilk noktası (yoksa null).
 static func refresh(tool: MapTools.Tool, route_start: MapPoint, points: Array[MapPoint],
-		views: Array[RegionView], sim: MapFlowSim, _config: MapConfig) -> void:
+		views: Array[RegionView], sim: MapFlowSim) -> void:
 	for point: MapPoint in points:
 		if route_start != null:
 			var usable: bool = point == route_start or sim.routes.build_block_reason(
@@ -35,3 +36,5 @@ static func refresh(tool: MapTools.Tool, route_start: MapPoint, points: Array[Ma
 				and sim.regions.unlock_block_reason(view.data.id, true).is_empty())
 		var cost: int = sim.regions.unlock_cost()
 		view.set_tool_tag(UNLOCK_TAG % cost if usable else "", sim.regions.wallet.can_afford(cost))
+		view.set_tool_highlight(tool == MapTools.Tool.FACTORY
+				and sim.factories.build_block_reason(view.data.id, true).is_empty())

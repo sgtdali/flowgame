@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://features/worldmap/hover_card.gd" id="11_hover"]
 [ext_resource type="Script" path="res://features/worldmap/map_top_bar.gd" id="12_top_bar"]
 [ext_resource type="Script" path="res://features/worldmap/tool_bar.gd" id="13_tool_bar"]
+[ext_resource type="Script" path="res://features/worldmap/cursor_tag.gd" id="14_cursor_tag"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")
@@ -498,6 +499,12 @@ autowrap_mode = 3
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("13_tool_bar")
+
+[node name="CursorTag" type="Label" parent="UI"]
+offset_right = 40.0
+offset_bottom = 23.0
+mouse_filter = 2
+script = ExtResource("14_cursor_tag")
 
 [node name="HoverCard" type="PanelContainer" parent="UI"]
 offset_right = 40.0

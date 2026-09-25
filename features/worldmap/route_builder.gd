@@ -76,10 +76,10 @@ func update_preview(world_mouse: Vector2, hovered: MapPoint) -> void:
 			hovered.get_point_id(), DEFAULT_TRANSPORT)
 	if reason.is_empty():
 		_preview.default_color = PREVIEW_OK
-		var capacity: float = MapRoute.capacity_for(1, DEFAULT_TRANSPORT,
-				map_distance(_start, hovered))
-		hint_changed.emit("Build route to %s: cost %d, %s/min with 1 %s" % [
-				hovered.describe(), routes.build_cost(DEFAULT_TRANSPORT),
+		var distance: float = map_distance(_start, hovered)
+		var capacity: float = MapRoute.capacity_for(1, DEFAULT_TRANSPORT, distance)
+		hint_changed.emit("Build route to %s: %s, cost %d, %s/min with 1 %s" % [
+				hovered.describe(), MapUnits.km_text(distance), routes.build_cost(DEFAULT_TRANSPORT),
 				RouteView.format_rate(capacity), DEFAULT_TRANSPORT.display_name.to_lower()])
 	else:
 		_preview.default_color = PREVIEW_BLOCKED

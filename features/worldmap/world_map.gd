@@ -28,20 +28,17 @@ const RIGHT_CLICK_SLOP: float = 6.0
 @onready var factory_screen: FactoryScreen = $UI/FactoryScreen
 @onready var hover_card: HoverCard = $UI/HoverCard
 @onready var tool_bar: ToolBar = $UI/ToolBar
+@onready var cursor_tag: CursorTag = $UI/CursorTag
 
 var sim: MapFlowSim = MapFlowSim.new()
 var state: RegionState = sim.regions
 var routes: RouteState = sim.routes
 var tools: MapTools
-var selected: RegionView = null
-var selected_point: MapPoint = null
-var selected_route: RouteView = null
+var selection: MapSelection = MapSelection.new()
 
 var _panels: MapPanels
 var _picker: MapPicker
 var _points: Array[MapPoint] = []
-var _hovered_point: MapPoint = null
-var _hovered_route: RouteView = null
 var _ui_timer: float = 0.0
 var _right_press_position: Vector2 = Vector2.ZERO
 
@@ -123,13 +120,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	var motion: InputEventMouseMotion = event as InputEventMouseMotion
 	if motion != null:
 		var world: Vector2 = _picker.to_world(motion.position)
-		_set_hovered_point(_picker.point_at(world))
-		route_builder.update_preview(world, _hovered_point)
+		selection.hover_point(_picker.point_at(world))
+		route_builder.update_preview(world, selection.hovered_point)
 		var hover_route: RouteView = null
-		if _hovered_point == null and not route_builder.is_building():
+		if selection.hovered_point == null and not route_builder.is_building():
 			hover_route = _picker.route_at(world)
-		_set_hovered_route(hover_route)
+		selection.hover_route(hover_route)
 		_update_hover_card()
+		cursor_tag.show_for(tools.cursor_tag(selection.hovered_point,
+				_picker.region_at(world) if tools.tool == MapTools.Tool.FACTORY else null), motion.position)
 
 
 func _on_left_click(world: Vector2) -> void:
@@ -144,61 +143,17 @@ func _on_left_click(world: Vector2) -> void:
 		else:
 			route_builder.cancel()
 		return
-	_clear_selection()
-	if point != null:
-		selected_point = point
-		point.set_selected(true)
-	else:
-		selected_route = _picker.route_at(world)
-		if selected_route != null:
-			selected_route.set_selected(true)
-		else:
-			selected = _picker.region_at(world)
-			if selected != null:
-				selected.set_selected(true)
+	selection.select_at(_picker, world)
 	_refresh_now()
 
 
-func _clear_selection() -> void:
-	if selected != null:
-		selected.set_selected(false)
-	if selected_point != null:
-		selected_point.set_selected(false)
-	if selected_route != null:
-		selected_route.set_selected(false)
-	selected = null
-	selected_point = null
-	selected_route = null
-
-
-func _set_hovered_route(view: RouteView) -> void:
-	if view == _hovered_route:
-		return
-	if _hovered_route != null and is_instance_valid(_hovered_route):
-		_hovered_route.set_hovered(false)
-	_hovered_route = view
-	if view != null:
-		view.set_hovered(true)
-
-
-func _set_hovered_point(point: MapPoint) -> void:
-	if point == _hovered_point:
-		return
-	if _hovered_point != null:
-		_hovered_point.set_hovered(false)
-	_hovered_point = point
-	if point != null:
-		point.set_hovered(true)
-
-
-## Üst çubuğu, hat etiketlerini ve açık paneli şimdi yeniler.
 func _refresh_now() -> void:
 	_ui_timer = 0.0
 	top_bar.refresh(sim)
 	route_builder.refresh_views(sim)
 	MapMarkers.refresh(_points, sim, RegionState.DEFAULT_CONFIG.point_stock_capacity)
 	_refresh_highlights()
-	_panels.show_selection(selected, selected_point, selected_route)
+	_panels.show_selection(selection.region, selection.point, selection.route)
 	_update_hover_card()
 
 
@@ -207,7 +162,7 @@ func _update_hover_card() -> void:
 	if factory_screen.is_open() or route_builder.is_building():
 		hover_card.hide()
 	else:
-		hover_card.show_for(_hovered_point, _hovered_route, _panels,
+		hover_card.show_for(selection.hovered_point, selection.hovered_route, _panels,
 				get_viewport().get_mouse_position())
 
 
@@ -219,14 +174,14 @@ func _show_hint(text: String) -> void:
 
 
 func _refresh_highlights() -> void:
-	ToolHighlights.refresh(tools.tool, route_builder.start_point(), _points, _picker.views(),
-			sim, RegionState.DEFAULT_CONFIG)
+	ToolHighlights.refresh(tools.tool, route_builder.start_point(), _points, _picker.views(), sim)
 
 
 func _on_tool_changed(tool: MapTools.Tool) -> void:
 	tool_bar.show_tool(tool)
+	cursor_tag.hide()
 	if tool != MapTools.Tool.NONE:
-		_clear_selection()
+		selection.clear()
 	_refresh_now()
 	_show_hint("")
 
@@ -238,7 +193,7 @@ func _on_unlock_requested(region_id: StringName) -> void:
 
 
 func _on_build_route_requested(point: MapPoint) -> void:
-	_clear_selection()
+	selection.clear()
 	_refresh_now()
 	route_builder.start(point)
 
@@ -266,7 +221,7 @@ func _on_open_factory_requested(point: MapPoint) -> void:
 	tools.set_tool(MapTools.Tool.NONE)
 	if route_builder.is_building():
 		route_builder.cancel()
-	_clear_selection()
+	selection.clear()
 	_refresh_now()
 	# Harita arkada gizli kalır; kamera fareyle kaymasın, alt çubuk görünmesin.
 	camera.set_process_unhandled_input(false)
@@ -281,10 +236,10 @@ func _on_factory_closed() -> void:
 
 
 func _on_remove_route_requested(route: MapRoute) -> void:
-	var view: RouteView = selected_route
+	var view: RouteView = selection.route
 	routes.remove_route(route)
-	_clear_selection()
-	_set_hovered_route(null)
+	selection.clear()
+	selection.hover_route(null)
 	if view != null:
 		route_builder.remove_view(view)
 	_refresh_now()

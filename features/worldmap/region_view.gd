@@ -26,6 +26,8 @@ const BORDER_WIDTH_AVAILABLE: float = 5.0
 const BORDER_WIDTH_SELECTED: float = 8.0
 ## Fare üzerindeyken dolgunun beyaza doğru açılma oranı.
 const HOVER_LIGHTEN: float = 0.18
+## Factory aleti seçiliyken fabrika kurulabilen (açık) bölgenin dolgusu bu kadar açılır.
+const TOOL_LIGHTEN: float = 0.25
 ## Unlock aleti fiyat etiketi (bölge adının altında): yetiyorsa açık, yetmiyorsa kırmızı.
 const TAG_FONT_SIZE: int = 20
 const TAG_COLOR: Color = Color(1.0, 0.9, 0.45)
@@ -34,6 +36,7 @@ const TAG_DROP: float = 26.0
 
 var _status: RegionState.Status = RegionState.Status.LOCKED
 var _hovered: bool = false
+var _tool_lit: bool = false
 var _selected: bool = false
 var _shapes: Array[Polygon2D] = []
 var _borders: Array[Line2D] = []
@@ -99,6 +102,8 @@ func _refresh() -> void:
 			fill = FILL_AVAILABLE
 			border_color = BORDER_AVAILABLE
 			width = BORDER_WIDTH_AVAILABLE
+	if _tool_lit:
+		fill = fill.lerp(Color.WHITE, TOOL_LIGHTEN)
 	if _hovered:
 		fill = fill.lerp(Color.WHITE, HOVER_LIGHTEN)
 	if _selected:
@@ -138,6 +143,13 @@ func points_root() -> Node2D:
 		root.name = POINTS_NODE
 		add_child(root)
 	return root
+
+
+## Factory aleti seçiliyken fabrika kurulabilen bölgeyi açık gösterir.
+func set_tool_highlight(value: bool) -> void:
+	if _tool_lit != value:
+		_tool_lit = value
+		_refresh()
 
 
 ## Unlock aleti seçiliyken bölge adının altındaki fiyat ("" gizler).

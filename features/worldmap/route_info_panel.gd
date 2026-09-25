@@ -46,7 +46,7 @@ func show_route(view: RouteView, add_reason: String, remove_reason: String, refu
 	var transport: TransportType = _route.transport
 	from_value.text = view.from_point.describe()
 	to_value.text = view.to_point.describe()
-	distance_value.text = str(roundi(_route.distance))
+	distance_value.text = MapUnits.km_text(_route.distance)
 	transport_value.text = transport.display_name
 	vehicles_value.text = str(_route.vehicles)
 	capacity_value.text = "%s/min" % RouteView.format_rate(_route.capacity_per_minute())

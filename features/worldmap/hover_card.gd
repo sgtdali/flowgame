@@ -40,8 +40,11 @@ func show_for(point: MapPoint, route: RouteView, panels: MapPanels, mouse_positi
 	if point != null:
 		show_rows(point.describe(), panels.point_rows(point), mouse_position)
 	elif route != null and is_instance_valid(route):
+		var rows: Array[Dictionary] = [{"caption": "Distance",
+				"text": MapUnits.km_text(route.route.distance)}]
+		rows.append_array(panels.route_rows(route))
 		show_rows("%s - %s" % [route.from_point.get_title(), route.to_point.get_title()],
-				panels.route_rows(route), mouse_position)
+				rows, mouse_position)
 	else:
 		hide()
 

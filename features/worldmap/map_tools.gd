@@ -9,6 +9,10 @@ extends RefCounted
 ## açmayı WorldMap yapar (sinyalle istenir); hat kurma akışı RouteBuilder'dadır.
 
 enum Tool { NONE, ROUTE, FACTORY, UNLOCK }
+## İmleç yazısının durumu: kurulabilir / para yetmiyor / kurulamaz.
+enum TagState { OK, EXPENSIVE, BLOCKED }
+
+const FACTORY_TAG: String = "Build %d"
 
 signal tool_changed(tool: Tool)
 ## Fabrika kurulacak bölge ve dünya konumu.
@@ -79,6 +83,19 @@ func step_back() -> bool:
 		set_tool(Tool.NONE)
 		return true
 	return false
+
+
+## İmlecin yanındaki yazı ({text, state}); gösterilecek bir şey yoksa text "".
+## Yalnızca Factory aletinde: boş yerde fiyat, kurulamayan yerde nedeni.
+func cursor_tag(point: MapPoint, region: RegionView) -> Dictionary:
+	if tool != Tool.FACTORY or point != null or region == null or region.data == null:
+		return {"text": ""}
+	var reason: String = _sim.factories.build_block_reason(region.data.id, true)
+	if not reason.is_empty():
+		return {"text": reason, "state": TagState.BLOCKED}
+	var cost: int = RegionState.DEFAULT_CONFIG.factory_cost
+	return {"text": FACTORY_TAG % cost,
+			"state": TagState.OK if _sim.regions.wallet.can_afford(cost) else TagState.EXPENSIVE}
 
 
 ## Alet açıkken sol tık. Alet yoksa false döner (WorldMap seçim yapar).
