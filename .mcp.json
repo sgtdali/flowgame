@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "godot-mcp-pro": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "tools/godot_mcp_pro_server.mjs"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,51 @@
+---
+tur: degisiklik-gunlugu
+durum: etkin
+guncelleme: 2026-10-20
+---
+# Değişiklik günlüğü
+
+## 2026-10-20 — İlk aktarım
+
+- Paylaşılan konuşma tam metin olarak kaynaklara alındı.
+- Doğrudan ürün tüketen araştırma, canvas üzerinde kart üretimi ve makine kartı seçimi karar defterine işlendi.
+- Alternatif prosesler ve bölgesel lojistik yönleri, onaylı ayrıntılar gibi sunulmadan konu notlarına aktarıldı.
+- Tasarımın konu notları, üç görsel pano, açık sorular ve iki şablon oluşturuldu.
+- Harici eklenti gerektirmeyen yerel Obsidian ayarları hazırlandı.
+- Mevcut çalışma klasöründe eski oyun dosyaları bulunmadığı görüldü; Git'teki eski içerik geri yüklenmedi.
+- Doğrulama: 23 Markdown notu, 3 Canvas; 70 wikilink, tüm Canvas dosya hedefleri, düğüm/ok kimlikleri ve JSON dosyaları kontrol edildi; bozuk hedef bulunmadı. Ham kaynak kopyası byte düzeyinde eşleşti.
+- Obsidian kasa kaydı, mevcut kayıtlar korunup yapılandırma yedeklenerek eklendi. Başlatma sonrasında uygulamada `Error` başlıklı pencere görüldü; panonun Obsidian içinde açılışı görsel olarak doğrulanamadı. Dosya doğrulaması uygulama içi görsel doğrulama değildir.
+- Kullanıcının Git geçmişini temizleme isteği için yerel `.git` kaldırma işlemi otomatik onay denetimince engellendi; mevcut geçmiş sıfırlanmadı.
+
+## 2026-10-20 — Makine üretim modeli onayı
+
+- K-005: Reçetenin gereken işi ve uygun makinenin saniyelik işleme hızıyla çevrim süresi hesaplanması onaylandı. Tamponlu çevrim ve girdi/çıktı zamanlaması Makine Kartları notuna işlendi.
+- Kaynak, karar defteri, güncel özet, simülasyon notu ve açık sorular birlikte güncellendi. Sayılar örnek olarak korundu; tampon boyutları ve gruplama açık bırakıldı.
+- Ana pano ve makine/proses panosuna karar özeti eklendi; mevcut kart konumları ve kimlikleri korundu.
+
+## 2026-10-20 — Otomatik eşit paylaşım onayı
+
+- K-006: Kabul edebilen bağlı tüketicilere otomatik eşit ürün paylaşımı onaylandı. Dolu tüketicinin payı diğerlerine aktarılır; bütün tüketiciler doluysa üreticinin çıkışı birikir ve yeni çevrim yer bekler.
+- Ürün dağıtımı notu, karar defteri, güncel özet, açık sorular, kaynak kaydı ve araştırma/üretim panosu güncellendi. Tarihsel 40/60/20 örneğinin dağıtım kuralı olmadığı netleştirildi.
+- Kart ölçeği kullanıcının isteği doğrultusunda açık bırakıldı.
+
+## 2026-10-20 — İlk çalışan üretim atölyesi
+
+- Kullanıcının oyunu oluşturmaya başlama talebiyle Godot 4.7.2 projesi kuruldu. K-005 üretim çevrimi ve K-006 otomatik eşit paylaşım küçük örnek ağda uygulandı.
+- 32 simülasyon kontrolü, headless ve OpenGL arayüz smoke testleri geçti; pencere görüntüsü incelendi. Kartlar, bağlantılar ve kayıt/yükleme kullanılabilir.
+- [[Yönetim/Uygulama Durumu]] oluşturuldu; geçici örnek değerler ve henüz uygulanmayan sistemler onaylı kararlardan ayrıldı. Mevcut kart ölçeği seçimi açık kaldı.
+
+## 2026-10-20 — Makine kütüphanesi ve seçili makine paneli
+
+- Mockup referansıyla, makine görselleri kullanılmadan sol arama/ekleme kütüphanesi ve sağ canlı ayrıntı/kontrol paneli uygulandı. Katalogdaki mevcut üç tür kullanılır.
+- Seçim, stoklar, çevrim hesabı, durdur/çalıştır, silme ve yüklemede panel güncellemeleri test edildi. Kütüphane ve kart seçimi viewport fare olaylarıyla doğrulandı. Mevcut 32 üretim kontrolü geçti.
+- [[Yönetim/Uygulama Durumu]] ve proje README'si güncellendi; yeni makine reçeteleri veya ekonomi kararı eklenmedi.
+
+## 2026-10-20 — 24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı
+
+- K-007: 5 katmanlı 24 ilişkili ürün, bunları işleyen makine türleri ve Kademe 0 başlangıç durumundan 3 paralel kolla ilerleyen 9 araştırmalık (`A-01` – `A-09`) teknoloji ağacı ilk taslak olarak kaydedildi; kalite sistemi (A/B/C) şu aşamada kapsam dışı bırakıldı.
+- [[Tasarım/Ürün ve Üretim Ağı]] oluşturuldu ve üretim akış şeması eklendi; [[Tasarım/Teknoloji Ağacı]] araştırma akış şeması ve kademe tablolarıyla güncellendi.
+- [[Yönetim/Karar Defteri]], [[Kaynaklar/02 - Bu Sohbetteki Kararlar]], [[00 - Başlangıç]], [[01 - Güncel Tasarım]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Yönetim/Açık Sorular]] ve ana tasarım panosu güncellendi.
+- Kullanıcının “bunları oyuna uygula şimdi” talebiyle 24 ürün, çok girdili/çıktılı reçeteler, reçete seçimi ve 9 araştırmalık teknoloji ağacı (`A-01` – `A-09`) Godot projesine uygulandı; 63 simülasyon kontrolü ve arayüz smoke testleri geçti.
+
+Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu notu; varsa eski karar bağlantısı.`

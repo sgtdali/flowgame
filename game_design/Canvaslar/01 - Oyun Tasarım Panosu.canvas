@@ -1,0 +1,256 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 0,
+      "y": -300,
+      "width": 2260,
+      "height": 180,
+      "text": "# FLOWGAME — TASARIM ÇALIŞMA ALANI\nMakine kartlarıyla endüstriyel üretim · Yaşayan tasarım · 20 Ekim 2026\n\nYeşil: açıkça seçilen temel · Sarı: öneri / olumlu karşılanan yön · Turuncu: açık sorular\nAyrıntılar dosya kartlarında. Öneri kartını taşımak veya bağlamak onay sayılmaz."
+    },
+    {
+      "id": "approved",
+      "type": "group",
+      "label": "SEÇİLEN TEMEL",
+      "x": 0,
+      "y": 0,
+      "width": 540,
+      "height": 1140,
+      "color": "4"
+    },
+    {
+      "id": "systems",
+      "type": "group",
+      "label": "TASARIM SİSTEMLERİ — AYRINTILAR ÖNERİ",
+      "x": 620,
+      "y": 0,
+      "width": 1060,
+      "height": 1500,
+      "color": "3"
+    },
+    {
+      "id": "governance",
+      "type": "group",
+      "label": "KARARLAR VE YAŞAYAN DÜZEN",
+      "x": 1760,
+      "y": 0,
+      "width": 540,
+      "height": 1500,
+      "color": "2"
+    },
+    {
+      "id": "current",
+      "type": "file",
+      "file": "01 - Güncel Tasarım.md",
+      "x": 40,
+      "y": 60,
+      "width": 460,
+      "height": 280,
+      "color": "4"
+    },
+    {
+      "id": "machine",
+      "type": "file",
+      "file": "Tasarım/Makine Kartları.md",
+      "x": 40,
+      "y": 410,
+      "width": 460,
+      "height": 280,
+      "color": "4"
+    },
+    {
+      "id": "core",
+      "type": "text",
+      "x": 40,
+      "y": 760,
+      "width": 460,
+      "height": 310,
+      "text": "## Açık seçimler\n**K-001:** Araştırma gerçek ürün tüketir.\n**K-002:** Üretim sonsuz canvas üzerinde kartlarla kurulur.\n**K-003:** Kartlar makineleri temsil eder.\n**K-005:** Çevrim süresi = gereken iş / makine işleme hızı.\n**K-006:** Kabul edebilen tüketicilere otomatik eşit paylaşım.\n**K-007:** 24 ürünlük ağ ve 9 araştırmalık teknoloji ağacı ilk taslağı (kalite şu an kapsam dışı).",
+      "color": "4"
+    },
+    {
+      "id": "identity",
+      "type": "file",
+      "file": "Tasarım/Oyun Kimliği ve Temel Döngü.md",
+      "x": 660,
+      "y": 60,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "research",
+      "type": "file",
+      "file": "Tasarım/Araştırma Ekonomisi.md",
+      "x": 1180,
+      "y": 60,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "process",
+      "type": "file",
+      "file": "Tasarım/Prosesler Kalite ve Yan Ürünler.md",
+      "x": 660,
+      "y": 410,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "regions",
+      "type": "file",
+      "file": "Tasarım/Bölgeler ve Lojistik.md",
+      "x": 1180,
+      "y": 410,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "goal",
+      "type": "file",
+      "file": "Tasarım/Ana Proje ve Ürün Dağıtımı.md",
+      "x": 660,
+      "y": 760,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "ui",
+      "type": "file",
+      "file": "Tasarım/Arayüz ve Büyük Ağ Yönetimi.md",
+      "x": 1180,
+      "y": 760,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "prototype",
+      "type": "file",
+      "file": "Tasarım/Prototip ve Doğrulama.md",
+      "x": 660,
+      "y": 1110,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "simulation",
+      "type": "file",
+      "file": "Tasarım/Simülasyon İlkeleri.md",
+      "x": 1180,
+      "y": 1110,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "decisions",
+      "type": "file",
+      "file": "Yönetim/Karar Defteri.md",
+      "x": 1800,
+      "y": 60,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "questions",
+      "type": "file",
+      "file": "Yönetim/Açık Sorular.md",
+      "x": 1800,
+      "y": 410,
+      "width": 460,
+      "height": 280,
+      "color": "2"
+    },
+    {
+      "id": "workflow",
+      "type": "file",
+      "file": "Yönetim/Çalışma Düzeni.md",
+      "x": 1800,
+      "y": 760,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "sources",
+      "type": "file",
+      "file": "Kaynaklar/00 - Kaynak Rehberi.md",
+      "x": 1800,
+      "y": 1110,
+      "width": 460,
+      "height": 280
+    },
+    {
+      "id": "flowboard",
+      "type": "file",
+      "file": "Canvaslar/02 - Araştırma ve Üretim Döngüsü.canvas",
+      "x": 0,
+      "y": 1600,
+      "width": 700,
+      "height": 180
+    },
+    {
+      "id": "regionboard",
+      "type": "file",
+      "file": "Canvaslar/03 - Makineler Prosesler ve Bölgeler.canvas",
+      "x": 780,
+      "y": 1600,
+      "width": 700,
+      "height": 180
+    },
+    {
+      "id": "start",
+      "type": "file",
+      "file": "00 - Başlangıç.md",
+      "x": 1560,
+      "y": 1600,
+      "width": 700,
+      "height": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "machine",
+      "fromSide": "right",
+      "toNode": "process",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "uygun reçeteler"
+    },
+    {
+      "id": "e2",
+      "fromNode": "identity",
+      "fromSide": "right",
+      "toNode": "research",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "üretim → ilerleme"
+    },
+    {
+      "id": "e3",
+      "fromNode": "goal",
+      "fromSide": "right",
+      "toNode": "ui",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "paylaşımı görünür kıl"
+    },
+    {
+      "id": "e4",
+      "fromNode": "prototype",
+      "fromSide": "right",
+      "toNode": "simulation",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "ölç ve doğrula"
+    },
+    {
+      "id": "e5",
+      "fromNode": "regions",
+      "fromSide": "right",
+      "toNode": "questions",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "kurallar açık"
+    }
+  ]
+}

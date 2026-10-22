@@ -1,0 +1,10 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "relative",
+  "useMarkdownLinks": false,
+  "showInlineTitle": true,
+  "attachmentFolderPath": "Ekler",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "Taslaklar",
+  "trashOption": "local"
+}

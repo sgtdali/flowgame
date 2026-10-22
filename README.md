@@ -1,48 +1,48 @@
-# Iron & Ember
+# Flowgame — Endüstriyel Üretim ve Araştırma Ağı
 
-A Godot 4 idle/incremental factory prototype: build short routes, then let
-them earn for a long time with little intervention.
+Godot 4.7.2 ile üretim ve araştırma prototipi. Onaylanan **K-001** (doğrudan ürün tüketen araştırma), **K-005** (iş/hız üretim çevrimi), **K-006** (otomatik eşit paylaşım) ve **K-007** (5 katmanlı 24 ürün kataloğu, makine türleri ve 9 araştırmalık teknoloji ağacı ilk taslağı) birlikte çalışır.
 
-## This round's playable loop
+## Başlatma
 
-1. Build `Iron Mine → Smelting Hearth → Market Stall`.
-2. Collect the gold piling up at the market roughly every 30 in-game seconds
-   with **Collect**.
-3. Optionally invest 150 gold in Mine speed or Market sale value.
-4. In parallel, research **Electrification** (free), then build a
-   **Generator** (900 gold) and a **Power Exchange** (300 gold). Wire the
-   Generator to the Exchange, a **Trade Network** to its Demand port, then
-   its Electricity output to a **Collector**. Every 1 kW plus 1 Demand makes
-   one Electricity; gold waits at the Collector.
-5. Once both branches are running, research **Electrified Rolling** (1,000
-   gold) and build the **Electric Rolling Mill** (900 gold — this reuses the
-   existing plate-making workshop, now needing a power line as well as
-   ingots). Wire the Smelting Hearth's ingots and a Generator's power line
-   into it: plate sales beat selling the same ingots and electricity apart.
+Windows'ta `Baslat.cmd` dosyasına çift tıkla. Başlatıcı, bu bilgisayarda projenin üst klasöründeki `Godot_v4.7.2-stable_win64.exe` dosyasını kullanır. Başka konum için `GODOT_PATH` ortam değişkenini ayarla.
 
-Workshops run themselves once wired correctly; the Mill also needs its power
-line connected, or it idles even with a full ingot buffer. There is no
-worker, food, farming, or hunger mechanic in the active game.
+Godot editöründen çalışmak için bu klasördeki `project.godot` dosyasını içe aktar ve F6 yerine projeyi F5 ile çalıştır. Alternatif: `powershell -File tools/launch.ps1 -Editor`.
 
-## Power, in short
+## Başlangıç Ağı ve Araştırma Döngüsü
 
-Power is a capacity, not a stockpiled good — a Generator's kW never carries
-over to the next tick. Its direct power branches split capacity evenly: two
-branches get half each; three get thirds, with any remainder going to the
-lowest-id branch. Iron Mine and Trade Network material outputs use the same
-round-robin split across their connected branches. Power wires are a visually
-and mechanically separate connection type from material wires, so the two can
-never be cross-wired by accident.
+Başlangıç ağı Kademe 0 makineleriyle kurulur:
+`Demir Madeni` + `Kömür Madeni` → `Ergitme Fırını (Pik Demir)` → `Çelik Fırını (Çelik Külçe)` → iki `Haddehane (Çelik Levha ve Çelik Çubuk)` → `Pres (Bağlantı Elemanı)` → `Araştırma Laboratuvarı (A-01: Talaşlı İmalat)`.
 
-## Verification
+- `Kömür`, `Çelik Külçe` ve `Çelik Çubuk` çıkışları bağlı tüketiciler arasında **K-006** gereğince otomatik eşit paylaşılır.
+- `Araştırma Laboratuvarı`, seçili araştırmanın gerektirdiği ürünleri doğrudan tüketerek deney ilerlemesi sağlar (**K-001**).
+- **A-01: Talaşlı İmalat** tamamlandığında sol kütüphanede `Torna` ve `CNC Tezgâhı` açılır (`Mil`, `Dişli`, `Rulman` ve yan ürün olarak `Metal Talaşı`).
+- Üst çubuktaki **Araştırma Ağacı** düğmesinden 9 araştırmalık (`A-01` – `A-09`) teknoloji ağacını açıp aktif araştırmayı değiştirebilir veya **Serbest Mod** düğmesiyle 24 ürünün tüm makine ve reçetelerini hemen açabilirsin.
+
+## Kontroller
+
+- Soldaki **Makine Kütüphanesi** içinde ara ve açık bir makineye tıklayarak canvas'a ekle.
+- Canvas üzerinde bir karta tıkla: sağdaki **Seçili Makine** panelinde **uygun reçeteleri seçebilir**, gereken iş, işleme hızı, çevrim süresi, kapasite ve canlı tamponları görebilirsin.
+- Çok girdili ve çok çıktılı reçetelerde (ör. `CNC` ve `Torna`'dan çıkan `Metal Talaşı` yan ürünü) her ürün kendi renkli port satırına sahiptir.
+- **Çıkış Tamponunu Boşalt** düğmesiyle makine çıkışında biriken ürünleri (ör. henüz geri kazanım hattına bağlanmamış `Metal Talaşı`) temizleyebilir veya `Talaş Bertaraf Ünitesi` / `Çelik Fırını (Talaştan Çelik Geri Kazanımı)` bağlayabilirsin.
+- Kaydet/Yükle yerel `user://workshop.json` yuvasını kullanır; ağ, seçili reçeteler, stoklar, yarım kalan işler, paylaşım sırası ve araştırma ilerlemesi korunur.
+
+## Dosyalar
+
+- `sim/production_sim.gd`: 24 ürün, çok girdili/çıktılı reçeteler, K-005 işleme, K-006 paylaşım, K-007 9 araştırmalık teknoloji ağacı ve kayıt durumu.
+- `data/prototype.json`: 24 ürün, 16 makine türü, 37 reçete ve 9 araştırma (`A-01` – `A-09`) tanımı.
+- `app/main.gd`: Çok portlu GraphEdit arayüzü ve simülasyon bağlantısı.
+- `app/machine_library.gd`: Arama, kilit durumu ve kart ekleme menüsü.
+- `app/machine_inspector.gd`: Seçili makinenin reçete seçimi, canlı ayrıntı ve envanter paneli.
+- `app/research_panel.gd`: 3 kademeli 9 araştırmalık teknoloji ağacı paneli.
+- `tests/test_production.gd`: 24 ürün erişilebilirliği (deadlock kontrolü), süre, stok, paylaşım, yan ürün geri kazanımı, araştırma geçişi ve kayıt devamlılığı testleri (63 kontrol).
+- `game_design/`: Obsidian tasarım vault'u; güncel ürün kararları.
+
+## Doğrulama
 
 ```powershell
-godot --headless --path . --script res://tools/sim_test.gd
-godot --headless --path . --script res://tools/iron_progression_test.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script res://tests/test_production.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --quit-after 20 -- --smoke-test
+& '..\Godot_v4.7.2-stable_win64_console.exe' --path . --rendering-method gl_compatibility -- --smoke-test
 ```
 
-The first command checks production, collection, and save/load correctness.
-The second measures four small-investment routes through the iron branch's
-opening from the same start. Neither was extended to cover Electrification
-or the Electric Rolling Mill this round — see DESIGN.md's "Not yet verified"
-section.
+Son komut OpenGL penceresinde çalışır, arayüz işlemlerini kontrol eder ve `artifacts/production-workshop.png` görüntüsünü üretir. Test; arama, boş arama/sonuç bulunamaması, kütüphaneden ekleme, seçime bağlı panel, stok çubukları, hız değişimine tepki, durdur/çalıştır, silme ve kayıt yüklemesini kapsar. Kütüphane ve kart seçimi, viewport'a gönderilen fare giriş olaylarıyla da doğrulanır. Smoke testi normal oyuncu kaydından ayrı dosya kullanır. Fiziksel fareyle kullanıcı testi ve büyük ağ performansı ayrıca değerlendirilmelidir.

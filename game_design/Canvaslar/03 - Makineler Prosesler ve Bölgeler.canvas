@@ -1,0 +1,226 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 0,
+      "y": -260,
+      "width": 2380,
+      "height": 180,
+      "text": "# MAKİNELER, PROSESLER VE EKONOMİK BÖLGELER\n**Kart = makine** seçildi. Bir kartın makine grubu olması henüz seçilmedi.\nK-005: İş miktarı / makinenin işleme hızıyla tamponlu üretim çevrimi onaylandı.\nAlternatif yöntemler ve bölge ilişkilerinin ayrıntıları öneridir."
+    },
+    {
+      "id": "machinegroup",
+      "type": "group",
+      "label": "MAKİNE KARTI",
+      "x": 0,
+      "y": 0,
+      "width": 650,
+      "height": 1350,
+      "color": "4"
+    },
+    {
+      "id": "processgroup",
+      "type": "group",
+      "label": "AYNI ÜRÜN — ALTERNATİF YÖNTEMLER",
+      "x": 750,
+      "y": 0,
+      "width": 800,
+      "height": 1350,
+      "color": "3"
+    },
+    {
+      "id": "regiongroup",
+      "type": "group",
+      "label": "EKONOMİK KONUM — ÖNERİ",
+      "x": 1650,
+      "y": 0,
+      "width": 750,
+      "height": 1350,
+      "color": "3"
+    },
+    {
+      "id": "machine",
+      "type": "file",
+      "file": "Tasarım/Makine Kartları.md",
+      "x": 40,
+      "y": 60,
+      "width": 570,
+      "height": 300,
+      "color": "4"
+    },
+    {
+      "id": "cardscale",
+      "type": "text",
+      "x": 40,
+      "y": 440,
+      "width": 570,
+      "height": 300,
+      "text": "## Kart ölçeği açık\n**A:** Bir kart = tek makine.\n**B:** Bir kart = aynı türden paralel makine grubu.\n\nBir kartta tek reçete veya kapasitenin birkaç ürüne paylaşılması ayrıca seçilecek.\nMakine kartı kararı bu seçimleri otomatik çözmez.",
+      "color": "2"
+    },
+    {
+      "id": "questions",
+      "type": "file",
+      "file": "Yönetim/Açık Sorular.md",
+      "x": 40,
+      "y": 830,
+      "width": 570,
+      "height": 400,
+      "color": "2"
+    },
+    {
+      "id": "cnc",
+      "type": "text",
+      "x": 790,
+      "y": 60,
+      "width": 720,
+      "height": 250,
+      "text": "## Yöntem A — CNC işleme\nÇelik çubuk → CNC → dişli + talaş\n\nÖrnek eğilim: yüksek kalite, düşük hız, talaş oluşumu.\nReçete ve değerler henüz onaylı değil.",
+      "color": "3"
+    },
+    {
+      "id": "casting",
+      "type": "text",
+      "x": 790,
+      "y": 390,
+      "width": 720,
+      "height": 250,
+      "text": "## Yöntem B — döküm + son işleme\nErgitme → döküm → taşlama → dişli\n\nÖrnek eğilim: yüksek kapasite, ek süreçler ve farklı kalite.\nKaliteyi yükseltme kuralları açık.",
+      "color": "3"
+    },
+    {
+      "id": "forging",
+      "type": "text",
+      "x": 790,
+      "y": 720,
+      "width": 720,
+      "height": 230,
+      "text": "## Yöntem C — dövme + son işleme\nÖrnek eğilim: daha az hammadde kaybı, özel altyapı gereksinimi.\n\nBir yöntemin her ölçütte üstün olmaması hedefleniyor.",
+      "color": "3"
+    },
+    {
+      "id": "process",
+      "type": "file",
+      "file": "Tasarım/Prosesler Kalite ve Yan Ürünler.md",
+      "x": 790,
+      "y": 1030,
+      "width": 720,
+      "height": 250
+    },
+    {
+      "id": "regions",
+      "type": "file",
+      "file": "Tasarım/Bölgeler ve Lojistik.md",
+      "x": 1690,
+      "y": 60,
+      "width": 670,
+      "height": 300
+    },
+    {
+      "id": "positions",
+      "type": "text",
+      "x": 1690,
+      "y": 440,
+      "width": 670,
+      "height": 300,
+      "text": "## İki ayrı konum önerisi\n**Canvas konumu:** Kartın çizildiği yer.\n**Ekonomik bölge:** Kaynak ve lojistik erişimi.\n\nKartı canvas üzerinde taşımak bölgesini değiştirmez.\nBölge transferinin maliyeti ve yöntemi açık.",
+      "color": "3"
+    },
+    {
+      "id": "transport",
+      "type": "text",
+      "x": 1690,
+      "y": 830,
+      "width": 670,
+      "height": 400,
+      "text": "## Yerinde işleme örneği\n30 cevher/dk kaynak · 8 birim/dk taşıma\nÖrnek dönüşüm: 2 cevher → 1 levha\n\nCevher taşı: merkezde 4 levha/dk\nLevha taşı: merkezde 8 levha/dk\nTaşıma 16 olursa: kaynak en çok 15 levha/dk sağlar\n\nHer adet eşit yük varsayılıyor. Kurulum bedelleri verilmediğinden dengelenmiş seçenekler sayılmaz.",
+      "color": "3"
+    },
+    {
+      "id": "proto",
+      "type": "file",
+      "file": "Tasarım/Prototip ve Doğrulama.md",
+      "x": 0,
+      "y": 1460,
+      "width": 1120,
+      "height": 300
+    },
+    {
+      "id": "testquestion",
+      "type": "text",
+      "x": 1240,
+      "y": 1460,
+      "width": 1160,
+      "height": 300,
+      "text": "## Temel doğrulama sorusu\nOyuncu kapasite sorunu yaşadığında yeni kart eklemekle birlikte üretim yöntemini veya bölgesel iş bölümünü değiştirmeyi de anlamlı görüyor mu?\n\nİlk deney seçenekleri: tek ürün / üç yöntem; iki bölge / üç kaynak / tek kısıtlı bağlantı. Bunlar kesinleşmiş ortak prototip kapsamı değil.",
+      "color": "2"
+    },
+    {
+      "id": "production-k005",
+      "type": "text",
+      "x": 0,
+      "y": 1880,
+      "width": 1120,
+      "height": 440,
+      "color": "4",
+      "text": "## K-005 — ONAYLI ÜRETİM MODELİ\n\nReçete: girdi + gereken iş + çıktı miktarı.\nMakine: uygun reçeteler + işleme hızı (işleme birimi/sn).\n**Çevrim süresi = gereken iş / makine hızı**\n\nÖrnek: 2 demir çubuk · 100 iş · 20 iş/sn → 5 saniyede 1 dişli → 12/dk.\nSayılar örnektir. İşleme birimi fiziksel stok değildir.\n\nBütün girdiler ve çıkış alanı varsa başla → girdileri tüket → işi tamamla → çıktıları ekle → koşullar uygunsa tekrarla.\nTampon boyutları, gruplama ve reçete paylaşımı açık.\n\nAyrıntı: [[Tasarım/Makine Kartları#Onaylı üretim modeli — K-005]]"
+    }
+  ],
+  "edges": [
+    {
+      "id": "a",
+      "fromNode": "machine",
+      "fromSide": "right",
+      "toNode": "cnc",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "uygun reçete"
+    },
+    {
+      "id": "b",
+      "fromNode": "cardscale",
+      "fromSide": "right",
+      "toNode": "casting",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "yöntemi makinelerle kur"
+    },
+    {
+      "id": "c",
+      "fromNode": "cnc",
+      "fromSide": "right",
+      "toNode": "regions",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "kaynak ve yük"
+    },
+    {
+      "id": "d",
+      "fromNode": "casting",
+      "fromSide": "right",
+      "toNode": "positions",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "ekonomik konum"
+    },
+    {
+      "id": "e",
+      "fromNode": "process",
+      "fromSide": "right",
+      "toNode": "transport",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "ne taşınmalı?"
+    },
+    {
+      "id": "f",
+      "fromNode": "proto",
+      "fromSide": "right",
+      "toNode": "testquestion",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "karar değerini ölç"
+    }
+  ]
+}

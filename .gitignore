@@ -1,15 +1,12 @@
-# Godot 4+ denylist
 .godot/
-/android/
-
-# Exported builds
-/build/
-/export/
-*.exe
-*.pck
-*.zip
-
-# OS / editor cruft
-.DS_Store
-Thumbs.db
+builds/
 *.tmp
+*.log
+game_design/.obsidian/workspace.json
+game_design/.obsidian/workspace-mobile.json
+
+# art_src: regenerable previews (scripts rebuild them)
+art_src/**/*.gif
+art_src/**/*_x4.png
+art_src/**/*_kareler.png
+art_src/**/__pycache__/

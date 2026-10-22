@@ -1,0 +1,594 @@
+extends Control
+
+const Simulation = preload("res://sim/production_sim.gd")
+const MachineCardScene = preload("res://app/machine_card.tscn")
+const MachineLibrary = preload("res://app/machine_library.gd")
+const MachineInspector = preload("res://app/machine_inspector.gd")
+const ResearchPanel = preload("res://app/research_panel.gd")
+const INK := Color("dce9ef")
+const MUTED := Color("7f99aa")
+const TEAL := Color("61d8bb")
+const GOLD := Color("efb65a")
+var sim := Simulation.new()
+var graph: GraphEdit
+var library: MachineLibrary
+var inspector: MachineInspector
+var research_panel: ResearchPanel
+var selected_id := ""
+var cards: Dictionary = {}
+var research_button: Button
+var unlock_button: Button
+var pause_button: Button
+var speed_button: Button
+var summary: Label
+var message: Label
+var paused := false
+var time_scale := 1.0
+var refresh_elapsed := 0.0
+var last_completed_count := 0
+var storage_path := "user://workshop.json"
+
+func _ready() -> void:
+	_build_theme()
+	_build_ui()
+	_demo()
+	if "--smoke-test" in OS.get_cmdline_user_args():
+		_smoke_test.call_deferred()
+
+func _build_theme() -> void:
+	var skin := Theme.new()
+	skin.default_font_size = 14
+	skin.set_color("font_color", "Label", INK)
+	skin.set_color("font_color", "Button", INK)
+	skin.set_stylebox("normal", "Button", _box(Color("162836"), Color("294356"), 6, 10, 6))
+	skin.set_stylebox("hover", "Button", _box(Color("213b4d"), TEAL, 6, 10, 6))
+	skin.set_stylebox("pressed", "Button", _box(Color("295258"), TEAL, 6, 10, 6))
+	skin.set_stylebox("disabled", "Button", _box(Color("101c26"), Color("1b2d3b"), 6, 10, 6))
+	skin.set_stylebox("background", "ProgressBar", _box(Color("09131c"), Color.TRANSPARENT, 3, 0, 0))
+	skin.set_stylebox("fill", "ProgressBar", _box(TEAL, Color.TRANSPARENT, 3, 0, 0))
+	theme = skin
+
+func _box(background: Color, border: Color, radius: int = 8, pad_x: int = 12, pad_y: int = 8) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(radius)
+	style.content_margin_left = pad_x
+	style.content_margin_right = pad_x
+	style.content_margin_top = pad_y
+	style.content_margin_bottom = pad_y
+	return style
+
+func _label(text: String, font_size: int = 14, color: Color = INK) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	return label
+
+func _button(text: String, action: Callable, parent: Node) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(action)
+	parent.add_child(button)
+	return button
+
+func _build_ui() -> void:
+	var backdrop := ColorRect.new()
+	backdrop.color = Color("081119")
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(backdrop)
+	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.add_theme_constant_override("separation", 0)
+	add_child(layout)
+	# Tek satırlı sade oyun HUD çubuğu
+	var header := PanelContainer.new()
+	header.add_theme_stylebox_override("panel", _box(Color("0f1d29"), Color("1e3446"), 0, 14, 8))
+	layout.add_child(header)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	header.add_child(head)
+	var brand := _label("FLOWGAME", 18, TEAL)
+	head.add_child(brand)
+	var sep1 := VSeparator.new()
+	head.add_child(sep1)
+	research_button = _button("🔬 Araştırma Ağacı", _toggle_research_panel, head)
+	unlock_button = _button("Serbest Mod", _unlock_all_sandbox, head)
+	unlock_button.tooltip_text = "Tüm 24 ürünü ve makineleri hemen denemek için kilitleri açar."
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(spacer)
+	pause_button = _button("Duraklat", _toggle_pause, head)
+	speed_button = _button("1×", _toggle_speed, head)
+	var sep2 := VSeparator.new()
+	head.add_child(sep2)
+	_button("Ortala", _frame_graph, head)
+	_button("Kaydet", _save_game, head)
+	_button("Yükle", _load_game, head)
+	_button("Sıfırla", _demo, head).tooltip_text = "Başlangıç ağını yeniden kurar."
+	var workspace := HBoxContainer.new()
+	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	workspace.add_theme_constant_override("separation", 0)
+	layout.add_child(workspace)
+	library = MachineLibrary.new()
+	library.add_theme_stylebox_override("panel", _box(Color("0d1a24"), Color("1c3142"), 0, 10, 10))
+	workspace.add_child(library)
+	library.build(sim.catalog)
+	library.machine_requested.connect(_add_at_view)
+	library.machine_with_recipe_requested.connect(_add_at_view_with_recipe)
+	graph = GraphEdit.new()
+	graph.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	graph.right_disconnects = true
+	graph.minimap_enabled = false
+	graph.snapping_enabled = true
+	graph.snapping_distance = 20
+	graph.get_menu_hbox().visible = false
+	graph.add_theme_stylebox_override("panel", _box(Color("09131c"), Color.TRANSPARENT, 0, 0, 0))
+	graph.add_theme_color_override("grid_minor", Color("10202c"))
+	graph.add_theme_color_override("grid_major", Color("183040"))
+	graph.connection_request.connect(_connect_cards)
+	graph.disconnection_request.connect(_disconnect_cards)
+	graph.delete_nodes_request.connect(_delete_cards)
+	graph.node_selected.connect(func(node: Node) -> void: _show_selection(str(node.name)))
+	graph.node_deselected.connect(func(_node: Node) -> void: _sync_selection.call_deferred())
+	workspace.add_child(graph)
+	inspector = MachineInspector.new()
+	inspector.add_theme_stylebox_override("panel", _box(Color("0d1a24"), Color("1c3142"), 0, 12, 10))
+	workspace.add_child(inspector)
+	inspector.build()
+	inspector.toggle_requested.connect(_toggle_machine)
+	inspector.speed_requested.connect(_change_machine_speed)
+	inspector.recipe_selected.connect(_change_machine_recipe)
+	inspector.clear_outputs_requested.connect(_clear_machine_outputs)
+	inspector.open_research_requested.connect(_toggle_research_panel)
+	inspector.spawn_supplier_requested.connect(_spawn_supplier)
+	inspector.close_requested.connect(func() -> void: _select_card(""))
+	# Tek satırlı ince alt durum çubuğu
+	var footer := PanelContainer.new()
+	footer.add_theme_stylebox_override("panel", _box(Color("0f1d29"), Color("1e3446"), 0, 14, 5))
+	layout.add_child(footer)
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 16)
+	footer.add_child(bottom)
+	summary = _label("", 12, TEAL)
+	bottom.add_child(summary)
+	var foot_spacer := Control.new()
+	foot_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom.add_child(foot_spacer)
+	message = _label("Karta tıkla: reçete ve ayarlar · Porttan porta sürükle: bağla · Orta fare: kaydır · Tekerlek: yakınlaştır", 12, MUTED)
+	bottom.add_child(message)
+	research_panel = ResearchPanel.new()
+	add_child(research_panel)
+	research_panel.build(sim.catalog)
+	research_panel.research_selected.connect(_select_research)
+	research_panel.unlock_all_requested.connect(_unlock_all_sandbox)
+	research_panel.close_requested.connect(func() -> void: research_panel.visible = false)
+
+func _toggle_research_panel() -> void:
+	research_panel.visible = not research_panel.visible
+	research_panel.refresh(sim)
+
+func _select_research(tech_id: String) -> void:
+	if not sim.set_active_research(tech_id):
+		message.text = "Bu araştırma henüz seçilemez; ön koşulları tamamlanmalı."
+		return
+	for id in cards.keys():
+		if sim.machines[id].kind == "lab" and not sim.machines[id].running:
+			_rebuild_card(id)
+	_sync_graph_connections()
+	research_panel.refresh(sim)
+	_refresh()
+	message.text = "Aktif araştırma: %s" % sim.catalog.researches[tech_id].name
+
+func _unlock_all_sandbox() -> void:
+	sim.unlock_all()
+	library.refresh_locks(sim)
+	research_panel.refresh(sim)
+	if not selected_id.is_empty():
+		inspector.show_machine(sim, selected_id)
+	_refresh()
+	message.text = "Serbest mod: 24 ürünün tüm makineleri ve reçeteleri açıldı."
+
+func _change_machine_recipe(id: String, recipe_id: String) -> void:
+	if not sim.is_recipe_unlocked(recipe_id):
+		message.text = "Bu reçete henüz kilitli."
+		return
+	if not sim.set_recipe(id, recipe_id):
+		return
+	_rebuild_card(id)
+	_sync_graph_connections()
+	_select_card(id)
+	_refresh()
+	message.text = "Reçete: %s" % sim.catalog.recipes[recipe_id].get("name", recipe_id)
+
+func _clear_machine_outputs(id: String) -> void:
+	sim.clear_outputs(id)
+	_refresh()
+	message.text = "Çıkış tamponu boşaltıldı."
+
+func _add_at_view(kind: String) -> void:
+	_add_at_view_with_recipe(kind, "")
+
+func _add_at_view_with_recipe(kind: String, recipe_id: String) -> void:
+	if not sim.is_machine_unlocked(kind):
+		message.text = "Bu makine henüz kilitli."
+		return
+	var pos := (graph.scroll_offset + graph.size * 0.35) / graph.zoom
+	var id := _add_card(kind, pos + Vector2(cards.size() % 4 * 28, cards.size() % 3 * 24), "", recipe_id)
+	_select_card(id)
+	_refresh()
+	var r_name: String = str(sim.recipe_for(id).get("name", ""))
+	message.text = "%s (%s) eklendi." % [sim.catalog.machines[kind].name, r_name]
+
+func _spawn_supplier(target_id: String, product: String, supplier_kind: String, supplier_recipe: String) -> void:
+	if not cards.has(target_id) or not sim.is_machine_unlocked(supplier_kind) or not sim.is_recipe_unlocked(supplier_recipe):
+		message.text = "Bu üretici makine veya reçete henüz kilitli."
+		return
+	var target_node: GraphNode = cards[target_id].node
+	var in_idx := sim.input_products(target_id).find(product)
+	var base_pos := target_node.position_offset + Vector2(-285, maxi(in_idx, 0) * 155 - 40)
+	# Çakışma varsa dikey kaydır
+	for attempt in range(8):
+		var clash := false
+		for view in cards.values():
+			if view.node.position_offset.distance_to(base_pos) < 95.0:
+				clash = true
+				break
+		if not clash:
+			break
+		base_pos += Vector2(0, 155)
+	var supplier_id := _add_card(supplier_kind, base_pos, "", supplier_recipe)
+	var out_port := sim.output_products(supplier_id).find(product)
+	var in_port := sim.input_products(target_id).find(product)
+	if out_port >= 0 and in_port >= 0:
+		sim.add_link(supplier_id, target_id, out_port, in_port)
+		_sync_graph_connections()
+	_refresh()
+	message.text = "%s (%s) kuruldu ve %s girişine bağlandı." % [
+		sim.catalog.machines[supplier_kind].name,
+		sim.catalog.products[product].name,
+		sim.catalog.machines[sim.machines[target_id].kind].name
+	]
+
+func _show_selection(id: String) -> void:
+	if not cards.has(id):
+		return
+	selected_id = id
+	inspector.show_machine(sim, id)
+
+func _select_card(id: String) -> void:
+	for card_id in cards:
+		cards[card_id].node.selected = card_id == id
+	if id.is_empty() or not cards.has(id):
+		selected_id = ""
+		inspector.clear_selection()
+	else:
+		_show_selection(id)
+
+func _sync_selection() -> void:
+	if cards.has(selected_id) and cards[selected_id].node.selected:
+		return
+	for id in cards:
+		if cards[id].node.selected:
+			_show_selection(id)
+			return
+	selected_id = ""
+	inspector.clear_selection()
+
+func _frame_graph() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if cards.is_empty() or not is_instance_valid(graph):
+		return
+	var bounds := Rect2()
+	var first := true
+	for view in cards.values():
+		var card: GraphNode = view.node
+		var rect := Rect2(card.position_offset, card.size)
+		bounds = rect if first else bounds.merge(rect)
+		first = false
+	graph.zoom = clampf(minf((graph.size.x - 90.0) / maxf(bounds.size.x, 1.0), (graph.size.y - 90.0) / maxf(bounds.size.y, 1.0)), graph.zoom_min, 1.0)
+	graph.scroll_offset = bounds.get_center() * graph.zoom - graph.size * 0.5
+
+func _rebuild_card(id: String) -> void:
+	if not cards.has(id) or not sim.machines.has(id):
+		return
+	var old_node: GraphNode = cards[id].node
+	var pos := old_node.position_offset
+	var was_selected := old_node.selected
+	graph.remove_child(old_node)
+	old_node.queue_free()
+	cards.erase(id)
+	_add_card(sim.machines[id].kind, pos, id)
+	cards[id].node.selected = was_selected
+
+func _add_card(kind: String, pos: Vector2, existing_id: String = "", recipe_override: String = "") -> String:
+	var id := existing_id if not existing_id.is_empty() else sim.add_machine(kind, recipe_override)
+	sim.machines[id].position = [pos.x, pos.y]
+	var card: GraphNode = MachineCardScene.instantiate()
+	card.position_offset = pos
+	graph.add_child(card)
+	card.setup_from_sim(sim, id)
+	card.recipe_changed.connect(_change_machine_recipe)
+	card.toggle_pressed.connect(_toggle_machine)
+	card.position_offset_changed.connect(func() -> void:
+		if sim.machines.has(id):
+			sim.machines[id].position = [card.position_offset.x, card.position_offset.y])
+	cards[id] = {
+		"node": card,
+		"displayed_recipe": str(sim.machines[id].recipe)
+	}
+	return id
+
+func _sync_graph_connections() -> void:
+	graph.clear_connections()
+	for link in sim.links:
+		if not cards.has(link.from) or not cards.has(link.to):
+			continue
+		var from_port := sim.output_products(link.from).find(link.product)
+		var to_port := sim.input_products(link.to).find(link.product)
+		if from_port >= 0 and to_port >= 0:
+			graph.connect_node(link.from, from_port, link.to, to_port)
+
+func _connect_cards(from: StringName, from_port: int, to: StringName, to_port: int) -> void:
+	if not sim.add_link(str(from), str(to), from_port, to_port):
+		message.text = "Bağlanamadı: çıkış ve giriş aynı ürün olmalı."
+		return
+	_sync_graph_connections()
+	message.text = "Bağlantı kuruldu (K-006 eşit paylaşım)."
+
+func _disconnect_cards(from: StringName, from_port: int, to: StringName, to_port: int) -> void:
+	sim.remove_link(str(from), str(to), from_port, to_port)
+	_sync_graph_connections()
+
+func _delete_cards(ids: Array[StringName]) -> void:
+	for name_id in ids:
+		var id := str(name_id)
+		if not cards.has(id):
+			continue
+		sim.remove_machine(id)
+		var node: GraphNode = cards[id].node
+		graph.remove_child(node)
+		node.queue_free()
+		cards.erase(id)
+	_sync_graph_connections()
+	_sync_selection()
+	message.text = "Kart silindi."
+	_refresh()
+
+func _clear_cards() -> void:
+	selected_id = ""
+	inspector.clear_selection()
+	graph.clear_connections()
+	for view in cards.values():
+		graph.remove_child(view.node)
+		view.node.queue_free()
+	cards.clear()
+
+func _demo() -> void:
+	_clear_cards()
+	sim = Simulation.new()
+	last_completed_count = 0
+	paused = false
+	pause_button.text = "Duraklat"
+	library.refresh_locks(sim)
+	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
+	var coal_mine := _add_card("coal_mine", Vector2(20, 230))
+	var smelter := _add_card("smelter", Vector2(310, 20), "", "pig_iron")
+	var steel_furnace := _add_card("steel_furnace", Vector2(310, 240), "", "steel_ingot")
+	var mill_plate := _add_card("rolling_mill", Vector2(600, 20), "", "steel_plate")
+	var mill_rod := _add_card("rolling_mill", Vector2(600, 200), "", "steel_rod")
+	var press := _add_card("press", Vector2(600, 380), "", "fastener")
+	var lab := _add_card("lab", Vector2(900, 160))
+	sim.add_link(iron_mine, smelter)
+	sim.add_link(coal_mine, smelter)
+	sim.add_link(coal_mine, steel_furnace)
+	sim.add_link(smelter, steel_furnace)
+	sim.add_link(steel_furnace, mill_plate)
+	sim.add_link(steel_furnace, mill_rod)
+	sim.add_link(mill_plate, lab)
+	sim.add_link(mill_rod, press)
+	sim.add_link(mill_rod, lab)
+	sim.add_link(press, lab)
+	_sync_graph_connections()
+	graph.scroll_offset = Vector2.ZERO
+	_select_card("")
+	_frame_graph.call_deferred()
+	message.text = "Karta tıklayarak reçete ve envanter detaylarını açabilirsin."
+	_refresh()
+
+func _toggle_machine(id: String) -> void:
+	if not sim.machines.has(id):
+		return
+	sim.machines[id].enabled = not sim.machines[id].enabled
+	var m: Dictionary = sim.machines[id]
+	m.status = ("İşleniyor" if m.enabled else "İşleniyor · duracak") if m.running else ("Hazır" if m.enabled else "Durduruldu")
+	_refresh()
+
+func _change_machine_speed(id: String) -> void:
+	sim.machines[id].speed = 40.0 if float(sim.machines[id].speed) == 20.0 else 20.0
+	_refresh()
+
+func _toggle_pause() -> void:
+	paused = not paused
+	pause_button.text = "Devam" if paused else "Duraklat"
+
+func _toggle_speed() -> void:
+	time_scale = 4.0 if time_scale == 1.0 else 1.0
+	speed_button.text = "%d×" % int(time_scale)
+
+func _process(delta: float) -> void:
+	if not paused:
+		sim.advance(minf(delta, 0.25) * time_scale)
+	refresh_elapsed += delta
+	if refresh_elapsed >= 0.1:
+		refresh_elapsed = 0.0
+		_refresh()
+
+func _refresh() -> void:
+	var ports_changed := false
+	for id in cards.keys():
+		if sim.machines.has(id) and cards[id].displayed_recipe != str(sim.machines[id].recipe):
+			_rebuild_card(id)
+			ports_changed = true
+	if ports_changed:
+		_sync_graph_connections()
+	if sim.completed_researches.size() != last_completed_count:
+		last_completed_count = sim.completed_researches.size()
+		library.refresh_locks(sim)
+		var latest := str(sim.completed_researches.back()) if not sim.completed_researches.is_empty() else ""
+		if not latest.is_empty():
+			message.text = "✓ %s tamamlandı! Yeni makineler ve reçeteler açıldı." % sim.catalog.researches[latest].name
+	var lab_experiments := 0
+	for id in cards:
+		var machine: Dictionary = sim.machines[id]
+		var view: Dictionary = cards[id]
+		view.node.update_from_sim(sim, id)
+		if machine.kind == "lab":
+			lab_experiments += int(machine.completed)
+	var active_text := "Tüm araştırmalar tamamlandı"
+	if sim.catalog.researches.has(sim.active_research) and not (sim.active_research in sim.completed_researches):
+		var r_spec: Dictionary = sim.catalog.researches[sim.active_research]
+		var done: int = int(sim.research_progress.get(sim.active_research, 0))
+		active_text = "%s (%d/%d)" % [r_spec.name, done, int(r_spec.experiments)]
+		research_button.text = "🔬 %s  [%d/%d]" % [sim.active_research, done, int(r_spec.experiments)]
+	elif sim.completed_researches.size() < sim.catalog.researches.size():
+		active_text = "%s bitti — Yeni hedef seç" % sim.active_research
+		research_button.text = "🔬 Hedef Seç (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
+	else:
+		research_button.text = "🔬 Araştırmalar (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
+	var whole_seconds := int(sim.elapsed + Simulation.EPSILON)
+	summary.text = "⏱ %02d:%02d   ·   %d Makine / %d Hat   ·   %s   ·   Teknoloji: %d/%d" % [
+		whole_seconds / 60, whole_seconds % 60, cards.size(), sim.links.size(),
+		active_text, sim.completed_researches.size(), sim.catalog.researches.size()
+	]
+	inspector.update_values(sim)
+	research_panel.refresh(sim)
+
+func _save_game() -> void:
+	var file := FileAccess.open(storage_path, FileAccess.WRITE)
+	if file == null:
+		message.text = "Kayıt yazılamadı: %s" % error_string(FileAccess.get_open_error())
+		return
+	file.store_string(JSON.stringify(sim.snapshot(), "\t"))
+	file.close()
+	message.text = "Oyun kaydedildi."
+
+func _load_game() -> void:
+	if not FileAccess.file_exists(storage_path):
+		message.text = "Henüz kayıt yok."
+		return
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(storage_path))
+	var restored := Simulation.new()
+	if not data is Dictionary or not restored.restore(data):
+		message.text = "Kayıt bozuk veya uyumsuz."
+		return
+	var previous_selection := selected_id
+	_clear_cards()
+	sim = restored
+	last_completed_count = sim.completed_researches.size()
+	library.refresh_locks(sim)
+	for id in sim.machines:
+		var m: Dictionary = sim.machines[id]
+		_add_card(m.kind, Vector2(m.position[0], m.position[1]), id)
+	_sync_graph_connections()
+	if cards.has(previous_selection):
+		_select_card(previous_selection)
+	_frame_graph.call_deferred()
+	_refresh()
+	message.text = "Kayıt yüklendi."
+
+func _smoke_test() -> void:
+	paused = true
+	pause_button.text = "Devam"
+	storage_path = "user://smoke-state.json"
+	sim.advance(180.0)
+	_refresh()
+	assert("A-01" in sim.completed_researches, "Başlangıç ağı A-01 araştırmasını tamamlamalı")
+	assert(sim.is_machine_unlocked("cnc") and sim.is_machine_unlocked("lathe"), "A-01 sonrası Torna ve CNC açılmalı")
+	_save_game()
+	var before := sim.snapshot()
+	_load_game()
+	if JSON.stringify(sim.snapshot()) != JSON.stringify(before):
+		push_error("UI kayıt/yükleme eşleşmedi")
+		get_tree().quit(1)
+		return
+	library.search.text = "CNC"
+	library.search.text_changed.emit("CNC")
+	assert(library.entries.cnc.button.visible and not library.entries.iron_mine.button.visible)
+	library.search.text = "olmayan_makine"
+	library.search.text_changed.emit("olmayan_makine")
+	assert(library.empty.visible)
+	library.search.text = "CNC"
+	library.search.text_changed.emit("CNC")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await _smoke_click(library.entries.cnc.button.get_global_rect().get_center())
+	library.search.text = ""
+	library.search.text_changed.emit("")
+	var cnc_card := selected_id
+	assert(cards.size() == 9 and inspector.selected_id == cnc_card and inspector.visible)
+	assert(inspector.work_value.text == "100 birim" and inspector.duration_value.text == "5.0 sn")
+	_change_machine_recipe(cnc_card, "bearing")
+	assert(sim.machines[cnc_card].recipe == "bearing")
+	_change_machine_recipe(cnc_card, "gear_cnc")
+	assert(sim.machines[cnc_card].recipe == "gear_cnc")
+	_change_machine_speed(cnc_card)
+	assert(inspector.duration_value.text == "2.5 sn" and inspector.capacity_value.text == "24.0 adet/dk")
+	inspector.toggle_button.pressed.emit()
+	assert(not sim.machines[cnc_card].enabled and inspector.toggle_button.text == "Çalıştır")
+	inspector.toggle_button.pressed.emit()
+	assert(sim.machines[cnc_card].enabled)
+	_toggle_research_panel()
+	assert(research_panel.visible)
+	_select_research("A-02")
+	assert(sim.active_research == "A-02")
+	_select_research("A-04")
+	assert(sim.active_research == "A-04")
+	_toggle_research_panel()
+	assert(not research_panel.visible)
+	_delete_cards([StringName(cnc_card)])
+	assert(cards.size() == 8)
+	# Tek tıkla üretici makine kurup bağlama testi (_spawn_supplier)
+	_select_card("machine_8")
+	_spawn_supplier("machine_8", "shaft", "lathe", "shaft")
+	assert(cards.size() == 9, "Tek tıkla Torna kurulup laboratuvara bağlanmalı")
+	var lathe_id := "machine_10"
+	assert(sim.machines[lathe_id].kind == "lathe" and sim.machines[lathe_id].recipe == "shaft")
+	_delete_cards([StringName(lathe_id)])
+	assert(cards.size() == 8)
+	_select_card("machine_8")
+	_refresh()
+	for i in range(4):
+		await get_tree().process_frame
+	if DisplayServer.get_name() != "headless":
+		var image := get_viewport().get_texture().get_image()
+		DirAccess.make_dir_recursive_absolute("res://artifacts")
+		image.save_png("res://artifacts/production-workshop.png")
+		image.save_png("res://artifacts/production-workshop-%dx%d.png" % [image.get_width(), image.get_height()])
+	print("UI_SMOKE_OK: sadeleştirilmiş oyun arayüzü, 24 ürün kataloğu, A-01 araştırma tamamlama ve kayıt/yükleme doğrulandı")
+	get_tree().quit()
+
+func _smoke_click(position_in_view: Vector2) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = position_in_view
+	motion.global_position = position_in_view
+	get_viewport().push_input(motion, true)
+	var down := InputEventMouseButton.new()
+	down.position = position_in_view
+	down.global_position = position_in_view
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.pressed = true
+	get_viewport().push_input(down, true)
+	await get_tree().process_frame
+	var up := InputEventMouseButton.new()
+	up.position = position_in_view
+	up.global_position = position_in_view
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.pressed = false
+	get_viewport().push_input(up, true)
+	await get_tree().process_frame

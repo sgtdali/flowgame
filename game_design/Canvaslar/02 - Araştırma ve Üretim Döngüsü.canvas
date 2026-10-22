@@ -1,0 +1,212 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 0,
+      "y": -260,
+      "width": 2220,
+      "height": 180,
+      "text": "# ARAŞTIRMA VE ÜRETİM DÖNGÜSÜ\nGerçek ürün tüketimi ve K-006 otomatik eşit paylaşım seçildi. Araştırma deneyleri ve ortak stok ayrıntıları öneridir.\nSayılar denge örnekleridir; onaylı reçeteler değildir."
+    },
+    {
+      "id": "supplygroup",
+      "type": "group",
+      "label": "ÜRETİM VE DARBOĞAZ",
+      "x": 0,
+      "y": 0,
+      "width": 600,
+      "height": 1170,
+      "color": "5"
+    },
+    {
+      "id": "sharegroup",
+      "type": "group",
+      "label": "ORTAK ÇIKTI — OTOMATİK EŞİT PAYLAŞIM (K-006)",
+      "x": 700,
+      "y": 0,
+      "width": 600,
+      "height": 1170,
+      "color": "4"
+    },
+    {
+      "id": "consume",
+      "type": "group",
+      "label": "ÜRÜN TÜKETİCİLERİ",
+      "x": 1400,
+      "y": 0,
+      "width": 850,
+      "height": 1170,
+      "color": "3"
+    },
+    {
+      "id": "machines",
+      "type": "file",
+      "file": "Tasarım/Makine Kartları.md",
+      "x": 40,
+      "y": 60,
+      "width": 520,
+      "height": 280
+    },
+    {
+      "id": "rates",
+      "type": "text",
+      "x": 40,
+      "y": 410,
+      "width": 520,
+      "height": 300,
+      "text": "## Otomasyon I örneği\nDeney: **2 dişli + 3 bobin + 1 levha**\n60 deney · deney süresi 10 sn\n\n1 laboratuvarın tam talebi:\n12 dişli/dk · 18 bobin/dk · 6 levha/dk\n\nYeterli besleme: yaklaşık 10 dk.\n2 laboratuvar, iki kat besleme: yaklaşık 5 dk.",
+      "color": "3"
+    },
+    {
+      "id": "bottleneck",
+      "type": "text",
+      "x": 40,
+      "y": 790,
+      "width": 520,
+      "height": 280,
+      "text": "## Daha fazla laboratuvar tek başına yetmez\nBobin 8/dk ise malzeme sınırı baskın.\n180 bobin / 8 ≈ 22,5 dk uzun dönem alt sınırı.\n\nTamponlar ve deney bitiş anı gerçek süreyi değiştirir.",
+      "color": "2"
+    },
+    {
+      "id": "sharing",
+      "type": "file",
+      "file": "Tasarım/Ana Proje ve Ürün Dağıtımı.md",
+      "x": 740,
+      "y": 60,
+      "width": 520,
+      "height": 280
+    },
+    {
+      "id": "motors",
+      "type": "text",
+      "x": 740,
+      "y": 410,
+      "width": 520,
+      "height": 300,
+      "text": "## K-006 — Onaylı paylaşım\n10 dişli/dk · iki bağlı tüketici\n\nİkisi de kabul ediyor: **5 / 5**\nBirinin tamponu dolu: **0 / 10**\nİkisi de dolu: **0 / 0**\n\nKullanılmayan pay diğerine gider. Hepsi doluysa üreticinin çıkışı birikir; yeni çevrim alan bekler.",
+      "color": "4"
+    },
+    {
+      "id": "ux",
+      "type": "file",
+      "file": "Tasarım/Arayüz ve Büyük Ağ Yönetimi.md",
+      "x": 740,
+      "y": 790,
+      "width": 520,
+      "height": 280
+    },
+    {
+      "id": "research",
+      "type": "file",
+      "file": "Tasarım/Araştırma Ekonomisi.md",
+      "x": 1440,
+      "y": 60,
+      "width": 770,
+      "height": 280
+    },
+    {
+      "id": "project",
+      "type": "file",
+      "file": "Tasarım/Ana Proje ve Ürün Dağıtımı.md",
+      "x": 1440,
+      "y": 410,
+      "width": 770,
+      "height": 280
+    },
+    {
+      "id": "expand",
+      "type": "text",
+      "x": 1440,
+      "y": 790,
+      "width": 770,
+      "height": 280,
+      "text": "## Makine ve altyapı genişlemesi — öneri\nÜrünlerin yeni makine yapımında tüketilmesi gelecekteki üretimi büyütür.\n\nMakine inşa maliyeti, kart başına makine sayısı ve büyütme bedelleri açık.\nBu dalın kuralları makine kartı ve ekonomi kararlarıyla netleşecek.",
+      "color": "3"
+    },
+    {
+      "id": "tech",
+      "type": "file",
+      "file": "Tasarım/Teknoloji Ağacı.md",
+      "x": 0,
+      "y": 1280,
+      "width": 700,
+      "height": 300
+    },
+    {
+      "id": "loop",
+      "type": "text",
+      "x": 780,
+      "y": 1280,
+      "width": 700,
+      "height": 300,
+      "text": "## Hedeflenen olumlu döngü\nDaha iyi üretim → daha hızlı araştırma → yeni makine / reçete / yönetim yeteneği → daha güçlü üretim.\n\nEski ürünlerin tekrar kullanılması ve araştırma değişiminde ilerlemenin korunması öneriliyor.\nZorunlu zaman sınırı olmaması önerisi kesin kural olarak henüz kaydedilmedi.",
+      "color": "4"
+    },
+    {
+      "id": "tests",
+      "type": "file",
+      "file": "Tasarım/Prototip ve Doğrulama.md",
+      "x": 1560,
+      "y": 1280,
+      "width": 700,
+      "height": 300
+    }
+  ],
+  "edges": [
+    {
+      "id": "a",
+      "fromNode": "machines",
+      "fromSide": "right",
+      "toNode": "sharing",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "ürün akışı"
+    },
+    {
+      "id": "b",
+      "fromNode": "motors",
+      "fromSide": "right",
+      "toNode": "project",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "ana hedef"
+    },
+    {
+      "id": "c",
+      "fromNode": "sharing",
+      "fromSide": "right",
+      "toNode": "research",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "teknoloji yatırımı"
+    },
+    {
+      "id": "d",
+      "fromNode": "ux",
+      "fromSide": "right",
+      "toNode": "expand",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "genişleme"
+    },
+    {
+      "id": "e",
+      "fromNode": "tech",
+      "fromSide": "right",
+      "toNode": "loop",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "yeni yetenekler"
+    },
+    {
+      "id": "f",
+      "fromNode": "loop",
+      "fromSide": "right",
+      "toNode": "tests",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "oynanışta sınanacak"
+    }
+  ]
+}
