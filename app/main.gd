@@ -1,10 +1,11 @@
 extends Control
 
 const Simulation = preload("res://sim/production_sim.gd")
-const MachineCardScene = preload("res://app/machine_card.tscn")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
-const MachineLibrary = preload("res://app/machine_library.gd")
-const MachineInspector = preload("res://app/machine_inspector.gd")
+const FlowGraph = preload("res://app/flow_graph.gd")
+const BuildBar = preload("res://app/build_bar.gd")
+const MachineMenu = preload("res://app/machine_menu.gd")
+const RecipePicker = preload("res://app/recipe_picker.gd")
 const ResearchPanel = preload("res://app/research_panel.gd")
 const INK := Color("dce9ef")
 const MUTED := Color("7f99aa")
@@ -12,8 +13,10 @@ const TEAL := Color("61d8bb")
 const GOLD := Color("efb65a")
 var sim := Simulation.new()
 var graph: GraphEdit
-var library: MachineLibrary
-var inspector: MachineInspector
+var build_bar: BuildBar
+var machine_menu: MachineMenu
+var recipe_picker: RecipePicker
+var _press_offset := Vector2.INF
 var research_panel: ResearchPanel
 var selected_id := ""
 var cards: Dictionary = {}
@@ -114,15 +117,13 @@ func _build_ui() -> void:
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 0)
 	layout.add_child(workspace)
-	library = MachineLibrary.new()
-	library.add_theme_stylebox_override("panel", _box(Color("0d1a24"), Color("1c3142"), 0, 10, 10))
-	workspace.add_child(library)
-	library.build(sim.catalog)
-	library.machine_requested.connect(_add_at_view)
-	library.machine_with_recipe_requested.connect(_add_at_view_with_recipe)
-	graph = GraphEdit.new()
-	graph.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# The canvas holds the graph with the build bar floating over its bottom edge.
+	var canvas := Control.new()
+	canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	workspace.add_child(canvas)
+	graph = FlowGraph.new()
+	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	graph.right_disconnects = true
 	graph.minimap_enabled = false
 	graph.snapping_enabled = true
@@ -136,18 +137,28 @@ func _build_ui() -> void:
 	graph.delete_nodes_request.connect(_delete_cards)
 	graph.node_selected.connect(func(node: Node) -> void: _show_selection(str(node.name)))
 	graph.node_deselected.connect(func(_node: Node) -> void: _sync_selection.call_deferred())
-	workspace.add_child(graph)
-	inspector = MachineInspector.new()
-	inspector.add_theme_stylebox_override("panel", _box(Color("0d1a24"), Color("1c3142"), 0, 12, 10))
-	workspace.add_child(inspector)
-	inspector.build()
-	inspector.toggle_requested.connect(_toggle_machine)
-	inspector.speed_requested.connect(_change_machine_speed)
-	inspector.recipe_selected.connect(_change_machine_recipe)
-	inspector.clear_outputs_requested.connect(_clear_machine_outputs)
-	inspector.open_research_requested.connect(_toggle_research_panel)
-	inspector.spawn_supplier_requested.connect(_spawn_supplier)
-	inspector.close_requested.connect(func() -> void: _select_card(""))
+	canvas.add_child(graph)
+	# Open inputs of auto machines accept any product one of their recipes uses.
+	for kind in sim.catalog.machines:
+		if sim.recipe_mode(str(kind)) == "auto":
+			for product in sim.recipe_input_union(str(kind)):
+				graph.add_valid_connection_type(sim.product_port_type(str(product)), sim.any_port_type(str(kind)))
+	build_bar = BuildBar.new()
+	canvas.add_child(build_bar)
+	build_bar.build(sim.catalog)
+	build_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 12)
+	build_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	build_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	build_bar.machine_requested.connect(_add_at_view)
+	machine_menu = MachineMenu.new()
+	add_child(machine_menu)
+	machine_menu.toggle_requested.connect(_toggle_machine)
+	machine_menu.speed_requested.connect(_change_machine_speed)
+	machine_menu.recipe_screen_requested.connect(func(id: String) -> void: recipe_picker.show_machine(sim, id))
+	machine_menu.clear_outputs_requested.connect(_clear_machine_outputs)
+	machine_menu.research_requested.connect(_toggle_research_panel)
+	machine_menu.delete_requested.connect(func(id: String) -> void: _delete_cards([StringName(id)]))
+	machine_menu.supplier_selected.connect(_spawn_supplier)
 	# Tek satırlı ince alt durum çubuğu
 	var footer := PanelContainer.new()
 	footer.add_theme_stylebox_override("panel", _box(Color("0f1d29"), Color("1e3446"), 0, 14, 5))
@@ -160,8 +171,12 @@ func _build_ui() -> void:
 	var foot_spacer := Control.new()
 	foot_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(foot_spacer)
-	message = _label("Karta tıkla: reçete ve ayarlar · Porttan porta sürükle: bağla · Orta fare: kaydır · Tekerlek: yakınlaştır", 12, MUTED)
+	message = _label("Sağ tık: makine menüsü · + : üretici kur · Porttan porta sürükle: bağla · Tekerlek: yakınlaştır", 12, MUTED)
 	bottom.add_child(message)
+	recipe_picker = RecipePicker.new()
+	add_child(recipe_picker)
+	recipe_picker.build()
+	recipe_picker.recipe_selected.connect(_change_machine_recipe)
 	research_panel = ResearchPanel.new()
 	add_child(research_panel)
 	research_panel.build(sim.catalog)
@@ -187,10 +202,8 @@ func _select_research(tech_id: String) -> void:
 
 func _unlock_all_sandbox() -> void:
 	sim.unlock_all()
-	library.refresh_locks(sim)
+	build_bar.refresh_locks(sim)
 	research_panel.refresh(sim)
-	if not selected_id.is_empty():
-		inspector.show_machine(sim, selected_id)
 	_refresh()
 	message.text = "Serbest mod: 24 ürünün tüm makineleri ve reçeteleri açıldı."
 
@@ -222,8 +235,9 @@ func _add_at_view_with_recipe(kind: String, recipe_id: String) -> void:
 	var id := _add_card(kind, pos + Vector2(cards.size() % 4 * 28, cards.size() % 3 * 24), "", recipe_id)
 	_select_card(id)
 	_refresh()
-	var r_name: String = str(sim.recipe_for(id).get("name", ""))
-	message.text = "%s (%s) eklendi." % [sim.catalog.machines[kind].name, r_name]
+	message.text = "%s eklendi." % sim.catalog.machines[kind].name
+	if sim.recipe_mode(kind) == "choose" and recipe_id.is_empty():
+		recipe_picker.show_machine(sim, id)
 
 func _spawn_supplier(target_id: String, product: String, supplier_kind: String, supplier_recipe: String) -> void:
 	if not cards.has(target_id) or not sim.is_machine_unlocked(supplier_kind) or not sim.is_recipe_unlocked(supplier_recipe):
@@ -231,7 +245,7 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 		return
 	var target_node: GraphNode = cards[target_id].node
 	var in_idx := sim.input_products(target_id).find(product)
-	var base_pos := target_node.position_offset + Vector2(-285, maxi(in_idx, 0) * 155 - 40)
+	var base_pos := target_node.position_offset + Vector2(-320, maxi(in_idx, 0) * 230 - 40)
 	# Çakışma varsa dikey kaydır
 	for attempt in range(8):
 		var clash := false
@@ -241,10 +255,12 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 				break
 		if not clash:
 			break
-		base_pos += Vector2(0, 155)
+		base_pos += Vector2(0, 230)
 	var supplier_id := _add_card(supplier_kind, base_pos, "", supplier_recipe)
 	var out_port := sim.output_products(supplier_id).find(product)
 	var in_port := sim.input_products(target_id).find(product)
+	if in_port < 0:
+		in_port = sim.input_products(target_id).find(sim.ANY)
 	if out_port >= 0 and in_port >= 0:
 		sim.add_link(supplier_id, target_id, out_port, in_port)
 		_sync_graph_connections()
@@ -259,14 +275,12 @@ func _show_selection(id: String) -> void:
 	if not cards.has(id):
 		return
 	selected_id = id
-	inspector.show_machine(sim, id)
 
 func _select_card(id: String) -> void:
 	for card_id in cards:
 		cards[card_id].node.selected = card_id == id
 	if id.is_empty() or not cards.has(id):
 		selected_id = ""
-		inspector.clear_selection()
 	else:
 		_show_selection(id)
 
@@ -278,7 +292,6 @@ func _sync_selection() -> void:
 			_show_selection(id)
 			return
 	selected_id = ""
-	inspector.clear_selection()
 
 func _frame_graph() -> void:
 	await get_tree().process_frame
@@ -310,24 +323,42 @@ func _rebuild_card(id: String) -> void:
 func _add_card(kind: String, pos: Vector2, existing_id: String = "", recipe_override: String = "") -> String:
 	var id := existing_id if not existing_id.is_empty() else sim.add_machine(kind, recipe_override)
 	sim.machines[id].position = [pos.x, pos.y]
-	var card: GraphNode
-	if SpriteMachineCard.SHEETS.has(kind):
-		card = SpriteMachineCard.new()
-	else:
-		card = MachineCardScene.instantiate()
+	var card: GraphNode = SpriteMachineCard.new()
 	card.position_offset = pos
 	graph.add_child(card)
 	card.setup_from_sim(sim, id)
+	card.set_header_icon(build_bar.icon_for(kind))
 	card.recipe_changed.connect(_change_machine_recipe)
 	card.toggle_pressed.connect(_toggle_machine)
+	card.supplier_requested.connect(func(target: String, product: String, at: Vector2) -> void:
+		machine_menu.show_suppliers(sim, target, product, at))
+	card.gui_input.connect(_on_card_input.bind(id))
 	card.position_offset_changed.connect(func() -> void:
 		if sim.machines.has(id):
 			sim.machines[id].position = [card.position_offset.x, card.position_offset.y])
 	cards[id] = {
 		"node": card,
-		"displayed_recipe": str(sim.machines[id].recipe)
+		"ports": sim.port_signature(id)
 	}
 	return id
+
+func _on_card_input(event: InputEvent, id: String) -> void:
+	var click := event as InputEventMouseButton
+	if click == null or not sim.machines.has(id):
+		return
+	if click.button_index == MOUSE_BUTTON_LEFT:
+		# A click that did not drag the card opens the recipe screen of "choose" machines.
+		var offset: Vector2 = cards[id].node.position_offset
+		if click.pressed:
+			_press_offset = offset
+		elif offset == _press_offset and sim.recipe_mode(str(sim.machines[id].kind)) == "choose":
+			recipe_picker.show_machine(sim, id)
+		return
+	if not click.pressed or click.button_index != MOUSE_BUTTON_RIGHT:
+		return
+	_select_card(id)
+	machine_menu.show_machine(sim, id, cards[id].node.get_global_transform() * click.position)
+	cards[id].node.accept_event()
 
 func _sync_graph_connections() -> void:
 	graph.clear_connections()
@@ -344,11 +375,14 @@ func _connect_cards(from: StringName, from_port: int, to: StringName, to_port: i
 		message.text = "Bağlanamadı: çıkış ve giriş aynı ürün olmalı."
 		return
 	_sync_graph_connections()
+	# Linking into an auto machine can settle its recipe and change its ports.
+	_refresh.call_deferred()
 	message.text = "Bağlantı kuruldu (K-006 eşit paylaşım)."
 
 func _disconnect_cards(from: StringName, from_port: int, to: StringName, to_port: int) -> void:
 	sim.remove_link(str(from), str(to), from_port, to_port)
 	_sync_graph_connections()
+	_refresh.call_deferred()
 
 func _delete_cards(ids: Array[StringName]) -> void:
 	for name_id in ids:
@@ -367,7 +401,6 @@ func _delete_cards(ids: Array[StringName]) -> void:
 
 func _clear_cards() -> void:
 	selected_id = ""
-	inspector.clear_selection()
 	graph.clear_connections()
 	for view in cards.values():
 		graph.remove_child(view.node)
@@ -380,15 +413,15 @@ func _demo() -> void:
 	last_completed_count = 0
 	paused = false
 	pause_button.text = "Duraklat"
-	library.refresh_locks(sim)
+	build_bar.refresh_locks(sim)
 	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
-	var coal_mine := _add_card("coal_mine", Vector2(20, 310))
-	var smelter := _add_card("smelter", Vector2(310, 20), "", "pig_iron")
-	var steel_furnace := _add_card("steel_furnace", Vector2(310, 360), "", "steel_ingot")
-	var mill_plate := _add_card("rolling_mill", Vector2(600, 20), "", "steel_plate")
-	var mill_rod := _add_card("rolling_mill", Vector2(600, 200), "", "steel_rod")
-	var press := _add_card("press", Vector2(600, 380), "", "fastener")
-	var lab := _add_card("lab", Vector2(900, 160))
+	var coal_mine := _add_card("coal_mine", Vector2(20, 250))
+	var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
+	var steel_furnace := _add_card("steel_furnace", Vector2(340, 250), "", "steel_ingot")
+	var mill_plate := _add_card("rolling_mill", Vector2(660, 20), "", "steel_plate")
+	var mill_rod := _add_card("rolling_mill", Vector2(660, 250), "", "steel_rod")
+	var press := _add_card("press", Vector2(660, 480), "", "fastener")
+	var lab := _add_card("lab", Vector2(980, 250))
 	sim.add_link(iron_mine, smelter)
 	sim.add_link(coal_mine, smelter)
 	sim.add_link(coal_mine, steel_furnace)
@@ -403,7 +436,7 @@ func _demo() -> void:
 	graph.scroll_offset = Vector2.ZERO
 	_select_card("")
 	_frame_graph.call_deferred()
-	message.text = "Karta tıklayarak reçete ve envanter detaylarını açabilirsin."
+	message.text = "Karta sağ tıkla: reçete, hız ve durdurma. Boş girişteki + üretici kurar."
 	_refresh()
 
 func _toggle_machine(id: String) -> void:
@@ -437,14 +470,14 @@ func _process(delta: float) -> void:
 func _refresh() -> void:
 	var ports_changed := false
 	for id in cards.keys():
-		if sim.machines.has(id) and cards[id].displayed_recipe != str(sim.machines[id].recipe):
+		if sim.machines.has(id) and cards[id].ports != sim.port_signature(id):
 			_rebuild_card(id)
 			ports_changed = true
 	if ports_changed:
 		_sync_graph_connections()
 	if sim.completed_researches.size() != last_completed_count:
 		last_completed_count = sim.completed_researches.size()
-		library.refresh_locks(sim)
+		build_bar.refresh_locks(sim)
 		var latest := str(sim.completed_researches.back()) if not sim.completed_researches.is_empty() else ""
 		if not latest.is_empty():
 			message.text = "✓ %s tamamlandı! Yeni makineler ve reçeteler açıldı." % sim.catalog.researches[latest].name
@@ -473,7 +506,6 @@ func _refresh() -> void:
 		whole_seconds / 60, whole_seconds % 60, cards.size(), sim.links.size(),
 		active_text, sim.completed_researches.size(), sim.catalog.researches.size()
 	]
-	inspector.update_values(sim)
 	research_panel.refresh(sim)
 
 func _save_game() -> void:
@@ -498,7 +530,7 @@ func _load_game() -> void:
 	_clear_cards()
 	sim = restored
 	last_completed_count = sim.completed_researches.size()
-	library.refresh_locks(sim)
+	build_bar.refresh_locks(sim)
 	for id in sim.machines:
 		var m: Dictionary = sim.machines[id]
 		_add_card(m.kind, Vector2(m.position[0], m.position[1]), id)
@@ -524,32 +556,38 @@ func _smoke_test() -> void:
 		push_error("UI kayıt/yükleme eşleşmedi")
 		get_tree().quit(1)
 		return
-	library.search.text = "CNC"
-	library.search.text_changed.emit("CNC")
-	assert(library.entries.cnc.button.visible and not library.entries.iron_mine.button.visible)
-	library.search.text = "olmayan_makine"
-	library.search.text_changed.emit("olmayan_makine")
-	assert(library.empty.visible)
-	library.search.text = "CNC"
-	library.search.text_changed.emit("CNC")
+	build_bar.open_category(3)
+	assert(build_bar.tiles.cnc.is_visible_in_tree() and not build_bar.tiles.iron_mine.is_visible_in_tree())
+	assert(not build_bar.tiles.cnc.disabled)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	await _smoke_click(library.entries.cnc.button.get_global_rect().get_center())
-	library.search.text = ""
-	library.search.text_changed.emit("")
+	await _smoke_click(build_bar.tiles.cnc.get_global_rect().get_center())
+	build_bar.open_category(-1)
 	var cnc_card := selected_id
-	assert(cards.size() == 9 and inspector.selected_id == cnc_card and inspector.visible)
-	assert(inspector.work_value.text == "100 birim" and inspector.duration_value.text == "5.0 sn")
-	_change_machine_recipe(cnc_card, "bearing")
-	assert(sim.machines[cnc_card].recipe == "bearing")
-	_change_machine_recipe(cnc_card, "gear_cnc")
+	assert(cards.size() == 9 and sim.machines[cnc_card].kind == "cnc")
+	# CNC makes gear or bearing from the same rod, so placing it opens the recipe screen.
+	assert(recipe_picker.visible and recipe_picker.target_id == cnc_card)
+	recipe_picker.tiles["bearing"].pressed.emit()
+	assert(sim.machines[cnc_card].recipe == "bearing" and not recipe_picker.visible)
+	# Right click opens the card menu; its items drive the recipe screen, speed and stop/run.
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	right.position = Vector2(40, 40)
+	_on_card_input(right, cnc_card)
+	assert(machine_menu.visible and machine_menu.target_id == cnc_card)
+	machine_menu.id_pressed.emit(MachineMenu.RECIPE)
+	assert(recipe_picker.visible)
+	recipe_picker.tiles["gear_cnc"].pressed.emit()
 	assert(sim.machines[cnc_card].recipe == "gear_cnc")
-	_change_machine_speed(cnc_card)
-	assert(inspector.duration_value.text == "2.5 sn" and inspector.capacity_value.text == "24.0 adet/dk")
-	inspector.toggle_button.pressed.emit()
-	assert(not sim.machines[cnc_card].enabled and inspector.toggle_button.text == "Çalıştır")
-	inspector.toggle_button.pressed.emit()
+	_on_card_input(right, cnc_card)
+	machine_menu.id_pressed.emit(MachineMenu.SPEED)
+	assert(float(sim.machines[cnc_card].speed) == 40.0)
+	machine_menu.id_pressed.emit(MachineMenu.TOGGLE)
+	assert(not sim.machines[cnc_card].enabled)
+	machine_menu.id_pressed.emit(MachineMenu.TOGGLE)
 	assert(sim.machines[cnc_card].enabled)
+	machine_menu.hide()
 	_toggle_research_panel()
 	assert(research_panel.visible)
 	_select_research("A-02")
@@ -562,7 +600,12 @@ func _smoke_test() -> void:
 	assert(cards.size() == 8)
 	# Tek tıkla üretici makine kurup bağlama testi (_spawn_supplier)
 	_select_card("machine_8")
-	_spawn_supplier("machine_8", "shaft", "lathe", "shaft")
+	var shaft_add: Button = cards["machine_8"].node.input_gauges["shaft"].add_button
+	assert(shaft_add.visible, "Bağlantısız girişte + görünmeli")
+	shaft_add.pressed.emit()
+	assert(machine_menu.visible and machine_menu.target_product == "shaft")
+	machine_menu.id_pressed.emit(0)
+	machine_menu.hide()
 	assert(cards.size() == 9, "Tek tıkla Torna kurulup laboratuvara bağlanmalı")
 	var lathe_id := "machine_10"
 	assert(sim.machines[lathe_id].kind == "lathe" and sim.machines[lathe_id].recipe == "shaft")

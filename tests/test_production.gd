@@ -152,6 +152,8 @@ func _sharing_and_byproducts() -> void:
 	sim.advance(0.05)
 	_check(sim.machines[press_b].received == 15, "Alıcı silindikten sonra kalan hat çalışmalı")
 	# Yan ürün (Metal Talaşı) geri kazanım bağlantısı testi
+	# Otomatik reçeteli makineler yalnız açık reçetelere bağlanır; bu test araştırmayı atlar.
+	sim.unlocked_recipes.append_array(["gearbox", "steel_from_scrap"])
 	var cnc := sim.add_machine("cnc", "gear_cnc")
 	var furnace := sim.add_machine("steel_furnace", "steel_from_scrap")
 	var gearbox_asm := sim.add_machine("assembler", "gearbox")

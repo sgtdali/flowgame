@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://crbxx5df2uokq"
-path="res://.godot/imported/gear.svg-fbd05b803aa0ab8ca3b67c295a5341fc.ctex"
+uid="uid://byeie8pw1q7gg"
+path="res://.godot/imported/lathe.png-febaa35bab95468c6447095ecd7d8d1f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://app/icons/gear.svg"
-dest_files=["res://.godot/imported/gear.svg-fbd05b803aa0ab8ca3b67c295a5341fc.ctex"]
+source_file="res://app/art/placeholder/lathe.png"
+dest_files=["res://.godot/imported/lathe.png-febaa35bab95468c6447095ecd7d8d1f.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

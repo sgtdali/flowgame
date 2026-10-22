@@ -1,5 +1,6 @@
 extends PanelContainer
-## 9 araştırmalık teknoloji ağacını (A-01 – A-09) kademelerine göre gösteren ve seçim yaptıran panel.
+## Technology tree: flows left to right by prerequisite depth, one horizontal lane per
+## category (research "category" in prototype.json). Click an available node to research it.
 
 signal research_selected(tech_id: String)
 signal unlock_all_requested()
@@ -9,182 +10,232 @@ const INK := Color("dce9ef")
 const MUTED := Color("8ca5b6")
 const TEAL := Color("61d8bb")
 const GOLD := Color("efb65a")
+## Lane order, title and accent colour.
+const CATEGORIES := [
+	{"id": "mekanik", "name": "Mekanik", "color": Color("efb65a")},
+	{"id": "malzeme", "name": "Malzeme", "color": Color("c87d55")},
+	{"id": "elektrik", "name": "Elektrik", "color": Color("f0a35e")},
+	{"id": "kontrol", "name": "Elektronik ve kontrol", "color": Color("52b5d8")},
+]
+const LANE_W := 150.0
+const COL_W := 290.0
+const LANE_H := 124.0
+const NODE := Vector2(236, 96)
+
+## Draws lane bands and step connectors behind the research nodes.
+class TreeCanvas extends Control:
+	var lanes: Array = []
+	var edges: Array = []
+
+	func _draw() -> void:
+		for i in range(lanes.size()):
+			var band := Rect2(0, i * LANE_H, size.x, LANE_H)
+			draw_rect(band, Color("12222e") if i % 2 == 0 else Color("0f1d28"))
+			draw_rect(Rect2(0, i * LANE_H, 4, LANE_H), lanes[i].color)
+		for edge in edges:
+			var a: Vector2 = edge.from
+			var b: Vector2 = edge.to
+			var mid: float = edge.bend_x
+			draw_polyline(PackedVector2Array([a, Vector2(mid, a.y), Vector2(mid, b.y), b]), edge.color, 2.0)
+
 var cards: Dictionary = {}
 var status_label: Label
 var unlock_all_button: Button
+var tree: TreeCanvas
+var _edges: Array = []
+
+func _box(background: Color, border: Color, width: int = 1, radius: int = 8, pad: int = 10) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border
+	style.set_border_width_all(width)
+	style.set_corner_radius_all(radius)
+	style.set_content_margin_all(pad)
+	return style
+
+func _label(text: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+func _depth(catalog: Dictionary, tech_id: String) -> int:
+	var depth := 0
+	for prereq in catalog.researches[tech_id].get("prerequisites", []):
+		depth = maxi(depth, _depth(catalog, str(prereq)) + 1)
+	return depth
 
 func build(catalog: Dictionary) -> void:
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 40)
-	margin.add_theme_constant_override("margin_right", 40)
-	margin.add_theme_constant_override("margin_top", 40)
-	margin.add_theme_constant_override("margin_bottom", 40)
-	add_child(margin)
+	add_theme_stylebox_override("panel", _box(Color(0.02, 0.05, 0.08, 0.72), Color.TRANSPARENT, 0, 0))
+	var center := CenterContainer.new()
+	add_child(center)
 	var dialog := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("0f1d28")
-	style.border_color = Color("30495b")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(10)
-	style.content_margin_left = 20
-	style.content_margin_right = 20
-	style.content_margin_top = 16
-	style.content_margin_bottom = 16
-	dialog.add_theme_stylebox_override("panel", style)
-	margin.add_child(dialog)
+	var dialog_style := _box(Color("0f1d28"), Color("30495b"), 2, 10)
+	dialog_style.set_content_margin_all(18)
+	dialog.add_theme_stylebox_override("panel", dialog_style)
+	center.add_child(dialog)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)
 	dialog.add_child(vbox)
 	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 14)
+	header.add_theme_constant_override("separation", 12)
 	vbox.add_child(header)
 	var title_box := VBoxContainer.new()
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title_box)
-	var title := Label.new()
-	title.text = "TEKNOLOJİ AĞACI  (K-001 & K-007 — 9 Araştırma)"
-	title.add_theme_font_size_override("font_size", 20)
-	title_box.add_child(title)
-	status_label = Label.new()
-	status_label.add_theme_font_size_override("font_size", 13)
-	status_label.add_theme_color_override("font_color", MUTED)
+	title_box.add_child(_label("Teknoloji ağacı", 20, INK))
+	status_label = _label("", 13, MUTED)
 	title_box.add_child(status_label)
 	unlock_all_button = Button.new()
-	unlock_all_button.text = "Tüm Kilitleri Aç (Serbest Mod)"
-	unlock_all_button.custom_minimum_size.y = 36
+	unlock_all_button.custom_minimum_size.y = 34
 	unlock_all_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	unlock_all_button.pressed.connect(func() -> void: unlock_all_requested.emit())
 	header.add_child(unlock_all_button)
 	var close_btn := Button.new()
 	close_btn.text = "Kapat"
-	close_btn.custom_minimum_size = Vector2(90, 36)
+	close_btn.custom_minimum_size = Vector2(84, 34)
 	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
 	header.add_child(close_btn)
-	vbox.add_child(HSeparator.new())
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(scroll)
-	var columns := HBoxContainer.new()
-	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	columns.add_theme_constant_override("separation", 16)
-	scroll.add_child(columns)
-	var tier_titles := {
-		1: "1. KADEME — Temel İmalat, Döküm ve İletkenler",
-		2: "2. KADEME — Mekanik, Bobin, Motor ve Elektronik",
-		3: "3. KADEME — Algılama ve Otomasyon Sistemleri"
-	}
-	var tier_boxes := {}
-	for tier in [1, 2, 3]:
-		var col := VBoxContainer.new()
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_theme_constant_override("separation", 10)
-		columns.add_child(col)
-		var t_head := Label.new()
-		t_head.text = tier_titles[tier]
-		t_head.add_theme_font_size_override("font_size", 14)
-		t_head.add_theme_color_override("font_color", TEAL)
-		col.add_child(t_head)
-		tier_boxes[tier] = col
-	for tech_id in catalog.get("researches", {}):
+	tree = TreeCanvas.new()
+	tree.lanes = CATEGORIES
+	vbox.add_child(tree)
+	var lane_of := {}
+	for i in range(CATEGORIES.size()):
+		lane_of[CATEGORIES[i].id] = i
+		var lane_title := _label(str(CATEGORIES[i].name), 14, CATEGORIES[i].color)
+		lane_title.position = Vector2(16, i * LANE_H + 12)
+		lane_title.size = Vector2(LANE_W - 24, 40)
+		lane_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tree.add_child(lane_title)
+	var max_depth := 0
+	for tech_id in catalog.researches:
 		var spec: Dictionary = catalog.researches[tech_id]
-		var tier: int = int(spec.get("tier", 1))
-		var card := PanelContainer.new()
-		var card_style := StyleBoxFlat.new()
-		card_style.bg_color = Color("162938")
-		card_style.border_color = Color("2b475c")
-		card_style.set_border_width_all(1)
-		card_style.set_corner_radius_all(8)
-		card_style.content_margin_left = 12
-		card_style.content_margin_right = 12
-		card_style.content_margin_top = 10
-		card_style.content_margin_bottom = 10
-		card.add_theme_stylebox_override("panel", card_style)
-		tier_boxes[tier].add_child(card)
-		var c_box := VBoxContainer.new()
-		c_box.add_theme_constant_override("separation", 6)
-		card.add_child(c_box)
-		var name_lbl := Label.new()
-		name_lbl.text = str(spec.name)
-		name_lbl.add_theme_font_size_override("font_size", 15)
-		c_box.add_child(name_lbl)
-		var desc_lbl := Label.new()
-		desc_lbl.text = str(spec.get("description", ""))
-		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		desc_lbl.add_theme_font_size_override("font_size", 12)
-		desc_lbl.add_theme_color_override("font_color", MUTED)
-		c_box.add_child(desc_lbl)
-		var recipe: Dictionary = catalog.recipes[spec.recipe]
-		var in_parts: PackedStringArray = []
-		for p in recipe.inputs:
-			in_parts.append("%d %s" % [int(recipe.inputs[p]), catalog.products[p].name.to_lower()])
-		var req_lbl := Label.new()
-		req_lbl.text = "Deney girdisi: " + " + ".join(in_parts)
-		req_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		req_lbl.add_theme_font_size_override("font_size", 12)
-		c_box.add_child(req_lbl)
-		var prereqs: Array = spec.get("prerequisites", [])
-		var pre_lbl := Label.new()
-		pre_lbl.text = "Ön koşul: Başlangıç" if prereqs.is_empty() else ("Ön koşul: " + ", ".join(PackedStringArray(prereqs)))
-		pre_lbl.add_theme_font_size_override("font_size", 11)
-		pre_lbl.add_theme_color_override("font_color", MUTED)
-		c_box.add_child(pre_lbl)
-		var bar := ProgressBar.new()
-		bar.max_value = float(spec.experiments)
-		bar.custom_minimum_size.y = 10
-		bar.show_percentage = false
-		c_box.add_child(bar)
-		var row := HBoxContainer.new()
-		c_box.add_child(row)
-		var prog_lbl := Label.new()
-		prog_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		prog_lbl.add_theme_font_size_override("font_size", 12)
-		row.add_child(prog_lbl)
-		var select_btn := Button.new()
-		select_btn.custom_minimum_size = Vector2(140, 30)
-		select_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var t_id := str(tech_id)
-		select_btn.pressed.connect(func() -> void: research_selected.emit(t_id))
-		row.add_child(select_btn)
-		cards[t_id] = {
-			"name_lbl": name_lbl,
-			"bar": bar,
-			"prog_lbl": prog_lbl,
-			"button": select_btn,
-			"experiments": int(spec.experiments)
-		}
+		var depth := _depth(catalog, str(tech_id))
+		max_depth = maxi(max_depth, depth)
+		var lane: int = lane_of.get(str(spec.get("category", "")), CATEGORIES.size() - 1)
+		var pos := Vector2(LANE_W + depth * COL_W, lane * LANE_H + (LANE_H - NODE.y) * 0.5)
+		cards[str(tech_id)] = _node(catalog, str(tech_id), pos)
+	tree.custom_minimum_size = Vector2(LANE_W + (max_depth + 1) * COL_W - (COL_W - NODE.x) + 16, CATEGORIES.size() * LANE_H)
+	for tech_id in catalog.researches:
+		for prereq in catalog.researches[tech_id].get("prerequisites", []):
+			_edges.append({"from_id": str(prereq), "to_id": str(tech_id)})
+
+func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
+	var spec: Dictionary = catalog.researches[tech_id]
+	var button := Button.new()
+	button.position = pos
+	button.size = NODE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.pressed.connect(func() -> void: research_selected.emit(tech_id))
+	tree.add_child(button)
+	var box := VBoxContainer.new()
+	box.position = Vector2(10, 8)
+	box.size = NODE - Vector2(20, 16)
+	box.add_theme_constant_override("separation", 4)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(box)
+	var name := str(spec.name)
+	var head := HBoxContainer.new()
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(head)
+	var name_lbl := _label(name.get_slice(": ", 1) if ": " in name else name, 13, INK)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.clip_text = true
+	head.add_child(name_lbl)
+	head.add_child(_label(tech_id, 11, MUTED))
+	# What it unlocks, in machine names; recipes only as a count.
+	var machines: PackedStringArray = []
+	for kind in spec.get("unlock_machines", []):
+		machines.append(str(catalog.machines[kind].name))
+	var recipes: int = spec.get("unlock_recipes", []).size()
+	if recipes > 0:
+		machines.append("+%d reçete" % recipes)
+	var unlocks := " · ".join(machines)
+	var unlock_lbl := _label(unlocks, 12, MUTED)
+	unlock_lbl.clip_text = true
+	box.add_child(unlock_lbl)
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(spacer)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(row)
+	var bar := ProgressBar.new()
+	bar.max_value = float(spec.experiments)
+	bar.show_percentage = false
+	bar.custom_minimum_size.y = 6
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_theme_stylebox_override("background", _box(Color("09131c"), Color.TRANSPARENT, 0, 3, 0))
+	row.add_child(bar)
+	var prog_lbl := _label("", 11, MUTED)
+	row.add_child(prog_lbl)
+	var recipe: Dictionary = catalog.recipes[spec.recipe]
+	var in_parts: PackedStringArray = []
+	for p in recipe.inputs:
+		in_parts.append("%d %s" % [int(recipe.inputs[p]), catalog.products[p].name.to_lower()])
+	button.tooltip_text = "%s\n%s\nDeney: %s" % [name, str(spec.get("description", "")), " + ".join(in_parts)]
+	return {"button": button, "name_lbl": name_lbl, "bar": bar, "prog_lbl": prog_lbl, "experiments": int(spec.experiments)}
+
+func _style(view: Dictionary, background: Color, border: Color, width: int) -> void:
+	var button: Button = view.button
+	for state in ["normal", "disabled", "focus"]:
+		button.add_theme_stylebox_override(state, _box(background, border, width))
+	button.add_theme_stylebox_override("hover", _box(background.lightened(0.06), TEAL if not button.disabled else border, width))
+	button.add_theme_stylebox_override("pressed", _box(background.lightened(0.1), TEAL, width))
+	view.bar.add_theme_stylebox_override("fill", _box(border, Color.TRANSPARENT, 0, 3, 0))
 
 func refresh(sim: RefCounted) -> void:
 	if not visible:
 		return
-	var done_total: int = sim.completed_researches.size()
-	var all_total: int = sim.catalog.researches.size()
-	status_label.text = "Tamamlanan araştırma: %d / %d  ·  Laboratuvar kartları aktif araştırmanın girdilerini tüketir." % [done_total, all_total]
-	unlock_all_button.text = "Serbest Mod Açık (Tüm Makineler Açık)" if sim.sandbox_mode else "Tüm Kilitleri Aç (Serbest Mod)"
+	status_label.text = "%d / %d tamamlandı  ·  Aktif: %s" % [sim.completed_researches.size(), sim.catalog.researches.size(),
+		sim.active_research if not (sim.active_research in sim.completed_researches) else "seçilmedi"]
+	unlock_all_button.text = "Serbest mod açık" if sim.sandbox_mode else "Serbest mod"
 	unlock_all_button.disabled = sim.sandbox_mode
 	for tech_id in cards:
 		var view: Dictionary = cards[tech_id]
-		var progress_val: int = int(sim.research_progress.get(tech_id, 0))
-		var total_val: int = int(view.experiments)
-		view.bar.value = progress_val
-		view.prog_lbl.text = "%d / %d deney" % [progress_val, total_val]
+		var done_count := int(sim.research_progress.get(tech_id, 0))
+		view.bar.value = done_count
+		view.prog_lbl.text = "%d/%d" % [done_count, int(view.experiments)]
+		var button: Button = view.button
 		if tech_id in sim.completed_researches:
+			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", TEAL)
-			view.button.text = "Tamamlandı"
-			view.button.disabled = true
+			_style(view, Color("16302f"), TEAL, 1)
 		elif sim.active_research == tech_id:
+			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", GOLD)
-			view.button.text = "✓ Aktif Araştırma"
-			view.button.disabled = true
+			_style(view, Color("2a2a1f"), GOLD, 2)
 		elif sim.can_research(tech_id):
+			button.disabled = false
 			view.name_lbl.add_theme_color_override("font_color", INK)
-			view.button.text = "Araştırmayı Seç"
-			view.button.disabled = false
+			_style(view, Color("162938"), Color("3d6178"), 1)
 		else:
+			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", MUTED)
-			view.button.text = "Ön Koşul Kilitli"
-			view.button.disabled = true
+			_style(view, Color("101c26"), Color("22394a"), 1)
+		button.modulate.a = 0.6 if button.disabled and not (tech_id in sim.completed_researches) and sim.active_research != tech_id else 1.0
+		button.mouse_default_cursor_shape = Control.CURSOR_ARROW if button.disabled else Control.CURSOR_POINTING_HAND
+	tree.edges.clear()
+	# Each line leaving the same column bends on its own track so lines never merge.
+	var tracks := {}
+	for edge in _edges:
+		var from: Button = cards[edge.from_id].button
+		var to: Button = cards[edge.to_id].button
+		var track: int = tracks.get(from.position.x, 0)
+		tracks[from.position.x] = track + 1
+		tree.edges.append({
+			"from": from.position + Vector2(NODE.x, NODE.y * 0.5),
+			"to": to.position + Vector2(0, NODE.y * 0.5),
+			"bend_x": from.position.x + NODE.x + 14.0 + track * 9.0,
+			"color": TEAL if edge.from_id in sim.completed_researches else Color("3d6178"),
+		})
+	tree.queue_redraw()

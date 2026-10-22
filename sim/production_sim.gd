@@ -4,6 +4,10 @@ extends RefCounted
 
 const STEP := 0.05
 const EPSILON := 0.000001
+## Placeholder input port of an "auto" machine whose recipe is not settled yet.
+const ANY := "*"
+## Port types for ANY ports start here (one per machine kind).
+const ANY_PORT_BASE := 1000
 var catalog: Dictionary
 var machines: Dictionary = {}
 var links: Array = []
@@ -17,6 +21,9 @@ var sandbox_mode := false
 var elapsed := 0.0
 var next_id := 1
 var accumulator := 0.0
+## kind -> "fixed" (one recipe or lab), "auto" (recipe follows the linked inputs) or
+## "choose" (several recipes share the same inputs, so the player picks the product).
+var recipe_modes: Dictionary = {}
 
 func _init() -> void:
 	catalog = JSON.parse_string(FileAccess.get_file_as_string("res://data/prototype.json"))
@@ -26,6 +33,85 @@ func _init() -> void:
 		unlocked_recipes.append(str(r_id))
 	for tech_id in catalog.get("researches", {}):
 		research_progress[str(tech_id)] = 0
+	for kind in catalog.machines:
+		var allowed: Array = catalog.machines[kind].get("recipes", [catalog.machines[kind].recipe])
+		var mode := "fixed"
+		if kind != "lab" and allowed.size() > 1:
+			mode = "auto"
+			var seen := {}
+			for r_id in allowed:
+				var key := _input_key(str(r_id))
+				if seen.has(key):
+					mode = "choose"
+				seen[key] = true
+		recipe_modes[str(kind)] = mode
+
+func _input_key(recipe_id: String) -> String:
+	var keys: Array = catalog.recipes[recipe_id].inputs.keys()
+	keys.sort()
+	return ",".join(PackedStringArray(keys))
+
+func recipe_mode(kind: String) -> String:
+	return str(recipe_modes.get(kind, "fixed"))
+
+## Products currently linked into `id`, in link order, without repeats.
+func linked_inputs(id: String) -> Array:
+	var products: Array = []
+	for link in links:
+		if link.to == id and not (link.product in products):
+			products.append(link.product)
+	return products
+
+## Unlocked recipes of an auto machine that use every product in `products`.
+func candidate_recipes(id: String, products: Array) -> Array:
+	var spec: Dictionary = catalog.machines[machines[id].kind]
+	var result: Array = []
+	for r_var in spec.get("recipes", [spec.recipe]):
+		var r_id := str(r_var)
+		if not is_recipe_unlocked(r_id):
+			continue
+		var fits := true
+		for product in products:
+			if not catalog.recipes[r_id].inputs.has(product):
+				fits = false
+				break
+		if fits:
+			result.append(r_id)
+	return result
+
+## Auto machines settle on the first recipe that matches what is linked into them.
+func _resolve_recipe(id: String) -> void:
+	if not machines.has(id) or recipe_mode(machines[id].kind) != "auto":
+		return
+	var candidates := candidate_recipes(id, linked_inputs(id))
+	if not candidates.is_empty() and not (machines[id].recipe in candidates):
+		set_recipe(id, str(candidates[0]))
+
+func any_port_type(kind: String) -> int:
+	return ANY_PORT_BASE + catalog.machines.keys().find(kind)
+
+## Every product some recipe of `kind` consumes: what its ANY port may accept.
+func recipe_input_union(kind: String) -> Array:
+	var spec: Dictionary = catalog.machines[kind]
+	var products: Array = []
+	for r_id in spec.get("recipes", [spec.recipe]):
+		for product in catalog.recipes[r_id].inputs:
+			if not (product in products):
+				products.append(product)
+	return products
+
+func product_name(product: String) -> String:
+	return "Herhangi bir girdi" if product == ANY else str(catalog.products[product].name)
+
+func product_color(product: String) -> Color:
+	return Color("7f99aa") if product == ANY else Color(catalog.products[product].color)
+
+func port_type(id: String, product: String) -> int:
+	return any_port_type(str(machines[id].kind)) if product == ANY else product_port_type(product)
+
+## Changes whenever a machine's ports change, so the UI knows to rebuild its card.
+func port_signature(id: String) -> String:
+	return "%s|%s|%s" % [machines[id].recipe, ",".join(PackedStringArray(input_products(id))), ",".join(PackedStringArray(output_products(id)))]
 
 func is_machine_unlocked(kind: String) -> bool:
 	return sandbox_mode or kind in unlocked_machines
@@ -144,7 +230,14 @@ func recipe_for(id: String) -> Dictionary:
 	return catalog.recipes[machines[id].recipe]
 
 func input_products(id: String) -> Array:
-	return recipe_for(id).inputs.keys()
+	var recipe_inputs: Array = recipe_for(id).inputs.keys()
+	if recipe_mode(machines[id].kind) != "auto":
+		return recipe_inputs
+	# Until the links pin down one recipe, show what is linked plus an open ANY port.
+	var linked := linked_inputs(id)
+	if candidate_recipes(id, linked).size() == 1 and not linked.is_empty():
+		return recipe_inputs
+	return linked + [ANY]
 
 func output_products(id: String) -> Array:
 	return recipe_for(id).outputs.keys()
@@ -259,12 +352,12 @@ func add_link(from: String, to: String, from_port: int = -1, to_port: int = -1) 
 			return false
 		var out_p := str(outs[from_port])
 		var in_p := str(ins[to_port])
-		if out_p != in_p:
+		if out_p != in_p and not (in_p == ANY and accepts_new_input(to, out_p)):
 			return false
 		product = out_p
 	else:
 		for out_p in outs:
-			if out_p in ins:
+			if out_p in ins or (ANY in ins and accepts_new_input(to, str(out_p))):
 				var already := false
 				for link in links:
 					if link.from == from and link.to == to and link.product == str(out_p):
@@ -279,7 +372,21 @@ func add_link(from: String, to: String, from_port: int = -1, to_port: int = -1) 
 		if link.from == from and link.to == to and link.product == product:
 			return false
 	links.append({"from": from, "to": to, "product": product, "transferred": 0})
+	_resolve_recipe(to)
 	return true
+
+## Whether an auto machine could still take `product` given what is already linked.
+func accepts_new_input(id: String, product: String) -> bool:
+	var linked := linked_inputs(id)
+	if not (product in linked):
+		linked.append(product)
+	return not candidate_recipes(id, linked).is_empty()
+
+func is_input_linked(id: String, product: String) -> bool:
+	for link in links:
+		if link.to == id and link.product == product:
+			return true
+	return false
 
 func remove_link(from: String, to: String, from_port: int = -1, _to_port: int = -1) -> void:
 	if from_port >= 0 and machines.has(from):

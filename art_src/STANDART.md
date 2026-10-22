@@ -47,4 +47,7 @@ parçalar (matkap, dişli, alev, duman) ayrı katmanda çizilir.
 - Script çıktıları: `.ase` (katmanlı, LibreSprite'ta açılır), `_onizleme.png`, `.gif`.
 - `--oyuna` ile oyun sheet'i `app/art/<makine>/<makine>_sheet.png` olarak yazılır.
 - Godot tarafında yeni makine için `app/sprite_machine_card.gd` içindeki `SHEETS`
-  sözlüğüne tek satır eklenir.
+  sözlüğüne tek satır eklenir. Listede olmayan makineler `app/art/placeholder/<makine>.png`
+  yer tutucusunu kullanır (`araclar/yer_tutucu_makineler.py` üretir).
+- Ürün simgeleri `araclar/urun_ikonlari.py` ile 16x16 çizilir; kart portlarında 2x görünür ve
+  reçete miktarı 1'den büyükse simgenin köşesinde yazar.

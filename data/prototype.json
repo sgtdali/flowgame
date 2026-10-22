@@ -449,6 +449,7 @@
     "A-01": {
       "name": "A-01: Talaşlı İmalat",
       "tier": 1,
+      "category": "mekanik",
       "prerequisites": [],
       "recipe": "research_A-01",
       "experiments": 8,
@@ -459,6 +460,7 @@
     "A-02": {
       "name": "A-02: Döküm ve Geri Kazanım",
       "tier": 1,
+      "category": "malzeme",
       "prerequisites": [],
       "recipe": "research_A-02",
       "experiments": 8,
@@ -469,6 +471,7 @@
     "A-03": {
       "name": "A-03: İletkenler ve Yalıtım",
       "tier": 1,
+      "category": "elektrik",
       "prerequisites": [],
       "recipe": "research_A-03",
       "experiments": 8,
@@ -479,6 +482,7 @@
     "A-04": {
       "name": "A-04: Mekanik Aktarma Sistemleri",
       "tier": 2,
+      "category": "mekanik",
       "prerequisites": ["A-01"],
       "recipe": "research_A-04",
       "experiments": 10,
@@ -489,6 +493,7 @@
     "A-05": {
       "name": "A-05: Elektromanyetik Sarım",
       "tier": 2,
+      "category": "elektrik",
       "prerequisites": ["A-03"],
       "recipe": "research_A-05",
       "experiments": 10,
@@ -499,6 +504,7 @@
     "A-06": {
       "name": "A-06: Elektrik Motorları",
       "tier": 2,
+      "category": "elektrik",
       "prerequisites": ["A-04", "A-05"],
       "recipe": "research_A-06",
       "experiments": 12,
@@ -509,6 +515,7 @@
     "A-07": {
       "name": "A-07: Temel Elektronik",
       "tier": 2,
+      "category": "kontrol",
       "prerequisites": ["A-03"],
       "recipe": "research_A-07",
       "experiments": 10,
@@ -519,6 +526,7 @@
     "A-08": {
       "name": "A-08: Endüstriyel Algılama",
       "tier": 3,
+      "category": "kontrol",
       "prerequisites": ["A-05", "A-07"],
       "recipe": "research_A-08",
       "experiments": 12,
@@ -529,6 +537,7 @@
     "A-09": {
       "name": "A-09: Otomasyon ve Kontrol Sistemleri",
       "tier": 3,
+      "category": "kontrol",
       "prerequisites": ["A-06", "A-08"],
       "recipe": "research_A-09",
       "experiments": 15,
