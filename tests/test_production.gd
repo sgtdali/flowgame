@@ -57,12 +57,17 @@ func _catalog_and_reachability() -> void:
 	var order := ["A-01", "A-02", "A-03", "A-04", "A-05", "A-06", "A-07", "A-08", "A-09"]
 	for tech_id in order:
 		_check(sim.can_research(tech_id), "%s araştırması ön koşul sırasıyla açılabilir olmalı" % tech_id)
-		var r_recipe: Dictionary = sim.catalog.recipes[sim.catalog.researches[tech_id].recipe]
+		# Every tier the research is priced in needs an unlocked lab whose inputs can be made.
 		var inputs_ready := true
-		for in_p in r_recipe.inputs:
-			if not producible.has(in_p):
+		for tier in sim.catalog.researches[tech_id].cost:
+			var lab_ready := false
+			for m_kind in sim.unlocked_machines:
+				var recipe: Dictionary = sim.catalog.recipes[sim.catalog.machines[m_kind].recipe]
+				if recipe.get("research_points", {}).has(tier):
+					lab_ready = recipe.inputs.keys().all(func(p: String) -> bool: return producible.has(p))
+			if not lab_ready:
 				inputs_ready = false
-		_check(inputs_ready, "%s araştırmasının tüm girdileri önceden üretilebilir olmalı (kilitlenme olmamalı)" % tech_id)
+		_check(inputs_ready, "%s araştırmasının puanlarını üreten laboratuvar önceden beslenebilir olmalı (kilitlenme olmamalı)" % tech_id)
 		sim._complete_research(tech_id)
 		update_producible.call()
 	_check(producible.size() == 24, "9 araştırma tamamlandığında 24 ürünün tamamı üretilebilir olmalı")
@@ -167,24 +172,30 @@ func _sharing_and_byproducts() -> void:
 
 func _research_progression() -> void:
 	var sim := Simulation.new()
-	var lab1 := sim.add_machine("lab")
-	var lab2 := sim.add_machine("lab")
-	# A-01 için 7/8 deney tamamlanmış olsun; 2 laboratuvarın ikisi de malzeme alsa bile
-	# yalnızca 1 deney başlamalı (Simülasyon İlkeleri: fazla deney başlamamalı).
-	sim.research_progress["A-01"] = 7
-	for id in [lab1, lab2]:
-		sim.machines[id].input.steel_plate = 2
-		sim.machines[id].input.steel_rod = 2
-		sim.machines[id].input.fastener = 4
-	sim.advance(1.0)
-	var running_count := (1 if sim.machines[lab1].running else 0) + (1 if sim.machines[lab2].running else 0)
-	_check(running_count == 1, "Kalan 1 deney için iki laboratuvar aynı anda fazladan deney başlatmamalı")
-	# Araştırma değiştirildiğinde çalışan deney bitmeli ve A-01'e yazılmalı
-	_check(sim.set_active_research("A-02"), "Aktif araştırma A-02'ye değiştirilebilmeli")
-	sim.advance(5.0)
-	_check("A-01" in sim.completed_researches, "Başlamış A-01 deneyi tamamlanıp A-01'i bitirmeli")
+	var lab := sim.add_machine("lab_1")
+	var mill := sim.add_machine("rolling_mill", "steel_plate")
+	_check(sim.add_link(mill, lab), "Laboratuvar 1 çelik levhayı kabul etmeli")
+	# Points made while no research can use them stay in the store.
+	sim.active_research = "A-04"
+	sim.machines[lab].input.steel_plate = 6
+	sim.machines[lab].input.fastener = 6
+	sim.advance(20.0)
+	_check(sim.research_points.k1 == 6, "Laboratuvar 1 her levha + bağlantı elemanı için 1 K1 puanı üretmeli")
+	_check(sim.research_progress["A-04"].is_empty(), "Ön koşulu eksik araştırma puan harcamamalı")
+	_check(sim.set_active_research("A-01"), "A-01 seçilebilmeli")
+	sim.advance(0.05)
+	_check(sim.research_progress["A-01"].k1 == 6 and sim.research_points.k1 == 0, "Aktif araştırma depodaki puanı çekmeli")
+	sim.research_points.k1 = 100
+	sim.advance(0.05)
+	_check("A-01" in sim.completed_researches and sim.research_points.k1 == 76, "Fiyat dolunca araştırma bitmeli, artan puan depoda kalmalı")
 	_check(sim.is_machine_unlocked("cnc") and sim.is_machine_unlocked("lathe"), "A-01 bitince Torna ve CNC açılmalı")
-	_check(sim.machines[lab1].recipe == "research_A-02" and sim.machines[lab2].recipe == "research_A-02", "Deney bitince laboratuvarlar yeni aktif araştırmaya (A-02) geçmeli")
+	_check(sim.set_active_research("A-04"), "A-01 sonrası A-04 seçilebilmeli")
+	sim.advance(0.05)
+	_check(sim.research_progress["A-04"].k1 == 60 and not ("A-04" in sim.completed_researches), "Eksik K2 varken araştırma bitmemeli")
+	sim.research_points.k2 = 30
+	sim.advance(0.05)
+	_check("A-04" in sim.completed_researches, "K1 ve K2 fiyatı dolunca A-04 bitmeli")
+	_check(sim.links.size() == 1, "Araştırma değişince laboratuvar bağlantıları silinmemeli")
 
 func _save_resume() -> void:
 	var sim := Simulation.new()
@@ -199,6 +210,11 @@ func _save_resume() -> void:
 	restored.advance(12.0)
 	_check(restored.machines[id].output == sim.machines[id].output, "Kayıttan devam ürün miktarını değiştirmemeli")
 	_check(is_equal_approx(restored.machines[id].remaining, sim.machines[id].remaining), "Kayıttan devam iş zamanını değiştirmemeli")
+	sim.research_points.k1 = 12
+	sim.research_progress["A-01"] = {"k1": 5}
+	var research_copy := Simulation.new()
+	_check(research_copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))), "Puan deposu ve ilerleme kayda girmeli")
+	_check(research_copy.research_points.k1 == 12 and research_copy.research_progress["A-01"].k1 == 5, "Kayıttan sonra puan deposu ve ilerleme korunmalı")
 	var broken := restored.snapshot()
 	broken.machines[id].input.steel_rod = -1
 	var before: String = JSON.stringify(restored.snapshot())

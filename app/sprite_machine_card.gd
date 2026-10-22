@@ -319,6 +319,12 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 	var product: String = sim.output_product(id)
 	var seconds := float(recipe.work) / float(machine.speed)
 	rate_label.text = "%.0f/dk" % (int(recipe.outputs.get(product, 1)) * 60.0 / seconds)
+	# Labs make research points instead of goods: their rate takes the tier colour.
+	for tier in recipe.get("research_points", {}):
+		for t in sim.catalog.get("research_tiers", []):
+			if str(t.id) == str(tier):
+				rate_label.add_theme_color_override("font_color", Color(t.color))
+				rate_label.tooltip_text = "%s puanı/dk" % t.name
 	var details := PackedStringArray([str(spec.name), str(recipe.name), str(machine.status)])
 	for input in input_gauges:
 		var gauge: PortGauge = input_gauges[input]

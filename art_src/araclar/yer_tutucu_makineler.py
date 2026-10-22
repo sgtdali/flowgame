@@ -20,7 +20,7 @@ KATEGORI = {
     'rolling_mill': 2, 'press': 2, 'foundry': 2,
     'lathe': 3, 'cnc': 3,
     'assembler': 4, 'wire_winder': 4,
-    'lab': 5, 'project_hub': 5, 'scrap_disposal': 5,
+    'lab_1': 5, 'lab_2': 5, 'lab_3': 5, 'project_hub': 5, 'scrap_disposal': 5,
 }
 
 

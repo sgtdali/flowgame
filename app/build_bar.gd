@@ -16,7 +16,7 @@ const CATEGORIES := [
 	{"name": "Şekillendirme", "machines": ["rolling_mill", "press", "foundry"]},
 	{"name": "Talaşlı imalat", "machines": ["lathe", "cnc"]},
 	{"name": "Montaj", "machines": ["assembler", "wire_winder"]},
-	{"name": "Hedefler", "machines": ["lab", "project_hub", "scrap_disposal"]},
+	{"name": "Araştırma ve hedefler", "machines": ["lab_1", "lab_2", "lab_3", "project_hub", "scrap_disposal"]},
 ]
 
 var category_buttons: Array[Button] = []

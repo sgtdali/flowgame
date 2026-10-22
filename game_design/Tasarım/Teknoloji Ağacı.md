@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: ilk-taslak
-guncelleme: 2026-10-20
+guncelleme: 2026-10-22
 ---
 # Teknoloji ağacı
 
@@ -51,6 +51,9 @@ flowchart LR
 
     A06 & A08 --> A09["A-09: Otomasyon ve Kontrol"]
 ```
+
+> [!warning] Tükettiği ürünler sütunu tarihseldir
+> Aşağıdaki tablolardaki "Tükettiği Ürünler" sütunu K-001 dönemine aittir. K-008 ile araştırmalar ürün değil kademe puanı ister; güncel fiyatlar ve laboratuvarlar [[Tasarım/Araştırma Ekonomisi]] notundadır.
 
 ---
 

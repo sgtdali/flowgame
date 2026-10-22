@@ -1,7 +1,7 @@
 ---
 tur: degisiklik-gunlugu
 durum: etkin
-guncelleme: 2026-10-20
+guncelleme: 2026-10-22
 ---
 # Değişiklik günlüğü
 
@@ -49,3 +49,9 @@ guncelleme: 2026-10-20
 - Kullanıcının “bunları oyuna uygula şimdi” talebiyle 24 ürün, çok girdili/çıktılı reçeteler, reçete seçimi ve 9 araştırmalık teknoloji ağacı (`A-01` – `A-09`) Godot projesine uygulandı; 63 simülasyon kontrolü ve arayüz smoke testleri geçti.
 
 Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu notu; varsa eski karar bağlantısı.`
+
+## 2026-10-22 — Araştırma ve reçete modeli
+
+- K-008: Kademeli laboratuvar ve depolanabilir araştırma puanı onaylandı; K-001 yerine geçti olarak işaretlendi. Araştırma Ekonomisi notunun onaylı bölümü güncellendi, eski model tarihsel bölüme alındı.
+- K-009: Girdisi farklı reçeteli makinelerde reçetenin gelen ürüne göre belirlenmesi, aynı girdili makinelerde simgeli reçete ekranı onaylandı.
+- Prototip (`data/prototype.json`, `sim/production_sim.gd`) bu iki karara göre güncellendi; fiyat ve laboratuvar girdileri dengelenmemiş ilk denemedir.

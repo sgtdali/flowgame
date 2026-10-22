@@ -1,13 +1,27 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-22
 ---
 # Araştırma ekonomisi
 
-## Onaylı temel ve önerilen çalışma modeli
+## Onaylı model: kademeli laboratuvar ve puan deposu (K-008)
 
-Onaylı seçim, **gerçek endüstriyel ürünleri doğrudan tüketen araştırmalardır** (K-001). Araştırmayı çok malzemeli deneylere ayırmak, aşağıdaki laboratuvar davranışları ve bütün sayılar öneridir.
+Laboratuvarlar kademelidir ve araştırmadan bağımsız olarak hep aynı ürünleri tüketir. Her laboratuvar kendi kademesinin araştırma puanını üretir; puanlar depoda birikir. Araştırmanın fiyatı kademe puanlarıyla yazılır ve aktif araştırma eksik kalan puanı depodan çeker. Araştırma değiştirmek laboratuvar hatlarını bozmaz.
+
+Prototipteki ilk deneme (dengelenmemiş):
+
+| Laboratuvar | Sürekli tükettiği | Ürettiği | Açılış |
+|---|---|---|---|
+| Laboratuvar 1 | çelik levha + bağlantı elemanı | Kademe 1 puanı | Başlangıç |
+| Laboratuvar 2 | dişli + bakır tel + endüstriyel cam | Kademe 2 puanı | A-03 |
+| Laboratuvar 3 | devre kartı + bobin + mil | Kademe 3 puanı | A-07 |
+
+Fiyatlar: A-01/A-02/A-03 30 K1; A-04 ve A-05 60 K1 + 30 K2; A-07 50 K1 + 40 K2; A-06 60 K1 + 60 K2; A-08 40 K2 + 30 K3; A-09 60 K2 + 60 K3.
+
+## Tarihsel: doğrudan ürün tüketen araştırma (K-001)
+
+Önceki onaylı seçim, **gerçek endüstriyel ürünleri doğrudan tüketen araştırmalardı** (K-001); K-008 ile yerine geçti. Oyuncu her araştırmada laboratuvar hattını yeniden kurmak zorunda kaldığı için bırakıldı. Araştırmayı çok malzemeli deneylere ayırmak, aşağıdaki laboratuvar davranışları ve bütün sayılar öneridir.
 
 Önerilen modelde araştırmanın bir deney reçetesi, deney süresi ve gerekli deney sayısı olur. Laboratuvar, bir deneyin bütün girdileri hazırsa deneyi başlatır; girdiler deney başında birlikte tüketilir. Tamamlanan deney ilerlemeyi artırır. Malzeme eksikse deney başlamaz; yalnızca bir girdiyi tüketerek beklemez.
 

@@ -17,7 +17,7 @@ func _initialize() -> void:
 		_check(sim.recipe_mode(kind) == "auto", "%s girdisine göre reçete seçmeli" % kind)
 	for kind in ["rolling_mill", "cnc", "foundry"]:
 		_check(sim.recipe_mode(kind) == "choose", "%s aynı girdiden farklı ürün yaptığı için seçimli olmalı" % kind)
-	_check(sim.recipe_mode("iron_mine") == "fixed" and sim.recipe_mode("lab") == "fixed", "Tek reçeteli makineler ve laboratuvar sabit kalmalı")
+	_check(sim.recipe_mode("iron_mine") == "fixed" and sim.recipe_mode("lab_1") == "fixed", "Tek reçeteli makineler ve laboratuvar sabit kalmalı")
 
 	var smelter := sim.add_machine("smelter")
 	_check(sim.input_products(smelter) == [sim.ANY], "Boş fırında tek genel giriş olmalı")

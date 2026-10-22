@@ -42,6 +42,8 @@ var cards: Dictionary = {}
 var status_label: Label
 var unlock_all_button: Button
 var tree: TreeCanvas
+## tier -> chip showing points waiting in the store
+var store_chips: Dictionary = {}
 var _edges: Array = []
 
 func _box(background: Color, border: Color, width: int = 1, radius: int = 8, pad: int = 10) -> StyleBoxFlat:
@@ -90,6 +92,18 @@ func build(catalog: Dictionary) -> void:
 	title_box.add_child(_label("Teknoloji ağacı", 20, INK))
 	status_label = _label("", 13, MUTED)
 	title_box.add_child(status_label)
+	# Point store: what the labs have produced and no research has spent yet.
+	var store := HBoxContainer.new()
+	store.add_theme_constant_override("separation", 12)
+	store.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(store)
+	for t in catalog.get("research_tiers", []):
+		var chip := _chip(catalog, str(t.id), 0)
+		chip.get_node("Amount").add_theme_font_size_override("font_size", 15)
+		chip.get_child(0).custom_minimum_size = Vector2(12, 12)
+		chip.tooltip_text = "%s puan deposu" % t.name
+		store.add_child(chip)
+		store_chips[str(t.id)] = chip
 	unlock_all_button = Button.new()
 	unlock_all_button.custom_minimum_size.y = 34
 	unlock_all_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -168,7 +182,8 @@ func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(row)
 	var bar := ProgressBar.new()
-	bar.max_value = float(spec.experiments)
+	bar.max_value = 1.0
+	bar.step = 0.0
 	bar.show_percentage = false
 	bar.custom_minimum_size.y = 6
 	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -176,14 +191,33 @@ func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.add_theme_stylebox_override("background", _box(Color("09131c"), Color.TRANSPARENT, 0, 3, 0))
 	row.add_child(bar)
-	var prog_lbl := _label("", 11, MUTED)
-	row.add_child(prog_lbl)
-	var recipe: Dictionary = catalog.recipes[spec.recipe]
-	var in_parts: PackedStringArray = []
-	for p in recipe.inputs:
-		in_parts.append("%d %s" % [int(recipe.inputs[p]), catalog.products[p].name.to_lower()])
-	button.tooltip_text = "%s\n%s\nDeney: %s" % [name, str(spec.get("description", "")), " + ".join(in_parts)]
-	return {"button": button, "name_lbl": name_lbl, "bar": bar, "prog_lbl": prog_lbl, "experiments": int(spec.experiments)}
+	# Price as tier chips: a coloured square and the points still missing.
+	var chips := {}
+	for tier in spec.cost:
+		var chip := _chip(catalog, str(tier), int(spec.cost[tier]))
+		row.add_child(chip)
+		chips[str(tier)] = chip
+	button.tooltip_text = "%s\n%s" % [name, str(spec.get("description", ""))]
+	return {"button": button, "name_lbl": name_lbl, "bar": bar, "chips": chips, "cost": spec.cost}
+
+## Coloured square for a research tier followed by a number.
+func _chip(catalog: Dictionary, tier: String, amount: int) -> HBoxContainer:
+	var chip := HBoxContainer.new()
+	chip.add_theme_constant_override("separation", 3)
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var swatch := ColorRect.new()
+	swatch.custom_minimum_size = Vector2(8, 8)
+	swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for t in catalog.get("research_tiers", []):
+		if str(t.id) == tier:
+			swatch.color = Color(t.color)
+			chip.tooltip_text = str(t.name)
+	chip.add_child(swatch)
+	var label := _label(str(amount), 11, INK)
+	label.name = "Amount"
+	chip.add_child(label)
+	return chip
 
 func _style(view: Dictionary, background: Color, border: Color, width: int) -> void:
 	var button: Button = view.button
@@ -197,14 +231,17 @@ func refresh(sim: RefCounted) -> void:
 	if not visible:
 		return
 	status_label.text = "%d / %d tamamlandı  ·  Aktif: %s" % [sim.completed_researches.size(), sim.catalog.researches.size(),
-		sim.active_research if not (sim.active_research in sim.completed_researches) else "seçilmedi"]
+		sim.active_research if sim.can_research(sim.active_research) else "seçilmedi"]
+	for tier in store_chips:
+		store_chips[tier].get_node("Amount").text = str(int(sim.research_points.get(tier, 0)))
 	unlock_all_button.text = "Serbest mod açık" if sim.sandbox_mode else "Serbest mod"
 	unlock_all_button.disabled = sim.sandbox_mode
 	for tech_id in cards:
 		var view: Dictionary = cards[tech_id]
-		var done_count := int(sim.research_progress.get(tech_id, 0))
-		view.bar.value = done_count
-		view.prog_lbl.text = "%d/%d" % [done_count, int(view.experiments)]
+		view.bar.value = sim.research_fraction(tech_id)
+		for tier in view.chips:
+			var missing := int(view.cost[tier]) - int(sim.research_progress[tech_id].get(tier, 0))
+			view.chips[tier].get_node("Amount").text = str(maxi(missing, 0))
 		var button: Button = view.button
 		if tech_id in sim.completed_researches:
 			button.disabled = true

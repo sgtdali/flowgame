@@ -36,7 +36,7 @@ func show_machine(sim: RefCounted, id: String, at: Vector2) -> void:
 	var machine: Dictionary = sim.machines[id]
 	var spec: Dictionary = sim.catalog.machines[machine.kind]
 	add_separator(str(spec.name))
-	if machine.kind == "lab":
+	if sim.is_lab(str(machine.kind)):
 		add_item("Araştırma hedefi seç", RESEARCH)
 		add_separator()
 	elif sim.recipe_mode(str(machine.kind)) == "choose":

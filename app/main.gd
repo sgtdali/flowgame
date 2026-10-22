@@ -192,10 +192,6 @@ func _select_research(tech_id: String) -> void:
 	if not sim.set_active_research(tech_id):
 		message.text = "Bu araştırma henüz seçilemez; ön koşulları tamamlanmalı."
 		return
-	for id in cards.keys():
-		if sim.machines[id].kind == "lab" and not sim.machines[id].running:
-			_rebuild_card(id)
-	_sync_graph_connections()
 	research_panel.refresh(sim)
 	_refresh()
 	message.text = "Aktif araştırma: %s" % sim.catalog.researches[tech_id].name
@@ -421,7 +417,7 @@ func _demo() -> void:
 	var mill_plate := _add_card("rolling_mill", Vector2(660, 20), "", "steel_plate")
 	var mill_rod := _add_card("rolling_mill", Vector2(660, 250), "", "steel_rod")
 	var press := _add_card("press", Vector2(660, 480), "", "fastener")
-	var lab := _add_card("lab", Vector2(980, 250))
+	var lab := _add_card("lab_1", Vector2(980, 250))
 	sim.add_link(iron_mine, smelter)
 	sim.add_link(coal_mine, smelter)
 	sim.add_link(coal_mine, steel_furnace)
@@ -430,7 +426,6 @@ func _demo() -> void:
 	sim.add_link(steel_furnace, mill_rod)
 	sim.add_link(mill_plate, lab)
 	sim.add_link(mill_rod, press)
-	sim.add_link(mill_rod, lab)
 	sim.add_link(press, lab)
 	_sync_graph_connections()
 	graph.scroll_offset = Vector2.ZERO
@@ -481,21 +476,17 @@ func _refresh() -> void:
 		var latest := str(sim.completed_researches.back()) if not sim.completed_researches.is_empty() else ""
 		if not latest.is_empty():
 			message.text = "✓ %s tamamlandı! Yeni makineler ve reçeteler açıldı." % sim.catalog.researches[latest].name
-	var lab_experiments := 0
 	for id in cards:
 		var machine: Dictionary = sim.machines[id]
 		var view: Dictionary = cards[id]
 		if view.node.has_method("set_simulation_playback"):
 			view.node.set_simulation_playback(paused, time_scale)
 		view.node.update_from_sim(sim, id)
-		if machine.kind == "lab":
-			lab_experiments += int(machine.completed)
 	var active_text := "Tüm araştırmalar tamamlandı"
-	if sim.catalog.researches.has(sim.active_research) and not (sim.active_research in sim.completed_researches):
-		var r_spec: Dictionary = sim.catalog.researches[sim.active_research]
-		var done: int = int(sim.research_progress.get(sim.active_research, 0))
-		active_text = "%s (%d/%d)" % [r_spec.name, done, int(r_spec.experiments)]
-		research_button.text = "🔬 %s  [%d/%d]" % [sim.active_research, done, int(r_spec.experiments)]
+	if sim.can_research(sim.active_research):
+		var percent := roundi(sim.research_fraction(sim.active_research) * 100.0)
+		active_text = "%s (%%%d)" % [sim.catalog.researches[sim.active_research].name, percent]
+		research_button.text = "🔬 %s  %%%d" % [sim.active_research, percent]
 	elif sim.completed_researches.size() < sim.catalog.researches.size():
 		active_text = "%s bitti — Yeni hedef seç" % sim.active_research
 		research_button.text = "🔬 Hedef Seç (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
@@ -599,17 +590,21 @@ func _smoke_test() -> void:
 	_delete_cards([StringName(cnc_card)])
 	assert(cards.size() == 8)
 	# Tek tıkla üretici makine kurup bağlama testi (_spawn_supplier)
+	# Cut the lab's fastener line, then rebuild it from the "+" on that input.
+	sim.links = sim.links.filter(func(link: Dictionary) -> bool: return not (link.to == "machine_8" and link.product == "fastener"))
+	_sync_graph_connections()
+	_refresh()
 	_select_card("machine_8")
-	var shaft_add: Button = cards["machine_8"].node.input_gauges["shaft"].add_button
-	assert(shaft_add.visible, "Bağlantısız girişte + görünmeli")
-	shaft_add.pressed.emit()
-	assert(machine_menu.visible and machine_menu.target_product == "shaft")
+	var fastener_add: Button = cards["machine_8"].node.input_gauges["fastener"].add_button
+	assert(fastener_add.visible, "Bağlantısız girişte + görünmeli")
+	fastener_add.pressed.emit()
+	assert(machine_menu.visible and machine_menu.target_product == "fastener")
 	machine_menu.id_pressed.emit(0)
 	machine_menu.hide()
-	assert(cards.size() == 9, "Tek tıkla Torna kurulup laboratuvara bağlanmalı")
-	var lathe_id := "machine_10"
-	assert(sim.machines[lathe_id].kind == "lathe" and sim.machines[lathe_id].recipe == "shaft")
-	_delete_cards([StringName(lathe_id)])
+	assert(cards.size() == 9, "Tek tıkla pres kurulup laboratuvara bağlanmalı")
+	var press_id := "machine_10"
+	assert(sim.machines[press_id].kind == "press" and sim.is_input_linked("machine_8", "fastener"))
+	_delete_cards([StringName(press_id)])
 	assert(cards.size() == 8)
 	_select_card("machine_8")
 	_refresh()

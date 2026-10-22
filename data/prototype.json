@@ -194,59 +194,26 @@
       "outputs": {},
       "work": 100.0
     },
-    "research_A-01": {
-      "name": "Araştırma: A-01 Talaşlı İmalat",
-      "inputs": {"steel_plate": 1, "steel_rod": 1, "fastener": 2},
+    "points_k1": {
+      "name": "Kademe 1 puanı",
+      "inputs": {"steel_plate": 1, "fastener": 1},
       "outputs": {},
-      "work": 100.0
+      "research_points": {"k1": 1},
+      "work": 40.0
     },
-    "research_A-02": {
-      "name": "Araştırma: A-02 Döküm ve Geri Kazanım",
-      "inputs": {"pig_iron": 2, "steel_ingot": 1, "steel_plate": 1},
+    "points_k2": {
+      "name": "Kademe 2 puanı",
+      "inputs": {"gear": 1, "copper_wire": 1, "insulator": 1},
       "outputs": {},
-      "work": 100.0
+      "research_points": {"k2": 1},
+      "work": 40.0
     },
-    "research_A-03": {
-      "name": "Araştırma: A-03 İletkenler ve Yalıtım",
-      "inputs": {"copper_ingot": 1, "steel_plate": 1, "fastener": 2},
+    "points_k3": {
+      "name": "Kademe 3 puanı",
+      "inputs": {"circuit_board": 1, "coil": 1, "shaft": 1},
       "outputs": {},
-      "work": 100.0
-    },
-    "research_A-04": {
-      "name": "Araştırma: A-04 Mekanik Aktarma",
-      "inputs": {"shaft": 1, "gear": 1, "bearing": 1, "housing": 1},
-      "outputs": {},
-      "work": 120.0
-    },
-    "research_A-05": {
-      "name": "Araştırma: A-05 Elektromanyetik Sarım",
-      "inputs": {"copper_wire": 2, "steel_rod": 1, "insulator": 1},
-      "outputs": {},
-      "work": 120.0
-    },
-    "research_A-06": {
-      "name": "Araştırma: A-06 Elektrik Motorları",
-      "inputs": {"coil": 1, "shaft": 1, "bearing": 1, "housing": 1},
-      "outputs": {},
-      "work": 150.0
-    },
-    "research_A-07": {
-      "name": "Araştırma: A-07 Temel Elektronik",
-      "inputs": {"copper_wire": 2, "insulator": 1, "fastener": 2},
-      "outputs": {},
-      "work": 120.0
-    },
-    "research_A-08": {
-      "name": "Araştırma: A-08 Endüstriyel Algılama",
-      "inputs": {"circuit_board": 1, "coil": 1, "insulator": 1},
-      "outputs": {},
-      "work": 150.0
-    },
-    "research_A-09": {
-      "name": "Araştırma: A-09 Otomasyon ve Kontrol",
-      "inputs": {"gearbox": 1, "electric_motor": 1, "sensor": 1, "circuit_board": 1},
-      "outputs": {},
-      "work": 200.0
+      "research_points": {"k3": 1},
+      "work": 40.0
     }
   },
   "machines": {
@@ -404,20 +371,38 @@
       "output_capacity": 8,
       "color": "8c9ba5"
     },
-    "lab": {
-      "name": "Araştırma laboratuvarı",
-      "role": "ARAŞTIRMA TÜKETİCİSİ",
-      "description": "Seçili araştırmanın gerektirdiği ürünleri doğrudan tüketerek deney ilerlemesi sağlar (K-001).",
-      "recipe": "research_A-01",
-      "recipes": [
-        "research_A-01", "research_A-02", "research_A-03",
-        "research_A-04", "research_A-05", "research_A-06",
-        "research_A-07", "research_A-08", "research_A-09"
-      ],
+    "lab_1": {
+      "name": "Laboratuvar 1",
+      "role": "ARAŞTIRMA",
+      "description": "Çelik levha ve bağlantı elemanı tüketerek Kademe 1 araştırma puanı üretir.",
+      "recipe": "points_k1",
+      "recipes": ["points_k1"],
+      "speed": 20.0,
+      "input_capacity": 6,
+      "output_capacity": 8,
+      "color": "efb65a"
+    },
+    "lab_2": {
+      "name": "Laboratuvar 2",
+      "role": "ARAŞTIRMA",
+      "description": "Dişli, bakır tel ve endüstriyel cam tüketerek Kademe 2 araştırma puanı üretir.",
+      "recipe": "points_k2",
+      "recipes": ["points_k2"],
       "speed": 20.0,
       "input_capacity": 6,
       "output_capacity": 8,
       "color": "61d8bb"
+    },
+    "lab_3": {
+      "name": "Laboratuvar 3",
+      "role": "ARAŞTIRMA",
+      "description": "Devre kartı, bobin ve mil tüketerek Kademe 3 araştırma puanı üretir.",
+      "recipe": "points_k3",
+      "recipes": ["points_k3"],
+      "speed": 20.0,
+      "input_capacity": 6,
+      "output_capacity": 8,
+      "color": "52b5d8"
     },
     "project_hub": {
       "name": "Ana proje terminali",
@@ -431,28 +416,15 @@
       "color": "b98eff"
     }
   },
-  "initial_unlocked_machines": [
-    "iron_mine", "copper_mine", "coal_mine", "quartz_quarry",
-    "smelter", "steel_furnace", "rolling_mill", "press",
-    "scrap_disposal", "lab"
-  ],
-  "initial_unlocked_recipes": [
-    "mine_iron", "mine_copper", "mine_coal", "mine_quartz",
-    "pig_iron", "copper_ingot", "steel_ingot",
-    "steel_plate", "steel_rod", "fastener", "housing_press",
-    "dispose_scrap",
-    "research_A-01", "research_A-02", "research_A-03",
-    "research_A-04", "research_A-05", "research_A-06",
-    "research_A-07", "research_A-08", "research_A-09"
-  ],
+  "initial_unlocked_machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry", "smelter", "steel_furnace", "rolling_mill", "press", "scrap_disposal", "lab_1"],
+  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
   "researches": {
     "A-01": {
       "name": "A-01: Talaşlı İmalat",
       "tier": 1,
       "category": "mekanik",
       "prerequisites": [],
-      "recipe": "research_A-01",
-      "experiments": 8,
+      "cost": {"k1": 30},
       "unlock_machines": ["lathe", "cnc"],
       "unlock_recipes": ["shaft", "gear_cnc", "bearing"],
       "description": "Torna ve CNC tezgâhlarını açar; mil, dişli ve rulman imalatını başlatır."
@@ -462,8 +434,7 @@
       "tier": 1,
       "category": "malzeme",
       "prerequisites": [],
-      "recipe": "research_A-02",
-      "experiments": 8,
+      "cost": {"k1": 30},
       "unlock_machines": ["foundry"],
       "unlock_recipes": ["gear_cast", "housing_cast", "steel_from_scrap"],
       "description": "Dökümhaneyi ve metal talaşından çelik geri kazanım reçetesini açar."
@@ -473,9 +444,8 @@
       "tier": 1,
       "category": "elektrik",
       "prerequisites": [],
-      "recipe": "research_A-03",
-      "experiments": 8,
-      "unlock_machines": ["wire_winder"],
+      "cost": {"k1": 30},
+      "unlock_machines": ["wire_winder", "lab_2"],
       "unlock_recipes": ["copper_wire", "insulator"],
       "description": "Tel çekme/sarım makinesini, bakır tel ve endüstriyel cam reçetelerini açar."
     },
@@ -484,8 +454,7 @@
       "tier": 2,
       "category": "mekanik",
       "prerequisites": ["A-01"],
-      "recipe": "research_A-04",
-      "experiments": 10,
+      "cost": {"k1": 60, "k2": 30},
       "unlock_machines": ["assembler"],
       "unlock_recipes": ["gearbox"],
       "description": "Montaj istasyonunu ve dişli kutusu (redüktör) üretimini açar."
@@ -495,8 +464,7 @@
       "tier": 2,
       "category": "elektrik",
       "prerequisites": ["A-03"],
-      "recipe": "research_A-05",
-      "experiments": 10,
+      "cost": {"k1": 60, "k2": 30},
       "unlock_machines": [],
       "unlock_recipes": ["coil"],
       "description": "Bakır tel ve çelik çubuktan elektromanyetik bobin sarımını açar."
@@ -506,8 +474,7 @@
       "tier": 2,
       "category": "elektrik",
       "prerequisites": ["A-04", "A-05"],
-      "recipe": "research_A-06",
-      "experiments": 12,
+      "cost": {"k1": 60, "k2": 60},
       "unlock_machines": [],
       "unlock_recipes": ["electric_motor"],
       "description": "Bobin, mil, rulman ve gövdeyi birleştirerek elektrik motoru montajını açar."
@@ -517,9 +484,8 @@
       "tier": 2,
       "category": "kontrol",
       "prerequisites": ["A-03"],
-      "recipe": "research_A-07",
-      "experiments": 10,
-      "unlock_machines": ["assembler"],
+      "cost": {"k1": 50, "k2": 40},
+      "unlock_machines": ["assembler", "lab_3"],
       "unlock_recipes": ["circuit_board"],
       "description": "Bakır tel ve endüstriyel camdan devre kartı üretimini açar."
     },
@@ -528,8 +494,7 @@
       "tier": 3,
       "category": "kontrol",
       "prerequisites": ["A-05", "A-07"],
-      "recipe": "research_A-08",
-      "experiments": 12,
+      "cost": {"k2": 40, "k3": 30},
       "unlock_machines": [],
       "unlock_recipes": ["sensor"],
       "description": "Devre kartı, bobin ve endüstriyel cam ile endüstriyel sensör üretimini açar."
@@ -539,11 +504,15 @@
       "tier": 3,
       "category": "kontrol",
       "prerequisites": ["A-06", "A-08"],
-      "recipe": "research_A-09",
-      "experiments": 15,
+      "cost": {"k2": 60, "k3": 60},
       "unlock_machines": ["project_hub"],
       "unlock_recipes": ["actuator", "plc", "project_stage_1"],
       "description": "Hassas aktüatör (servo kolu), kontrol ünitesi (PLC) ve Ana Proje terminalini açar."
     }
-  }
+  },
+  "research_tiers": [
+    {"id": "k1", "name": "Kademe 1", "color": "efb65a"},
+    {"id": "k2", "name": "Kademe 2", "color": "61d8bb"},
+    {"id": "k3", "name": "Kademe 3", "color": "52b5d8"}
+  ]
 }

@@ -1,7 +1,7 @@
 ---
 tur: karar-defteri
 durum: etkin
-guncelleme: 2026-10-20
+guncelleme: 2026-10-22
 ---
 # Karar defteri
 
@@ -9,7 +9,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 
 ## K-001 — Doğrudan ürün tüketen araştırma
 
-- **Durum:** Onaylı temel model.
+- **Durum:** Yerine geçti → K-008 (2026-10-22).
 - **Karar:** Araştırmalar gerçek üretim ürünlerini tüketir; B modeli seçilmiştir.
 - **Kaynak:** [[Kaynaklar/01 - Aktarılan Sohbet]] başlangıcı: “Araştırma tüketim modeli olarak B: Doğrudan ürün tüketen araştırmalar seçiyorum.”
 - **Alternatif:** Bilim puanı veya ayrı bilim paketi üzerinden ilerleme.
@@ -87,6 +87,27 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Gerekçe:** Ürünlerin ortak ara girdiler üzerinden paylaşım kararları (K-006) üretmesi, alternatif yöntemlere (`Dişli` ve `Gövde` için talaşlı/pres vs. döküm) ve yan ürün geri kazanımına (`Metal Talaşı`) zemin hazırlaması.
 - **Sınır:** İlk taslak niteliğindedir. Reçetelerin girdi/çıktı sayıları, gereken iş miktarları (K-005), makine hızları, araştırma deney sayıları/süreleri ve montaj makinelerinin tek veya üç ayrı makine türü olması henüz sabitlenmemiştir.
 - **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Teknoloji Ağacı]].
+
+## K-008 — Kademeli laboratuvarlar ve depolanabilir araştırma puanı
+
+- **Durum:** Onaylı; K-001'in yerine geçer.
+- **Tarih:** 2026-10-22.
+- **Karar:**
+  1. Laboratuvarlar kademelidir. Her laboratuvar araştırmadan bağımsız olarak hep aynı ürünleri tüketir ve kendi kademesinin araştırma puanını üretir (Laboratuvar 1 → Kademe 1 puanı, Laboratuvar 2 → Kademe 2 puanı …). Üst laboratuvar alttakinden farklı ürünler ister.
+  2. Araştırmanın fiyatı kademe puanlarıyla yazılır; bir araştırma birden fazla kademenin puanını isteyebilir.
+  3. Puanlar depolanabilir. Laboratuvarların ürettiği puan depoda birikir; aktif araştırma eksik kalan fiyatını depodan çeker.
+- **Kaynak:** Kullanıcı oyunu denedikten sonra her araştırmada ağı yeniden kurmanın can sıkıcı olduğunu söyledi ve “verdiğimiz kararı boş ver” dedi. Modeli kendisi tarif etti: “lab 1 olcak. 2 ürün isticek hep. ve çıktı olarak resarch point kademe1 gibi bişey verecek … kademe 1 ve kademe 2 resarch pointlerde araştırmamı yapılacak”; onayı: “tamam uygula ama puan depolanabilir olsun.”
+- **Gerekçe:** Oyuncunun laboratuvara kurduğu hattın araştırma değişince bozulmaması; araştırma ağacının kademe puanları üzerinden birbirine bağlı kalması.
+- **Sınır:** Laboratuvar girdileri, puan fiyatları ve laboratuvarların hangi araştırmayla açıldığı ilk denemedir; dengelenmemiştir. Puan deposunun bir üst sınırı yoktur.
+- **Asıl not:** [[Tasarım/Araştırma Ekonomisi]].
+
+## K-009 — Reçete gelen ürüne göre belirlenir
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-22.
+- **Karar:** Girdileri birbirinden farklı reçeteleri olan makinelerde (ör. ergitme fırını) oyuncu reçete seçmez; makine bağlanan ürüne göre üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Aynı girdiden farklı ürün yapan makinelerde (haddehane, CNC, dökümhane) kartın tıklanmasıyla açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir.
+- **Kaynak:** “bunu oyuncu seçmesin. ancak gelen ürüne göre otomatik olarak üretilecek ürün belirlenmiş olsun”; aynı girdili makineler için “tıklayınca recipe ekranı çıksın … oyuncu bir ürün üretmek için nelere ihtiyacı olduğunu da ordan görmüş olur”; boş makine için “Tek genel giriş” seçimi.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
 
 ## Henüz karar olmayan yönler
 

@@ -1,6 +1,8 @@
 extends RefCounted
 ## UI'dan bağımsız, sabit adımlı üretim ve araştırma simülasyonu.
 ## K-005 (iş/hız çevrimi), K-006 (otomatik eşit paylaşım) ve K-007 (24 ürün + 9 araştırma) kurallarını yürütür.
+## Araştırma: laboratuvarlar sabit ürünleri tüketip kademe puanı üretir; puanlar depoda
+## birikir ve aktif araştırma fiyatı kadarını depodan çeker.
 
 const STEP := 0.05
 const EPSILON := 0.000001
@@ -15,13 +17,16 @@ var cursors: Dictionary = {}
 var unlocked_machines: Array = []
 var unlocked_recipes: Array = []
 var completed_researches: Array = []
+## tech_id -> {tier: points already spent on it}
 var research_progress: Dictionary = {}
+## tier -> stored points not yet spent
+var research_points: Dictionary = {}
 var active_research := "A-01"
 var sandbox_mode := false
 var elapsed := 0.0
 var next_id := 1
 var accumulator := 0.0
-## kind -> "fixed" (one recipe or lab), "auto" (recipe follows the linked inputs) or
+## kind -> "fixed" (one recipe), "auto" (recipe follows the linked inputs) or
 ## "choose" (several recipes share the same inputs, so the player picks the product).
 var recipe_modes: Dictionary = {}
 
@@ -32,11 +37,13 @@ func _init() -> void:
 	for r_id in catalog.get("initial_unlocked_recipes", []):
 		unlocked_recipes.append(str(r_id))
 	for tech_id in catalog.get("researches", {}):
-		research_progress[str(tech_id)] = 0
+		research_progress[str(tech_id)] = {}
+	for tier in catalog.get("research_tiers", []):
+		research_points[str(tier.id)] = 0
 	for kind in catalog.machines:
 		var allowed: Array = catalog.machines[kind].get("recipes", [catalog.machines[kind].recipe])
 		var mode := "fixed"
-		if kind != "lab" and allowed.size() > 1:
+		if allowed.size() > 1:
 			mode = "auto"
 			var seen := {}
 			for r_id in allowed:
@@ -140,26 +147,20 @@ func set_active_research(tech_id: String) -> bool:
 	if not can_research(tech_id):
 		return false
 	active_research = tech_id
-	var target_recipe: String = str(catalog.researches[tech_id].recipe)
-	for id in machines:
-		if machines[id].kind == "lab" and not machines[id].running:
-			_sync_lab_recipe(id, target_recipe)
 	return true
 
-func _sync_lab_recipe(id: String, recipe_id: String) -> void:
-	var machine: Dictionary = machines[id]
-	if machine.recipe == recipe_id:
-		return
-	var new_recipe: Dictionary = catalog.recipes[recipe_id]
-	var new_inputs := {}
-	for product in new_recipe.inputs:
-		new_inputs[product] = int(machine.input.get(product, 0))
-	machine.recipe = recipe_id
-	machine.input = new_inputs
-	machine.output = {}
-	machine.status = "Girdi bekliyor" if machine.enabled else "Durduruldu"
-	links = links.filter(func(link: Dictionary) -> bool:
-		return link.to != id or new_recipe.inputs.has(link.product))
+## Share of the research cost already paid, 0..1.
+func research_fraction(tech_id: String) -> float:
+	var cost: Dictionary = catalog.researches[tech_id].cost
+	var total := 0
+	var paid := 0
+	for tier in cost:
+		total += int(cost[tier])
+		paid += mini(int(research_progress[tech_id].get(tier, 0)), int(cost[tier]))
+	return 1.0 if total == 0 else float(paid) / float(total)
+
+func is_lab(kind: String) -> bool:
+	return catalog.recipes[catalog.machines[kind].recipe].has("research_points")
 
 func add_machine(kind: String, recipe_override: String = "") -> String:
 	if not catalog.machines.has(kind):
@@ -168,8 +169,6 @@ func add_machine(kind: String, recipe_override: String = "") -> String:
 	next_id += 1
 	var spec: Dictionary = catalog.machines[kind]
 	var recipe_id: String = str(spec.recipe)
-	if kind == "lab" and catalog.researches.has(active_research):
-		recipe_id = str(catalog.researches[active_research].recipe)
 	if not recipe_override.is_empty() and recipe_override in spec.get("recipes", [spec.recipe]):
 		recipe_id = recipe_override
 	var recipe: Dictionary = catalog.recipes[recipe_id]
@@ -183,8 +182,7 @@ func add_machine(kind: String, recipe_override: String = "") -> String:
 		"kind": kind, "recipe": recipe_id, "speed": float(spec.speed),
 		"enabled": true, "running": false, "remaining": 0.0,
 		"input": inputs, "output": outputs, "completed": 0,
-		"received": 0, "status": "Hazır", "position": [0.0, 0.0],
-		"research_id": ""
+		"received": 0, "status": "Hazır", "position": [0.0, 0.0]
 	}
 	return id
 
@@ -208,7 +206,6 @@ func set_recipe(id: String, recipe_id: String) -> bool:
 	machine.recipe = recipe_id
 	machine.running = false
 	machine.remaining = 0.0
-	machine.research_id = ""
 	machine.input = new_inputs
 	machine.output = new_outputs
 	machine.status = "Hazır" if machine.enabled else "Durduruldu"
@@ -304,8 +301,8 @@ func producers_for(product: String) -> Array:
 func machine_outputs_summary(kind: String) -> String:
 	if not catalog.machines.has(kind):
 		return ""
-	if kind == "lab":
-		return "Araştırma deneyleri yürütür"
+	if is_lab(kind):
+		return "Araştırma puanı üretir"
 	if kind == "project_hub":
 		return "Ana proje parçalarını tüketir"
 	if kind == "scrap_disposal":
@@ -418,14 +415,26 @@ func _tick() -> void:
 	for id in machines:
 		_process_machine(id, STEP)
 	_transfer()
+	_spend_points()
 	elapsed += STEP
 
-func _running_labs_for(tech_id: String) -> int:
-	var count := 0
-	for m in machines.values():
-		if m.kind == "lab" and m.running and str(m.get("research_id", "")) == tech_id:
-			count += 1
-	return count
+## The active research draws what it still needs from the point store.
+func _spend_points() -> void:
+	if not can_research(active_research):
+		return
+	var cost: Dictionary = catalog.researches[active_research].cost
+	var progress: Dictionary = research_progress[active_research]
+	var done := true
+	for tier in cost:
+		var missing := int(cost[tier]) - int(progress.get(tier, 0))
+		var take := mini(missing, int(research_points.get(tier, 0)))
+		if take > 0:
+			progress[tier] = int(progress.get(tier, 0)) + take
+			research_points[tier] -= take
+		if int(progress.get(tier, 0)) < int(cost[tier]):
+			done = false
+	if done:
+		_complete_research(active_research)
 
 func _complete_research(tech_id: String) -> void:
 	if tech_id in completed_researches or not catalog.researches.has(tech_id):
@@ -444,24 +453,6 @@ func _start(id: String) -> bool:
 	if not machine.enabled:
 		machine.status = "Durduruldu"
 		return false
-	if machine.kind == "lab":
-		if active_research.is_empty() or not catalog.researches.has(active_research):
-			machine.status = "Araştırma seçilmedi"
-			return false
-		if active_research in completed_researches:
-			machine.status = "Araştırma tamamlandı"
-			return false
-		if not can_research(active_research):
-			machine.status = "Ön koşul bekliyor"
-			return false
-		var target_recipe: String = str(catalog.researches[active_research].recipe)
-		if machine.recipe != target_recipe:
-			_sync_lab_recipe(id, target_recipe)
-		var total_needed: int = int(catalog.researches[active_research].experiments)
-		var done: int = int(research_progress.get(active_research, 0))
-		if done + _running_labs_for(active_research) >= total_needed:
-			machine.status = "Araştırma tamamlandı" if done >= total_needed else "Son deney sürüyor"
-			return false
 	var recipe: Dictionary = recipe_for(id)
 	var spec: Dictionary = catalog.machines[machine.kind]
 	for product in recipe.inputs:
@@ -476,7 +467,6 @@ func _start(id: String) -> bool:
 		machine.input[product] -= int(recipe.inputs[product])
 	machine.running = true
 	machine.remaining = float(recipe.work)
-	machine.research_id = active_research if machine.kind == "lab" else ""
 	machine.status = "İşleniyor"
 	return true
 
@@ -496,16 +486,8 @@ func _process_machine(id: String, delta: float) -> void:
 			machine.completed += 1
 			machine.running = false
 			machine.remaining = 0.0
-			if machine.kind == "lab":
-				var r_id: String = str(machine.get("research_id", active_research))
-				machine.research_id = ""
-				if catalog.researches.has(r_id) and not (r_id in completed_researches):
-					var req: int = int(catalog.researches[r_id].experiments)
-					research_progress[r_id] = mini(int(research_progress.get(r_id, 0)) + 1, req)
-					if int(research_progress[r_id]) >= req:
-						_complete_research(r_id)
-				if catalog.researches.has(active_research):
-					_sync_lab_recipe(id, str(catalog.researches[active_research].recipe))
+			for tier in recipe.get("research_points", {}):
+				research_points[tier] = int(research_points.get(tier, 0)) + int(recipe.research_points[tier])
 			machine.status = "Çevrim tamamlandı"
 
 func _transfer() -> void:
@@ -547,7 +529,7 @@ func _transfer() -> void:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 2,
+		"version": 3,
 		"machines": machines.duplicate(true),
 		"links": links.duplicate(true),
 		"cursors": cursors.duplicate(true),
@@ -555,6 +537,7 @@ func snapshot() -> Dictionary:
 		"unlocked_recipes": unlocked_recipes.duplicate(),
 		"completed_researches": completed_researches.duplicate(),
 		"research_progress": research_progress.duplicate(true),
+		"research_points": research_points.duplicate(),
 		"active_research": active_research,
 		"sandbox_mode": sandbox_mode,
 		"elapsed": elapsed,
@@ -563,7 +546,7 @@ func snapshot() -> Dictionary:
 	}
 
 func restore(data: Dictionary) -> bool:
-	if data.get("version") != 2 or not data.get("machines") is Dictionary or not data.get("links") is Array:
+	if data.get("version") != 3 or not data.get("machines") is Dictionary or not data.get("links") is Array:
 		return false
 	for id in data.machines:
 		var m: Variant = data.machines[id]
@@ -647,9 +630,16 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if not data.get("unlocked_machines") is Array or not data.get("unlocked_recipes") is Array:
 		return false
+	if not data.get("research_points") is Dictionary:
+		return false
 	for tech_id in data.research_progress:
-		var val: Variant = data.research_progress[tech_id]
-		if not catalog.researches.has(tech_id) or not (val is int or val is float) or float(val) < 0 or float(val) != floorf(float(val)):
+		if not catalog.researches.has(tech_id) or not data.research_progress[tech_id] is Dictionary:
+			return false
+		for tier in data.research_progress[tech_id]:
+			if not _whole_count(data.research_progress[tech_id][tier]):
+				return false
+	for tier in data.research_points:
+		if not _whole_count(data.research_points[tier]):
 			return false
 	machines = data.machines.duplicate(true)
 	links = data.links.duplicate(true)
@@ -657,7 +647,6 @@ func restore(data: Dictionary) -> bool:
 		machine.completed = int(machine.completed)
 		machine.received = int(machine.received)
 		machine.recipe = str(machine.get("recipe", catalog.machines[machine.kind].recipe))
-		machine.research_id = str(machine.get("research_id", ""))
 		for field in ["input", "output"]:
 			for product in machine[field]:
 				machine[field][product] = int(machine[field][product])
@@ -675,10 +664,17 @@ func restore(data: Dictionary) -> bool:
 		completed_researches.append(str(tech_id))
 	research_progress.clear()
 	for tech_id in catalog.researches:
-		research_progress[str(tech_id)] = int(data.research_progress.get(tech_id, 0))
+		research_progress[str(tech_id)] = {}
+		for tier in data.research_progress.get(tech_id, {}):
+			research_progress[str(tech_id)][str(tier)] = int(data.research_progress[tech_id][tier])
+	for tier in research_points:
+		research_points[tier] = int(data.research_points.get(tier, 0))
 	active_research = str(data.get("active_research", "A-01"))
 	sandbox_mode = bool(data.get("sandbox_mode", false))
 	elapsed = float(data.elapsed)
 	accumulator = float(data.accumulator)
 	next_id = int(data.next_id)
 	return true
+
+func _whole_count(value: Variant) -> bool:
+	return (value is int or value is float) and is_finite(float(value)) and float(value) >= 0 and float(value) == floorf(float(value))
