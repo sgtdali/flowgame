@@ -1,7 +1,9 @@
-"""Ürün simgeleri: 24 ürün, her biri 16x16, ortak palet. Oyunda 2x gösterilir.
+"""Ürün simgeleri: 24 ürün, ortak palet, şeritte her biri 32x32 ve oyunda 1:1 görünür.
 
+32x32 çizimi olan ürün art_src/urun_32/<ürün>.png'den olduğu gibi alınır; olmayanlar
+burada 16x16 çizilip 2x büyütülür (ekranda eskisiyle aynı görünür).
 Sıra data/prototype.json'daki products sırasıyla aynıdır.
-python art_src/araclar/urun_ikonlari.py   -> app/art/ui/product_icons.png (384x16)
+python art_src/araclar/urun_ikonlari.py   -> app/art/ui/product_icons.png (768x32)
 """
 from pathlib import Path
 import json
@@ -12,6 +14,8 @@ from palet import PALET
 
 KOK = Path(__file__).resolve().parents[2]
 S = 16
+HUCRE = 32
+YENI = KOK / 'art_src' / 'urun_32'
 
 
 def c(name):
@@ -265,22 +269,28 @@ CIZIMLER = {name: fn for name, fn in globals().items() if callable(fn)}
 
 def main():
     urunler = list(json.loads((KOK / 'data' / 'prototype.json').read_text(encoding='utf-8'))['products'].keys())
-    serit = Image.new('RGBA', (S * len(urunler), S))
+    izinli = {tuple(int(v[j:j + 2], 16) for j in (1, 3, 5)) for v in PALET.values()}
+    serit = Image.new('RGBA', (HUCRE * len(urunler), HUCRE))
+    yeni = []
     for i, urun in enumerate(urunler):
-        im = Image.new('RGBA', (S, S))
-        CIZIMLER[urun](ImageDraw.Draw(im))
-        izinli = {tuple(int(v[j:j + 2], 16) for j in (1, 3, 5)) for v in PALET.values()}
+        if (YENI / f'{urun}.png').exists():
+            im = Image.open(YENI / f'{urun}.png').convert('RGBA')
+            assert im.size == (HUCRE, HUCRE), (urun, im.size)
+            yeni.append(urun)
+        else:
+            im = Image.new('RGBA', (S, S))
+            CIZIMLER[urun](ImageDraw.Draw(im))
+            im = im.resize((HUCRE, HUCRE), Image.Resampling.NEAREST)
         for r, g, b, a in set(im.get_flattened_data()):
             assert not a or (r, g, b) in izinli, (urun, (r, g, b))
-        serit.paste(im, (i * S, 0))
+        serit.paste(im, (i * HUCRE, 0))
     hedef = KOK / 'app' / 'art' / 'ui' / 'product_icons.png'
     serit.save(hedef)
-    on = Image.new('RGBA', (S * 8 * 5, S * 3 * 5), '#142331')
+    on = Image.new('RGBA', (HUCRE * 8 * 3, HUCRE * 3 * 3), '#142331')
     for i in range(len(urunler)):
-        parca = serit.crop((i * S, 0, (i + 1) * S, S)).resize((S * 4, S * 4), Image.Resampling.NEAREST)
-        on.alpha_composite(parca, (i % 8 * S * 5 + 8, i // 8 * S * 5 + 8))
+        parca = serit.crop((i * HUCRE, 0, (i + 1) * HUCRE, HUCRE)).resize((HUCRE * 2, HUCRE * 2), Image.Resampling.NEAREST)
+        on.alpha_composite(parca, (i % 8 * HUCRE * 3 + 16, i // 8 * HUCRE * 3 + 16))
     on.save(Path(__file__).resolve().parent / 'urun_ikonlari_x4.png')
-    print('URUN_IKONLARI_OK:', hedef, len(urunler))
-
+    print('URUN_IKONLARI_OK:', hedef, len(urunler), '32x32 cizimli:', ', '.join(yeni) or '-')
 
 main()

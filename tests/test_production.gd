@@ -10,6 +10,7 @@ func _initialize() -> void:
 	_inputs_and_blocking()
 	_sharing_and_byproducts()
 	_research_progression()
+	_build_limits()
 	_save_resume()
 	_conservation()
 	if failures.is_empty():
@@ -196,6 +197,20 @@ func _research_progression() -> void:
 	sim.advance(0.05)
 	_check("A-04" in sim.completed_researches, "K1 ve K2 fiyatı dolunca A-04 bitmeli")
 	_check(sim.links.size() == 1, "Araştırma değişince laboratuvar bağlantıları silinmemeli")
+
+func _build_limits() -> void:
+	var sim := Simulation.new()
+	for kind in ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry"]:
+		_check(sim.build_limit(kind) == 1, "%s başlangıçta 1 adetle sınırlı olmalı" % kind)
+	var mine := sim.add_machine("iron_mine")
+	_check(not mine.is_empty() and not sim.can_build("iron_mine"), "Sınır dolunca maden kurulamaz görünmeli")
+	_check(sim.add_machine("iron_mine").is_empty() and sim.built_count("iron_mine") == 1, "Sınırı dolan maden ikinci kez eklenmemeli")
+	_check(sim.build_limit("smelter") == -1 and sim.can_build("smelter"), "Sınırsız makineler etkilenmemeli")
+	sim.remove_machine(mine)
+	_check(sim.can_build("iron_mine"), "Maden silinince yeniden kurulabilmeli")
+	sim.unlock_all()
+	sim.add_machine("iron_mine")
+	_check(not sim.add_machine("iron_mine").is_empty(), "Serbest modda sınır olmamalı")
 
 func _save_resume() -> void:
 	var sim := Simulation.new()

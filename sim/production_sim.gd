@@ -29,9 +29,23 @@ var accumulator := 0.0
 ## kind -> "fixed" (one recipe), "auto" (recipe follows the linked inputs) or
 ## "choose" (several recipes share the same inputs, so the player picks the product).
 var recipe_modes: Dictionary = {}
+## product -> count the player carries
+var inventory: Dictionary = {}
+## machine kind -> machines the player carries but has not placed
+var machine_inventory: Dictionary = {}
+## Hand crafting, front first: {"type": "machine" or "recipe", "id": kind or recipe id, "remaining": work}
+var craft_queue: Array = []
+## Work units per second of hand crafting; machines are faster.
+var hand_speed := 10.0
 
 func _init() -> void:
 	catalog = JSON.parse_string(FileAccess.get_file_as_string("res://data/prototype.json"))
+	hand_speed = float(catalog.get("hand_speed", hand_speed))
+	var kit: Dictionary = catalog.get("starting_inventory", {})
+	for product in kit.get("products", {}):
+		inventory[str(product)] = int(kit.products[product])
+	for kind in kit.get("machines", {}):
+		machine_inventory[str(kind)] = int(kit.machines[kind])
 	for m_kind in catalog.get("initial_unlocked_machines", []):
 		unlocked_machines.append(str(m_kind))
 	for r_id in catalog.get("initial_unlocked_recipes", []):
@@ -99,6 +113,8 @@ func any_port_type(kind: String) -> int:
 
 ## Every product some recipe of `kind` consumes: what its ANY port may accept.
 func recipe_input_union(kind: String) -> Array:
+	if is_storage(kind):
+		return catalog.products.keys()
 	var spec: Dictionary = catalog.machines[kind]
 	var products: Array = []
 	for r_id in spec.get("recipes", [spec.recipe]):
@@ -122,6 +138,168 @@ func port_signature(id: String) -> String:
 
 func is_machine_unlocked(kind: String) -> bool:
 	return sandbox_mode or kind in unlocked_machines
+
+## How many of this kind may stand at once; -1 means no limit.
+func build_limit(kind: String) -> int:
+	if sandbox_mode:
+		return -1
+	return int(catalog.machines[kind].get("build_limit", -1))
+
+func built_count(kind: String) -> int:
+	var count := 0
+	for machine in machines.values():
+		if machine.kind == kind:
+			count += 1
+	return count
+
+func can_build(kind: String) -> bool:
+	if not catalog.machines.has(kind) or not is_machine_unlocked(kind):
+		return false
+	var limit := build_limit(kind)
+	return limit < 0 or built_count(kind) < limit
+
+## A depot keeps whatever is linked into it and makes nothing.
+func is_storage(kind: String) -> bool:
+	return bool(catalog.machines[kind].get("storage", false))
+
+func _add_items(product: String, count: int) -> void:
+	if count > 0:
+		inventory[product] = int(inventory.get(product, 0)) + count
+
+func _take_items(product: String, count: int) -> void:
+	inventory[product] = int(inventory.get(product, 0)) - count
+	if int(inventory[product]) <= 0:
+		inventory.erase(product)
+
+## Whether the player carries one of `kind` to place (sandbox mode needs none).
+func can_place(kind: String) -> bool:
+	return can_build(kind) and (sandbox_mode or int(machine_inventory.get(kind, 0)) > 0)
+
+## Puts a carried machine on the canvas.
+func place_machine(kind: String, recipe_override: String = "") -> String:
+	if not can_place(kind):
+		return ""
+	var id := add_machine(kind, recipe_override)
+	if not id.is_empty() and not sandbox_mode:
+		machine_inventory[kind] = int(machine_inventory[kind]) - 1
+		if int(machine_inventory[kind]) <= 0:
+			machine_inventory.erase(kind)
+	return id
+
+## Takes a machine off the canvas; it and everything in its buffers go to the inventory.
+func pick_up_machine(id: String) -> void:
+	if not machines.has(id):
+		return
+	var machine: Dictionary = machines[id]
+	for field in ["input", "output"]:
+		for product in machine[field]:
+			_add_items(str(product), int(machine[field][product]))
+	machine_inventory[machine.kind] = int(machine_inventory.get(machine.kind, 0)) + 1
+	remove_machine(id)
+
+## Moves what a machine has made (or what a depot holds) of `product` into the inventory.
+func take(id: String, product: String) -> int:
+	if not machines.has(id):
+		return 0
+	var storage := is_storage(str(machines[id].kind))
+	var buffer: Dictionary = machines[id].input if storage else machines[id].output
+	var count := int(buffer.get(product, 0))
+	if count <= 0:
+		return 0
+	buffer[product] = 0
+	_add_items(product, count)
+	if storage and not is_input_linked(id, product):
+		buffer.erase(product)
+	return count
+
+func take_all(id: String) -> int:
+	if not machines.has(id):
+		return 0
+	var buffer: Dictionary = machines[id].input if is_storage(str(machines[id].kind)) else machines[id].output
+	var total := 0
+	for product in buffer.keys():
+		total += take(id, str(product))
+	return total
+
+## Recipes the player may make by hand: those of machines marked "handcraft".
+func handcraft_recipes() -> Array:
+	var list: Array = []
+	for kind in catalog.machines:
+		var spec: Dictionary = catalog.machines[kind]
+		if not spec.get("handcraft", false):
+			continue
+		for r_var in spec.get("recipes", [spec.recipe]):
+			if not (str(r_var) in list):
+				list.append(str(r_var))
+	return list
+
+func craft_inputs(type: String, id: String) -> Dictionary:
+	return catalog.machines[id].get("build_cost", {}) if type == "machine" else catalog.recipes[id].inputs
+
+func craft_work(type: String, id: String) -> float:
+	return float(catalog.get("machine_build_work", 50.0)) if type == "machine" else float(catalog.recipes[id].work)
+
+func is_craft_unlocked(type: String, id: String) -> bool:
+	if type == "machine":
+		return is_machine_unlocked(id)
+	return is_recipe_unlocked(id) and id in handcraft_recipes()
+
+## Placed, carried and queued machines of `kind`: crafting stops at the build limit.
+func machine_total(kind: String) -> int:
+	var total := built_count(kind) + int(machine_inventory.get(kind, 0))
+	for job in craft_queue:
+		if job.type == "machine" and job.id == kind:
+			total += 1
+	return total
+
+func can_craft(type: String, id: String) -> bool:
+	if not is_craft_unlocked(type, id):
+		return false
+	if type == "machine":
+		var limit := build_limit(id)
+		if limit >= 0 and machine_total(id) >= limit:
+			return false
+	var inputs := craft_inputs(type, id)
+	for product in inputs:
+		if int(inventory.get(product, 0)) < int(inputs[product]):
+			return false
+	return true
+
+## Materials leave the inventory when the job is queued and come back if it is cancelled.
+func enqueue_craft(type: String, id: String) -> bool:
+	if not can_craft(type, id):
+		return false
+	var inputs := craft_inputs(type, id)
+	for product in inputs:
+		_take_items(str(product), int(inputs[product]))
+	craft_queue.append({"type": type, "id": id, "remaining": craft_work(type, id)})
+	return true
+
+func cancel_craft(index: int) -> void:
+	if index < 0 or index >= craft_queue.size():
+		return
+	var job: Dictionary = craft_queue[index]
+	var inputs := craft_inputs(str(job.type), str(job.id))
+	for product in inputs:
+		_add_items(str(product), int(inputs[product]))
+	craft_queue.remove_at(index)
+
+func _craft(delta: float) -> void:
+	var budget := delta * hand_speed
+	while budget > EPSILON and not craft_queue.is_empty():
+		var job: Dictionary = craft_queue[0]
+		var used := minf(budget, float(job.remaining))
+		job.remaining = float(job.remaining) - used
+		budget -= used
+		if float(job.remaining) > EPSILON:
+			return
+		craft_queue.pop_front()
+		if job.type == "machine":
+			machine_inventory[job.id] = int(machine_inventory.get(job.id, 0)) + 1
+		else:
+			var outputs: Dictionary = catalog.recipes[job.id].outputs
+			for product in outputs:
+				_add_items(str(product), int(outputs[product]))
 
 func is_recipe_unlocked(recipe_id: String) -> bool:
 	return sandbox_mode or recipe_id in unlocked_recipes
@@ -164,6 +342,9 @@ func is_lab(kind: String) -> bool:
 
 func add_machine(kind: String, recipe_override: String = "") -> String:
 	if not catalog.machines.has(kind):
+		return ""
+	var limit := build_limit(kind)
+	if limit >= 0 and built_count(kind) >= limit:
 		return ""
 	var id := "machine_%d" % next_id
 	next_id += 1
@@ -227,6 +408,9 @@ func recipe_for(id: String) -> Dictionary:
 	return catalog.recipes[machines[id].recipe]
 
 func input_products(id: String) -> Array:
+	# A depot has a port for each product it holds or is fed, plus an open one.
+	if is_storage(str(machines[id].kind)):
+		return machines[id].input.keys() + [ANY]
 	var recipe_inputs: Array = recipe_for(id).inputs.keys()
 	if recipe_mode(machines[id].kind) != "auto":
 		return recipe_inputs
@@ -294,7 +478,8 @@ func producers_for(product: String) -> Array:
 				"inputs_text": inputs_str,
 				"output_amount": int(r_spec.outputs[product]),
 				"unlocked": m_unlocked and r_unlocked,
-				"unlock_tech": req_tech
+				"unlock_tech": req_tech,
+				"at_limit": m_unlocked and not can_build(str(kind))
 			})
 	return list
 
@@ -369,11 +554,15 @@ func add_link(from: String, to: String, from_port: int = -1, to_port: int = -1) 
 		if link.from == from and link.to == to and link.product == product:
 			return false
 	links.append({"from": from, "to": to, "product": product, "transferred": 0})
+	if is_storage(str(machines[to].kind)) and not machines[to].input.has(product):
+		machines[to].input[product] = 0
 	_resolve_recipe(to)
 	return true
 
 ## Whether an auto machine could still take `product` given what is already linked.
 func accepts_new_input(id: String, product: String) -> bool:
+	if is_storage(str(machines[id].kind)):
+		return catalog.products.has(product)
 	var linked := linked_inputs(id)
 	if not (product in linked):
 		linked.append(product)
@@ -392,12 +581,28 @@ func remove_link(from: String, to: String, from_port: int = -1, _to_port: int = 
 			var product := str(outs[from_port])
 			links = links.filter(func(link: Dictionary) -> bool:
 				return not (link.from == from and link.to == to and link.product == product))
+			_drop_empty_storage_ports(to)
 			return
 	links = links.filter(func(link: Dictionary) -> bool: return not (link.from == from and link.to == to))
+	_drop_empty_storage_ports(to)
+
+## A depot forgets products it no longer holds or receives.
+func _drop_empty_storage_ports(id: String) -> void:
+	if not machines.has(id) or not is_storage(str(machines[id].kind)):
+		return
+	for product in machines[id].input.keys():
+		if int(machines[id].input[product]) == 0 and not is_input_linked(id, str(product)):
+			machines[id].input.erase(product)
 
 func remove_machine(id: String) -> void:
+	var fed: Array = []
+	for link in links:
+		if link.from == id:
+			fed.append(link.to)
 	links = links.filter(func(link: Dictionary) -> bool: return link.from != id and link.to != id)
 	machines.erase(id)
+	for target in fed:
+		_drop_empty_storage_ports(target)
 	for key in cursors.keys():
 		if str(key).begins_with(id + ":") or cursors[key] == id:
 			cursors.erase(key)
@@ -413,9 +618,11 @@ func advance(seconds: float) -> void:
 func _tick() -> void:
 	_transfer()
 	for id in machines:
-		_process_machine(id, STEP)
+		if not is_storage(str(machines[id].kind)):
+			_process_machine(id, STEP)
 	_transfer()
 	_spend_points()
+	_craft(STEP)
 	elapsed += STEP
 
 ## The active research draws what it still needs from the point store.
@@ -529,7 +736,10 @@ func _transfer() -> void:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 3,
+		"version": 4,
+		"inventory": inventory.duplicate(),
+		"machine_inventory": machine_inventory.duplicate(),
+		"craft_queue": craft_queue.duplicate(true),
 		"machines": machines.duplicate(true),
 		"links": links.duplicate(true),
 		"cursors": cursors.duplicate(true),
@@ -546,8 +756,34 @@ func snapshot() -> Dictionary:
 	}
 
 func restore(data: Dictionary) -> bool:
-	if data.get("version") != 3 or not data.get("machines") is Dictionary or not data.get("links") is Array:
+	var version: Variant = data.get("version")
+	if not (version is int or version is float) or not (int(version) in [3, 4]) or float(version) != floorf(float(version)):
 		return false
+	if not data.get("machines") is Dictionary or not data.get("links") is Array:
+		return false
+	# Version 3 saves predate the inventory; they keep the starting kit.
+	if int(version) == 4:
+		for field in ["inventory", "machine_inventory"]:
+			if not data.get(field) is Dictionary:
+				return false
+			for key in data[field]:
+				if not _whole_count(data[field][key]):
+					return false
+		for key in data.inventory:
+			if not catalog.products.has(key):
+				return false
+		for key in data.machine_inventory:
+			if not catalog.machines.has(key):
+				return false
+		if not data.get("craft_queue") is Array:
+			return false
+		for job in data.craft_queue:
+			if not job is Dictionary or not (job.get("type") in ["machine", "recipe"]):
+				return false
+			if not (catalog.machines if job.type == "machine" else catalog.recipes).has(str(job.get("id", ""))):
+				return false
+			if not (job.get("remaining") is float or job.get("remaining") is int) or not is_finite(float(job.remaining)) or float(job.remaining) < 0:
+				return false
 	for id in data.machines:
 		var m: Variant = data.machines[id]
 		if not m is Dictionary or not catalog.machines.has(m.get("kind", "")):
@@ -577,10 +813,15 @@ func restore(data: Dictionary) -> bool:
 			return false
 		for field in ["input", "output"]:
 			var products: Dictionary = recipe.inputs if field == "input" else recipe.outputs
+			# A depot's inputs are whatever products it holds.
+			if field == "input" and is_storage(kind_str):
+				products = m.input
 			var cap: int = int(spec[field + "_capacity"])
 			if m[field].size() != products.size():
 				return false
 			for product in products:
+				if not catalog.products.has(product):
+					return false
 				var count: Variant = m[field].get(product)
 				if not (count is float or count is int) or not is_finite(float(count)) or float(count) != floorf(float(count)) or float(count) < 0 or float(count) > cap:
 					return false
@@ -607,7 +848,8 @@ func restore(data: Dictionary) -> bool:
 		var to_m: Dictionary = data.machines[link.to]
 		var from_recipe: Dictionary = catalog.recipes[str(from_m.get("recipe", catalog.machines[from_m.kind].recipe))]
 		var to_recipe: Dictionary = catalog.recipes[str(to_m.get("recipe", catalog.machines[to_m.kind].recipe))]
-		if not from_recipe.outputs.has(prod_str) or not to_recipe.inputs.has(prod_str):
+		var to_has: bool = to_m.input.has(prod_str) if is_storage(str(to_m.kind)) else to_recipe.inputs.has(prod_str)
+		if not from_recipe.outputs.has(prod_str) or not to_has:
 			return false
 		if not (link.get("transferred") is float or link.get("transferred") is int) or float(link.transferred) < 0:
 			return false
@@ -669,6 +911,18 @@ func restore(data: Dictionary) -> bool:
 			research_progress[str(tech_id)][str(tier)] = int(data.research_progress[tech_id][tier])
 	for tier in research_points:
 		research_points[tier] = int(data.research_points.get(tier, 0))
+	if int(version) == 4:
+		inventory.clear()
+		for key in data.inventory:
+			if int(data.inventory[key]) > 0:
+				inventory[str(key)] = int(data.inventory[key])
+		machine_inventory.clear()
+		for key in data.machine_inventory:
+			if int(data.machine_inventory[key]) > 0:
+				machine_inventory[str(key)] = int(data.machine_inventory[key])
+		craft_queue.clear()
+		for job in data.craft_queue:
+			craft_queue.append({"type": str(job.type), "id": str(job.id), "remaining": float(job.remaining)})
 	active_research = str(data.get("active_research", "A-01"))
 	sandbox_mode = bool(data.get("sandbox_mode", false))
 	elapsed = float(data.elapsed)

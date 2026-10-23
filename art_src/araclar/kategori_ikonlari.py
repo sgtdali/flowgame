@@ -1,8 +1,8 @@
 """İnşa çubuğu kategori simgeleri: 16x16, ortak palet, oyunda 2x gösterilir.
 
-Sıra build_bar.gd'deki CATEGORIES ile aynıdır: hammadde, metalürji, şekillendirme,
-talaşlı imalat, montaj, hedefler.
-python art_src/araclar/kategori_ikonlari.py   -> app/art/ui/category_icons.png (96x16)
+Sıra craft_screen.gd'deki CATEGORIES ile aynıdır: hammadde, metalürji, şekillendirme,
+talaşlı imalat, montaj, hedefler, depo; son simge el üretimi (craft) düğmesinindir.
+python art_src/araclar/kategori_ikonlari.py   -> app/art/ui/category_icons.png (128x16)
 """
 from pathlib import Path
 from PIL import Image
@@ -121,6 +121,42 @@ IKONLAR = {
         '.ktttttttttnnnk.',
         '.knnnnnnnnnnnnk.',
         '..kkkkkkkkkkkk..',
+        '................',
+    ],
+    'depo': [  # sandık
+        '................',
+        '................',
+        '..kkkkkkkkkkkk..',
+        '.kwaaaaaaaaaaak.',
+        '.kggggggggggggk.',
+        '.kkkkkkkkkkkkkk.',
+        '.korrorrrrorrok.',
+        '.korrokkkkorrok.',
+        '.korrokyykorrok.',
+        '.korrokkkkorrok.',
+        '.korrorrrrorrok.',
+        '.kkkkkkkkkkkkkk.',
+        '.korroorroorrok.',
+        '.krrrrrrrrrrrrk.',
+        '..kkkkkkkkkkkk..',
+        '................',
+    ],
+    'craft': [  # çekiç
+        '................',
+        '..kkkkkkk.......',
+        '.kwllllllk......',
+        '.klllllmmsk.....',
+        '.kmmmmmmssk.....',
+        '..kkksskkk......',
+        '.....kook.......',
+        '......kook......',
+        '.......kook.....',
+        '........kook....',
+        '.........kook...',
+        '..........krok..',
+        '...........krrk.',
+        '............kk..',
+        '................',
         '................',
     ],
 }

@@ -1,16 +1,16 @@
 extends PopupMenu
-## Card context menu: recipe screen, stop/run, speed, empty output, delete. The same popup also
+## Card context menu: recipe screen, stop/run, speed, take into inventory, pick up. The same popup also
 ## lists the producers of an input product when a card's "+" is pressed.
 
 signal recipe_screen_requested(id: String)
 signal toggle_requested(id: String)
 signal speed_requested(id: String)
-signal clear_outputs_requested(id: String)
+signal take_requested(id: String)
 signal research_requested()
 signal delete_requested(id: String)
 signal supplier_selected(target_id: String, product: String, kind: String, recipe_id: String)
 
-enum { TOGGLE = 1000, SPEED, CLEAR, RESEARCH, DELETE, RECIPE }
+enum { TOGGLE = 1000, SPEED, TAKE, RESEARCH, DELETE, RECIPE }
 
 var target_id := ""
 var target_product := ""
@@ -43,11 +43,12 @@ func show_machine(sim: RefCounted, id: String, at: Vector2) -> void:
 		add_item("Ne üretilsin?", RECIPE)
 		add_separator()
 	add_item("Durdur" if machine.enabled else "Çalıştır", TOGGLE)
-	add_item("Hız: %d → %d iş/sn" % [int(machine.speed), 40 if float(machine.speed) == 20.0 else 20], SPEED)
-	if not sim.output_products(id).is_empty():
-		add_item("Çıkışı boşalt", CLEAR)
+	if not sim.is_storage(str(machine.kind)):
+		add_item("Hız: %d → %d iş/sn" % [int(machine.speed), 40 if float(machine.speed) == 20.0 else 20], SPEED)
+	if not sim.output_products(id).is_empty() or sim.is_storage(str(machine.kind)):
+		add_item("Envantere al", TAKE)
 	add_separator()
-	add_item("Sil", DELETE)
+	add_item("Kaldır (envantere)", DELETE)
 	_open(at)
 
 ## Producers that can feed `product` into `id`; locked ones are listed but disabled.
@@ -68,9 +69,17 @@ func show_suppliers(sim: RefCounted, id: String, product: String, at: Vector2) -
 			var label := str(info.machine_name)
 			if products.size() > 1:
 				label = "%s → %s" % [info.machine_name, sim.product_name(str(p))]
-			add_item(label if info.unlocked else "%s (%s)" % [label, info.unlock_tech], _choices.size())
+			# Placing uses a carried machine, so the menu shows how many you have.
+			var held := int(sim.machine_inventory.get(str(info.kind), 0))
+			if not info.unlocked:
+				label = "%s (%s)" % [label, info.unlock_tech]
+			elif info.at_limit:
+				label = "%s (%d/%d)" % [label, sim.built_count(str(info.kind)), sim.build_limit(str(info.kind))]
+			elif not sim.sandbox_mode:
+				label = "%s ×%d" % [label, held]
+			add_item(label, _choices.size())
 			set_item_tooltip(index, "%s · %s" % [info.recipe_name, info.inputs_text])
-			set_item_disabled(index, not info.unlocked)
+			set_item_disabled(index, not info.unlocked or not sim.can_place(str(info.kind)))
 			info["product"] = str(p)
 			_choices.append(info)
 	_open(at)
@@ -79,7 +88,7 @@ func _on_id_pressed(item_id: int) -> void:
 	match item_id:
 		TOGGLE: toggle_requested.emit(target_id)
 		SPEED: speed_requested.emit(target_id)
-		CLEAR: clear_outputs_requested.emit(target_id)
+		TAKE: take_requested.emit(target_id)
 		RESEARCH: research_requested.emit()
 		DELETE: delete_requested.emit(target_id)
 		RECIPE: recipe_screen_requested.emit(target_id)

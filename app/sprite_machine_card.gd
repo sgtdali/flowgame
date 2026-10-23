@@ -5,6 +5,8 @@ extends GraphNode
 signal recipe_changed(card_id: String, recipe_id: String)
 signal toggle_pressed(card_id: String)
 signal supplier_requested(card_id: String, product: String, at: Vector2)
+## Clicking an output gauge (or a depot's stock) moves it into the player's inventory.
+signal take_requested(card_id: String, product: String)
 
 const Icons = preload("res://app/icons.gd")
 ## kind -> 512x384 sheet (4x3 frames of 128x128). Add a line here for each new machine;
@@ -110,6 +112,7 @@ var accent_color := MUTED
 var header_icon: TextureRect
 var _machine_enabled := true
 var _frame_count := 1
+var _storage := false
 
 func _box(background: Color, border: Color, pad_x: int, pad_y: int, radius: int = 8) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -179,6 +182,8 @@ func _build(accent: Color) -> void:
 	pause_btn.mouse_entered.connect(pause_btn.queue_redraw)
 	pause_btn.mouse_exited.connect(pause_btn.queue_redraw)
 	get_titlebar_hbox().add_child(pause_btn)
+	# A depot has no cycle to stop.
+	pause_btn.visible = not _storage
 	_atlas = AtlasTexture.new()
 	_atlas.atlas = load(art_path(kind))
 	_frame_count = maxi(1, int(_atlas.atlas.get_width() / ART) * int(_atlas.atlas.get_height() / ART))
@@ -227,6 +232,7 @@ func setup_from_sim(sim: RefCounted, id: String) -> void:
 	name = id
 	var machine: Dictionary = sim.machines[id]
 	kind = str(machine.kind)
+	_storage = sim.is_storage(kind)
 	var spec: Dictionary = sim.catalog.machines[kind]
 	title = str(spec.name)
 	_build(Color(spec.color))
@@ -272,6 +278,7 @@ func setup_from_sim(sim: RefCounted, id: String) -> void:
 	cycle_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cycle_bar.add_theme_stylebox_override("background", _box(Color("09131c"), Color.TRANSPARENT, 0, 0, 3))
 	footer.add_child(cycle_bar)
+	cycle_bar.modulate.a = 0.0 if _storage else 1.0
 	rate_label = Label.new()
 	rate_label.custom_minimum_size.x = 44
 	rate_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -295,6 +302,13 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 	gauge.size = Vector2(SIDE, row.custom_minimum_size.y)
 	gauge.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(gauge)
+	if (is_output or _storage) and not gauge.open:
+		gauge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		gauge.gui_input.connect(func(event: InputEvent) -> void:
+			var click := event as InputEventMouseButton
+			if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+				take_requested.emit(card_id, product)
+				gauge.accept_event())
 	if not is_output:
 		var add := Button.new()
 		add.text = "+"
@@ -331,8 +345,10 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		gauge.count = int(machine.input.get(input, 0))
 		gauge.capacity = int(spec.input_capacity)
 		gauge.amount = int(recipe.inputs.get(input, 1))
-		gauge.add_button.visible = gauge.open or not sim.is_input_linked(id, input)
-		if gauge.open:
+		gauge.add_button.visible = not _storage and (gauge.open or not sim.is_input_linked(id, input))
+		if gauge.open and _storage:
+			gauge.tooltip_text = "Her ürün bağlanabilir"
+		elif gauge.open:
 			var accepted := PackedStringArray()
 			for product_id in sim.recipe_input_union(kind):
 				if sim.accepts_new_input(id, product_id) and not sim.is_input_linked(id, product_id):
@@ -340,6 +356,8 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 			gauge.tooltip_text = "Bağlanabilir: %s" % ", ".join(accepted)
 		else:
 			gauge.tooltip_text = "%s %d/%d" % [sim.product_name(input), gauge.count, gauge.capacity]
+			if _storage:
+				gauge.tooltip_text += "\nTıkla: envantere al"
 		details.append(gauge.tooltip_text)
 		gauge.queue_redraw()
 	for output in output_gauges:
@@ -347,10 +365,17 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		gauge.count = int(machine.output.get(output, 0))
 		gauge.capacity = int(spec.output_capacity)
 		gauge.amount = int(recipe.outputs.get(output, 1))
-		gauge.tooltip_text = "%s %d/%d" % [sim.product_name(output), gauge.count, gauge.capacity]
+		gauge.tooltip_text = "%s %d/%d\nTıkla: envantere al" % [sim.product_name(output), gauge.count, gauge.capacity]
 		details.append(gauge.tooltip_text)
 		gauge.queue_redraw()
-	details.append("%.0f birim iş · %.0f iş/sn · %.1f sn · %s" % [float(recipe.work), float(machine.speed), seconds, rate_label.text])
+	if _storage:
+		var stored := 0
+		for product_id in machine.input:
+			stored += int(machine.input[product_id])
+		rate_label.text = str(stored)
+		rate_label.tooltip_text = "Depodaki toplam ürün"
+	else:
+		details.append("%.0f birim iş · %.0f iş/sn · %.1f sn · %s" % [float(recipe.work), float(machine.speed), seconds, rate_label.text])
 	tooltip_text = "\n".join(details)
 	is_working = bool(machine.running)
 	animation_active = is_working and not simulation_paused

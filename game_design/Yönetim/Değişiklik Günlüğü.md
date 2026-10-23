@@ -1,7 +1,7 @@
 ---
 tur: degisiklik-gunlugu
 durum: etkin
-guncelleme: 2026-10-22
+guncelleme: 2026-10-23
 ---
 # Değişiklik günlüğü
 
@@ -55,3 +55,8 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-008: Kademeli laboratuvar ve depolanabilir araştırma puanı onaylandı; K-001 yerine geçti olarak işaretlendi. Araştırma Ekonomisi notunun onaylı bölümü güncellendi, eski model tarihsel bölüme alındı.
 - K-009: Girdisi farklı reçeteli makinelerde reçetenin gelen ürüne göre belirlenmesi, aynı girdili makinelerde simgeli reçete ekranı onaylandı.
 - Prototip (`data/prototype.json`, `sim/production_sim.gd`) bu iki karara göre güncellendi; fiyat ve laboratuvar girdileri dengelenmemiş ilk denemedir.
+
+## 2026-10-23 — Maden sınırı ve envanter
+
+- K-010: Madenlerin oyun başında birer adetle sınırlanması onaylandı. Prototipte makinelere `build_limit` alanı eklendi; sınır kurulu, envanterdeki ve üretim kuyruğundaki makineleri birlikte sayar, sınırı dolan maden üretilemez ve kurulamaz.
+- K-011: Oyuncu envanteri, malzemeli makine kurulumu, karttan/depodan elle alma ve süreli el üretimi onaylandı. Prototipte alttaki inşa çubuğu envanter çubuğuyla, makine seçimi kategorili üretim ekranıyla (C) değiştirildi; Depo makinesi eklendi; kayıt biçimi 4'e çıktı (3 okunmaya devam eder).

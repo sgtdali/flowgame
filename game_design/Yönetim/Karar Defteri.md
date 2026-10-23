@@ -1,7 +1,7 @@
 ---
 tur: karar-defteri
 durum: etkin
-guncelleme: 2026-10-22
+guncelleme: 2026-10-23
 ---
 # Karar defteri
 
@@ -108,6 +108,28 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Karar:** Girdileri birbirinden farklı reçeteleri olan makinelerde (ör. ergitme fırını) oyuncu reçete seçmez; makine bağlanan ürüne göre üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Aynı girdiden farklı ürün yapan makinelerde (haddehane, CNC, dökümhane) kartın tıklanmasıyla açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir.
 - **Kaynak:** “bunu oyuncu seçmesin. ancak gelen ürüne göre otomatik olarak üretilecek ürün belirlenmiş olsun”; aynı girdili makineler için “tıklayınca recipe ekranı çıksın … oyuncu bir ürün üretmek için nelere ihtiyacı olduğunu da ordan görmüş olur”; boş makine için “Tek genel giriş” seçimi.
 - **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-010 — Hammadde kaynakları sınırlıdır
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:** Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü veride bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir.
+- **Kaynak:** “hammedde kaynakalrının sınırsız olması oyunun balansını yapmayı imkansız hale getiriyor. madenler 1 er adet kurulabilmeli en azından oyun başında”.
+- **Gerekçe:** Sınırsız hammadde dengelemeyi imkânsız kılıyor.
+- **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndür; karar değildir, uygulanmadı. Serbest modda (tümünü aç) sınır uygulanmaz.
+
+## K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Ekranın altı oyuncunun envanteridir; envanterde hem ürünler hem kurulmamış makineler tutulur.
+  2. Makineler malzemeyle üretilir; envanterdeki makine tuvale yerleştirilir. Kaldırılan makine içindekilerle birlikte envantere döner.
+  3. Üretilen ürün envantere kendiliğinden geçmez. Oyuncu isterse makine kartında biriken çıktıyı ya da ağa bağlanan Depo kartında biriken ürünü envantere alır.
+  4. Oyuncu üretim (reçete) ekranından el ile üretim yapar; el üretimi süreli bir kuyruktur ve makinelerden yavaştır.
+  5. Hammadde el ile çıkarılamaz; oyuncu bir başlangıç kitiyle başlar.
+- **Kaynak:** “alt taraf oyuncunun inventorysi gibi olacak. ve kurulacak node lar malzeme isteyecek. oyuncu malzemeleri de node larıda bu inventery de tutabilecek. ve kendisi de recipe ekranından craft yapabilecek.” Seçimler: ürünün envantere girişi için “ikiside ancak otomatik inventory e geçmeyecek oyuncu kartta birikmiş çıktıyı ordan inventorysine isterse alacak. aynı şekilde depodan da”; el üretimi “Süreli kuyruk”; hammadde “Hayır, başlangıç kiti”; silinen kart “Envantere döner”.
+- **Sınır:** Kurulum maliyetleri, el üretimi hızı (10 iş/sn, makineler 20), makine yapım süresi (5 sn), hangi makinelerin reçetelerinin el ile yapılabildiği (haddehane, pres, torna, CNC, tel sarım, montaj) ve başlangıç kiti ilk denemedir; dengelenmemiştir. Envanterin yuva sınırı yoktur. Depo ürün başına 100 tutar.
 
 ## Henüz karar olmayan yönler
 

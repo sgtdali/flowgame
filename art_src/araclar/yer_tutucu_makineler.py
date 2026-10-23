@@ -13,7 +13,7 @@ from palet import PALET
 
 KOK = Path(__file__).resolve().parents[2]
 CIZILMIS = {'iron_mine', 'smelter'}
-# build_bar.gd CATEGORIES ile aynı gruplar; değer kategori simgesinin sırası.
+# craft_screen.gd CATEGORIES ile aynı gruplar; değer kategori simgesinin sırası.
 KATEGORI = {
     'iron_mine': 0, 'copper_mine': 0, 'coal_mine': 0, 'quartz_quarry': 0,
     'smelter': 1, 'steel_furnace': 1,
@@ -21,6 +21,7 @@ KATEGORI = {
     'lathe': 3, 'cnc': 3,
     'assembler': 4, 'wire_winder': 4,
     'lab_1': 5, 'lab_2': 5, 'lab_3': 5, 'project_hub': 5, 'scrap_disposal': 5,
+    'storage': 6,
 }
 
 

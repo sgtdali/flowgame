@@ -49,5 +49,12 @@ parçalar (matkap, dişli, alev, duman) ayrı katmanda çizilir.
 - Godot tarafında yeni makine için `app/sprite_machine_card.gd` içindeki `SHEETS`
   sözlüğüne tek satır eklenir. Listede olmayan makineler `app/art/placeholder/<makine>.png`
   yer tutucusunu kullanır (`araclar/yer_tutucu_makineler.py` üretir).
-- Ürün simgeleri `araclar/urun_ikonlari.py` ile 16x16 çizilir; kart portlarında 2x görünür ve
-  reçete miktarı 1'den büyükse simgenin köşesinde yazar.
+- Ürün simgeleri oyunda 32x32 ve 1:1 görünür (`app/art/ui/product_icons.png`, ürün başına 32
+  piksellik hücre). Reçete miktarı 1'den büyükse simgenin köşesinde yazar.
+  - Yeni simgeler 32x32 çizilip `urun_32/<ürün>.png` olarak konur; `araclar/urun_ikonlari.py`
+    şeridi kurarken bunları olduğu gibi alır. Henüz 32'lik çizimi olmayan ürünler eski 16x16
+    çizimin 2x büyütülmüşüyle kalır.
+  - Tarz (kullanıcı seçimi, 2026-10-23, dişliyle): iri ve sade silüet, 1 px `ink` dış çizgi,
+    sol üstten ışıkla 2 px'lik kenar parlaması/gölgesi, tek bir vurgu ayrıntısı. Mavimsi
+    renkler istenmedi. Dişli pirinç renk takımıyla çizildi (`disli_stil/disli_d_32.py`);
+    seçenekler ve Codex taslağı `disli_stil/` klasöründe.
