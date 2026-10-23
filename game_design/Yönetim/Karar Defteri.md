@@ -108,6 +108,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Karar:** Girdileri birbirinden farklı reçeteleri olan makinelerde (ör. ergitme fırını) oyuncu reçete seçmez; makine bağlanan ürüne göre üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Aynı girdiden farklı ürün yapan makinelerde (haddehane, CNC, dökümhane) kartın tıklanmasıyla açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir.
 - **Kaynak:** “bunu oyuncu seçmesin. ancak gelen ürüne göre otomatik olarak üretilecek ürün belirlenmiş olsun”; aynı girdili makineler için “tıklayınca recipe ekranı çıksın … oyuncu bir ürün üretmek için nelere ihtiyacı olduğunu da ordan görmüş olur”; boş makine için “Tek genel giriş” seçimi.
 - **Asıl not:** [[Tasarım/Makine Kartları]].
+- **Değişiklik:** Fırınlar (ergitme ve çelik fırını) için K-016 ile değişti: girdileri farklı olsa da fırınlarda reçeteyi oyuncu seçer. Diğer makineler için kural geçerli.
 
 ## K-010 — Hammadde kaynakları sınırlıdır
 
@@ -145,6 +146,46 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** “bu alttaki inentory hızlı kullanım için olsun ve sabit 10 ürün alıyor olsun. esas inventory başka açılan bir pencere olsun o geniş olsun. oyuncu istedğini altta hızlıya alabiliyor olsun. yani ikisi aynı inventory i paylaşacak ama oyuncu istediğini alta sabitleyebiliyor olacak ölye düşün. birde inventory açma tuşu koyman lazım tabi”
 - **Sınır:** Kullanıcının seçmediği, prototipte asistanın koyduğu ayrıntılar: açma tuşu I; yuvalar 1-9 ve 0 tuşlarıyla kullanılır (makine yerleştirir); sabitleme sürükle-bırak, sağ tık ya da pencerede öğenin üstündeyken numara tuşuyla yapılır; sayısı sıfıra inen öğe yuvasında soluk kalır; yeni gelen öğe boş yuva varsa ilk boş yuvaya kendiliğinden girer; başlangıç kiti çubuğa dizilir. Bunlar değiştirilebilir.
 - **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-013 — Oyun boş tuvalle başlar
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:** Oyunun başında tuvalde hiç makine kartı yoktur; oyuncu ilk makineleri başlangıç kitiyle kendisi üretip yerleştirir.
+- **Kaynak:** “tamam şimdi oyunun başlangıcını boşalt. canvasda node olmasın”.
+- **Önceki duruma etkisi:** Prototipte hazır kurulu gelen 8 kartlık başlangıç ağı kaldırıldı; bu ağ bir uygulama seçimiydi, kullanıcı kararı değildi.
+- **Sınır:** Başlangıç kiti değişmedi (20 çelik levha, 10 bağlantı elemanı, 10 çelik külçe; Bakır madeni, Kuvars ocağı, Depo). Kitin bu başlangıç için dengesi açıktır.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-014 — Envanterden makine girişine elle malzeme konur
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:** Oyuncu envanterdeki bir ürünü, uygunsa bir makine kartının girişine bırakabilir. Böylece ağa bağlı olmayan makineler de elle çalıştırılabilir.
+- **Kaynak:** “inventory den node ların input kısımlarına da eğer uygunsa malzeme bırakabiliyor olmalıyız. böylece oyuncu ağ ile bağlı olmayan makineleri de manuel çalıştırabilir”
+- **Sınır:** Prototip ayrıntıları kullanıcı kararı değildir: sürükle-bırak; varsayılan olarak girişe sığdığı kadar, Shift ile 1 adet; reçetesini gelen ürüne göre seçen makinede elle konan ürün de reçeteyi belirler; depo her ürünü alır.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-015 — Makine kartında ürün kutuları ve üretilen ürün
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Kartlarda ürünlerin göründüğü yer çerçeveli bir kutudur. Kutu 0 iken boştur; ürün geldikçe simgesi ve adedi görünür. Depolar dahil bar kullanılmaz, sayı gösterilir.
+  2. Kartta makinenin ne ürettiği görünür; bu bilgi çıktı kutusunda değil, ayrı bir yerde durur.
+  3. Seçili reçetenin girdileri boş giriş kutularında saydamlaştırılmış simge olarak görünür; oyuncu hangi kutuya kaç tür malzeme gireceğini görür. Silüet ayırt edilemediği için saydam simge seçildi.
+- **Kaynak:** “bu node lardaki ürünlerün göründüğü kısım görseldeki gibi bir alan içerisinde görünsün. depolarda barşeklinde olmasın. sayı olsun. 0 iken bu kutular boş olsun”; “üretilecek ürünün ne olduğu görünmeli ama bu biraz önce yaptığımız doplanabilir çıktı tarafında olmamalı”; “seçilen reçeteye göre input kısmındaki malzemelerin görüntüğü yerde o malzemenin silüeti olsun”; “siluet değilde saydamlaştırılmış mı yapsak”.
+- **Sınır:** Prototipte üretilen ürün kart başlığında, adın sağında simge ve adla gösterilir; kutu 40 px, saydamlık %30, dolu tamponda çerçeve altın rengidir. Bunlar uygulama seçimidir.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-016 — Fırınlarda reçeteyi oyuncu seçer
+
+- **Durum:** Onaylı; K-009'un fırınlarla ilgili kısmının yerine geçer.
+- **Tarih:** 2026-10-23.
+- **Karar:** Ergitme fırını ve çelik fırınında reçete, aynı girdili makinelerde olduğu gibi oyuncu tarafından reçete ekranından seçilir. Gelen ürün fırının reçetesini değiştirmez.
+- **Kaynak:** “fırınlardada reçete seçilebilir olsun. bu kararı ben vermiştim ama değiştiriyorum şimdi.”
+- **Sınır:** Pres, tel sarım ve montaj istasyonunda K-009'daki otomatik seçim sürer.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
 
 ## Henüz karar olmayan yönler
 

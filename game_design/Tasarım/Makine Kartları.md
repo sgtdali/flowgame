@@ -66,10 +66,10 @@ Makine türü hangi reçetelerin çalıştırılabileceğini belirler. Aynı mak
 
 ### Onaylı reçete seçimi — K-009
 
-- **Girdileri farklı reçeteler:** Oyuncu reçete seçmez; makine bağlanan ürüne göre ne üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Prototipte ergitme fırını, çelik fırını, pres, tel sarım ve montaj istasyonu böyle çalışır.
-- **Aynı girdiden farklı ürün:** Kartın menüsünden açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir. Prototipte haddehane, CNC ve dökümhane böyledir.
+- **Girdileri farklı reçeteler:** Oyuncu reçete seçmez; makine bağlanan ya da elle konan ürüne göre ne üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Prototipte pres, tel sarım ve montaj istasyonu böyle çalışır.
+- **Aynı girdiden farklı ürün ve fırınlar:** Kartın menüsünden açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir. Prototipte haddehane, CNC, dökümhane ve — K-016 ile — ergitme fırını ve çelik fırını böyledir. Seçili reçeteye uymayan ürün bağlanamaz ve konamaz.
 
-Dayanak: [[Yönetim/Karar Defteri#K-009 — Reçete gelen ürüne göre belirlenir|K-009]].
+Dayanak: [[Yönetim/Karar Defteri#K-009 — Reçete gelen ürüne göre belirlenir|K-009]], [[Yönetim/Karar Defteri#K-016 — Fırınlarda reçeteyi oyuncu seçer|K-016]]. Prototipte bir makinenin seçim biçimi katalogda zorlanabilir (`recipe_mode`).
 
 Giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Bu model, makine türünü üretim operasyonundan ayırır. Araştırma bazen yeni makine, bazen mevcut makine için yeni reçete açabilir. Makine-reçete uygunluğu henüz detaylı veri tablosuna dönüşmemiştir.
 
@@ -87,7 +87,13 @@ Giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Bu m
 | Ekonomik bölge | Bölgesel model seçilirse kaynak erişimini göstermek | Açık |
 | Enerji, kalite ve yan ürün | İlgili sistemler seçilirse karar vermek | Açık |
 
-Prototipteki kart; makine görseli, giriş/çıkış göstergeleri (tampon sayıları), çevrim çubuğu ve durdurma düğmesi gösterir. Çıkış göstergesine tıklamak ürünü envantere alır; girişin "+" düğmesi o ürünün üreticisini kurup bağlar. Bu düzen bir uygulama seçimidir; tablodaki "Öneri" durumlarını onaylamaz.
+### Onaylı kart gösterimi — K-015
+
+- Girişler ve çıkışlar çerçeveli kutulardır. Kutu 0 iken boştur; ürün geldikçe simgesi ve adedi görünür. Depolar dahil bar yoktur.
+- Seçili reçetenin girdileri boş giriş kutularında saydamlaştırılmış simge olarak görünür; oyuncu hangi kutuya hangi malzemenin gireceğini görür.
+- Makinenin ne ürettiği çıktı kutusunda değil, ayrı bir yerde görünür; prototipte kart başlığında, adın sağında.
+
+Prototipte ayrıca: dolu tamponda kutu çerçevesi altın rengi; çevrim çubuğu ve durdurma düğmesi; çıkış kutusuna tıklamak ürünü envantere alır; envanterden giriş kutusuna ürün bırakılabilir (K-014); girişin "+" düğmesi o ürünün üreticisini kurup bağlar. Kutu boyutu, renkler ve başlık yerleşimi uygulama seçimidir; tablodaki "Öneri" durumlarını onaylamaz.
 
 ## Kurulum bedeli ve sınırı — K-010, K-011
 

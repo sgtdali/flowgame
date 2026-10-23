@@ -73,6 +73,9 @@ func _init() -> void:
 				if seen.has(key):
 					mode = "choose"
 				seen[key] = true
+		# The catalog can force a mode: furnaces are chosen by the player although their
+		# recipes take different inputs.
+		mode = str(catalog.machines[kind].get("recipe_mode", mode))
 		recipe_modes[str(kind)] = mode
 
 func _input_key(recipe_id: String) -> String:
@@ -83,12 +86,17 @@ func _input_key(recipe_id: String) -> String:
 func recipe_mode(kind: String) -> String:
 	return str(recipe_modes.get(kind, "fixed"))
 
-## Products currently linked into `id`, in link order, without repeats.
+## Products fed into a machine: linked in, or put in by hand from the inventory and still
+## there. Auto machines pick their recipe from these.
 func linked_inputs(id: String) -> Array:
 	var products: Array = []
 	for link in links:
 		if link.to == id and not (link.product in products):
 			products.append(link.product)
+	if not is_storage(str(machines[id].kind)):
+		for product in machines[id].input:
+			if int(machines[id].input[product]) > 0 and not (product in products):
+				products.append(product)
 	return products
 
 ## Unlocked recipes of an auto machine that use every product in `products`.
@@ -186,6 +194,37 @@ func _take_items(product: String, count: int) -> void:
 	inventory[product] = int(inventory.get(product, 0)) - count
 	if int(inventory[product]) <= 0:
 		inventory.erase(product)
+
+## How many of `product` the player can put into machine `id` by hand: what they carry,
+## up to the free input space. 0 when the machine does not take it. Auto machines take
+## anything that still leaves them a recipe; depots take every product.
+func can_deposit(id: String, product: String) -> int:
+	if not machines.has(id) or not catalog.products.has(product):
+		return 0
+	var machine: Dictionary = machines[id]
+	var kind := str(machine.kind)
+	if not is_storage(kind) and not recipe_for(id).inputs.has(product):
+		if recipe_mode(kind) != "auto" or not accepts_new_input(id, product):
+			return 0
+	var space := int(catalog.machines[kind].input_capacity) - int(machine.input.get(product, 0))
+	return clampi(mini(space, int(inventory.get(product, 0))), 0, space)
+
+## Puts up to `count` (-1: as many as fit) of `product` from the inventory into machine
+## `id`'s input. An auto machine switches to a recipe that uses it. Returns how many moved.
+func deposit(id: String, product: String, count: int = -1) -> int:
+	var amount := can_deposit(id, product)
+	if count >= 0:
+		amount = mini(amount, count)
+	if amount <= 0:
+		return 0
+	var machine: Dictionary = machines[id]
+	if not is_storage(str(machine.kind)) and not recipe_for(id).inputs.has(product):
+		var wanted := linked_inputs(id)
+		wanted.append(product)
+		set_recipe(id, str(candidate_recipes(id, wanted)[0]))
+	machine.input[product] = int(machine.input.get(product, 0)) + amount
+	_take_items(product, amount)
+	return amount
 
 ## Whether the player carries one of `kind` to place (sandbox mode needs none).
 func can_place(kind: String) -> bool:

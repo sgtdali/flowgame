@@ -9,6 +9,10 @@ func _run() -> void:
 	current_scene = main
 	for i in range(4):
 		await process_frame
+	# The game starts on an empty canvas; the old starting network gives these cards.
+	main.build_sample_network()
+	for i in range(2):
+		await process_frame
 	main.paused = true
 	main.sim.unlock_all()
 	main.graph.zoom = 1.0

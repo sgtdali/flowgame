@@ -10,7 +10,7 @@ Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve 
 
 ## Oyunun başı
 
-- Başlangıç ağı hazır kurulu gelir: `Demir madeni` + `Kömür madeni` → `Ergitme fırını` → `Çelik fırını` → iki `Haddehane` (levha, çubuk) → `Pres` → `Laboratuvar 1`.
+- Tuval boştur (K-013). İlk makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit; demir ve kömür madeni, ergitme ve çelik fırınına yeter, fırının külçesinden el ile levha, çubuk ve bağlantı elemanı yapıp `Laboratuvar 1`'e ulaşılır.
 - `Laboratuvar 1` sürekli çelik levha ve bağlantı elemanı tüketip Kademe 1 puanı üretir. Puanlar depoda birikir; aktif araştırma fiyatını depodan çeker (K-008).
 - Envanterde bir başlangıç kiti vardır: çelik levha, bağlantı elemanı, çelik külçe, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
 - Madenler oyun başında birer adet kurulabilir (K-010).
@@ -23,13 +23,14 @@ Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve 
 | Envanter penceresi | **I** ya da alt çubuktaki sandık. Makineye tıklamak onu yerleştirir. |
 | Hızlı erişim | Alttaki 10 yuva, **1–9 ve 0** tuşları. Makine yuvası makineyi yerleştirir. Envanterden yuvaya sürükle, sağ tıkla ya da öğenin üstündeyken numara tuşuna bas: öğe o yuvaya sabitlenir. Yuvada sağ tık sabitlemeyi kaldırır. |
 | Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). |
-| Reçete | Girdisi farklı reçeteli makineler gelen ürüne göre üretir. Haddehane, CNC ve dökümhanede sağ tık → **Ne üretilsin?** ile reçete ekranı açılır (K-009). |
+| Reçete | Pres, tel sarım ve montaj gelen ürüne göre üretir. Haddehane, CNC, dökümhane ve fırınlarda sağ tık → **Ne üretilsin?** ile reçete ekranı açılır (K-009, K-016). Seçili reçetenin girdileri boş giriş kutularında saydam görünür. |
 | Kart menüsü | Kartta sağ tık: reçete, Durdur/Çalıştır, hız 20 ↔ 40 iş/sn, Envantere al, Kaldır (envantere). Laboratuvarda araştırma hedefi. |
-| Ürün alma | Karttaki çıkış göstergesine tıkla: biriken ürün envantere geçer. Depo'da giriş göstergesine tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
+| Ürün alma | Karttaki çıkış kutusuna tıkla: biriken ürün envantere geçer. Depo'da giriş kutusuna tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
+| Elle besleme | Hızlı erişimden ya da envanter penceresinden bir ürünü makinenin giriş kutusuna sürükle: sığdığı kadar konur, Shift ile 1 adet. Ağa bağlı olmayan makine de böyle çalışır (K-014). |
 | Üretici kurma | Bir girişin **+** düğmesi o ürünü yapan makineyi envanterden kurup bağlar. |
 | Araştırma | Üst çubuktaki araştırma düğmesi; **Serbest mod** bütün kilitleri ve sınırları kaldırır. |
 | Zaman | Duraklat/Devam, 1× ↔ 4× hız. |
-| Kayıt | Kaydet / Yükle (`user://workshop.json`), Sıfırla başlangıç ağını yeniden kurar. |
+| Kayıt | Kaydet / Yükle (`user://workshop.json`), Sıfırla oyunu boş tuval ve başlangıç kitiyle yeniden başlatır. |
 
 ## Dosyalar
 

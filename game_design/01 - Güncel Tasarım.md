@@ -19,11 +19,13 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı kaydedildi (K-007):** 5 katmanlı 24 ilişkili ürün, bunları işleyen makine türleri (`Ergitme Fırını`, `Çelik Fırını`, `Haddehane`, `Pres`, `Torna`, `CNC`, `Dökümhane`, `Tel Çekme / Sarım Makinesi`, `Montaj İstasyonu`) ve 9 araştırmalık teknoloji ağacı (`A-01` – `A-09`) ilk taslak olarak belirlendi. Kalite sistemi (A/B/C) şu aşamada kapsam dışı bırakıldı. Sayısal reçete miktarları ve montaj makinelerinin alt ayrımı açıktır. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] ve [[Tasarım/Teknoloji Ağacı]] notlarındadır.
 
-**Reçete gelen ürüne göre belirlenir (K-009):** Girdileri farklı reçeteli makinelerde oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde simgeli reçete ekranından ürün seçilir.
+**Reçete seçimi (K-009, K-016):** Girdileri farklı reçeteli makinelerde (pres, tel sarım, montaj) oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde ve fırınlarda simgeli reçete ekranından ürün seçilir.
+
+**Makine kartı gösterimi (K-015):** Ürünler kartta çerçeveli kutularda adetle görünür; seçili reçetenin girdileri boş kutuda saydamdır; üretilen ürün çıktı kutusundan ayrı gösterilir.
 
 **Hammadde sınırlıdır (K-010):** Madenler oyun başında birer adet kurulabilir.
 
-**Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
+**Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Oyun boş tuvalle başlar (K-013). Oyuncu envanterdeki ürünü uygun bir makinenin girişine elle koyabilir; ağa bağlı olmayan makine de böyle çalışır (K-014). Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
 
 ## Üzerinde çalışılan yön
 
@@ -50,6 +52,6 @@ Oyuncu yalnızca daha fazla kart yerleştirerek değil, üretim yöntemini, kapa
 
 ## Yetki ve doğrulama sınırı
 
-Godot prototipi K-002 – K-012 kararlarını uyguluyor ve otomatik testlerle (üretim, envanter, otomatik reçete, kart görselleri) ve pencereli smoke testiyle doğrulanıyor. Başlangıç ağı, sayılar, tampon boyutları, kurulum bedelleri ve tek işli kartlar geçici uygulama seçimleridir; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Oynanış dengesi ve büyük ağ performansı doğrulanmadı. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
+Godot prototipi K-002 – K-016 kararlarını uyguluyor ve otomatik testlerle (üretim, envanter, otomatik reçete, kart görselleri) ve pencereli smoke testiyle doğrulanıyor. Başlangıç ağı, sayılar, tampon boyutları, kurulum bedelleri ve tek işli kartlar geçici uygulama seçimleridir; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Oynanış dengesi ve büyük ağ performansı doğrulanmadı. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
 
 Sıradaki tartışma için [[Yönetim/Açık Sorular]]; test için [[Tasarım/Prototip ve Doğrulama]].

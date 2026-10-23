@@ -66,7 +66,7 @@
       "y": 760,
       "width": 460,
       "height": 330,
-      "text": "## Açık seçimler\n**K-002:** Üretim sonsuz canvas üzerinde kartlarla kurulur.\n**K-003:** Kartlar makineleri temsil eder.\n**K-005:** Çevrim süresi = gereken iş / makine işleme hızı.\n**K-006:** Kabul edebilen tüketicilere otomatik eşit paylaşım.\n**K-007:** 24 ürünlük ağ ve 9 araştırmalık teknoloji ağacı ilk taslağı (kalite şu an kapsam dışı).\n**K-008:** Kademeli laboratuvarlar puan üretir, puan depolanır (K-001'in yerine).\n**K-009:** Reçete gelen ürüne göre; aynı girdide reçete ekranı.\n**K-010:** Madenler başta birer adet.\n**K-011:** Envanter, malzemeli kurulum, süreli el üretimi.\n**K-012:** 10 yuvalı hızlı erişim + ayrı envanter penceresi.",
+      "text": "## Açık seçimler\n**K-002/003:** Tuvalde makine kartları.\n**K-005:** Çevrim süresi = gereken iş / makine işleme hızı.\n**K-006:** Kabul edebilen tüketicilere otomatik eşit paylaşım.\n**K-007:** 24 ürünlük ağ, 9 araştırma (kalite kapsam dışı).\n**K-008:** Kademeli laboratuvar puanı, depolanır.\n**K-009/016:** Reçete gelen ürünle; aynı girdide ve fırında oyuncu seçer.\n**K-010:** Madenler başta birer adet.\n**K-011/012:** Envanter, malzemeli kurulum, el üretimi, 10 yuvalı hızlı erişim.\n**K-013/014:** Boş başlangıç; envanterden makineye elle koyma.\n**K-015:** Kartta adetli ürün kutuları.",
       "color": "4"
     },
     {

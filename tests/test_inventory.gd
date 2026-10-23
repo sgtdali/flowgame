@@ -66,10 +66,65 @@ func _initialize() -> void:
 	_check(sim.machine_inventory.get("copper_mine", 0) == 1 and sim.inventory.copper_ore == ore + left, "Silinen makine ve içindekiler envantere dönmeli")
 
 	_quick_use()
+	_empty_start()
+	_hand_feeding()
 
 	if failures == 0:
 		print("INVENTORY_TESTS_OK")
 	quit(failures)
+
+## The game starts on an empty canvas with only the starting kit. It must not be a dead end:
+## the kit pays for the steel line, and its ingots, hand-rolled and pressed, pay for lab 1.
+func _empty_start() -> void:
+	var sim := Simulation.new()
+	_check(sim.machines.is_empty(), "Yeni oyunda tuval boş olmalı")
+	for kind in ["iron_mine", "coal_mine", "smelter", "steel_furnace"]:
+		_check(sim.enqueue_craft("machine", kind), "Başlangıç kiti %s üretmeye yetmeli" % kind)
+	sim.advance(20.5)
+	var iron := sim.place_machine("iron_mine")
+	var coal := sim.place_machine("coal_mine")
+	var smelter := sim.place_machine("smelter")
+	var furnace := sim.place_machine("steel_furnace")
+	_check(not "" in [iron, coal, smelter, furnace], "Üretilen çelik hattı yerleştirilebilmeli")
+	sim.add_link(iron, smelter)
+	sim.add_link(coal, smelter)
+	sim.add_link(coal, furnace)
+	sim.add_link(smelter, furnace)
+	sim.advance(120.0)
+	var ingots := sim.take(furnace, "steel_ingot")
+	_check(ingots >= 8, "Çelik hattı külçe vermeli (%d)" % ingots)
+	# Ingots → plates and rods by hand; rods → fasteners by hand.
+	for i in range(6):
+		sim.enqueue_craft("recipe", "steel_plate")
+	for i in range(2):
+		sim.enqueue_craft("recipe", "steel_rod")
+	sim.advance(60.0)
+	for i in range(3):
+		sim.enqueue_craft("recipe", "fastener")
+	sim.advance(30.0)
+	_check(sim.enqueue_craft("machine", "lab_1"), "Elde yapılan levha ve bağlantı elemanıyla Laboratuvar 1 üretilebilmeli")
+
+## Products dropped from the inventory onto a machine's input run it without a network.
+func _hand_feeding() -> void:
+	var sim := Simulation.new()
+	sim.inventory["iron_ore"] = 20
+	sim.inventory["coal"] = 3
+	sim.unlock_all()
+	var smelter := sim.place_machine("smelter", "pig_iron")
+	_check(sim.can_deposit(smelter, "steel_plate") == 0, "Fırın almadığı ürünü kabul etmemeli")
+	# Only what fits leaves the inventory.
+	_check(sim.deposit(smelter, "iron_ore") == 12 and sim.inventory.iron_ore == 8, "Sığdığı kadar cevher konmalı (kapasite 12)")
+	_check(sim.can_deposit(smelter, "copper_ore") == 0, "Pik demir reçetesine bakır cevheri konmamalı")
+	_check(sim.deposit(smelter, "coal", 1) == 1 and sim.inventory.coal == 2, "İstenen adet kadar konmalı")
+	sim.advance(3.1)
+	_check(sim.machines[smelter].output.get("pig_iron", 0) == 2, "Elle beslenen fırın bağlantısız çalışmalı")
+	var depot := sim.place_machine("storage")
+	_check(sim.deposit(depot, "coal") == 2 and sim.machines[depot].input.coal == 2, "Depo her ürünü almalı")
+	_check(sim.deposit(depot, "coal") == 0, "Envanterde olmayan ürün konamamalı")
+	# Auto machine: the dropped product chooses the recipe.
+	sim.inventory["steel_rod"] = 2
+	var winder := sim.place_machine("wire_winder")
+	_check(sim.deposit(winder, "steel_rod") == 2 and sim.machines[winder].recipe == "coil", "Konan çubuk tel sarımı bobine çevirmeli")
 
 ## Quick-use bar: ten pinned keys sharing the inventory's counts.
 func _quick_use() -> void:

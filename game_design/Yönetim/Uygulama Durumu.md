@@ -16,17 +16,20 @@ Godot 4.7.2 prototipinde 2026-10-23 itibarıyla çalışan ve test edilen kısı
 | K-006 | Kabul edebilen bağlı tüketicilere her ürün için otomatik eşit paylaşım (çıkış başına hatırlanan adil sıra). |
 | K-007 | 24 ürün, 19 makine türü, 32 reçete, 9 araştırma (`A-01` – `A-09`). Üç alt montaj türü tek `Montaj istasyonu` altında birleşik. |
 | K-008 | Laboratuvar 1/2/3 sürekli aynı ürünleri tüketip Kademe 1/2/3 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
-| K-009 | Girdisi farklı reçeteli makineler (ergitme fırını, çelik fırını, pres, tel sarım, montaj) reçeteyi gelen ürüne göre seçer, boşken tek genel girişi olur. Aynı girdili makinelerde (haddehane, CNC, dökümhane) simgeli reçete ekranından ürün seçilir. |
+| K-009, K-016 | Pres, tel sarım ve montaj reçeteyi gelen ya da elle konan ürüne göre seçer, boşken tek genel girişi olur. Haddehane, CNC, dökümhane ve fırınlarda (K-016) simgeli reçete ekranından ürün seçilir. |
 | K-010 | Dört maden birer adetle sınırlı; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
 | K-011 | Envanter, malzemeli makine kurulumu, karttan/depodan elle alma, süreli el üretimi kuyruğu, başlangıç kiti, Depo kartı. |
 | K-012 | Alttaki 10 yuvalı hızlı erişim çubuğu ve I ile açılan envanter penceresi; ikisi aynı envanteri paylaşır, öğeler hızlı erişime sabitlenir. |
+| K-013 | Oyun boş tuvalle başlar; Sıfırla da boş tuvale ve başlangıç kitine döner. |
+| K-014 | Envanterden makine girişine sürükle-bırak; ağa bağlı olmayan makine elle çalışır. |
+| K-015 | Kartta ürünler çerçeveli kutularda adetle (0'da boş, bar yok); seçili reçetenin girdileri boş kutuda saydam; üretilen ürün başlıkta. |
 
 Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Teknoloji Ağacı]].
 
 ## Arayüz
 
 - **Üst çubuk:** Araştırma ağacı (aktif araştırma ve yüzdesi), Serbest mod, Duraklat/Devam, oyun hızı (1× ↔ 4×), Ortala, Kaydet, Yükle, Sıfırla.
-- **Makine kartı:** 128×128 makine görseli, giriş ve çıkış göstergeleri, çevrim çubuğu, durdurma düğmesi. Çıkış göstergesine tıklamak ürünü envantere alır; bir girişin "+" düğmesi o ürünü yapan makineyi envanterden kurup bağlar.
+- **Makine kartı:** Başlıkta makinenin adı ve ürettiği ürün; 128×128 makine görseli; giriş ve çıkış kutuları (adet, boş girişte beklenen ürün saydam), çevrim çubuğu, durdurma düğmesi. Çıkış kutusuna tıklamak ürünü envantere alır; giriş kutusuna envanterden ürün bırakılır; bir girişin "+" düğmesi o ürünü yapan makineyi envanterden kurup bağlar.
 - **Kart menüsü (sağ tık):** Ne üretilsin? (reçete ekranı), Durdur/Çalıştır, hız 20 ↔ 40 iş/sn, Envantere al, Kaldır (envantere); laboratuvarda araştırma hedefi seçimi.
 - **Üretim ekranı (C):** Kategori sekmeleri, öğe kutuları, seçili öğenin resmi/açıklaması/tarifi, ÜRET düğmesi, üretim sırası ve envanter satırı. Çerçevesi kullanıcının LibreSprite'ta çizdiği 9-slice görseldir.
 - **Envanter penceresi (I)** ve **hızlı erişim çubuğu (1–9, 0):** bkz. [[Tasarım/Envanter ve El Üretimi]].
@@ -34,7 +37,7 @@ Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]],
 
 ## Geçici deney seçimleri
 
-- Başlangıç ağı 8 kart ve 9 bağlantıdır ve başlangıç kitinden ayrı, bedelsiz kurulur: `Demir madeni` + `Kömür madeni` → `Ergitme fırını (pik demir)` → `Çelik fırını (çelik külçe)` → iki `Haddehane` (levha, çubuk) → `Pres (bağlantı elemanı)` → `Laboratuvar 1`.
+- Eski 8 kartlık başlangıç ağı (`Demir madeni` + `Kömür madeni` → `Ergitme fırını` → `Çelik fırını` → iki `Haddehane` → `Pres` → `Laboratuvar 1`) oyundan kalktı; yalnızca smoke testi ve kart görsel testleri onu `build_sample_network()` ile kurar.
 - Bütün makinelerin işleme hızı 20 iş/sn; kart menüsünden 40'a çıkarılabilir. Tamponlar 6–12, Depo 100.
 - `Talaş bertaraf ünitesi` ve `Ana proje terminali` (A-09 sonrası, aktüatör + PLC tüketir) yer tutucudur; bertaraf ve ana proje için kullanıcı kararı yoktur.
 - Bağlantılar anlık ve sınırsız aktarım yapar. Bölge, taşıma kısıtı, enerji ve para uygulanmadı.
@@ -48,10 +51,10 @@ Tek yuvalı yerel kayıt (`user://workshop.json`), sürüm 4: kart konumları, r
 
 - Motor: **4.7.2.stable.official**.
 - `tests/test_production.gd`: 80 kontrol — ürünlerin ve araştırmaların kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü.
-- `tests/test_inventory.gd`: başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt.
-- `tests/test_auto_recipe.gd`: reçetenin gelen ürüne göre seçilmesi ve seçilen reçetenin korunması.
+- `tests/test_inventory.gd`: boş başlangıcın çıkmaz olmaması (kitten Laboratuvar 1'e), makineye elle koyma, başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt.
+- `tests/test_auto_recipe.gd`: fırınların seçimli olması, reçetenin gelen ürüne göre seçilmesi (tel sarım, montaj) ve seçilen reçetenin korunması.
 - `tests/test_mine_visual.gd`, `tests/test_smelter_visual.gd`: makine kartı görselleri, animasyon, durdurma, hız ve port hizası.
-- Pencereli smoke testi (`-- --smoke-test`): kayıt/yükleme, üretim ekranından CNC üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, envanter penceresi ve sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Ekran görüntüleri `artifacts/` altındadır.
+- Pencereli smoke testi (`-- --smoke-test`, son çalıştırma K-013 – K-016 öncesi): kayıt/yükleme, üretim ekranından CNC üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, envanter penceresi ve sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Smoke testi boş başlangıcı denetleyip örnek ağı kurarak devam eder. Ekran görüntüleri `artifacts/` altındadır.
 - Doğrulanmayanlar: fiziksel fareyle oynanış testi, denge, büyük ağ performansı.
 
 ## Çalıştırma ve kaynaklar

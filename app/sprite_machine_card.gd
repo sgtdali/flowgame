@@ -7,6 +7,8 @@ signal toggle_pressed(card_id: String)
 signal supplier_requested(card_id: String, product: String, at: Vector2)
 ## Clicking an output gauge (or a depot's stock) moves it into the player's inventory.
 signal take_requested(card_id: String, product: String)
+## A product dragged from the inventory was dropped on one of this card's inputs.
+signal deposit_requested(card_id: String, product: String)
 
 const Icons = preload("res://app/icons.gd")
 ## kind -> 512x384 sheet (4x3 frames of 128x128). Add a line here for each new machine;
@@ -27,8 +29,11 @@ const HEADER := Color("1e3141")
 const EDGE := Color("2c4356")
 const RIVET := Color("4d6a7e")
 const FRAME := 2
+## Port slot size on the card (px).
+const SLOT := 40.0
 
-## One port column cell: product icon plus a small buffer gauge.
+## One port column cell: a framed slot holding what the buffer has. Empty at zero; otherwise
+## the product icon with the count in the corner (gold when the buffer is full).
 class PortGauge extends Control:
 	var mirrored := false
 	var color := Color.WHITE
@@ -38,38 +43,65 @@ class PortGauge extends Control:
 	## The open input of a machine whose recipe follows what gets linked to it.
 	var open := false
 	var icon: Texture2D
+	## Inputs: while the slot is empty, the expected product is drawn faded.
+	var ghost := false
 	## Shown instead of the gauge while an input has no incoming line.
 	var add_button: Button
 	## Recipe amount for this product, drawn on the icon when above one.
 	var amount := 1
+	## Inputs only: how many of a product the player could drop here (0: not accepted),
+	## and what to do when they do.
+	var accepts: Callable
+	var on_deposit: Callable
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		if not accepts.is_valid() or not (data is Dictionary) or not str(data.get("inventory_key", "")).begins_with("product:"):
+			return false
+		return int(accepts.call(str(data.inventory_key).trim_prefix("product:"))) > 0
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		on_deposit.call(str(data.inventory_key).trim_prefix("product:"))
+
+	## Framed slot, SLOT px square (smaller in crowded rows), set against the card's outer edge.
+	func slot_rect() -> Rect2:
+		var side := clampf(minf(size.y - 4.0, SLOT), 24.0, SLOT)
+		var x := size.x - 2.0 - side if mirrored else 2.0
+		return Rect2(x, roundf((size.y - side) * 0.5), side, side)
 
 	func _draw() -> void:
-		var cy := size.y * 0.5
-		var icon_x := size.x - 20.0 if mirrored else 20.0
-		var bar := Rect2(6.0 if mirrored else 38.0, cy - 2.0, 20.0, 4.0)
-		var shape := PackedVector2Array([Vector2(-6, 0), Vector2(-2, -6), Vector2(6, -3), Vector2(6, 3), Vector2(-2, 6)])
-		if ingot:
-			shape = PackedVector2Array([Vector2(-7, 2), Vector2(-3, -4), Vector2(7, -4), Vector2(4, 4), Vector2(-5, 4)])
+		var box := slot_rect()
+		var full := count >= capacity and count > 0
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("0d161d")
+		style.border_color = GOLD if full else Color("8a98a3")
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(5)
+		draw_style_box(style, box)
+		var c := box.get_center()
 		if open:
-			draw_arc(Vector2(icon_x, cy), 8.0, 0.0, TAU, 20, color, 1.5)
-		elif icon != null:
-			draw_texture_rect(icon, Rect2(icon_x - 16.0, cy - 16.0, 32.0, 32.0), false)
-			if amount > 1:
-				var font := ThemeDB.fallback_font
-				var at := Vector2(icon_x + 9.0, cy + 15.0)
-				draw_string_outline(font, at, str(amount), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 4, Color("09131c"))
-				draw_string(font, at, str(amount), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, INK)
-		else:
-			for i in range(shape.size()):
-				shape[i] += Vector2(icon_x, cy)
-			draw_colored_polygon(shape, color)
-			draw_line(Vector2(icon_x - 3, cy - 3), Vector2(icon_x + 2, cy - 4), color.lightened(0.4))
-		if add_button != null and add_button.visible:
+			draw_arc(c, 7.0, 0.0, TAU, 20, color, 1.5)
 			return
-		draw_rect(bar, Color("09131c"))
-		var fill := clampf(float(count) / float(maxi(capacity, 1)), 0.0, 1.0)
-		var filled := Rect2(bar.position + Vector2(bar.size.x * (1.0 - fill) if mirrored else 0.0, 0), Vector2(bar.size.x * fill, bar.size.y))
-		draw_rect(filled, GOLD if count >= capacity else color)
+		# 32px icons only fit whole; in crowded rows they are drawn at half size.
+		var icon_size := 32.0 if box.size.x >= 36.0 else 16.0
+		var icon_rect := Rect2(c - Vector2(icon_size, icon_size) * 0.5, Vector2(icon_size, icon_size))
+		if count <= 0:
+			if ghost and icon != null:
+				draw_texture_rect(icon, icon_rect, false, Color(1, 1, 1, 0.3))
+			return
+		if icon != null:
+			draw_texture_rect(icon, icon_rect, false)
+		else:
+			var shape := PackedVector2Array([Vector2(-6, 0), Vector2(-2, -6), Vector2(6, -3), Vector2(6, 3), Vector2(-2, 6)])
+			if ingot:
+				shape = PackedVector2Array([Vector2(-7, 2), Vector2(-3, -4), Vector2(7, -4), Vector2(4, 4), Vector2(-5, 4)])
+			for i in range(shape.size()):
+				shape[i] += c
+			draw_colored_polygon(shape, color)
+		var font := ThemeDB.fallback_font
+		var text := str(count)
+		var at := Vector2(box.end.x - 3.0 - font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, box.end.y - 3.0)
+		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, Color("09131c"))
+		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, GOLD if full else INK)
 
 ## Small status symbol beside the cycle bar; the status text is its tooltip.
 class StatusIcon extends Control:
@@ -110,6 +142,9 @@ var output_gauges: Dictionary = {}
 var _atlas: AtlasTexture
 var accent_color := MUTED
 var header_icon: TextureRect
+## Header chip naming what the machine makes (its recipe's main product).
+var target_icon: TextureRect
+var target_label: Label
 var _machine_enabled := true
 var _frame_count := 1
 var _storage := false
@@ -172,6 +207,30 @@ func _build(accent: Color) -> void:
 	get_titlebar_hbox().add_child(header_icon)
 	get_titlebar_hbox().move_child(header_icon, 0)
 	get_titlebar_hbox().add_theme_constant_override("separation", 6)
+	var target := HBoxContainer.new()
+	target.add_theme_constant_override("separation", 3)
+	target.mouse_filter = Control.MOUSE_FILTER_PASS
+	# Shares the header with the title; long product names are cut with an ellipsis.
+	target.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	target.alignment = BoxContainer.ALIGNMENT_END
+	target_icon = TextureRect.new()
+	target_icon.custom_minimum_size = Vector2(16, 16)
+	target_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	target_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	target_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	target_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	target_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	target.add_child(target_icon)
+	target_label = Label.new()
+	target_label.add_theme_font_size_override("font_size", 11)
+	target_label.add_theme_color_override("font_color", GOLD)
+	target_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	target_label.custom_minimum_size.x = 20
+	target_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	target_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	target_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	target.add_child(target_label)
+	get_titlebar_hbox().add_child(target)
 	pause_btn = Button.new()
 	pause_btn.flat = true
 	pause_btn.custom_minimum_size = Vector2(20, 18)
@@ -198,6 +257,27 @@ func _build(accent: Color) -> void:
 	art.position = Vector2(SIDE, 0)
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_set_frame(0)
+
+## What the machine is set to make, in the header: the main output's icon and name, the
+## recipe name for machines without a product output (labs, project), "?" for an auto
+## machine that has nothing fed in yet. A depot shows nothing.
+func _show_target(sim: RefCounted, id: String) -> void:
+	var chip := target_icon.get_parent() as Control
+	var product: String = sim.output_product(id)
+	chip.visible = not _storage
+	if sim.recipe_mode(kind) == "auto" and sim.linked_inputs(id).is_empty():
+		target_icon.visible = false
+		target_label.text = "?"
+		chip.tooltip_text = "Bağlanan ya da konan ürüne göre belirlenir"
+	elif product.is_empty():
+		target_icon.visible = false
+		target_label.text = str(sim.recipe_for(id).get("name", ""))
+		chip.tooltip_text = target_label.text
+	else:
+		target_icon.texture = Icons.product(sim, product)
+		target_icon.visible = true
+		target_label.text = sim.product_name(product)
+		chip.tooltip_text = "Üretiyor: %s" % target_label.text
 
 func set_header_icon(texture: Texture2D) -> void:
 	header_icon.texture = texture
@@ -297,6 +377,8 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 	gauge.color = sim.product_color(product)
 	gauge.open = product == sim.ANY
 	gauge.icon = Icons.product(sim, product)
+	if not is_output and not gauge.open:
+		gauge.ghost = true
 	gauge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	gauge.position = Vector2(SIDE + ART if is_output else 0.0, 0)
 	gauge.size = Vector2(SIDE, row.custom_minimum_size.y)
@@ -310,10 +392,15 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 				take_requested.emit(card_id, product)
 				gauge.accept_event())
 	if not is_output:
+		# The open port of an auto machine or depot takes whatever fits; others only their product.
+		gauge.accepts = func(dropped: String) -> int:
+			return 0 if not gauge.open and dropped != product else sim.can_deposit(card_id, dropped)
+		gauge.on_deposit = func(dropped: String) -> void: deposit_requested.emit(card_id, dropped)
 		var add := Button.new()
 		add.text = "+"
 		add.flat = true
-		add.position = Vector2(36, row.custom_minimum_size.y * 0.5 - 11)
+		# Beside the slot, between it and the artwork.
+		add.position = Vector2(SLOT + 1.0, row.custom_minimum_size.y * 0.5 - 11)
 		add.size = Vector2(22, 22)
 		add.add_theme_font_size_override("font_size", 20)
 		add.add_theme_color_override("font_color", TEAL)
@@ -327,6 +414,7 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 func update_from_sim(sim: RefCounted, id: String) -> void:
 	if not sim.machines.has(id):
 		return
+	_show_target(sim, id)
 	var machine: Dictionary = sim.machines[id]
 	var spec: Dictionary = sim.catalog.machines[machine.kind]
 	var recipe: Dictionary = sim.recipe_for(id)

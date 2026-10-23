@@ -119,6 +119,14 @@ func build(sim: RefCounted) -> void:
 		quick.add_child(slot)
 		quick_slots.append(slot)
 
+## While an item is dragged, the dimmed backdrop lets it through so it can be dropped on a
+## machine card's input behind the window; the window itself still takes drops.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_BEGIN:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	elif what == NOTIFICATION_DRAG_END:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
 func _grid() -> GridContainer:
 	var grid := GridContainer.new()
 	grid.columns = COLUMNS

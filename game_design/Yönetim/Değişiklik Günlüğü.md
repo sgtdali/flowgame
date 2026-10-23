@@ -82,3 +82,15 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - Panolar: ana panodaki seçimler kartı K-008 – K-012 ile güncellendi (K-001 çıkarıldı), yeni not kartı eklendi; döngü panosunda başlık ve genişleme kartı güncellendi, Otomasyon I örneği tarihsel işaretlendi. Mevcut kart konumları ve kimlikleri korundu.
 - Depo kökündeki `README.md` ve `art_src/README.md` güncel prototipe göre yeniden yazıldı.
 - Yeni kullanıcı kararı yok; prototip ayrıntıları karar olarak yazılmadı.
+
+## 2026-10-23 — Boş başlangıç
+
+- K-013: Oyunun boş tuvalle başlaması onaylandı. Prototipte hazır başlangıç ağı kaldırıldı; Sıfırla da boş tuvale döner. Eski ağ yalnızca testlerde `build_sample_network()` ile kurulur. Envanter testine kitten Laboratuvar 1'e ulaşılabildiğini denetleyen kontrol eklendi.
+- Güncellenen notlar: [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]]; `README.md`.
+
+## 2026-10-23 — Makine kartı, elle besleme ve fırın reçetesi
+
+- K-014: Envanterden makine girişine elle ürün koyma onaylandı; prototipte sürükle-bırak (sığdığı kadar, Shift: 1).
+- K-015: Kartta ürünler çerçeveli kutularda adetle gösterilir (0'da boş, depolar dahil bar yok); seçili reçetenin girdileri boş kutuda saydam simgedir (silüet ayırt edilemediği için değiştirildi); üretilen ürün başlıkta.
+- K-016: Fırınlarda reçeteyi oyuncu seçer; K-009'un fırın kısmı değişti olarak işaretlendi. Otomatik reçete testi tel sarım ve montaj üzerinden yeniden yazıldı.
+- Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[01 - Güncel Tasarım]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.

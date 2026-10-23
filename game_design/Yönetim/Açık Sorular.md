@@ -49,5 +49,8 @@ Kart ölçeği (S-001) için kullanıcı bu aşamada karar vermek istemediğini 
 | Hammadde sınırsız mı? | Hayır: madenler oyun başında birer adet | [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|K-010]] |
 | Oyuncunun envanteri ve makine kurma bedeli var mı? | Evet: envanter, malzemeli kurulum, elle alma, süreli el üretimi, başlangıç kiti | [[Yönetim/Karar Defteri#K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi|K-011]] |
 | Alttaki çubuk envanterin tamamı mı? | Hayır: 10 yuvalı hızlı erişim; envanter ayrı pencerede, öğeler sabitlenir | [[Yönetim/Karar Defteri#K-012 — Hızlı erişim çubuğu ve envanter penceresi|K-012]] |
+| Oyun hazır bir ağla mı başlar? | Hayır: boş tuval ve başlangıç kiti | [[Yönetim/Karar Defteri#K-013 — Oyun boş tuvalle başlar|K-013]] |
+| Ağa bağlı olmayan makine çalıştırılabilir mi? | Evet: envanterden girişe elle ürün konur | [[Yönetim/Karar Defteri#K-014 — Envanterden makine girişine elle malzeme konur|K-014]] |
+| Fırının reçetesini kim seçer? | Oyuncu (K-009'un fırın kısmı değişti) | [[Yönetim/Karar Defteri#K-016 — Fırınlarda reçeteyi oyuncu seçer|K-016]] |
 
 Yeni cevap geldiğinde satırı ilgili karara bağla. Açık sorunun yanında bulunan öneri, cevap yerine geçmez.

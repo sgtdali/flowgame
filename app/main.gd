@@ -116,7 +116,7 @@ func _build_ui() -> void:
 	_button("Ortala", _frame_graph, head)
 	_button("Kaydet", _save_game, head)
 	_button("Yükle", _load_game, head)
-	_button("Sıfırla", _demo, head).tooltip_text = "Başlangıç ağını yeniden kurar."
+	_button("Sıfırla", _demo, head).tooltip_text = "Oyunu boş tuval ve başlangıç kitiyle yeniden başlatır."
 	var workspace := HBoxContainer.new()
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 0)
@@ -248,6 +248,13 @@ func _take_product(id: String, product: String) -> void:
 	_refresh()
 	if count > 0:
 		message.text = "+%d %s" % [count, sim.product_name(product)]
+
+## Drop from the inventory onto a card input: as many as fit, Shift for one.
+func _deposit(id: String, product: String) -> void:
+	var count := sim.deposit(id, product, 1 if Input.is_key_pressed(KEY_SHIFT) else -1)
+	_refresh()
+	if count > 0:
+		message.text = "%d %s makineye kondu." % [count, sim.product_name(product)]
 
 func _craft(type: String, id: String, count: int) -> void:
 	var queued := 0
@@ -390,6 +397,7 @@ func _add_card(kind: String, pos: Vector2, existing_id: String = "", recipe_over
 	card.setup_from_sim(sim, id)
 	card.set_header_icon(CraftScreen.icon_for(kind))
 	card.take_requested.connect(_take_product)
+	card.deposit_requested.connect(_deposit)
 	card.recipe_changed.connect(_change_machine_recipe)
 	card.toggle_pressed.connect(_toggle_machine)
 	card.supplier_requested.connect(func(target: String, product: String, at: Vector2) -> void:
@@ -475,6 +483,15 @@ func _demo() -> void:
 	last_completed_count = 0
 	paused = false
 	pause_button.text = "Duraklat"
+	graph.scroll_offset = Vector2.ZERO
+	graph.zoom = 1.0
+	_select_card("")
+	message.text = "Tuval boş: C ile makine üret, hızlı erişimden (1-0) ya da envanterden (I) yerleştir."
+	_refresh()
+
+## The old starting network: mines → smelter → steel furnace → two mills → press → lab 1.
+## The game starts empty; the smoke and card tests build this to have something running.
+func build_sample_network() -> void:
 	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
 	var coal_mine := _add_card("coal_mine", Vector2(20, 250))
 	var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
@@ -493,10 +510,7 @@ func _demo() -> void:
 	sim.add_link(mill_rod, press)
 	sim.add_link(press, lab)
 	_sync_graph_connections()
-	graph.scroll_offset = Vector2.ZERO
-	_select_card("")
 	_frame_graph.call_deferred()
-	message.text = "Hızlı erişimdeki makineye tıkla ya da numarasına bas: yerleştir · I: envanter · C: üretim ekranı"
 	_refresh()
 
 func _toggle_machine(id: String) -> void:
@@ -599,6 +613,13 @@ func _load_game() -> void:
 	message.text = "Kayıt yüklendi."
 
 func _smoke_test() -> void:
+	assert(cards.is_empty() and sim.machines.is_empty(), "Oyun boş tuvalle başlamalı")
+	if DisplayServer.get_name() != "headless":
+		await get_tree().process_frame
+		await get_tree().process_frame
+		DirAccess.make_dir_recursive_absolute("res://artifacts")
+		get_viewport().get_texture().get_image().save_png("res://artifacts/start-empty.png")
+	build_sample_network()
 	paused = true
 	pause_button.text = "Devam"
 	storage_path = "user://smoke-state.json"

@@ -9,6 +9,10 @@ func _run() -> void:
 	current_scene = main
 	for i in range(4):
 		await process_frame
+	# The game starts on an empty canvas; the old starting network gives these cards.
+	main.build_sample_network()
+	for i in range(2):
+		await process_frame
 	var card: GraphNode = main.cards["machine_1"].node
 	assert(card.get_output_port_count() == 1)
 	assert(card.get_output_port_type(0) == main.sim.product_port_type("iron_ore"))
