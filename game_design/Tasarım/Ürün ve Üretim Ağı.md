@@ -3,22 +3,24 @@ tur: sistem
 durum: ilk-taslak
 guncelleme: 2026-10-23
 ---
-# Ürün ve üretim ağı (İlk taslak — K-007)
+# Ürün ve üretim ağı (İlk taslak — K-007, K-017)
 
 ## Kapsam ve tasarım amacı
 
-Bu not, oyunun ilk taslak olarak kararlaştırılan **24 ürünlük üretim ağını** ve ilgili **makine türlerini** tanımlar ([[Yönetim/Karar Defteri#K-007 — 24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı|K-007]]).
+Bu not, oyunun üretim ağını, ürün ilişkilerini ve makine türlerini tanımlar ([[Yönetim/Karar Defteri#K-007 — 24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı|K-007]], [[Yönetim/Karar Defteri#K-017 — Tek reçete ve farklı ürün ilkesi|K-017]]).
 
-Tasarımda her ürünün tek bir yerde kullanılıp unutulması yerine:
-- **Ortak ara ürünler** üzerinden araştırma, alt sistemler ve genişleme arasında paylaşım kararları ([[Tasarım/Ana Proje ve Ürün Dağıtımı#Onaylı otomatik eşit paylaşım — K-006|K-006]]) doğurması,
-- **Alternatif üretim yöntemlerine** (talaşlı imalat vs. döküm/pres) zemin hazırlaması,
-- **Yan ürün geri kazanımı** (`Metal Talaşı`) ile hammadde tasarrufu seçeneği sunması hedeflenmiştir.
+Tasarımda temel ilkeler:
+- **Tek reçete ilkesi (K-017):** Her ürünün tam olarak **tek bir ana üretim tarifi** vardır. Makinelerin aynı ürün için alternatif tariflerle karmaşıklaşması engellenir.
+- **Farklı yöntem = Farklı ürün (K-017):** Döküm ve talaşlı imalat gibi farklı üretim yöntemleri ya da demir ve çelik gibi farklı hammadde aileleri aynı ürünü çıkarmaz; ayrı ürünler üretir (Örn: `Cast Iron Gear` vs `Steel Gear`; `Cast Iron Housing` vs `Steel Housing`).
+- **Ortak ara ürünler ve paylaşım:** Ortak ara girdiler üzerinden araştırma, alt sistemler ve fabrika genişlemesi arasında paylaşım kararları ([[Tasarım/Ana Proje ve Ürün Dağıtımı#Onaylı otomatik eşit paylaşım — K-006|K-006]]) doğması hedeflenir.
+- **Yan ürün geri kazanımı:** `Metal Talaşı / Hurda (Metal Scrap)` geri dönüşümle ergitmeye ve çelik fırınına dönerek hammadde tasarrufu sağlar.
 
-> [!note] İlk taslak sınırları
+> [!note] Tasarım ve prototip sınırları
 > - **Kalite sistemi (A/B/C):** Kullanıcı kararıyla şu aşamada kapsam dışı bırakılmıştır; ürünler tek standart kalitede üretilir.
-> - **Sayısal değerler:** Reçetelerin girdi/çıktı adetleri, gereken iş miktarları ([[Tasarım/Makine Kartları#Onaylı üretim modeli — K-005|K-005]]) ve makine işleme hızları henüz sabitlenmemiştir.
-> - **Montaj makineleri:** `Montaj İstasyonu`, `Elektronik Montaj` ve `Hassas Montaj` ayrı makine kartları olarak veya tek `Montaj İstasyonu` altında birleştirilerek uygulanabilir; bu ayrım açıktır.
-> - **Prototip:** Sayısal reçeteler ilk deneme olarak `data/prototype.json` içinde; montaj tek istasyonda birleşik. Ürünler artık makine kurulumunda da harcanır (K-011); ör. çelik levha ve bağlantı elemanı hemen her makinenin bedelinde var. Bedeller [[Tasarım/Envanter ve El Üretimi]] notundadır.
+> - **Demir ve Çelik ayrımı:** Demir Külçe (`Iron Ingot`) kömürsüz fırında (`2x Iron Ore -> 2x Iron Ingot`), Çelik Külçe (`Steel Ingot`) ise kömür katkısıyla (`2x Iron Ore + 1x Coal -> 2x Steel Ingot`) üretilir.
+> - **Demir ara mamulleri:** `Iron Ingot`tan `Iron Plate` ve `Iron Rod`; `Iron Plate`ten `Iron Pipe` üretilir.
+> - **Montaj makineleri:** `Montaj İstasyonu`, `Elektronik Montaj` ve `Hassas Montaj` ayrı makine kartları olarak veya birleşik olarak uygulanabilir; bu ayrım açıktır.
+> - **Prototip:** Sayısal reçeteler `data/prototype.json` içinde tutulur ve görsel ürün zinciri editörü (`app/chain_editor.tscn`) üzerinden incelenebilir.
 
 ---
 
@@ -27,142 +29,141 @@ Tasarımda her ürünün tek bir yerde kullanılıp unutulması yerine:
 ```mermaid
 flowchart LR
     subgraph Hammadde["1. Katman: Hammaddeler"]
-        FE[1. Demir Cevheri]
-        CU[2. Bakır Cevheri]
-        CO[3. Kömür]
-        SI[4. Kuvars]
+        FE["Demir Cevheri (Iron Ore)"]
+        CU["Bakır Cevheri (Copper Ore)"]
+        CO["Kömür (Coal)"]
+        SI["Kuvars (Quartz)"]
     end
 
     subgraph Metalurji["2. Katman: Temel Metalürji ve Malzeme"]
-        PIK[5. Pik Demir]
-        CEL[6. Çelik Külçe]
-        BAK[7. Bakır Külçe]
-        CLEV[8. Çelik Levha]
-        CCUB[9. Çelik Çubuk]
-        CAM[10. Endüstriyel Cam / Yalıtkan]
+        ING_FE["Demir Külçe (Iron Ingot)"]
+        ING_ST["Çelik Külçe (Steel Ingot)"]
+        ING_CU["Bakır Külçe (Copper Ingot)"]
+        CAM["Endüstriyel Cam (Glass)"]
+        PL_FE["Demir Levha (Iron Plate)"]
+        ROD_FE["Demir Çubuk (Iron Rod)"]
+        PIP_FE["Demir Boru (Iron Pipe)"]
+        PL_ST["Çelik Levha (Steel Plate)"]
+        ROD_ST["Çelik Çubuk (Steel Rod)"]
     end
 
     subgraph Imalat["3. Katman: Temel İmalat ve Yan Ürün"]
-        VID[11. Bağlantı Elemanları]
-        MIL[12. Mil]
-        DIS[13. Dişli]
-        RUL[14. Rulman]
-        TEL[15. Bakır Tel]
-        TAL[16. Metal Talaşı]
+        VID["Bağlantı Elemanları (Fasteners)"]
+        MIL["Mil (Shaft)"]
+        DIS_ST["Çelik Dişli (Steel Gear)"]
+        DIS_CAST["Döküm Dişli (Cast Iron Gear)"]
+        RUL["Rulman (Bearing)"]
+        TEL["Bakır Tel (Copper Wire)"]
+        TAL["Metal Talaşı / Hurda (Metal Scrap)"]
     end
 
     subgraph AltSistem["4. Katman: Alt Sistemler"]
-        GOV[17. Gövde]
-        BOB[18. Elektromanyetik Bobin]
-        RED[19. Dişli Kutusu]
-        DEV[20. Devre Kartı]
-        MOT[21. Elektrik Motoru]
+        GOV_ST["Çelik Gövde (Steel Housing)"]
+        GOV_CAST["Döküm Gövde (Cast Iron Housing)"]
+        BOB["Bobin (Electromagnetic Coil)"]
+        RED["Dişli Kutusu (Gearbox)"]
+        DEV["Devre Kartı (Circuit Board)"]
+        MOT["Elektrik Motoru (Electric Motor)"]
     end
 
     subgraph Ileri["5. Katman: İleri Endüstriyel Ürünler"]
-        SEN[22. Endüstriyel Sensör]
-        AKT[23. Hassas Aktüatör]
-        PLC[24. Kontrol Ünitesi]
+        SEN["Sensör (Industrial Sensor)"]
+        AKT["Aktüatör (Precision Actuator)"]
+        PLC["Kontrol Ünitesi (Control Unit)"]
     end
 
-    FE & CO --> PIK
-    PIK & CO --> CEL
-    CU --> BAK
+    FE --> ING_FE
+    FE & CO --> ING_ST
+    CU --> ING_CU
     SI --> CAM
 
-    CEL --> CLEV & CCUB
-    CCUB --> VID & MIL & DIS & RUL
-    PIK -.->|Döküm alternatifi| DIS & GOV
-    CLEV & VID --> GOV
-    DIS & MIL -.->|Yan ürün| TAL
-    TAL -.->|Geri kazanım| CEL
+    ING_FE --> PL_FE & ROD_FE
+    PL_FE --> PIP_FE
+    ING_FE --> DIS_CAST & GOV_CAST
 
-    BAK --> TEL
+    ING_ST --> PL_ST & ROD_ST
+    ROD_ST --> VID & MIL & DIS_ST & RUL
+    PL_ST & VID --> GOV_ST
+
+    DIS_ST & MIL --> TAL
+    TAL -.->|Geri Dönüşüm| ING_FE
+    TAL & CO -.->|Geri Dönüşüm| ING_ST
+
+    ING_CU --> TEL
     TEL --> BOB & DEV
     CAM --> DEV & SEN
 
-    DIS & MIL & RUL & GOV --> RED
-    BOB & MIL & RUL & GOV --> MOT
+    DIS_ST & MIL & RUL & GOV_ST --> RED
+    BOB & MIL & RUL & GOV_ST --> MOT
     DEV & BOB & CAM --> SEN
     MOT & RED & SEN --> AKT
-    DEV & SEN & CLEV & VID --> PLC
+    DEV & SEN & PL_ST & VID --> PLC
 ```
 
 ---
 
-## 24 ürünlük katalog (5 katman)
+## Katalog ve Katmanlar (K-017 Uyarlaması)
 
-### 1. Katman: Hammaddeler (4 Ürün)
-| # | Ürün | Kaynak / Çıkarım | Nerelerde Kullanılır? |
-|---|---|---|---|
-| 1 | **Demir Cevheri** | Demir Madeni | `5. Pik Demir` |
-| 2 | **Bakır Cevheri** | Bakır Madeni | `7. Bakır Külçe` |
-| 3 | **Kömür** | Kömür Madeni | `5. Pik Demir`, `6. Çelik Külçe` (ergitme ve karbon katkısı) |
-| 4 | **Kuvars / Silika** | Taş / Kuvars Ocağı | `10. Endüstriyel Cam / Yalıtkan` |
-
-### 2. Katman: Temel Metalürji ve Malzeme (6 Ürün)
-| # | Ürün | Girdiler | Makine Türü | Nerelerde Kullanılır? |
-|---|---|---|---|---|
-| 5 | **Pik Demir (Ham Demir)** | Demir Cevheri + Kömür | Ergitme Fırını | `6. Çelik Külçe`, `13. Dişli (Döküm)`, `17. Gövde (Döküm)`, Araştırma (A-02) |
-| 6 | **Çelik Külçe** | **Yöntem A:** Pik Demir + Kömür<br>**Yöntem B (Geri kazanım):** Metal Talaşı (+ Pik Demir/Kömür) | Çelik Fırını | `8. Çelik Levha`, `9. Çelik Çubuk`, Araştırma (A-02) |
-| 7 | **Bakır Külçe** | Bakır Cevheri | Ergitme Fırını | `15. Bakır Tel`, Araştırma (A-03) |
-| 8 | **Çelik Levha** | Çelik Külçe | Haddehane | `17. Gövde (Pres)`, `24. Kontrol Ünitesi`, Araştırma (A-01, A-02, A-03) |
-| 9 | **Çelik Çubuk** | Çelik Külçe | Haddehane | `11. Bağlantı Elemanları`, `12. Mil`, `13. Dişli (CNC)`, `14. Rulman`, `18. Bobin`, Araştırma (A-01, A-05) |
-| 10 | **Endüstriyel Cam / Yalıtkan** | Kuvars | Ergitme Fırını / Fırın | `20. Devre Kartı`, `22. Endüstriyel Sensör`, Araştırma (A-05, A-07, A-08) |
-
-### 3. Katman: Temel İmalat ve Yan Ürün (6 Ürün)
-| # | Ürün | Girdiler ve Alternatif Yöntemler | Makine Türü | Nerelerde Kullanılır? |
-|---|---|---|---|---|
-| 11 | **Bağlantı Elemanları (Vida/Civata)** | Çelik Çubuk | Pres | `17. Gövde (Pres)`, `24. Kontrol Ünitesi`, Araştırma (A-01, A-03, A-07) |
-| 12 | **Mil (Şaft)** | Çelik Çubuk → Mil + *Metal Talaşı* | Torna | `19. Dişli Kutusu`, `21. Elektrik Motoru`, Araştırma (A-04, A-06) |
-| 13 | **Dişli** | **Yöntem A (Talaşlı):** Çelik Çubuk → Dişli + *Metal Talaşı*<br>**Yöntem B (Döküm):** Pik Demir → Dişli | CNC *(A)* veya Dökümhane *(B)* | `19. Dişli Kutusu`, Araştırma (A-04) |
-| 14 | **Rulman** | Çelik Çubuk → Rulman (+ *Metal Talaşı*) | CNC | `19. Dişli Kutusu`, `21. Elektrik Motoru`, Araştırma (A-04, A-06) |
-| 15 | **Bakır Tel** | Bakır Külçe | Tel Çekme / Sarım Makinesi | `18. Elektromanyetik Bobin`, `20. Devre Kartı`, Araştırma (A-05, A-07) |
-| 16 | **Metal Talaşı (Yan Ürün)** | *Torna ve CNC işlemlerinden yan ürün olarak çıkar* | Çelik Fırını *(geri kazanım)* | `6. Çelik Külçe` üretimine geri beslenir |
-
-### 4. Katman: Alt Sistemler — Mekanik ve Elektromekanik (5 Ürün)
-| # | Ürün | Girdiler ve Alternatif Yöntemler | Makine Türü | Nerelerde Kullanılır? |
-|---|---|---|---|---|
-| 17 | **Gövde (Makine/Motor Gövdesi)** | **Yöntem A (Pres):** Çelik Levha + Bağlantı Elemanı<br>**Yöntem B (Döküm):** Pik Demir | Pres *(A)* veya Dökümhane *(B)* | `19. Dişli Kutusu`, `21. Elektrik Motoru`, Araştırma (A-04, A-06) |
-| 18 | **Elektromanyetik Bobin** | Bakır Tel + Çelik Çubuk | Tel Çekme / Sarım Makinesi | `21. Elektrik Motoru`, `22. Endüstriyel Sensör`, Araştırma (A-06, A-08) |
-| 19 | **Dişli Kutusu (Redüktör)** | Dişli + Mil + Rulman + Gövde | Montaj İstasyonu | `23. Hassas Aktüatör`, Araştırma (A-09), Makine kurulumu |
-| 20 | **Devre Kartı** | Bakır Tel + Endüstriyel Cam / Yalıtkan | Elektronik Montaj *(veya Montaj İstasyonu)* | `22. Endüstriyel Sensör`, `24. Kontrol Ünitesi`, Araştırma (A-08, A-09) |
-| 21 | **Elektrik Motoru** | Elektromanyetik Bobin + Mil + Rulman + Gövde | Montaj İstasyonu | `23. Hassas Aktüatör`, Araştırma (A-09), Makine kurulumu |
-
-### 5. Katman: İleri Endüstriyel Ürünler / Tüketim Hedefleri (3 Ürün)
-| # | Ürün | Girdiler | Makine Türü | Rolü (Araştırma / Genişleme / Ana Proje) |
-|---|---|---|---|---|
-| 22 | **Endüstriyel Sensör** | Devre Kartı + Elektromanyetik Bobin + Endüstriyel Cam / Yalıtkan | Hassas Montaj *(veya Montaj İstasyonu)* | `23. Hassas Aktüatör`, `24. Kontrol Ünitesi`, Araştırma (A-09) |
-| 23 | **Hassas Aktüatör (Servo Kolu)** | Elektrik Motoru + Dişli Kutusu + Endüstriyel Sensör | Hassas Montaj *(veya Montaj İstasyonu)* | Ana Proje aşamaları, ileri fabrika genişlemesi |
-| 24 | **Kontrol Ünitesi (PLC)** | Devre Kartı + Endüstriyel Sensör + Çelik Levha + Bağlantı Elemanları | Elektronik Montaj *(veya Montaj İstasyonu)* | Ana Proje aşamaları, ileri fabrika genişlemesi |
-
----
-
-## Makine türleri özeti (İlk taslak)
-
-| Makine Türü | Çalıştırdığı Başlıca Reçeteler | Açıldığı Aşama |
+### 1. Katman: Hammaddeler
+| Ürün | Kaynak | Tüketildiği Yer |
 |---|---|---|
-| **Ergitme Fırını** | `5. Pik Demir`, `7. Bakır Külçe`, `10. Endüstriyel Cam / Yalıtkan` | Başlangıç (`10` reçetesi A-03 ile) |
-| **Çelik Fırını** | `6. Çelik Külçe` (Pik Demir + Kömür veya `16. Metal Talaşı` geri kazanımı) | Başlangıç (Talaş geri kazanımı A-02 ile) |
-| **Haddehane** | `8. Çelik Levha`, `9. Çelik Çubuk` | Başlangıç |
-| **Pres** | `11. Bağlantı Elemanları`, `17. Gövde (Pres yöntemi)` | Başlangıç |
-| **Torna** | `12. Mil` (+ `16. Metal Talaşı`) | A-01: Talaşlı İmalat |
-| **CNC** | `13. Dişli (CNC yöntemi)`, `14. Rulman` (+ `16. Metal Talaşı`) | A-01: Talaşlı İmalat |
-| **Dökümhane** | `13. Dişli (Döküm yöntemi)`, `17. Gövde (Döküm yöntemi)` | A-02: Döküm ve Geri Kazanım |
-| **Tel Çekme / Sarım Makinesi** | `15. Bakır Tel`, `18. Elektromanyetik Bobin` | A-03 (Tel) ve A-05 (Bobin) |
-| **Montaj İstasyonu** *(veya 3 alt montaj türü)* | `19. Dişli Kutusu`, `20. Devre Kartı`, `21. Elektrik Motoru`, `22. Sensör`, `23. Aktüatör`, `24. Kontrol Ünitesi` | A-04, A-07, A-08, A-09 |
+| **Iron Ore (Demir Cevheri)** | Demir Madeni | `Iron Ingot`, `Steel Ingot` |
+| **Copper Ore (Bakır Cevheri)** | Bakır Madeni | `Copper Ingot` |
+| **Coal (Kömür)** | Kömür Madeni | `Steel Ingot` (karbon katkısı), Hurda Çelik geri dönüşümü |
+| **Quartz (Kuvars)** | Taş / Kuvars Ocağı | `Industrial Glass` |
+
+### 2. Katman: Metalürji ve Malzeme
+| Ürün | Girdiler | Makine | Kullanım Alanı |
+|---|---|---|---|
+| **Iron Ingot (Demir Külçe)** | 2x Iron Ore | Ergitme Fırını | `Iron Plate`, `Iron Rod`, `Cast Iron Gear`, `Cast Iron Housing` |
+| **Steel Ingot (Çelik Külçe)** | 2x Iron Ore + 1x Coal | Çelik Fırını | `Steel Plate`, `Steel Rod` |
+| **Copper Ingot (Bakır Külçe)** | 2x Copper Ore | Ergitme Fırını | `Copper Wire` |
+| **Industrial Glass (Endüstriyel Cam)** | 2x Quartz | Ergitme Fırını | `Circuit Board`, `Industrial Sensor` |
+| **Iron Plate (Demir Levha)** | 1x Iron Ingot | Haddehane | `Iron Pipe`, inşaat / altyapı |
+| **Iron Rod (Demir Çubuk)** | 1x Iron Ingot (çıktı: 2) | Haddehane | İnşaat, temel mekanik parçalar |
+| **Iron Pipe (Demir Boru)** | 1x Iron Plate | Haddehane / Pres | Sıvı/gaz transferi, altyapı |
+| **Steel Plate (Çelik Levha)** | 1x Steel Ingot | Haddehane | `Steel Housing`, `Control Unit`, makine kurulumları |
+| **Steel Rod (Çelik Çubuk)** | 1x Steel Ingot | Haddehane | `Fasteners`, `Shaft`, `Steel Gear`, `Bearing`, `Electromagnetic Coil` |
+
+### 3. Katman: Temel İmalat ve Yan Ürün
+| Ürün | Girdiler | Makine | Not / Tek Reçete |
+|---|---|---|---|
+| **Fasteners (Bağlantı Elemanları)** | 1x Steel Rod (çıktı: 2) | Pres | `Steel Housing`, `Control Unit`, makine kurulumları |
+| **Shaft (Mil)** | 1x Steel Rod (çıktı: 1x Shaft + 1x Metal Scrap) | Torna | `Gearbox`, `Electric Motor` |
+| **Steel Gear (Çelik Dişli)** | 1x Steel Rod (çıktı: 1x Steel Gear + 1x Metal Scrap) | CNC | Yüksek mukavemetli `Gearbox` montajı |
+| **Cast Iron Gear (Döküm Dişli)** | 1x Iron Ingot | Dökümhane | Döküm mekanik aksamlar |
+| **Bearing (Rulman)** | 1x Steel Rod (çıktı: 1x Bearing + 1x Metal Scrap) | CNC | `Gearbox`, `Electric Motor` |
+| **Copper Wire (Bakır Tel)** | 1x Copper Ingot (çıktı: 2) | Tel Çekme / Sarım | `Electromagnetic Coil`, `Circuit Board` |
+| **Metal Scrap (Metal Talaşı / Hurda)** | Torna & CNC talaşı | Fırınlar (Geri Dönüşüm) | Ergitme Fırını (`2x Scrap -> 1x Iron Ingot`) veya Çelik Fırını (`2x Scrap + 1x Coal -> 1x Steel Ingot`) |
+
+### 4. Katman: Alt Sistemler
+| Ürün | Girdiler | Makine | Not |
+|---|---|---|---|
+| **Steel Housing (Çelik Gövde)** | 2x Steel Plate + 2x Fasteners | Pres | Presleme montaj gövdesi |
+| **Cast Iron Housing (Döküm Gövde)** | 2x Iron Ingot | Dökümhane | Döküm ağır gövde |
+| **Electromagnetic Coil (Bobin)** | 2x Copper Wire + 1x Steel Rod | Tel Çekme / Sarım | `Electric Motor`, `Industrial Sensor` |
+| **Gearbox (Dişli Kutusu / Redüktör)** | 2x Gear + 1x Shaft + 2x Bearing + 1x Housing | Montaj İstasyonu | Mekanik aktarım alt sistemi |
+| **Circuit Board (Devre Kartı)** | 2x Copper Wire + 1x Industrial Glass | Elektronik Montaj | `Industrial Sensor`, `Control Unit` |
+| **Electric Motor (Elektrik Motoru)** | 2x Coil + 1x Shaft + 2x Bearing + 1x Housing | Montaj İstasyonu | Elektromekanik güç ünitesi |
+
+### 5. Katman: İleri Endüstriyel Ürünler
+| Ürün | Girdiler | Makine | Rolü |
+|---|---|---|---|
+| **Industrial Sensor (Endüstriyel Sensör)** | 1x Circuit Board + 1x Coil + 1x Industrial Glass | Hassas Montaj | `Precision Actuator`, `Control Unit` |
+| **Precision Actuator (Hassas Aktüatör)** | 1x Electric Motor + 1x Gearbox + 1x Industrial Sensor | Hassas Montaj | Ana Proje hedefleri, robotik genişleme |
+| **Control Unit (PLC / Kontrol Ünitesi)** | 1x Circuit Board + 1x Industrial Sensor + 1x Steel Plate + 2x Fasteners | Elektronik Montaj | Ana Proje hedefleri, otomasyon yönetimi |
 
 ---
 
-## Tasarım kesişimleri ve stratejik karar noktaları
+## Tasarım Kesişimleri ve K-017 Stratejik Etkileri
 
-1. **Ortak ara ürün darboğazları (K-006 paylaşım testi):**
-   - `9. Çelik Çubuk`; `Bağlantı Elemanı`, `Mil`, `Dişli`, `Rulman` ve `Bobin` hatları arasında paylaşılır.
-   - `12. Mil`, `14. Rulman` ve `17. Gövde`; hem `19. Dişli Kutusu` hem `21. Elektrik Motoru` tarafından aynı anda talep edilir.
-   - `15. Bakır Tel` ve `10. Endüstriyel Cam / Yalıtkan`; hem elektromekanik (`Bobin`) hem elektronik (`Devre Kartı`, `Sensör`) kollarını besler.
-2. **Alternatif proseslerle darboğaz çözme:**
-   - Oyuncu `Dişli` ve `Gövde` üretimini çelikten (`Çelik Çubuk` / `Çelik Levha`) **Dökümhane** (`Pik Demir`) hattına kaydırarak çelik haddeleme kapasitesini `Mil` ve `Rulman` için serbest bırakabilir.
-3. **Yan ürün döngüsü:**
-   - `Torna` ve `CNC` çalıştıkça çıkan `16. Metal Talaşı`, `Çelik Fırını`na geri beslenerek cevher ve pik demir ihtiyacını azaltır.
+1. **Reçete Başına Tek Çıktı ve Netlik:**
+   - Her ürünün tek bir tarifinin olması, oyuncunun makine kartını kurarken veya otomasyon kurarken kafa karışıklığı yaşamasını engeller.
+   - Dökümhane döküm parçaları (`Cast Iron Gear`, `Cast Iron Housing`), CNC ve Torna ise çelik talaşlı parçaları üretir.
+2. **Hammadde Seçimi ve Hat Yönetimi:**
+   - Oyuncu demir bazlı daha ucuz/hızlı döküm hattı ile çelik bazlı hassas/mukavim talaşlı imalat hattı arasında tercih yapar.
+   - Demir hattı (Levha, Çubuk, Boru) altyapı ve kaba montajlar için ana besleme kolu haline gelirken, çelik hattı hassas mekanik parçalar için kullanılır.
+3. **Geri Dönüşüm Dengesi:**
+   - Talaşlı imalattan çıkan `Metal Scrap`, kömür harcamadan `Iron Ingot`a veya kömür eklenerek `Steel Ingot`a geri dönüştürülebilir.
 
-İlgili notlar: [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Makine Kartları]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]].
+İlgili notlar: [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Makine Kartları]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]].

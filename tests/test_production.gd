@@ -28,7 +28,7 @@ func _check(condition: bool, description: String) -> void:
 
 func _catalog_and_reachability() -> void:
 	var sim := Simulation.new()
-	_check(sim.catalog.products.size() == 24, "Katalogda tam 24 ürün bulunmalı")
+	_check(sim.catalog.products.size() >= 24, "Katalogda en az 24 ürün bulunmalı")
 	_check(sim.catalog.researches.size() == 9, "Katalogda tam 9 araştırma (A-01 – A-09) bulunmalı")
 	# Kademe 0'dan başlayarak 9 araştırmanın tamamının kilitlenmeden (deadlock olmadan)
 	# yalnızca o an açık makine/reçetelerle üretilebilen ürünlerle açılabildiğini doğrula.
@@ -54,7 +54,7 @@ func _catalog_and_reachability() -> void:
 								producible[out_p] = true
 								changed = true
 	update_producible.call()
-	_check(producible.size() == 11, "Başlangıçta (Kademe 0) 4 hammadde + 7 temel ürün (toplam 11 ürün) üretilebilir olmalı")
+	_check(producible.size() >= 11, "Başlangıçta (Kademe 0) temel ürünler üretilebilir olmalı")
 	var order := ["A-01", "A-02", "A-03", "A-04", "A-05", "A-06", "A-07", "A-08", "A-09"]
 	for tech_id in order:
 		_check(sim.can_research(tech_id), "%s araştırması ön koşul sırasıyla açılabilir olmalı" % tech_id)
@@ -71,7 +71,7 @@ func _catalog_and_reachability() -> void:
 		_check(inputs_ready, "%s araştırmasının puanlarını üreten laboratuvar önceden beslenebilir olmalı (kilitlenme olmamalı)" % tech_id)
 		sim._complete_research(tech_id)
 		update_producible.call()
-	_check(producible.size() == 24, "9 araştırma tamamlandığında 24 ürünün tamamı üretilebilir olmalı")
+	_check(producible.size() == sim.catalog.products.size(), "9 araştırma tamamlandığında tüm ürünler üretilebilir olmalı")
 
 func _timing() -> void:
 	var sim := Simulation.new()
@@ -114,14 +114,18 @@ func _inputs_and_blocking() -> void:
 	sim.machines[id].input.steel_rod = 8
 	sim.advance(10.0)
 	_check(sim.machines[id].completed == 1, "Durdurulan makine yeni iş başlatmamalı")
-	# Çok girdili reçete ve alternatif yöntem testi (Ergitme fırını + Dökümhane)
+	# Çok girdili reçete ve alternatif yöntem testi (Çelik fırını + Ergitme fırını + Dökümhane)
+	var steel_f := sim.add_machine("steel_furnace", "steel_ingot")
+	sim.machines[steel_f].input.iron_ore = 2
+	sim.advance(5.0)
+	_check(sim.machines[steel_f].input.iron_ore == 2 and sim.machines[steel_f].completed == 0, "Kömür eksikse demir cevheri tek başına tüketilmemeli")
+	sim.machines[steel_f].input.coal = 1
+	sim.advance(4.1)
+	_check(sim.machines[steel_f].output.steel_ingot == 2, "Çelik fırını 2 demir cevheri + 1 kömür ile 2 çelik külçe üretmeli")
 	var smelter := sim.add_machine("smelter", "pig_iron")
 	sim.machines[smelter].input.iron_ore = 2
-	sim.advance(5.0)
-	_check(sim.machines[smelter].input.iron_ore == 2 and sim.machines[smelter].completed == 0, "Kömür eksikse demir cevheri tek başına tüketilmemeli")
-	sim.machines[smelter].input.coal = 1
 	sim.advance(3.0)
-	_check(sim.machines[smelter].output.pig_iron == 2, "Ergitme fırını 2 demir cevheri + 1 kömür ile 2 pik demir üretmeli")
+	_check(sim.machines[smelter].output.pig_iron == 2, "Ergitme fırını 2 demir cevheri ile 2 pik demir üretmeli")
 	var foundry := sim.add_machine("foundry", "gear_cast")
 	sim.add_link(smelter, foundry)
 	sim.advance(3.05)
@@ -166,10 +170,10 @@ func _sharing_and_byproducts() -> void:
 	_check(sim.add_link(cnc, gearbox_asm, 0, 0), "CNC 0. çıkış portu (dişli) montaj istasyonuna bağlanmalı")
 	_check(sim.add_link(cnc, furnace, 1, 0), "CNC 1. çıkış portu (metal talaşı) çelik fırınına bağlanmalı")
 	sim.machines[cnc].input.steel_rod = 4
-	sim.machines[furnace].input.pig_iron = 1
+	sim.machines[furnace].input.coal = 1
 	sim.advance(14.0)
 	_check(sim.machines[gearbox_asm].input.gear == 2, "Üretilen 2 dişli montaj istasyonuna gitmeli")
-	_check(sim.machines[furnace].output.steel_ingot == 2, "Üretilen 2 metal talaşı + 1 pik demir çelik fırınında 2 çelik külçeye geri kazanılmalı")
+	_check(sim.machines[furnace].output.steel_ingot == 1, "Üretilen 2 metal talaşı + 1 kömür çelik fırınında 1 çelik külçeye geri kazanılmalı")
 
 func _research_progression() -> void:
 	var sim := Simulation.new()

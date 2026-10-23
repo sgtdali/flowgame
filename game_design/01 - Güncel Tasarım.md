@@ -19,6 +19,8 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı kaydedildi (K-007):** 5 katmanlı 24 ilişkili ürün, bunları işleyen makine türleri (`Ergitme Fırını`, `Çelik Fırını`, `Haddehane`, `Pres`, `Torna`, `CNC`, `Dökümhane`, `Tel Çekme / Sarım Makinesi`, `Montaj İstasyonu`) ve 9 araştırmalık teknoloji ağacı (`A-01` – `A-09`) ilk taslak olarak belirlendi. Kalite sistemi (A/B/C) şu aşamada kapsam dışı bırakıldı. Sayısal reçete miktarları ve montaj makinelerinin alt ayrımı açıktır. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] ve [[Tasarım/Teknoloji Ağacı]] notlarındadır.
 
+**Tek reçete ve farklı ürün ilkesi (K-017):** Her ürünün tek bir ana üretim tarifi vardır; aynı ürün için alternatif tarifler tanımlanmaz. Farklı yöntemler veya hammaddeler (örneğin döküm vs talaşlı imalat, pik demir vs çelik) aynı işlev grubunda olsalar bile farklı ürünler oluşturur (`Cast Iron Gear` vs `Steel Gear`, `Cast Iron Housing` vs `Steel Housing`). Demir ergitme kömürsüz yapılırken, çelik ergitme kömür katkısıyla çalışır; demir kolu levha, çubuk ve boru gibi ara ürünlerle genişletilmiştir. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] notundadır.
+
 **Reçete seçimi (K-009, K-016):** Girdileri farklı reçeteli makinelerde (pres, tel sarım, montaj) oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde ve fırınlarda simgeli reçete ekranından ürün seçilir.
 
 **Makine kartı gösterimi (K-015):** Ürünler kartta çerçeveli kutularda adetle görünür; seçili reçetenin girdileri boş kutuda saydamdır; üretilen ürün çıktı kutusundan ayrı gösterilir.
@@ -29,7 +31,7 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 ## Üzerinde çalışılan yön
 
-Kullanıcı, alternatif prosesler fikrine olumlu yaklaşmıştır. Aynı ürünün farklı yöntemlerle üretilmesi; kapasite, kaynak verimi, kalite ve yan ürünler üzerinden kararlar doğurabilir. Bu yön olumlu karşılanmıştır; bütün alt kurallar onaylanmış değildir.
+Kullanıcı, farklı üretim yöntemleri fikrine olumlu yaklaşmıştır. K-017 kararıyla bu durum aynı ürüne alternatif reçete vermek yerine, her yöntemin farklı bir ürün üretmesi (döküm dişli vs çelik dişli) şeklinde somutlaştırılmıştır. Bu ürünlerin downstream tüketim ve performans dengeleri üzerinde çalışılmaktadır.
 
 Sonsuz canvas'ın sınırsız kaynak ve zahmetsiz kapasite artışına dönüşmesi bir tasarım sorunudur. Buna çözüm olarak ekonomik bölgeler ve kapasitesi sınırlı bölgeler arası taşımacılık önerilmiştir. Kullanıcı bunu “fena fikir değil” diye karşılamıştır; kesin bölge modeli, kaynak limitleri ve taşıma kuralları açık kalmıştır.
 

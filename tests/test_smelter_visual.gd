@@ -19,15 +19,15 @@ func _run() -> void:
 	main.graph.scroll_offset = Vector2(0, -10)
 	var id := "machine_3"
 	var card: GraphNode = main.cards[id].node
-	assert(card.get_input_port_count() == 2 and card.get_output_port_count() == 1)
+	assert(card.get_input_port_count() == 1 and card.get_output_port_count() == 1)
 	assert(card.get_input_port_type(0) == main.sim.product_port_type("iron_ore"))
-	assert(card.get_input_port_type(1) == main.sim.product_port_type("coal"))
+	
 	assert(card.get_output_port_type(0) == main.sim.product_port_type("pig_iron"))
 	# Two port rows split the 128px artwork: ports at 32 and 96 from its top.
 	var top: float = card.get_node("PortRow_0").position.y
-	assert(absf(card.get_input_port_position(0).y - (32 + top)) < 0.6)
-	assert(absf(card.get_input_port_position(1).y - (96 + top)) < 0.6)
-	assert(absf(card.get_output_port_position(0).y - (32 + top)) < 0.6)
+	assert(absf(card.get_input_port_position(0).y - (64 + top)) < 0.6)
+	
+	assert(absf(card.get_output_port_position(0).y - (64 + top)) < 0.6)
 	for recipe in ["copper_ingot", "insulator", "pig_iron"]:
 		main._change_machine_recipe(id, recipe)
 		await process_frame

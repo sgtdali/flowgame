@@ -23,7 +23,7 @@ guncelleme: 2026-10-23
 | S-012 | Araştırma değişirken çalışan deney ve ayrılmış malzeme ne olur? | Oyuncu kontrolü, kayıt | Çözüldü (K-008): laboratuvar araştırmadan bağımsız çalışır; değişim hatları bozmaz, puan depoda kalır |
 | S-013 | Para, satış veya sipariş var mı? | Ekonominin tüketicileri | Açık |
 | S-014 | Somut nihai proje ve ilk aşaması ne? | Uzun vadeli motivasyon | Açık |
-| S-015 | İlk prototipte hangi ürün ve hangi alternatif yöntemler denenir? | Üretimin anlamlı tercih üretmesi | İlk taslak seçildi (K-007): 24 ürünlük ağ, `Dişli` ve `Gövde` alternatif yöntemleri, `Metal Talaşı` geri kazanımı; sayısal değerler açık |
+| S-015 | İlk prototipte hangi ürün ve hangi alternatif yöntemler denenir? | Üretimin anlamlı tercih üretmesi | Çözüldü (K-007, K-017): Tek reçete ve farklı ürün ilkesi; döküm ve talaşlı ürünler (Cast Iron vs Steel) ayrıldı |
 | S-016 | İlk 60 dakika hangi başarılar ve darboğazlardan oluşur? | Öğrenme ve ilerleme temposu | Açık |
 | S-017 | Hedef cihaz ve kabul edilebilir simülasyon/arayüz performansı ne? | Ölçek bütçesi | Açık |
 | S-018 | Giriş/çıkış tamponlarının kapasitesi ne olacak? | Akış ve stok sınırı | Açık; tamponların varlığı K-005 ile onaylı |

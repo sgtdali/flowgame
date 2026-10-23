@@ -1,4 +1,4 @@
-param([switch]$Editor)
+param([switch]$Editor, [switch]$ChainEditor)
 $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $enginePath = $env:GODOT_PATH
@@ -10,4 +10,5 @@ if (-not (Test-Path -LiteralPath $enginePath -PathType Leaf)) {
 }
 $launchArgs = @('--path', ('"{0}"' -f $projectRoot))
 if ($Editor) { $launchArgs += '--editor' }
+if ($ChainEditor) { $launchArgs += 'res://app/chain_editor.tscn' }
 Start-Process -FilePath $enginePath -ArgumentList $launchArgs

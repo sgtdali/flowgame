@@ -1,221 +1,248 @@
 {
   "products": {
-    "iron_ore": {"name": "Demir cevheri", "tier": 1, "color": "c87d55"},
-    "copper_ore": {"name": "Bakır cevheri", "tier": 1, "color": "e08a4b"},
-    "coal": {"name": "Kömür", "tier": 1, "color": "7a8b99"},
-    "quartz": {"name": "Kuvars", "tier": 1, "color": "a8d5e5"},
-    "pig_iron": {"name": "Pik demir", "tier": 2, "color": "b58969"},
-    "steel_ingot": {"name": "Çelik külçe", "tier": 2, "color": "9ab4c7"},
-    "copper_ingot": {"name": "Bakır külçe", "tier": 2, "color": "e6955a"},
-    "steel_plate": {"name": "Çelik levha", "tier": 2, "color": "7fa6c4"},
-    "steel_rod": {"name": "Çelik çubuk", "tier": 2, "color": "8db8d0"},
-    "insulator": {"name": "Endüstriyel cam", "tier": 2, "color": "7fd4e6"},
-    "fastener": {"name": "Bağlantı elemanı", "tier": 3, "color": "a3bfd1"},
-    "shaft": {"name": "Mil", "tier": 3, "color": "87c5b8"},
-    "gear": {"name": "Dişli", "tier": 3, "color": "efb65a"},
-    "bearing": {"name": "Rulman", "tier": 3, "color": "e6c86e"},
-    "copper_wire": {"name": "Bakır tel", "tier": 3, "color": "f0a35e"},
-    "metal_scrap": {"name": "Metal talaşı", "tier": 3, "color": "8c9ba5"},
-    "housing": {"name": "Gövde", "tier": 4, "color": "6da8ba"},
-    "coil": {"name": "Elektromanyetik bobin", "tier": 4, "color": "f28d52"},
-    "gearbox": {"name": "Dişli kutusu", "tier": 4, "color": "e69f45"},
-    "circuit_board": {"name": "Devre kartı", "tier": 4, "color": "58c99c"},
-    "electric_motor": {"name": "Elektrik motoru", "tier": 4, "color": "52b5d8"},
-    "sensor": {"name": "Endüstriyel sensör", "tier": 5, "color": "61d8bb"},
-    "actuator": {"name": "Hassas aktüatör", "tier": 5, "color": "b98eff"},
-    "plc": {"name": "Kontrol ünitesi", "tier": 5, "color": "ff7a8a"}
+    "iron_ore": {"name": "Iron Ore", "tier": 1, "color": "c87d55"},
+    "copper_ore": {"name": "Copper Ore", "tier": 1, "color": "e08a4b"},
+    "coal": {"name": "Coal", "tier": 1, "color": "7a8b99"},
+    "quartz": {"name": "Quartz", "tier": 1, "color": "a8d5e5"},
+    "pig_iron": {"name": "Iron Ingot", "tier": 2, "color": "b58969"},
+    "iron_plate": {"name": "Iron Plate", "tier": 2, "color": "a68a71"},
+    "iron_rod": {"name": "Iron Rod", "tier": 2, "color": "b89c82"},
+    "iron_pipe": {"name": "Iron Pipe", "tier": 3, "color": "9c826b"},
+    "steel_ingot": {"name": "Steel Ingot", "tier": 2, "color": "9ab4c7"},
+    "copper_ingot": {"name": "Copper Ingot", "tier": 2, "color": "e6955a"},
+    "steel_plate": {"name": "Steel Plate", "tier": 2, "color": "7fa6c4"},
+    "steel_rod": {"name": "Steel Rod", "tier": 2, "color": "8db8d0"},
+    "insulator": {"name": "Industrial Glass", "tier": 2, "color": "7fd4e6"},
+    "fastener": {"name": "Fastener", "tier": 3, "color": "a3bfd1"},
+    "shaft": {"name": "Shaft", "tier": 3, "color": "87c5b8"},
+    "gear": {"name": "Gear", "tier": 3, "color": "efb65a"},
+    "bearing": {"name": "Bearing", "tier": 3, "color": "e6c86e"},
+    "copper_wire": {"name": "Copper Wire", "tier": 3, "color": "f0a35e"},
+    "metal_scrap": {"name": "Metal Scrap", "tier": 3, "color": "8c9ba5"},
+    "housing": {"name": "Housing", "tier": 4, "color": "6da8ba"},
+    "coil": {"name": "Electromagnetic Coil", "tier": 4, "color": "f28d52"},
+    "gearbox": {"name": "Gearbox", "tier": 4, "color": "e69f45"},
+    "circuit_board": {"name": "Circuit Board", "tier": 4, "color": "58c99c"},
+    "electric_motor": {"name": "Electric Motor", "tier": 4, "color": "52b5d8"},
+    "sensor": {"name": "Industrial Sensor", "tier": 5, "color": "61d8bb"},
+    "actuator": {"name": "Precision Actuator", "tier": 5, "color": "b98eff"},
+    "plc": {"name": "Control Unit (PLC)", "tier": 5, "color": "ff7a8a"}
   },
   "recipes": {
     "mine_iron": {
-      "name": "Demir cevheri çıkarımı",
+      "name": "Iron Ore Extraction",
       "inputs": {},
       "outputs": {"iron_ore": 1},
       "work": 40.0
     },
     "mine_copper": {
-      "name": "Bakır cevheri çıkarımı",
+      "name": "Copper Ore Extraction",
       "inputs": {},
       "outputs": {"copper_ore": 1},
       "work": 40.0
     },
     "mine_coal": {
-      "name": "Kömür çıkarımı",
+      "name": "Coal Extraction",
       "inputs": {},
       "outputs": {"coal": 1},
       "work": 40.0
     },
     "mine_quartz": {
-      "name": "Kuvars çıkarımı",
+      "name": "Quartz Extraction",
       "inputs": {},
       "outputs": {"quartz": 1},
       "work": 50.0
     },
     "pig_iron": {
-      "name": "Pik demir ergitme",
-      "inputs": {"iron_ore": 2, "coal": 1},
+      "name": "Iron Ingot Smelting",
+      "inputs": {"iron_ore": 2},
       "outputs": {"pig_iron": 2},
       "work": 60.0
     },
+    "iron_from_scrap": {
+      "name": "Iron Recovery from Scrap",
+      "inputs": {"metal_scrap": 2},
+      "outputs": {"pig_iron": 1},
+      "work": 50.0
+    },
+    "iron_plate": {
+      "name": "Iron Plate Rolling",
+      "inputs": {"pig_iron": 1},
+      "outputs": {"iron_plate": 1},
+      "work": 50.0
+    },
+    "iron_rod": {
+      "name": "Iron Rod Rolling",
+      "inputs": {"pig_iron": 1},
+      "outputs": {"iron_rod": 2},
+      "work": 50.0
+    },
+    "iron_pipe": {
+      "name": "Iron Pipe Forming",
+      "inputs": {"iron_plate": 1},
+      "outputs": {"iron_pipe": 1},
+      "work": 60.0
+    },
     "copper_ingot": {
-      "name": "Bakır külçe ergitme",
+      "name": "Copper Ingot Smelting",
       "inputs": {"copper_ore": 2},
       "outputs": {"copper_ingot": 2},
       "work": 60.0
     },
     "insulator": {
-      "name": "Endüstriyel cam / yalıtkan",
+      "name": "Industrial Glass Smelting",
       "inputs": {"quartz": 2},
       "outputs": {"insulator": 1},
       "work": 80.0
     },
     "steel_ingot": {
-      "name": "Çelik külçe üretimi",
-      "inputs": {"pig_iron": 2, "coal": 1},
+      "name": "Steel Ingot Production",
+      "inputs": {"iron_ore": 2, "coal": 1},
       "outputs": {"steel_ingot": 2},
       "work": 80.0
     },
     "steel_from_scrap": {
-      "name": "Talaştan çelik geri kazanımı",
-      "inputs": {"metal_scrap": 2, "pig_iron": 1},
-      "outputs": {"steel_ingot": 2},
+      "name": "Steel Recovery from Scrap",
+      "inputs": {"metal_scrap": 2, "coal": 1},
+      "outputs": {"steel_ingot": 1},
       "work": 60.0
     },
     "steel_plate": {
-      "name": "Çelik levha haddeleme",
+      "name": "Steel Plate Rolling",
       "inputs": {"steel_ingot": 1},
       "outputs": {"steel_plate": 1},
       "work": 60.0
     },
     "steel_rod": {
-      "name": "Çelik çubuk haddeleme",
+      "name": "Steel Rod Rolling",
       "inputs": {"steel_ingot": 1},
       "outputs": {"steel_rod": 2},
       "work": 60.0
     },
     "fastener": {
-      "name": "Bağlantı elemanı basımı",
+      "name": "Fastener Pressing",
       "inputs": {"steel_rod": 1},
       "outputs": {"fastener": 2},
       "work": 50.0
     },
     "housing_press": {
-      "name": "Gövde (Pres yöntemi)",
+      "name": "Housing (Pressing)",
       "inputs": {"steel_plate": 2, "fastener": 2},
       "outputs": {"housing": 1},
       "work": 80.0
     },
     "shaft": {
-      "name": "Mil tornalama",
+      "name": "Shaft Turning",
       "inputs": {"steel_rod": 2},
       "outputs": {"shaft": 1, "metal_scrap": 1},
       "work": 80.0
     },
     "gear_cnc": {
-      "name": "Dişli (CNC talaşlı imalat)",
+      "name": "Gear (CNC Machining)",
       "inputs": {"steel_rod": 2},
       "outputs": {"gear": 1, "metal_scrap": 1},
       "work": 100.0
     },
     "bearing": {
-      "name": "Rulman işleme",
+      "name": "Bearing Machining",
       "inputs": {"steel_rod": 2},
       "outputs": {"bearing": 1, "metal_scrap": 1},
       "work": 100.0
     },
     "gear_cast": {
-      "name": "Dişli (Döküm yöntemi)",
+      "name": "Gear (Casting)",
       "inputs": {"pig_iron": 2},
       "outputs": {"gear": 1},
       "work": 60.0
     },
     "housing_cast": {
-      "name": "Gövde (Döküm yöntemi)",
+      "name": "Housing (Casting)",
       "inputs": {"pig_iron": 3},
       "outputs": {"housing": 1},
       "work": 70.0
     },
     "copper_wire": {
-      "name": "Bakır tel çekme",
+      "name": "Copper Wire Drawing",
       "inputs": {"copper_ingot": 1},
       "outputs": {"copper_wire": 2},
       "work": 60.0
     },
     "coil": {
-      "name": "Elektromanyetik bobin sarımı",
+      "name": "Electromagnetic Coil Winding",
       "inputs": {"copper_wire": 2, "steel_rod": 1},
       "outputs": {"coil": 1},
       "work": 80.0
     },
     "gearbox": {
-      "name": "Dişli kutusu (Redüktör) montajı",
+      "name": "Gearbox Assembly",
       "inputs": {"gear": 2, "shaft": 1, "bearing": 1, "housing": 1},
       "outputs": {"gearbox": 1},
       "work": 120.0
     },
     "circuit_board": {
-      "name": "Devre kartı montajı",
+      "name": "Circuit Board Assembly",
       "inputs": {"copper_wire": 2, "insulator": 1},
       "outputs": {"circuit_board": 1},
       "work": 100.0
     },
     "electric_motor": {
-      "name": "Elektrik motoru montajı",
+      "name": "Electric Motor Assembly",
       "inputs": {"coil": 2, "shaft": 1, "bearing": 1, "housing": 1},
       "outputs": {"electric_motor": 1},
       "work": 140.0
     },
     "sensor": {
-      "name": "Endüstriyel sensör montajı",
+      "name": "Industrial Sensor Assembly",
       "inputs": {"circuit_board": 1, "coil": 1, "insulator": 1},
       "outputs": {"sensor": 1},
       "work": 140.0
     },
     "actuator": {
-      "name": "Hassas aktüatör (Servo kolu)",
+      "name": "Precision Actuator Assembly",
       "inputs": {"electric_motor": 1, "gearbox": 1, "sensor": 1},
       "outputs": {"actuator": 1},
       "work": 180.0
     },
     "plc": {
-      "name": "Kontrol ünitesi (PLC)",
+      "name": "Control Unit (PLC) Assembly",
       "inputs": {"circuit_board": 2, "sensor": 1, "steel_plate": 1, "fastener": 2},
       "outputs": {"plc": 1},
       "work": 180.0
     },
     "store": {
-      "name": "Depolama",
+      "name": "Storage",
       "inputs": {},
       "outputs": {},
       "work": 1.0
     },
     "dispose_scrap": {
-      "name": "Talaş bertarafı",
+      "name": "Scrap Disposal",
       "inputs": {"metal_scrap": 1},
       "outputs": {},
       "work": 20.0
     },
     "project_stage_1": {
-      "name": "Ana Proje: Otomasyon Çekirdeği",
+      "name": "Main Project: Automation Core",
       "inputs": {"actuator": 1, "plc": 1},
       "outputs": {},
       "work": 100.0
     },
     "points_k1": {
-      "name": "Kademe 1 puanı",
+      "name": "Tier 1 Points",
       "inputs": {"steel_plate": 1, "fastener": 1},
       "outputs": {},
       "research_points": {"k1": 1},
       "work": 40.0
     },
     "points_k2": {
-      "name": "Kademe 2 puanı",
+      "name": "Tier 2 Points",
       "inputs": {"gear": 1, "copper_wire": 1, "insulator": 1},
       "outputs": {},
       "research_points": {"k2": 1},
       "work": 40.0
     },
     "points_k3": {
-      "name": "Kademe 3 puanı",
+      "name": "Tier 3 Points",
       "inputs": {"circuit_board": 1, "coil": 1, "shaft": 1},
       "outputs": {},
       "research_points": {"k3": 1},
@@ -224,9 +251,9 @@
   },
   "machines": {
     "iron_mine": {
-      "name": "Demir madeni",
-      "role": "HAMMADDE KAYNAĞI",
-      "description": "Demir cevheri çıkarır. Pik demir üretiminin ana girdisidir.",
+      "name": "Iron Mine",
+      "role": "RAW RESOURCE",
+      "description": "Extracts Iron Ore for smelting into Iron Ingots.",
       "recipe": "mine_iron",
       "recipes": ["mine_iron"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
@@ -237,9 +264,9 @@
       "color": "c87d55"
     },
     "copper_mine": {
-      "name": "Bakır madeni",
-      "role": "HAMMADDE KAYNAĞI",
-      "description": "Bakır cevheri çıkarır. İletken ve elektronik zincirini besler.",
+      "name": "Copper Mine",
+      "role": "RAW RESOURCE",
+      "description": "Extracts Copper Ore for conductive and electronic chains.",
       "recipe": "mine_copper",
       "recipes": ["mine_copper"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
@@ -250,9 +277,9 @@
       "color": "e08a4b"
     },
     "coal_mine": {
-      "name": "Kömür madeni",
-      "role": "HAMMADDE KAYNAĞI",
-      "description": "Ergitme ve çelik fırınları için kömür sağlar.",
+      "name": "Coal Mine",
+      "role": "RAW RESOURCE",
+      "description": "Provides Coal for steel production and furnaces.",
       "recipe": "mine_coal",
       "recipes": ["mine_coal"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
@@ -263,9 +290,9 @@
       "color": "7a8b99"
     },
     "quartz_quarry": {
-      "name": "Kuvars ocağı",
-      "role": "HAMMADDE KAYNAĞI",
-      "description": "Endüstriyel cam ve yalıtkan üretimi için kuvars çıkarır.",
+      "name": "Quartz Quarry",
+      "role": "RAW RESOURCE",
+      "description": "Extracts Quartz for Industrial Glass production.",
       "recipe": "mine_quartz",
       "recipes": ["mine_quartz"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
@@ -276,11 +303,11 @@
       "color": "a8d5e5"
     },
     "smelter": {
-      "name": "Ergitme fırını",
-      "role": "METALÜRJİ MAKİNESİ",
-      "description": "Cevher ve kuvarsı ergiterek pik demir, bakır külçe veya endüstriyel cam üretir.",
+      "name": "Smelter",
+      "role": "METALLURGY",
+      "description": "Smelts ores and quartz into Iron Ingot, Copper Ingot, or Industrial Glass.",
       "recipe": "pig_iron",
-      "recipes": ["pig_iron", "copper_ingot", "insulator"],
+      "recipes": ["pig_iron", "iron_from_scrap", "copper_ingot", "insulator"],
       "recipe_mode": "choose",
       "build_cost": {"steel_plate": 4, "steel_ingot": 4},
       "speed": 20.0,
@@ -289,9 +316,9 @@
       "color": "d9824b"
     },
     "steel_furnace": {
-      "name": "Çelik fırını",
-      "role": "METALÜRJİ MAKİNESİ",
-      "description": "Pik demir ve kömürden veya metal talaşı geri kazanımıyla çelik külçe üretir.",
+      "name": "Steel Furnace",
+      "role": "METALLURGY",
+      "description": "Produces Steel Ingots from Iron Ingots and Coal, or by recycling Metal Scrap.",
       "recipe": "steel_ingot",
       "recipes": ["steel_ingot", "steel_from_scrap"],
       "recipe_mode": "choose",
@@ -302,11 +329,11 @@
       "color": "9ab4c7"
     },
     "rolling_mill": {
-      "name": "Haddehane",
-      "role": "ŞEKİLLENDİRME MAKİNESİ",
-      "description": "Çelik külçeyi haddelenmiş çelik levha veya çelik çubuğa dönüştürür.",
+      "name": "Rolling Mill",
+      "role": "FORMING",
+      "description": "Rolls ingots into plates, rods, or pipes.",
       "recipe": "steel_rod",
-      "recipes": ["steel_plate", "steel_rod"],
+      "recipes": ["iron_plate", "iron_rod", "iron_pipe", "steel_plate", "steel_rod"],
       "build_cost": {"steel_plate": 6, "fastener": 4},
       "handcraft": true,
       "speed": 20.0,
@@ -315,9 +342,9 @@
       "color": "7fa6c4"
     },
     "press": {
-      "name": "Pres",
-      "role": "İMALAT MAKİNESİ",
-      "description": "Çelik çubuktan bağlantı elemanı veya çelik levhadan pres gövde üretir.",
+      "name": "Press",
+      "role": "MANUFACTURING",
+      "description": "Presses Fasteners from Steel Rods or Housings from Steel Plates.",
       "recipe": "fastener",
       "recipes": ["fastener", "housing_press"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
@@ -328,9 +355,9 @@
       "color": "a3bfd1"
     },
     "lathe": {
-      "name": "Torna",
-      "role": "TALAŞLI İMALAT",
-      "description": "Çelik çubuğu işleyerek mil üretir; yan ürün olarak metal talaşı çıkarır.",
+      "name": "Lathe",
+      "role": "MACHINING",
+      "description": "Turns Steel Rods into Shafts and produces Metal Scrap as a byproduct.",
       "recipe": "shaft",
       "recipes": ["shaft"],
       "build_cost": {"steel_plate": 4, "steel_rod": 4, "fastener": 4},
@@ -341,9 +368,9 @@
       "color": "87c5b8"
     },
     "cnc": {
-      "name": "CNC tezgâhı",
-      "role": "TALAŞLI İMALAT",
-      "description": "Çelik çubuktan yüksek hassasiyetli dişli veya rulman işler; metal talaşı çıkarır.",
+      "name": "CNC Machine",
+      "role": "MACHINING",
+      "description": "Machines precision Gears or Bearings from Steel Rods; outputs Metal Scrap.",
       "recipe": "gear_cnc",
       "recipes": ["gear_cnc", "bearing"],
       "build_cost": {"steel_plate": 6, "steel_rod": 4, "fastener": 6},
@@ -354,9 +381,9 @@
       "color": "efb65a"
     },
     "foundry": {
-      "name": "Dökümhane",
-      "role": "ALTERNATİF İMALAT",
-      "description": "Pik demirden doğrudan döküm dişli ve döküm gövde üreterek çelik darboğazını çözer.",
+      "name": "Foundry",
+      "role": "CASTING",
+      "description": "Casts Gears and Housings directly from Iron Ingots to relieve steel bottlenecks.",
       "recipe": "gear_cast",
       "recipes": ["gear_cast", "housing_cast"],
       "build_cost": {"steel_plate": 6, "steel_ingot": 6},
@@ -366,9 +393,9 @@
       "color": "d47a55"
     },
     "wire_winder": {
-      "name": "Tel çekme ve sarım",
-      "role": "ELEKTROMEKANİK",
-      "description": "Bakır külçeden bakır tel çeker ve elektromanyetik bobin sarar.",
+      "name": "Wire Winder",
+      "role": "ELECTROMECHANICAL",
+      "description": "Draws Copper Wire from Copper Ingots and winds Electromagnetic Coils.",
       "recipe": "copper_wire",
       "recipes": ["copper_wire", "coil"],
       "build_cost": {"steel_plate": 4, "gear": 2, "fastener": 4},
@@ -379,9 +406,9 @@
       "color": "f0a35e"
     },
     "assembler": {
-      "name": "Montaj istasyonu",
-      "role": "MONTAJ VE SİSTEM",
-      "description": "Alt sistemleri (dişli kutusu, devre kartı, elektrik motoru, sensör, aktüatör, PLC) birleştirir.",
+      "name": "Assembly Station",
+      "role": "ASSEMBLY",
+      "description": "Assembles Gearboxes, Circuit Boards, Electric Motors, Sensors, Actuators, and PLCs.",
       "recipe": "gearbox",
       "recipes": ["gearbox", "circuit_board", "electric_motor", "sensor", "actuator", "plc"],
       "build_cost": {"steel_plate": 8, "gear": 4, "fastener": 8},
@@ -392,9 +419,9 @@
       "color": "58c99c"
     },
     "scrap_disposal": {
-      "name": "Talaş bertaraf ünitesi",
-      "role": "ATIK YÖNETİMİ",
-      "description": "Geri kazanım kurulmadan önce fazla metal talaşını eritip tahliye eder.",
+      "name": "Scrap Disposal",
+      "role": "WASTE MANAGEMENT",
+      "description": "Disposes of excess Metal Scrap before steel recycling is set up.",
       "recipe": "dispose_scrap",
       "recipes": ["dispose_scrap"],
       "build_cost": {"steel_plate": 3, "fastener": 2},
@@ -404,9 +431,9 @@
       "color": "8c9ba5"
     },
     "storage": {
-      "name": "Depo",
-      "role": "DEPOLAMA",
-      "description": "Bağlanan her ürünü biriktirir; oyuncu istediğini envantere alır.",
+      "name": "Storage",
+      "role": "STORAGE",
+      "description": "Stores connected products; click to transfer into player inventory.",
       "recipe": "store",
       "recipes": ["store"],
       "build_cost": {"steel_plate": 4, "fastener": 2},
@@ -417,9 +444,9 @@
       "color": "c8913c"
     },
     "lab_1": {
-      "name": "Laboratuvar 1",
-      "role": "ARAŞTIRMA",
-      "description": "Çelik levha ve bağlantı elemanı tüketerek Kademe 1 araştırma puanı üretir.",
+      "name": "Lab 1",
+      "role": "RESEARCH",
+      "description": "Consumes Steel Plates and Fasteners to generate Tier 1 research points.",
       "recipe": "points_k1",
       "recipes": ["points_k1"],
       "build_cost": {"steel_plate": 6, "fastener": 6},
@@ -429,9 +456,9 @@
       "color": "efb65a"
     },
     "lab_2": {
-      "name": "Laboratuvar 2",
-      "role": "ARAŞTIRMA",
-      "description": "Dişli, bakır tel ve endüstriyel cam tüketerek Kademe 2 araştırma puanı üretir.",
+      "name": "Lab 2",
+      "role": "RESEARCH",
+      "description": "Consumes Gears, Copper Wire, and Industrial Glass to generate Tier 2 research points.",
       "recipe": "points_k2",
       "recipes": ["points_k2"],
       "build_cost": {"steel_plate": 6, "gear": 4, "copper_wire": 6},
@@ -441,9 +468,9 @@
       "color": "61d8bb"
     },
     "lab_3": {
-      "name": "Laboratuvar 3",
-      "role": "ARAŞTIRMA",
-      "description": "Devre kartı, bobin ve mil tüketerek Kademe 3 araştırma puanı üretir.",
+      "name": "Lab 3",
+      "role": "RESEARCH",
+      "description": "Consumes Circuit Boards, Coils, and Shafts to generate Tier 3 research points.",
       "recipe": "points_k3",
       "recipes": ["points_k3"],
       "build_cost": {"steel_plate": 8, "circuit_board": 4, "coil": 4},
@@ -453,9 +480,9 @@
       "color": "52b5d8"
     },
     "project_hub": {
-      "name": "Ana proje terminali",
-      "role": "ANA HEDEF TÜKETİCİSİ",
-      "description": "Hassas aktüatör ve kontrol ünitelerini tüketerek ana proje aşamasını ilerletir.",
+      "name": "Project Hub",
+      "role": "MAIN GOAL",
+      "description": "Consumes Precision Actuators and Control Units (PLCs) to advance the Main Project.",
       "recipe": "project_stage_1",
       "recipes": ["project_stage_1"],
       "build_cost": {"steel_plate": 20, "gearbox": 4, "circuit_board": 6},
@@ -466,7 +493,7 @@
     }
   },
   "initial_unlocked_machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry", "smelter", "steel_furnace", "rolling_mill", "press", "scrap_disposal", "lab_1", "storage"],
-  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
+  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "iron_plate", "iron_rod", "iron_pipe", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
   "hand_speed": 10.0,
   "machine_build_work": 50.0,
   "starting_inventory": {
@@ -475,99 +502,99 @@
   },
   "researches": {
     "A-01": {
-      "name": "A-01: Talaşlı İmalat",
+      "name": "A-01: Machining",
       "tier": 1,
       "category": "mekanik",
       "prerequisites": [],
       "cost": {"k1": 30},
       "unlock_machines": ["lathe", "cnc"],
       "unlock_recipes": ["shaft", "gear_cnc", "bearing"],
-      "description": "Torna ve CNC tezgâhlarını açar; mil, dişli ve rulman imalatını başlatır."
+      "description": "Unlocks Lathe and CNC Machine; enables Shaft, Gear, and Bearing machining."
     },
     "A-02": {
-      "name": "A-02: Döküm ve Geri Kazanım",
+      "name": "A-02: Casting & Recycling",
       "tier": 1,
       "category": "malzeme",
       "prerequisites": [],
       "cost": {"k1": 30},
       "unlock_machines": ["foundry"],
-      "unlock_recipes": ["gear_cast", "housing_cast", "steel_from_scrap"],
-      "description": "Dökümhaneyi ve metal talaşından çelik geri kazanım reçetesini açar."
+      "unlock_recipes": ["gear_cast", "housing_cast", "iron_from_scrap", "steel_from_scrap"],
+      "description": "Unlocks Foundry casting for Gears/Housings and Steel recovery from Metal Scrap."
     },
     "A-03": {
-      "name": "A-03: İletkenler ve Yalıtım",
+      "name": "A-03: Conductors & Insulation",
       "tier": 1,
       "category": "elektrik",
       "prerequisites": [],
       "cost": {"k1": 30},
       "unlock_machines": ["wire_winder", "lab_2"],
       "unlock_recipes": ["copper_wire", "insulator"],
-      "description": "Tel çekme/sarım makinesini, bakır tel ve endüstriyel cam reçetelerini açar."
+      "description": "Unlocks Wire Winder, Copper Wire drawing, and Industrial Glass smelting."
     },
     "A-04": {
-      "name": "A-04: Mekanik Aktarma Sistemleri",
+      "name": "A-04: Mechanical Transmission",
       "tier": 2,
       "category": "mekanik",
       "prerequisites": ["A-01"],
       "cost": {"k1": 60, "k2": 30},
       "unlock_machines": ["assembler"],
       "unlock_recipes": ["gearbox"],
-      "description": "Montaj istasyonunu ve dişli kutusu (redüktör) üretimini açar."
+      "description": "Unlocks Assembly Station and Gearbox production."
     },
     "A-05": {
-      "name": "A-05: Elektromanyetik Sarım",
+      "name": "A-05: Electromagnetic Winding",
       "tier": 2,
       "category": "elektrik",
       "prerequisites": ["A-03"],
       "cost": {"k1": 60, "k2": 30},
       "unlock_machines": [],
       "unlock_recipes": ["coil"],
-      "description": "Bakır tel ve çelik çubuktan elektromanyetik bobin sarımını açar."
+      "description": "Unlocks Electromagnetic Coil winding from Copper Wire and Steel Rod."
     },
     "A-06": {
-      "name": "A-06: Elektrik Motorları",
+      "name": "A-06: Electric Motors",
       "tier": 2,
       "category": "elektrik",
       "prerequisites": ["A-04", "A-05"],
       "cost": {"k1": 60, "k2": 60},
       "unlock_machines": [],
       "unlock_recipes": ["electric_motor"],
-      "description": "Bobin, mil, rulman ve gövdeyi birleştirerek elektrik motoru montajını açar."
+      "description": "Combines Coil, Shaft, Bearing, and Housing to assemble Electric Motors."
     },
     "A-07": {
-      "name": "A-07: Temel Elektronik",
+      "name": "A-07: Basic Electronics",
       "tier": 2,
       "category": "kontrol",
       "prerequisites": ["A-03"],
       "cost": {"k1": 50, "k2": 40},
       "unlock_machines": ["assembler", "lab_3"],
       "unlock_recipes": ["circuit_board"],
-      "description": "Bakır tel ve endüstriyel camdan devre kartı üretimini açar."
+      "description": "Unlocks Circuit Board assembly from Copper Wire and Industrial Glass."
     },
     "A-08": {
-      "name": "A-08: Endüstriyel Algılama",
+      "name": "A-08: Industrial Sensing",
       "tier": 3,
       "category": "kontrol",
       "prerequisites": ["A-05", "A-07"],
       "cost": {"k2": 40, "k3": 30},
       "unlock_machines": [],
       "unlock_recipes": ["sensor"],
-      "description": "Devre kartı, bobin ve endüstriyel cam ile endüstriyel sensör üretimini açar."
+      "description": "Unlocks Industrial Sensor assembly."
     },
     "A-09": {
-      "name": "A-09: Otomasyon ve Kontrol Sistemleri",
+      "name": "A-09: Automation & Control",
       "tier": 3,
       "category": "kontrol",
       "prerequisites": ["A-06", "A-08"],
       "cost": {"k2": 60, "k3": 60},
       "unlock_machines": ["project_hub"],
       "unlock_recipes": ["actuator", "plc", "project_stage_1"],
-      "description": "Hassas aktüatör (servo kolu), kontrol ünitesi (PLC) ve Ana Proje terminalini açar."
+      "description": "Unlocks Precision Actuator, Control Unit (PLC), and Project Hub."
     }
   },
   "research_tiers": [
-    {"id": "k1", "name": "Kademe 1", "color": "efb65a"},
-    {"id": "k2", "name": "Kademe 2", "color": "61d8bb"},
-    {"id": "k3", "name": "Kademe 3", "color": "52b5d8"}
+    {"id": "k1", "name": "Tier 1", "color": "efb65a"},
+    {"id": "k2", "name": "Tier 2", "color": "61d8bb"},
+    {"id": "k3", "name": "Tier 3", "color": "52b5d8"}
   ]
 }

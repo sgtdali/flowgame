@@ -87,6 +87,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Gerekçe:** Ürünlerin ortak ara girdiler üzerinden paylaşım kararları (K-006) üretmesi, alternatif yöntemlere (`Dişli` ve `Gövde` için talaşlı/pres vs. döküm) ve yan ürün geri kazanımına (`Metal Talaşı`) zemin hazırlaması.
 - **Sınır:** İlk taslak niteliğindedir. Reçetelerin girdi/çıktı sayıları, gereken iş miktarları (K-005), makine hızları, araştırma deney sayıları/süreleri ve montaj makinelerinin tek veya üç ayrı makine türü olması henüz sabitlenmemiştir.
 - **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Teknoloji Ağacı]].
+- **Değişiklik:** K-017 ile aynı ürüne alternatif yöntem (ör. döküm dişli vs CNC dişli) yerine "tek reçete ve farklı ürünler" (Cast Iron Gear vs Steel Gear) ilkesi benimsendi.
 
 ## K-008 — Kademeli laboratuvarlar ve depolanabilir araştırma puanı
 
@@ -187,11 +188,27 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Sınır:** Pres, tel sarım ve montaj istasyonunda K-009'daki otomatik seçim sürer.
 - **Asıl not:** [[Tasarım/Makine Kartları]].
 
+## K-017 — Tek reçete ve farklı ürün ilkesi
+
+- **Durum:** Onaylı; K-007'deki "aynı ürüne alternatif üretim yöntemi" yaklaşımının yerine geçer.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. **Her ürünün tek bir ana tarifi/reçetesi vardır:** Hurda geri kazanım gibi döngüsel yan durumlar haricinde, aynı ürün için birden fazla alternatif üretim yolu tanımlanmaz.
+  2. **Farklı yöntemler veya hammaddeler farklı ürünler üretir:** Aynı parça ailesi olsa bile, döküm veya talaşlı imalat gibi farklı yöntemlerden ya da pik demir vs. çelik gibi farklı alaşımlardan gelen çıktılar ayrı ürün kimliklerine sahip olur (Örn: `Cast Iron Gear` ve `Steel Gear`; `Cast Iron Housing` ve `Steel Housing`). Her birinin kendi tekil reçetesi bulunur.
+  3. **Demir ve çelik kollarının net ayrımı:**
+     - `Iron Ingot` kömürsüz eritilir (`2x Iron Ore -> 2x Iron Ingot` Ergitme Fırınında).
+     - `Steel Ingot` kömür katkısıyla üretilir (`2x Iron Ore + 1x Coal -> 2x Steel Ingot` Çelik Fırınında).
+     - Hurda geri dönüşümü: `2x Metal Scrap -> 1x Iron Ingot`, `2x Metal Scrap + 1x Coal -> 1x Steel Ingot`.
+     - Demir ara mamulleri: `Iron Plate` (`1x Iron Ingot -> 1x Iron Plate`), `Iron Rod` (`1x Iron Ingot -> 2x Iron Rod`), `Iron Pipe` (`1x Iron Plate -> 1x Iron Pipe`).
+- **Kaynak:** Kullanıcının “Cast Iron Gear Steel Gear zaten 2 farklı ürün oluyor. bunlarında kendi tarifleri oluyor... her ürünün tek tarifi olsun. zaten Cast Iron Gear Steel Gear farklı ürünler olduğu için bunlarında kendi tarifleri olacak. dökümanları bu şekilde güncelle” yönlendirmesi.
+- **Gerekçe:** Ürün zincirini zengin ve detaylı kılarken makinelerin aynı ürün için gereksiz çoklu tariflerle karmaşıklaşmasını önlemek.
+- **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]].
+
 ## Henüz karar olmayan yönler
 
 | Konu | Kanıt düzeyi | Ayrıntı |
 |---|---|---|
-| Alternatif prosesler | Kullanıcı olumlu karşılamış | Kalite, yan ürün ve yöntem dengeleri öneri. |
+| Alternatif proses dengeleri | Kullanıcı olumlu karşılamış | K-017 ile farklı ürünler (Cast Iron vs Steel) üzerinden tekil tarifler belirlendi; nihai tüketici/performans dengeleri açık. |
 | Bölgesel kaynak ve lojistik | Kullanıcı temkinli olumlu karşılamış | Bölge sistemi ve maliyetler kesinleşmemiş. |
 | Aynı kartta paralel makineler | Asistan önerisi | Kullanıcı seçimi yok. |
 | Ana proje ve ürünlerin üç tüketiciye ayrılması | Asistan önerisi | Ana hedef ve tüketim üçgeni açık; genel paylaşım kuralı K-006 ile onaylı. |

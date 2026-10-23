@@ -93,4 +93,9 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-014: Envanterden makine girişine elle ürün koyma onaylandı; prototipte sürükle-bırak (sığdığı kadar, Shift: 1).
 - K-015: Kartta ürünler çerçeveli kutularda adetle gösterilir (0'da boş, depolar dahil bar yok); seçili reçetenin girdileri boş kutuda saydam simgedir (silüet ayırt edilemediği için değiştirildi); üretilen ürün başlıkta.
 - K-016: Fırınlarda reçeteyi oyuncu seçer; K-009'un fırın kısmı değişti olarak işaretlendi. Otomatik reçete testi tel sarım ve montaj üzerinden yeniden yazıldı.
-- Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[01 - Güncel Tasarım]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
+- Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[01 - Güncel Tasarım]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
+## 2026-10-23 — Tek reçete ve farklı ürün ilkesi
+
+- K-017: Her ürünün tek bir ana reçetesi olması kuralı getirildi. Aynı ürün için makinelerde alternatif reçete seçimi kaldırıldı; döküm veya talaşlı imalat gibi farklı yöntem ve malzemeler farklı ürünler (`Cast Iron Gear` vs `Steel Gear`, `Cast Iron Housing` vs `Steel Housing`) olarak ayrıldı.
+- Demir ve çelik kolları netleştirildi: `Iron Ore -> Iron Ingot` (ergitme, kömürsüz); `Iron Ore + Coal -> Steel Ingot` (çelik fırını); talaş/hurda fırınlara geri beslenir. Demir kolu `Iron Plate`, `Iron Rod` ve `Iron Pipe` ara ürünleriyle genişletildi.
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[01 - Güncel Tasarım]], [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Yönetim/Açık Sorular]].

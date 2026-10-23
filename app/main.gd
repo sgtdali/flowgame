@@ -503,7 +503,7 @@ func build_sample_network() -> void:
 	sim.add_link(iron_mine, smelter)
 	sim.add_link(coal_mine, smelter)
 	sim.add_link(coal_mine, steel_furnace)
-	sim.add_link(smelter, steel_furnace)
+	sim.add_link(iron_mine, steel_furnace)
 	sim.add_link(steel_furnace, mill_plate)
 	sim.add_link(steel_furnace, mill_rod)
 	sim.add_link(mill_plate, lab)

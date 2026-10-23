@@ -26,7 +26,7 @@ func _initialize() -> void:
 	_check(sim.input_products(smelter) == ["copper_ore"], "Seçilen reçetenin girişleri görünmeli")
 	var iron_mine := sim.add_machine("iron_mine")
 	_check(not sim.add_link(iron_mine, smelter), "Seçili reçeteye uymayan cevher bağlanmamalı")
-	_check(sim.set_recipe(smelter, "pig_iron") and sim.input_products(smelter) == ["iron_ore", "coal"], "Reçete değişince girişler değişmeli")
+	_check(sim.set_recipe(smelter, "pig_iron") and sim.input_products(smelter) == ["iron_ore"], "Reçete değişince girişler değişmeli")
 
 	# Wire winder: the linked product picks the recipe; the last one stays when the link goes.
 	var winder := sim.add_machine("wire_winder")

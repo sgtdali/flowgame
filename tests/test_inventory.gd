@@ -89,7 +89,7 @@ func _empty_start() -> void:
 	sim.add_link(iron, smelter)
 	sim.add_link(coal, smelter)
 	sim.add_link(coal, furnace)
-	sim.add_link(smelter, furnace)
+	sim.add_link(iron, furnace)
 	sim.advance(120.0)
 	var ingots := sim.take(furnace, "steel_ingot")
 	_check(ingots >= 8, "Çelik hattı külçe vermeli (%d)" % ingots)
@@ -115,7 +115,7 @@ func _hand_feeding() -> void:
 	# Only what fits leaves the inventory.
 	_check(sim.deposit(smelter, "iron_ore") == 12 and sim.inventory.iron_ore == 8, "Sığdığı kadar cevher konmalı (kapasite 12)")
 	_check(sim.can_deposit(smelter, "copper_ore") == 0, "Pik demir reçetesine bakır cevheri konmamalı")
-	_check(sim.deposit(smelter, "coal", 1) == 1 and sim.inventory.coal == 2, "İstenen adet kadar konmalı")
+	var sf := sim.place_machine("steel_furnace", "steel_ingot"); _check(sim.deposit(sf, "coal", 1) == 1 and sim.inventory.coal == 2, "İstenen adet kadar konmalı")
 	sim.advance(3.1)
 	_check(sim.machines[smelter].output.get("pig_iron", 0) == 2, "Elle beslenen fırın bağlantısız çalışmalı")
 	var depot := sim.place_machine("storage")

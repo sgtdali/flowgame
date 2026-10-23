@@ -4,20 +4,62 @@ extends RefCounted
 
 const PRODUCTS := preload("res://app/art/ui/product_icons.png")
 const SIZE := 32
+const ATLAS_ORDER := [
+	"iron_ore", "copper_ore", "coal", "quartz",
+	"pig_iron", "steel_ingot", "copper_ingot", "steel_plate",
+	"steel_rod", "insulator", "fastener", "shaft",
+	"gear", "bearing", "copper_wire", "metal_scrap",
+	"housing", "coil", "gearbox", "circuit_board",
+	"electric_motor", "sensor", "actuator", "plc"
+]
 
 static var _cache: Dictionary = {}
 
-static func product(sim: RefCounted, product_id: String) -> Texture2D:
-	if _cache.has(product_id):
-		return _cache[product_id]
-	var index: int = sim.catalog.products.keys().find(product_id)
-	if index < 0:
+static func clear_cache() -> void:
+	_cache.clear()
+
+static func atlas_icon(index: int) -> Texture2D:
+	var count := int(PRODUCTS.get_width() / SIZE)
+	if index < 0 or index >= count:
 		return null
 	var atlas := AtlasTexture.new()
 	atlas.atlas = PRODUCTS
 	atlas.region = Rect2(index * SIZE, 0, SIZE, SIZE)
-	_cache[product_id] = atlas
 	return atlas
+
+static func _generated_product_icon(color_hex: String) -> Texture2D:
+	var img := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
+	img.fill(Color.TRANSPARENT)
+	var base := Color.from_string(color_hex, Color("7fa6c4"))
+	var light := base.lightened(0.32)
+	var dark := base.darkened(0.38)
+	var border := Color("0d161d")
+	for y in range(5, 27):
+		for x in range(5, 27):
+			var dx := absi(x - 15) + absi(y - 15)
+			if dx <= 12:
+				if dx >= 11 or x == 5 or x == 26 or y == 5 or y == 26:
+					img.set_pixel(x, y, border)
+				elif x + y < 28:
+					img.set_pixel(x, y, light)
+				elif x + y > 33:
+					img.set_pixel(x, y, dark)
+				else:
+					img.set_pixel(x, y, base)
+	return ImageTexture.create_from_image(img)
+
+static func product(sim: RefCounted, product_id: String) -> Texture2D:
+	if _cache.has(product_id):
+		return _cache[product_id]
+	if not sim.catalog.products.has(product_id):
+		return null
+	var spec: Dictionary = sim.catalog.products[product_id]
+	var index: int = int(spec.get("icon_index", ATLAS_ORDER.find(product_id)))
+	var tex := atlas_icon(index)
+	if tex == null:
+		tex = _generated_product_icon(str(spec.get("color", "7fa6c4")))
+	_cache[product_id] = tex
+	return tex
 
 ## First frame of a machine's 128x128 artwork, for inventory and craft slots.
 static func machine(art_path: String) -> Texture2D:

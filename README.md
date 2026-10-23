@@ -4,9 +4,10 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 
 ## Başlatma
 
-Windows'ta `Baslat.cmd` dosyasına çift tıkla. Başlatıcı, projenin üst klasöründeki `Godot_v4.7.2-stable_win64.exe` dosyasını kullanır. Başka konum için `GODOT_PATH` ortam değişkenini ayarla.
-
-Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve F5 ile çalıştır. Alternatif: `powershell -File tools/launch.ps1 -Editor`.
+- **Oyun:** Windows'ta `Baslat.cmd` dosyasına çift tıkla.
+- **Üretim Zinciri Editörü (Bağımsız Tasarım Aracı):** `ZincirEditoru.cmd` dosyasına çift tıkla (veya `powershell -File tools/launch.ps1 -ChainEditor`). Ürünlerin birbirleriyle olan girdi/çıktı bağlarını, adetlerini, alternatif reçetelerini, makinelerini, iş yüklerini, yan ürünlerini ve araştırma kilitlerini node editör üzerinde düzenler; **Kaydet (`Ctrl+S`)** ile doğrudan `data/prototype.json` dosyasına aktarır.
+- Başlatıcı, projenin üst klasöründeki `Godot_v4.7.2-stable_win64.exe` dosyasını kullanır. Başka konum için `GODOT_PATH` ortam değişkenini ayarla.
+- Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve F5 ile çalıştır. Alternatif: `powershell -File tools/launch.ps1 -Editor`.
 
 ## Oyunun başı
 
@@ -36,12 +37,13 @@ Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve 
 
 - `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
 - `data/prototype.json`: 24 ürün, 19 makine türü, 32 reçete, 9 araştırma, başlangıç kiti, kurulum bedelleri.
+- `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
 - `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).
 - `app/craft_screen.gd`: üretim ekranı. `app/inventory_window.gd`, `app/inventory_bar.gd`, `app/inventory_slot.gd`: envanter penceresi, hızlı erişim çubuğu ve ortak yuva.
 - `app/machine_menu.gd`, `app/recipe_picker.gd`, `app/research_panel.gd`: kart menüsü, reçete ekranı, araştırma paneli.
 - `app/icons.gd`, `app/art/`: ürün simgeleri ve makine görselleri. Kaynakları ve çizim kuralları `art_src/` altında (`art_src/STANDART.md`).
-- `tests/`: `test_production.gd`, `test_inventory.gd`, `test_auto_recipe.gd`, `test_mine_visual.gd`, `test_smelter_visual.gd`.
+- `tests/`: `test_production.gd`, `test_inventory.gd`, `test_auto_recipe.gd`, `test_chain_editor.gd`, `test_mine_visual.gd`, `test_smelter_visual.gd`.
 - `game_design/`: Obsidian tasarım vault'u.
 
 ## Doğrulama
@@ -50,6 +52,7 @@ Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve 
 & '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_production.gd
 & '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_inventory.gd
 & '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_auto_recipe.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_chain_editor.gd
 & '..\Godot_v4.7.2-stable_win64_console.exe' --path . -- --smoke-test
 ```
 
