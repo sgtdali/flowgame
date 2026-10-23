@@ -153,9 +153,7 @@ func _build_ui() -> void:
 	inventory_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	inventory_bar.machine_requested.connect(_add_at_view)
 	inventory_bar.craft_screen_requested.connect(func() -> void: craft_screen.toggle())
-	inventory_bar.craft_cancelled.connect(func(index: int) -> void:
-		sim.cancel_craft(index)
-		_refresh())
+	inventory_bar.craft_cancelled.connect(_cancel_craft)
 	machine_menu = MachineMenu.new()
 	add_child(machine_menu)
 	machine_menu.toggle_requested.connect(_toggle_machine)
@@ -193,6 +191,7 @@ func _build_ui() -> void:
 	add_child(craft_screen)
 	craft_screen.build(sim)
 	craft_screen.craft_requested.connect(_craft)
+	craft_screen.craft_cancelled.connect(_cancel_craft)
 
 func _toggle_research_panel() -> void:
 	research_panel.visible = not research_panel.visible
@@ -243,6 +242,10 @@ func _craft(type: String, id: String, count: int) -> void:
 	_refresh()
 	if queued == 0:
 		message.text = "Üretilemez: malzeme eksik, kilitli ya da sınıra ulaşıldı."
+
+func _cancel_craft(index: int) -> void:
+	sim.cancel_craft(index)
+	_refresh()
 
 func _add_at_view(kind: String) -> void:
 	_add_at_view_with_recipe(kind, "")
@@ -588,9 +591,12 @@ func _smoke_test() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	assert(craft_screen.tiles["machine:cnc"].is_visible_in_tree() and not craft_screen.tiles["machine:iron_mine"].is_visible_in_tree())
-	assert(not craft_screen.tiles["machine:cnc"].disabled)
 	await _smoke_click(craft_screen.tiles["machine:cnc"].get_global_rect().get_center())
-	assert(sim.craft_queue.size() == 1 and inventory_bar.queue_slots.size() == 1 and not sim.inventory.has("steel_rod"))
+	assert(craft_screen.selected == "machine:cnc" and not craft_screen.craft_button.disabled)
+	await _smoke_click(craft_screen.craft_button.get_global_rect().get_center())
+	_refresh()
+	await get_tree().process_frame
+	assert(sim.craft_queue.size() == 1 and inventory_bar.queue_slots.size() == 1 and craft_screen.queue_slots.size() == 1 and not sim.inventory.has("steel_rod"))
 	if DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute("res://artifacts")
 		get_viewport().get_texture().get_image().save_png("res://artifacts/craft-screen.png")
@@ -638,7 +644,9 @@ func _smoke_test() -> void:
 	assert(cards.size() == 8 and sim.machine_inventory.get("cnc", 0) == 1, "Kaldırılan makine envantere dönmeli")
 	# The demo already has the one iron mine allowed, so it cannot be crafted or placed again.
 	craft_screen.toggle()
-	assert(craft_screen.tiles["machine:iron_mine"].disabled)
+	craft_screen.open_category(0)
+	craft_screen.select("machine:iron_mine")
+	assert(craft_screen.craft_button.disabled)
 	craft_screen.hide()
 	_add_at_view("iron_mine")
 	assert(cards.size() == 8, "Sınırı dolan maden ikinci kez kurulmamalı")

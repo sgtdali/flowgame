@@ -60,3 +60,9 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 
 - K-010: Madenlerin oyun başında birer adetle sınırlanması onaylandı. Prototipte makinelere `build_limit` alanı eklendi; sınır kurulu, envanterdeki ve üretim kuyruğundaki makineleri birlikte sayar, sınırı dolan maden üretilemez ve kurulamaz.
 - K-011: Oyuncu envanteri, malzemeli makine kurulumu, karttan/depodan elle alma ve süreli el üretimi onaylandı. Prototipte alttaki inşa çubuğu envanter çubuğuyla, makine seçimi kategorili üretim ekranıyla (C) değiştirildi; Depo makinesi eklendi; kayıt biçimi 4'e çıktı (3 okunmaya devam eder).
+
+## 2026-10-23 — Üretim ekranı görünümü
+
+- Kullanıcı, Codex'in dört taslağından (`art_src/craft_ekrani_stil/`) A tarzını seçti: koyu çerçeve, amber vurgu, sağda seçili öğenin ayrıntı paneli. Bu bir arayüz görünümü seçimidir, oyun kuralı değişmedi; karar defterine işlenmedi.
+- Prototipte üretim ekranında kutuya tıklamak artık seçer, ÜRET düğmesi sıraya ekler (Shift: 5). Üretilemeyen öğede düğme kapanır ve nedeni yazılır. Üretim sırası (× ile iptal) ve envanter pencerenin içinde de gösterilir.
+- Pencere çerçevesi ve zemini kullanıcının LibreSprite'ta pencerenin gerçek boyutunda çizdiği görselden 16 px kesim paylı 9-slice olarak alındı (`art_src/ui/menu_cerceve/`).
