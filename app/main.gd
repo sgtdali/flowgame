@@ -4,6 +4,7 @@ const Simulation = preload("res://sim/production_sim.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const FlowGraph = preload("res://app/flow_graph.gd")
 const InventoryBar = preload("res://app/inventory_bar.gd")
+const InventoryWindow = preload("res://app/inventory_window.gd")
 const CraftScreen = preload("res://app/craft_screen.gd")
 const MachineMenu = preload("res://app/machine_menu.gd")
 const RecipePicker = preload("res://app/recipe_picker.gd")
@@ -15,6 +16,7 @@ const GOLD := Color("efb65a")
 var sim := Simulation.new()
 var graph: GraphEdit
 var inventory_bar: InventoryBar
+var inventory_window: InventoryWindow
 var craft_screen: CraftScreen
 var machine_menu: MachineMenu
 var recipe_picker: RecipePicker
@@ -152,8 +154,15 @@ func _build_ui() -> void:
 	inventory_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	inventory_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	inventory_bar.machine_requested.connect(_add_at_view)
-	inventory_bar.craft_screen_requested.connect(func() -> void: craft_screen.toggle())
+	inventory_bar.craft_screen_requested.connect(func() -> void:
+		inventory_window.hide()
+		craft_screen.toggle())
+	inventory_bar.inventory_requested.connect(_toggle_inventory)
 	inventory_bar.craft_cancelled.connect(_cancel_craft)
+	inventory_bar.pin_requested.connect(_pin)
+	inventory_bar.unpin_requested.connect(_unpin)
+	inventory_bar.is_blocked = func() -> bool:
+		return craft_screen.visible or inventory_window.visible or research_panel.visible or recipe_picker.visible
 	machine_menu = MachineMenu.new()
 	add_child(machine_menu)
 	machine_menu.toggle_requested.connect(_toggle_machine)
@@ -175,7 +184,7 @@ func _build_ui() -> void:
 	var foot_spacer := Control.new()
 	foot_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(foot_spacer)
-	message = _label("C: üret · Çıkışa tıkla: envantere al · Sağ tık: makine menüsü · Porttan porta sürükle: bağla", 12, MUTED)
+	message = _label("C: üret · I: envanter · 1-0: hızlı erişim · Çıkışa tıkla: envantere al · Sağ tık: makine menüsü", 12, MUTED)
 	bottom.add_child(message)
 	recipe_picker = RecipePicker.new()
 	add_child(recipe_picker)
@@ -192,6 +201,12 @@ func _build_ui() -> void:
 	craft_screen.build(sim)
 	craft_screen.craft_requested.connect(_craft)
 	craft_screen.craft_cancelled.connect(_cancel_craft)
+	inventory_window = InventoryWindow.new()
+	add_child(inventory_window)
+	inventory_window.build(sim)
+	inventory_window.machine_requested.connect(_add_at_view)
+	inventory_window.pin_requested.connect(_pin)
+	inventory_window.unpin_requested.connect(_unpin)
 
 func _toggle_research_panel() -> void:
 	research_panel.visible = not research_panel.visible
@@ -242,6 +257,19 @@ func _craft(type: String, id: String, count: int) -> void:
 	_refresh()
 	if queued == 0:
 		message.text = "Üretilemez: malzeme eksik, kilitli ya da sınıra ulaşıldı."
+
+func _toggle_inventory() -> void:
+	craft_screen.hide()
+	inventory_window.toggle()
+
+func _pin(key: String, slot: int) -> void:
+	if not sim.pin(key, slot):
+		message.text = "Hızlı erişim dolu: önce bir yuvayı sağ tıkla boşalt."
+	_refresh()
+
+func _unpin(slot: int) -> void:
+	sim.unpin(slot)
+	_refresh()
 
 func _cancel_craft(index: int) -> void:
 	sim.cancel_craft(index)
@@ -468,7 +496,7 @@ func _demo() -> void:
 	graph.scroll_offset = Vector2.ZERO
 	_select_card("")
 	_frame_graph.call_deferred()
-	message.text = "Envanterdeki makineye tıkla: yerleştir · C: üretim ekranı · Çıkışa tıkla: envantere al"
+	message.text = "Hızlı erişimdeki makineye tıkla ya da numarasına bas: yerleştir · I: envanter · C: üretim ekranı"
 	_refresh()
 
 func _toggle_machine(id: String) -> void:
@@ -535,6 +563,7 @@ func _refresh() -> void:
 	]
 	research_panel.refresh(sim)
 	inventory_bar.refresh(sim)
+	inventory_window.refresh(sim)
 	craft_screen.refresh(sim)
 
 func _save_game() -> void:
@@ -606,7 +635,9 @@ func _smoke_test() -> void:
 	assert(sim.machine_inventory.get("cnc", 0) == 1 and sim.craft_queue.is_empty())
 	await get_tree().process_frame
 	await get_tree().process_frame
-	await _smoke_click(inventory_bar.slots["machine:cnc"].get_global_rect().get_center())
+	# The crafted CNC took a free quick-use slot; place it from there.
+	assert(inventory_bar.slot_for("machine:cnc") != null)
+	await _smoke_click(inventory_bar.slot_for("machine:cnc").get_global_rect().get_center())
 	var cnc_card := selected_id
 	assert(cards.size() == 9 and sim.machines[cnc_card].kind == "cnc")
 	# CNC makes gear or bearing from the same rod, so placing it opens the recipe screen.
@@ -632,6 +663,21 @@ func _smoke_test() -> void:
 	machine_menu.id_pressed.emit(MachineMenu.TOGGLE)
 	assert(sim.machines[cnc_card].enabled)
 	machine_menu.hide()
+	# Inventory window (I): shares the inventory with the quick-use bar and pins items to it.
+	_toggle_inventory()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert(inventory_window.visible and inventory_window.items.has("product:steel_plate"))
+	if DisplayServer.get_name() != "headless":
+		get_viewport().get_texture().get_image().save_png("res://artifacts/inventory-window.png")
+	inventory_window.quick_slots[9].on_drop.call(9, "product:steel_plate")
+	assert(sim.hotbar[9] == "product:steel_plate" and inventory_bar.slots[9].key == "product:steel_plate", "Sürüklenen öğe hızlı erişime sabitlenmeli")
+	inventory_window._toggle_pin("product:steel_plate")
+	assert(not ("product:steel_plate" in sim.hotbar), "Sağ tık sabitlenmiş öğeyi çıkarmalı")
+	inventory_window._toggle_pin("product:steel_plate")
+	assert("product:steel_plate" in sim.hotbar, "Sağ tık öğeyi ilk boş yuvaya sabitlemeli")
+	_toggle_inventory()
+	assert(not inventory_window.visible)
 	_toggle_research_panel()
 	assert(research_panel.visible)
 	_select_research("A-02")

@@ -1,13 +1,26 @@
 ---
 tur: sistem
 durum: oneri
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Arayüz ve büyük ağ yönetimi
 
 ## Amaç
 
 Oyuncu büyük bir üretim ağında ne olduğunu, neyin eksik kaldığını ve hangi değişikliğin işe yarayacağını okuyabilmeli. Kart sayısının büyümesi bir yönetim yüküne dönüşmemeli. Aşağıdaki araçlar öneridir; uygulanmış özellikler değildir.
+
+## Prototipte uygulanan arayüz
+
+Aşağıdakiler çalışan prototipte var. Onaylı kural olanlar karar kimliğiyle işaretli; diğerleri uygulama seçimidir.
+
+- **Reçete ekranı** (K-009): aynı girdili makinelerde ürün seçimi, girdileriyle birlikte.
+- **Üretim ekranı (C)** (K-011): kategoriler, seçili öğenin tarifi ve süresi, ÜRET düğmesi, üretim sırası. Görünüm, kullanıcının Codex taslakları arasından seçtiği "A" tarzıdır.
+- **Envanter penceresi (I) ve 10 yuvalı hızlı erişim** (K-012): bkz. [[Tasarım/Envanter ve El Üretimi]].
+- **Kart üstü göstergeler:** giriş/çıkış tamponları, çevrim ilerlemesi, durdurma; çıkışa tıklayınca envantere alma (K-011).
+- **Kart menüsü (sağ tık):** reçete, durdur/çalıştır, hız, envantere al, kaldır.
+- **Araştırma paneli:** kademeli ağaç ve puan depoları (K-008).
+
+Aşağıdaki darboğaz, gerçekleşen hız ve büyük ağ araçlarının hiçbiri henüz uygulanmadı.
 
 ## Kart ve bağlantı okunabilirliği
 

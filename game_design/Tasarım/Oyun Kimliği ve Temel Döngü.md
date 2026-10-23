@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Oyun kimliği ve temel döngü
 
@@ -22,6 +22,8 @@ Kaynak konuşmada kullanıcı, ilk yaklaşımın “Factorio'nun konveyörsüz h
 ## Önerilen oyuncu döngüsü
 
 Bir sonraki yetenek veya hedef seçilir → gereken ürünler ve özellikleri anlaşılır → uygun makineler/reçeteler bağlanır → ağın gerçek akışı izlenir → darboğaz görülür → daha fazla makine, farklı yöntem veya farklı kaynak/taşıma yatırımı arasında seçim yapılır → ürünler hedefe harcanır → yeni üretim imkânı açılır.
+
+Sonradan seçilen kurallar döngüye somut adımlar ekledi: madenler birer adetle sınırlı olduğundan hammadde artık sınırsız büyütülemez (K-010); yeni makine kurmak için ürün harcanır, oyuncu ürünü karttan veya depodan kendisi alır ve gerekirse el ile üretir (K-011); araştırma laboratuvarlardan sürekli akan kademe puanıyla ilerler (K-008). Bkz. [[Tasarım/Envanter ve El Üretimi]].
 
 Bu döngünün başarısı, oyuncunun her darboğazda yalnızca aynı kartı çoğaltmak zorunda kalmamasına bağlıdır. Kopyalama faydalı bir araç olabilir; bütün stratejinin yerini almamalıdır.
 

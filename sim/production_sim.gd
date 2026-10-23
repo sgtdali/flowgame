@@ -37,6 +37,10 @@ var machine_inventory: Dictionary = {}
 var craft_queue: Array = []
 ## Work units per second of hand crafting; machines are faster.
 var hand_speed := 10.0
+## Quick-use bar: HOTBAR_SIZE pinned inventory keys ("machine:<kind>", "product:<id>" or "").
+## It shares the inventory's counts; a pinned slot stays put even while its count is zero.
+const HOTBAR_SIZE := 10
+var hotbar: Array = []
 
 func _init() -> void:
 	catalog = JSON.parse_string(FileAccess.get_file_as_string("res://data/prototype.json"))
@@ -46,6 +50,10 @@ func _init() -> void:
 		inventory[str(product)] = int(kit.products[product])
 	for kind in kit.get("machines", {}):
 		machine_inventory[str(kind)] = int(kit.machines[kind])
+	hotbar.resize(HOTBAR_SIZE)
+	hotbar.fill("")
+	for key in carried_keys():
+		pin(key)
 	for m_kind in catalog.get("initial_unlocked_machines", []):
 		unlocked_machines.append(str(m_kind))
 	for r_id in catalog.get("initial_unlocked_recipes", []):
@@ -164,7 +172,15 @@ func is_storage(kind: String) -> bool:
 
 func _add_items(product: String, count: int) -> void:
 	if count > 0:
+		if int(inventory.get(product, 0)) == 0:
+			pin("product:" + product)
 		inventory[product] = int(inventory.get(product, 0)) + count
+
+## A machine coming into the inventory; like products, a new kind takes a free quick-use slot.
+func _add_machine_item(kind: String) -> void:
+	if int(machine_inventory.get(kind, 0)) == 0:
+		pin("machine:" + kind)
+	machine_inventory[kind] = int(machine_inventory.get(kind, 0)) + 1
 
 func _take_items(product: String, count: int) -> void:
 	inventory[product] = int(inventory.get(product, 0)) - count
@@ -194,7 +210,7 @@ func pick_up_machine(id: String) -> void:
 	for field in ["input", "output"]:
 		for product in machine[field]:
 			_add_items(str(product), int(machine[field][product]))
-	machine_inventory[machine.kind] = int(machine_inventory.get(machine.kind, 0)) + 1
+	_add_machine_item(str(machine.kind))
 	remove_machine(id)
 
 ## Moves what a machine has made (or what a depot holds) of `product` into the inventory.
@@ -295,7 +311,7 @@ func _craft(delta: float) -> void:
 			return
 		craft_queue.pop_front()
 		if job.type == "machine":
-			machine_inventory[job.id] = int(machine_inventory.get(job.id, 0)) + 1
+			_add_machine_item(str(job.id))
 		else:
 			var outputs: Dictionary = catalog.recipes[job.id].outputs
 			for product in outputs:
@@ -734,12 +750,56 @@ func _transfer() -> void:
 				if not moved:
 					break
 
+## Everything the player carries, machines first, in catalog order.
+func carried_keys() -> Array:
+	var keys: Array = []
+	for kind in catalog.machines:
+		if int(machine_inventory.get(kind, 0)) > 0:
+			keys.append("machine:" + str(kind))
+	for product in catalog.products:
+		if int(inventory.get(product, 0)) > 0:
+			keys.append("product:" + str(product))
+	return keys
+
+func carried_count(key: String) -> int:
+	var parts := key.split(":")
+	if parts.size() != 2:
+		return 0
+	return int((machine_inventory if parts[0] == "machine" else inventory).get(parts[1], 0))
+
+func _valid_inventory_key(key: String) -> bool:
+	var parts := key.split(":")
+	return parts.size() == 2 and ((parts[0] == "machine" and catalog.machines.has(parts[1])) or (parts[0] == "product" and catalog.products.has(parts[1])))
+
+## Pins `key` to `slot` (first empty slot when -1). A key lives in one slot only: moving it
+## from another slot swaps it with whatever was in the target. Returns false when there is
+## no room or the key is unknown.
+func pin(key: String, slot: int = -1) -> bool:
+	if not _valid_inventory_key(key) or slot >= HOTBAR_SIZE:
+		return false
+	var from := hotbar.find(key)
+	if slot < 0:
+		if from >= 0:
+			return true
+		slot = hotbar.find("")
+		if slot < 0:
+			return false
+	if from >= 0:
+		hotbar[from] = hotbar[slot]
+	hotbar[slot] = key
+	return true
+
+func unpin(slot: int) -> void:
+	if slot >= 0 and slot < HOTBAR_SIZE:
+		hotbar[slot] = ""
+
 func snapshot() -> Dictionary:
 	return {
 		"version": 4,
 		"inventory": inventory.duplicate(),
 		"machine_inventory": machine_inventory.duplicate(),
 		"craft_queue": craft_queue.duplicate(true),
+		"hotbar": hotbar.duplicate(),
 		"machines": machines.duplicate(true),
 		"links": links.duplicate(true),
 		"cursors": cursors.duplicate(true),
@@ -784,6 +844,13 @@ func restore(data: Dictionary) -> bool:
 				return false
 			if not (job.get("remaining") is float or job.get("remaining") is int) or not is_finite(float(job.remaining)) or float(job.remaining) < 0:
 				return false
+		# Saves made before the quick-use bar have no "hotbar"; they keep the current one.
+		if data.has("hotbar"):
+			if not data.hotbar is Array or data.hotbar.size() != HOTBAR_SIZE:
+				return false
+			for key in data.hotbar:
+				if not key is String or (not key.is_empty() and not _valid_inventory_key(key)):
+					return false
 	for id in data.machines:
 		var m: Variant = data.machines[id]
 		if not m is Dictionary or not catalog.machines.has(m.get("kind", "")):
@@ -923,6 +990,8 @@ func restore(data: Dictionary) -> bool:
 		craft_queue.clear()
 		for job in data.craft_queue:
 			craft_queue.append({"type": str(job.type), "id": str(job.id), "remaining": float(job.remaining)})
+		if data.has("hotbar"):
+			hotbar = data.hotbar.duplicate()
 	active_research = str(data.get("active_research", "A-01"))
 	sandbox_mode = bool(data.get("sandbox_mode", false))
 	elapsed = float(data.elapsed)

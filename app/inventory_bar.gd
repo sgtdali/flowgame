@@ -1,25 +1,32 @@
 extends VBoxContainer
-## Bottom inventory: the hammer opens the craft screen, then one slot per carried machine
-## (click to place it) and per carried product. The hand-craft queue sits above it; clicking
-## a queued job cancels it and returns its materials.
+## Bottom quick-use bar: the hammer opens the craft screen, the crate opens the inventory
+## window, then ten fixed slots the player pins items to. Slots share the inventory's counts
+## and stay put when empty. Clicking a machine (or pressing its number, 1-9 then 0) places
+## it; right click unpins; dropping an item from the inventory window pins it there.
+## The hand-craft queue sits above it; clicking a queued job cancels it and returns its materials.
 
 signal machine_requested(kind: String)
 signal craft_screen_requested()
+signal inventory_requested()
 signal craft_cancelled(index: int)
+signal pin_requested(key: String, slot: int)
+signal unpin_requested(slot: int)
 
 const Icons = preload("res://app/icons.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const CraftScreen = preload("res://app/craft_screen.gd")
+const InventorySlot = preload("res://app/inventory_slot.gd")
 const TEAL := Color("61d8bb")
-const COLUMNS := 16
+const INVENTORY_ICON := 6
 
 var craft_button: Button
-## "machine:<kind>" or "product:<id>" -> slot button
-var slots: Dictionary = {}
+var inventory_button: Button
+## Quick-use slots, index 0-9 (keys 1-9, 0).
+var slots: Array[InventorySlot] = []
 var queue_slots: Array[Button] = []
-var _grid: GridContainer
+## Returns true while another window owns the number keys (craft screen, inventory...).
+var is_blocked: Callable
 var _queue_row: HBoxContainer
-var _keys: Array = []
 var _queue_keys: Array = []
 
 func _box(background: Color, border: Color, pad: int, radius: int = 6) -> StyleBoxFlat:
@@ -38,6 +45,18 @@ func _style(button: Button) -> void:
 	button.add_theme_stylebox_override("disabled", _box(Color("0d1a24"), Color("1c3142"), 4))
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
+func _icon_button(icon_index: int, tip: String) -> Button:
+	var button := Button.new()
+	button.icon = CraftScreen.icon(icon_index)
+	button.expand_icon = true
+	button.custom_minimum_size = Vector2(44, 44)
+	button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	button.tooltip_text = tip
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_style(button)
+	return button
+
 func build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	alignment = BoxContainer.ALIGNMENT_END
@@ -52,75 +71,62 @@ func build() -> void:
 	bar.add_theme_stylebox_override("panel", _box(Color("0d1a24e6"), Color("1c3142"), 6, 8))
 	add_child(bar)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 4)
 	bar.add_child(row)
-	craft_button = Button.new()
-	craft_button.icon = CraftScreen.icon(CraftScreen.CRAFT_ICON)
-	craft_button.expand_icon = true
-	craft_button.custom_minimum_size = Vector2(44, 44)
-	craft_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	craft_button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	craft_button.tooltip_text = "Üret (C)"
-	craft_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	craft_button = _icon_button(CraftScreen.CRAFT_ICON, "Üret (C)")
 	craft_button.pressed.connect(func() -> void: craft_screen_requested.emit())
-	_style(craft_button)
 	row.add_child(craft_button)
+	inventory_button = _icon_button(INVENTORY_ICON, "Envanter (I)")
+	inventory_button.pressed.connect(func() -> void: inventory_requested.emit())
+	row.add_child(inventory_button)
 	row.add_child(VSeparator.new())
-	_grid = GridContainer.new()
-	_grid.columns = COLUMNS
-	_grid.add_theme_constant_override("h_separation", 4)
-	_grid.add_theme_constant_override("v_separation", 4)
-	row.add_child(_grid)
+	for i in range(10):
+		var slot := InventorySlot.new()
+		slot.show_number(i)
+		slot.on_drop = func(index: int, key: String) -> void: pin_requested.emit(key, index)
+		slot.pressed.connect(_use.bind(i))
+		slot.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and not slot.key.is_empty():
+				unpin_requested.emit(i)
+				accept_event())
+		row.add_child(slot)
+		slots.append(slot)
+
+## Quick-use slot holding `key`, or null when it is not pinned.
+func slot_for(key: String) -> InventorySlot:
+	for slot in slots:
+		if slot.key == key:
+			return slot
+	return null
+
+func _use(index: int) -> void:
+	var key := slots[index].key
+	if key.begins_with("machine:") and not slots[index].disabled:
+		machine_requested.emit(key.trim_prefix("machine:"))
 
 func refresh(sim: RefCounted) -> void:
-	var keys: Array = []
-	for kind in sim.catalog.machines:
-		if int(sim.machine_inventory.get(kind, 0)) > 0:
-			keys.append("machine:" + str(kind))
-	for product in sim.catalog.products:
-		if int(sim.inventory.get(product, 0)) > 0:
-			keys.append("product:" + str(product))
-	if keys != _keys:
-		_rebuild(sim, keys)
-	for key in slots:
-		var parts: PackedStringArray = str(key).split(":")
-		var slot: Icons.Slot = slots[key].get_child(0)
-		if parts[0] == "machine":
-			slot.count = int(sim.machine_inventory.get(parts[1], 0))
-			var placeable: bool = sim.can_place(parts[1])
-			slots[key].disabled = not placeable
-			slots[key].modulate.a = 1.0 if placeable else 0.5
-		else:
-			slot.count = int(sim.inventory.get(parts[1], 0))
-		slot.queue_redraw()
+	for i in range(slots.size()):
+		var key: String = sim.hotbar[i]
+		slots[i].set_item(sim, key)
+		slots[i].disabled = key.begins_with("machine:") and not sim.can_place(key.trim_prefix("machine:"))
 	_refresh_queue(sim)
 
-func _rebuild(sim: RefCounted, keys: Array) -> void:
-	_keys = keys
-	slots.clear()
-	for child in _grid.get_children():
-		child.queue_free()
-	for key in keys:
-		var parts: PackedStringArray = str(key).split(":")
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(44, 44)
-		_style(button)
-		var slot: Icons.Slot
-		if parts[0] == "machine":
-			slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(parts[1])), 1)
-			slot.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			button.tooltip_text = "%s\nTıkla: yerleştir" % sim.catalog.machines[parts[1]].name
-			button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			button.pressed.connect(func() -> void: machine_requested.emit(parts[1]))
-		else:
-			slot = Icons.Slot.new(Icons.product(sim, parts[1]), 1)
-			button.tooltip_text = sim.product_name(parts[1])
-		slot.show_one = true
-		slot.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		button.add_child(slot)
-		_grid.add_child(button)
-		slots[key] = button
-	_grid.columns = clampi(keys.size(), 1, COLUMNS)
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key == null or not key.pressed or key.echo or (is_blocked.is_valid() and is_blocked.call()):
+		return
+	var index := -1
+	if key.keycode >= KEY_1 and key.keycode <= KEY_9:
+		index = key.keycode - KEY_1
+	elif key.keycode == KEY_0:
+		index = 9
+	elif key.keycode == KEY_I:
+		inventory_requested.emit()
+		get_viewport().set_input_as_handled()
+		return
+	if index >= 0:
+		_use(index)
+		get_viewport().set_input_as_handled()
 
 func _refresh_queue(sim: RefCounted) -> void:
 	var keys: Array = []

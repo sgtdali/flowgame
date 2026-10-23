@@ -7,7 +7,7 @@
       "y": -260,
       "width": 2220,
       "height": 180,
-      "text": "# ARAŞTIRMA VE ÜRETİM DÖNGÜSÜ\nGerçek ürün tüketimi ve K-006 otomatik eşit paylaşım seçildi. Araştırma deneyleri ve ortak stok ayrıntıları öneridir.\nSayılar denge örnekleridir; onaylı reçeteler değildir."
+      "text": "# ARAŞTIRMA VE ÜRETİM DÖNGÜSÜ\nK-008 kademeli laboratuvar ve puan deposu, K-006 otomatik eşit paylaşım ve K-011 malzemeli kurulum seçildi. Deney örnekleri K-001 dönemine aittir.\nSayılar denge örnekleridir; onaylı reçeteler değildir."
     },
     {
       "id": "supplygroup",
@@ -55,7 +55,7 @@
       "y": 410,
       "width": 520,
       "height": 300,
-      "text": "## Otomasyon I örneği\nDeney: **2 dişli + 3 bobin + 1 levha**\n60 deney · deney süresi 10 sn\n\n1 laboratuvarın tam talebi:\n12 dişli/dk · 18 bobin/dk · 6 levha/dk\n\nYeterli besleme: yaklaşık 10 dk.\n2 laboratuvar, iki kat besleme: yaklaşık 5 dk.",
+      "text": "## Otomasyon I örneği (tarihsel, K-001)\nDeney: **2 dişli + 3 bobin + 1 levha**\n60 deney · deney süresi 10 sn\n\n1 laboratuvarın tam talebi:\n12 dişli/dk · 18 bobin/dk · 6 levha/dk\n\nYeterli besleme: yaklaşık 10 dk.\n2 laboratuvar, iki kat besleme: yaklaşık 5 dk.",
       "color": "3"
     },
     {
@@ -65,7 +65,7 @@
       "y": 790,
       "width": 520,
       "height": 280,
-      "text": "## Daha fazla laboratuvar tek başına yetmez\nBobin 8/dk ise malzeme sınırı baskın.\n180 bobin / 8 ≈ 22,5 dk uzun dönem alt sınırı.\n\nTamponlar ve deney bitiş anı gerçek süreyi değiştirir.",
+      "text": "## Daha fazla laboratuvar tek başına yetmez\nBobin 8/dk ise malzeme sınırı baskın.\n180 bobin / 8 ≈ 22,5 dk uzun dönem alt sınırı.\n\nTamponlar ve deney bitiş anı gerçek süreyi değiştirir.\n\nK-008 sonrası aynı ilke laboratuvarın sürekli girdisine uygulanır: puan hızı en yavaş girdiyle sınırlıdır.",
       "color": "2"
     },
     {
@@ -121,7 +121,7 @@
       "y": 790,
       "width": 770,
       "height": 280,
-      "text": "## Makine ve altyapı genişlemesi — öneri\nÜrünlerin yeni makine yapımında tüketilmesi gelecekteki üretimi büyütür.\n\nMakine inşa maliyeti, kart başına makine sayısı ve büyütme bedelleri açık.\nBu dalın kuralları makine kartı ve ekonomi kararlarıyla netleşecek.",
+      "text": "## Makine ve altyapı genişlemesi\nMakine kurmak malzeme ister (K-011): ürünler yeni makinelerde tüketilir ve gelecekteki üretimi büyütür.\n\nMiktarlar ilk denemedir; kart başına makine sayısı ve büyütme bedelleri açık. Madenler başta birer adet (K-010).",
       "color": "3"
     },
     {

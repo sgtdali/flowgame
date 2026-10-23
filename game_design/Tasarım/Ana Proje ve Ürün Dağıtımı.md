@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Ana proje ve ürün dağıtımı
 
@@ -12,6 +12,8 @@ Aynı üretim çıktısı üç amaç için kullanılabilir:
 - **Araştırma:** Yeni teknoloji ve üretim yeteneği açar.
 - **Genişleme:** Yeni makineler ve altyapı kurarak gelecekteki kapasiteyi artırır.
 - **Ana proje:** Oyuncunun somut uzun vadeli hedefine ilerleme sağlar.
+
+Üçgenin iki ucu artık seçilmiş kurallara dayanıyor: araştırma laboratuvarları sürekli ürün tüketir (K-008), makine kurmak malzeme ister (K-011). Ana proje için kullanıcı kararı yoktur; prototipteki `Ana proje terminali` (A-09 sonrası, hassas aktüatör + PLC tüketir) yer tutucudur.
 
 Bu model, ürünün değerini yalnızca satış fiyatına bağlamadan anlamlı tüketim yaratabilir. Ancak para veya satış ekonomisinin kesinlikle olmayacağı kararı verilmemiştir; kaynak konuşmada para gerekmeyen model asistan önerisidir.
 

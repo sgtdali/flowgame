@@ -7,6 +7,9 @@ guncelleme: 2026-10-20
 
 Kullanıcının game_design içindeki oyuna göre node editör mockup'ı oluşturma talebiyle hazırlandı. Bu bir görsel tasarım önerisidir; onaylı arayüz veya çalışan oyunun ekran görüntüsü değildir.
 
+> [!note] Tarihsel öneri
+> Prototip bu düzenden ayrıldı: sol kütüphane ve sağ ayrıntı paneli yok; makineler üretim ekranında (C) yapılır, envanterden ve alttaki hızlı erişimden yerleştirilir, kart ayrıntıları kartın üstünde ve sağ tık menüsündedir. Güncel arayüz: [[Yönetim/Uygulama Durumu#Arayüz]].
+
 ![[Ekler/node_editor_mockup_v1.png]]
 
 ## Gösterilen yön

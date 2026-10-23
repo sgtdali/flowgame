@@ -65,6 +65,40 @@ func _initialize() -> void:
 	sim.pick_up_machine(mine)
 	_check(sim.machine_inventory.get("copper_mine", 0) == 1 and sim.inventory.copper_ore == ore + left, "Silinen makine ve içindekiler envantere dönmeli")
 
+	_quick_use()
+
 	if failures == 0:
 		print("INVENTORY_TESTS_OK")
 	quit(failures)
+
+## Quick-use bar: ten pinned keys sharing the inventory's counts.
+func _quick_use() -> void:
+	var sim := Simulation.new()
+	_check(sim.hotbar.size() == 10, "Hızlı erişim 10 yuva olmalı")
+	_check(sim.hotbar.slice(0, 6) == ["machine:copper_mine", "machine:quartz_quarry", "machine:storage", "product:steel_ingot", "product:steel_plate", "product:fastener"] and sim.hotbar[6] == "", "Başlangıç kiti hızlı erişime dizilmeli")
+	# A placed machine keeps its slot at zero.
+	sim.place_machine("storage")
+	_check(sim.hotbar[2] == "machine:storage" and sim.carried_count("machine:storage") == 0, "Sayısı sıfırlanan öğe yuvasında kalmalı")
+	# Moving swaps; unpinning frees the slot; an unpinned item does not come back by itself.
+	_check(sim.pin("product:fastener", 0) and sim.hotbar[0] == "product:fastener" and sim.hotbar[5] == "machine:copper_mine", "Dolu yuvaya taşıma yer değiştirmeli")
+	sim.unpin(0)
+	_check(sim.hotbar[0] == "" and not ("product:fastener" in sim.hotbar), "Çıkarılan öğe yuvayı boşaltmalı")
+	sim.inventory.fastener += 1
+	_check(not ("product:fastener" in sim.hotbar), "Elde olan öğe çıkarıldıktan sonra kendiliğinden geri gelmemeli")
+	# Something newly carried takes the first free slot.
+	var mine := sim.place_machine("copper_mine")
+	sim.advance(5.0)
+	sim.take(mine, "copper_ore")
+	_check(sim.hotbar[0] == "product:copper_ore", "Yeni gelen öğe ilk boş yuvaya girmeli")
+	_check(not sim.pin("product:not_a_product"), "Bilinmeyen öğe sabitlenmemeli")
+	for p in ["steel_rod", "gear", "bearing", "copper_wire", "coil"]:
+		sim.pin("product:" + p)
+	_check(not ("" in sim.hotbar) and not sim.pin("product:circuit_board"), "Dolu çubuğa yeni öğe sabitlenmemeli")
+	var copy := Simulation.new()
+	_check(copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))) and copy.hotbar == sim.hotbar, "Hızlı erişim kayda girmeli")
+	var old_save: Dictionary = sim.snapshot()
+	old_save.erase("hotbar")
+	_check(copy.restore(old_save), "Hızlı erişimi olmayan eski kayıt yüklenebilmeli")
+	var broken: Dictionary = sim.snapshot()
+	broken.hotbar = ["product:nope", "", "", "", "", "", "", "", "", ""]
+	_check(not copy.restore(broken), "Bozuk hızlı erişim kaydı reddedilmeli")

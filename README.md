@@ -1,48 +1,55 @@
 # Flowgame — Endüstriyel Üretim ve Araştırma Ağı
 
-Godot 4.7.2 ile üretim ve araştırma prototipi. Onaylanan **K-001** (doğrudan ürün tüketen araştırma), **K-005** (iş/hız üretim çevrimi), **K-006** (otomatik eşit paylaşım) ve **K-007** (5 katmanlı 24 ürün kataloğu, makine türleri ve 9 araştırmalık teknoloji ağacı ilk taslağı) birlikte çalışır.
+Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-012 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
 
 ## Başlatma
 
-Windows'ta `Baslat.cmd` dosyasına çift tıkla. Başlatıcı, bu bilgisayarda projenin üst klasöründeki `Godot_v4.7.2-stable_win64.exe` dosyasını kullanır. Başka konum için `GODOT_PATH` ortam değişkenini ayarla.
+Windows'ta `Baslat.cmd` dosyasına çift tıkla. Başlatıcı, projenin üst klasöründeki `Godot_v4.7.2-stable_win64.exe` dosyasını kullanır. Başka konum için `GODOT_PATH` ortam değişkenini ayarla.
 
-Godot editöründen çalışmak için bu klasördeki `project.godot` dosyasını içe aktar ve F6 yerine projeyi F5 ile çalıştır. Alternatif: `powershell -File tools/launch.ps1 -Editor`.
+Godot editöründen çalışmak için `project.godot` dosyasını içe aktar ve F5 ile çalıştır. Alternatif: `powershell -File tools/launch.ps1 -Editor`.
 
-## Başlangıç Ağı ve Araştırma Döngüsü
+## Oyunun başı
 
-Başlangıç ağı Kademe 0 makineleriyle kurulur:
-`Demir Madeni` + `Kömür Madeni` → `Ergitme Fırını (Pik Demir)` → `Çelik Fırını (Çelik Külçe)` → iki `Haddehane (Çelik Levha ve Çelik Çubuk)` → `Pres (Bağlantı Elemanı)` → `Araştırma Laboratuvarı (A-01: Talaşlı İmalat)`.
-
-- `Kömür`, `Çelik Külçe` ve `Çelik Çubuk` çıkışları bağlı tüketiciler arasında **K-006** gereğince otomatik eşit paylaşılır.
-- `Araştırma Laboratuvarı`, seçili araştırmanın gerektirdiği ürünleri doğrudan tüketerek deney ilerlemesi sağlar (**K-001**).
-- **A-01: Talaşlı İmalat** tamamlandığında sol kütüphanede `Torna` ve `CNC Tezgâhı` açılır (`Mil`, `Dişli`, `Rulman` ve yan ürün olarak `Metal Talaşı`).
-- Üst çubuktaki **Araştırma Ağacı** düğmesinden 9 araştırmalık (`A-01` – `A-09`) teknoloji ağacını açıp aktif araştırmayı değiştirebilir veya **Serbest Mod** düğmesiyle 24 ürünün tüm makine ve reçetelerini hemen açabilirsin.
+- Başlangıç ağı hazır kurulu gelir: `Demir madeni` + `Kömür madeni` → `Ergitme fırını` → `Çelik fırını` → iki `Haddehane` (levha, çubuk) → `Pres` → `Laboratuvar 1`.
+- `Laboratuvar 1` sürekli çelik levha ve bağlantı elemanı tüketip Kademe 1 puanı üretir. Puanlar depoda birikir; aktif araştırma fiyatını depodan çeker (K-008).
+- Envanterde bir başlangıç kiti vardır: çelik levha, bağlantı elemanı, çelik külçe, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
+- Madenler oyun başında birer adet kurulabilir (K-010).
 
 ## Kontroller
 
-- Soldaki **Makine Kütüphanesi** içinde ara ve açık bir makineye tıklayarak canvas'a ekle.
-- Canvas üzerinde bir karta tıkla: sağdaki **Seçili Makine** panelinde **uygun reçeteleri seçebilir**, gereken iş, işleme hızı, çevrim süresi, kapasite ve canlı tamponları görebilirsin.
-- Çok girdili ve çok çıktılı reçetelerde (ör. `CNC` ve `Torna`'dan çıkan `Metal Talaşı` yan ürünü) her ürün kendi renkli port satırına sahiptir.
-- **Çıkış Tamponunu Boşalt** düğmesiyle makine çıkışında biriken ürünleri (ör. henüz geri kazanım hattına bağlanmamış `Metal Talaşı`) temizleyebilir veya `Talaş Bertaraf Ünitesi` / `Çelik Fırını (Talaştan Çelik Geri Kazanımı)` bağlayabilirsin.
-- Kaydet/Yükle yerel `user://workshop.json` yuvasını kullanır; ağ, seçili reçeteler, stoklar, yarım kalan işler, paylaşım sırası ve araştırma ilerlemesi korunur.
+| Ne | Nasıl |
+|---|---|
+| Üretim ekranı | **C** ya da alt çubuktaki çekiç. Bir öğe seç, **ÜRET** ile sıraya al (Shift: 5 adet). El üretimi süreli bir kuyruktur; × ile iptal edilen işin malzemesi geri döner. |
+| Envanter penceresi | **I** ya da alt çubuktaki sandık. Makineye tıklamak onu yerleştirir. |
+| Hızlı erişim | Alttaki 10 yuva, **1–9 ve 0** tuşları. Makine yuvası makineyi yerleştirir. Envanterden yuvaya sürükle, sağ tıkla ya da öğenin üstündeyken numara tuşuna bas: öğe o yuvaya sabitlenir. Yuvada sağ tık sabitlemeyi kaldırır. |
+| Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). |
+| Reçete | Girdisi farklı reçeteli makineler gelen ürüne göre üretir. Haddehane, CNC ve dökümhanede sağ tık → **Ne üretilsin?** ile reçete ekranı açılır (K-009). |
+| Kart menüsü | Kartta sağ tık: reçete, Durdur/Çalıştır, hız 20 ↔ 40 iş/sn, Envantere al, Kaldır (envantere). Laboratuvarda araştırma hedefi. |
+| Ürün alma | Karttaki çıkış göstergesine tıkla: biriken ürün envantere geçer. Depo'da giriş göstergesine tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
+| Üretici kurma | Bir girişin **+** düğmesi o ürünü yapan makineyi envanterden kurup bağlar. |
+| Araştırma | Üst çubuktaki araştırma düğmesi; **Serbest mod** bütün kilitleri ve sınırları kaldırır. |
+| Zaman | Duraklat/Devam, 1× ↔ 4× hız. |
+| Kayıt | Kaydet / Yükle (`user://workshop.json`), Sıfırla başlangıç ağını yeniden kurar. |
 
 ## Dosyalar
 
-- `sim/production_sim.gd`: 24 ürün, çok girdili/çıktılı reçeteler, K-005 işleme, K-006 paylaşım, K-007 9 araştırmalık teknoloji ağacı ve kayıt durumu.
-- `data/prototype.json`: 24 ürün, 16 makine türü, 37 reçete ve 9 araştırma (`A-01` – `A-09`) tanımı.
-- `app/main.gd`: Çok portlu GraphEdit arayüzü ve simülasyon bağlantısı.
-- `app/machine_library.gd`: Arama, kilit durumu ve kart ekleme menüsü.
-- `app/machine_inspector.gd`: Seçili makinenin reçete seçimi, canlı ayrıntı ve envanter paneli.
-- `app/research_panel.gd`: 3 kademeli 9 araştırmalık teknoloji ağacı paneli.
-- `tests/test_production.gd`: 24 ürün erişilebilirliği (deadlock kontrolü), süre, stok, paylaşım, yan ürün geri kazanımı, araştırma geçişi ve kayıt devamlılığı testleri (63 kontrol).
-- `game_design/`: Obsidian tasarım vault'u; güncel ürün kararları.
+- `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
+- `data/prototype.json`: 24 ürün, 19 makine türü, 32 reçete, 9 araştırma, başlangıç kiti, kurulum bedelleri.
+- `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
+- `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).
+- `app/craft_screen.gd`: üretim ekranı. `app/inventory_window.gd`, `app/inventory_bar.gd`, `app/inventory_slot.gd`: envanter penceresi, hızlı erişim çubuğu ve ortak yuva.
+- `app/machine_menu.gd`, `app/recipe_picker.gd`, `app/research_panel.gd`: kart menüsü, reçete ekranı, araştırma paneli.
+- `app/icons.gd`, `app/art/`: ürün simgeleri ve makine görselleri. Kaynakları ve çizim kuralları `art_src/` altında (`art_src/STANDART.md`).
+- `tests/`: `test_production.gd`, `test_inventory.gd`, `test_auto_recipe.gd`, `test_mine_visual.gd`, `test_smelter_visual.gd`.
+- `game_design/`: Obsidian tasarım vault'u.
 
 ## Doğrulama
 
 ```powershell
-& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script res://tests/test_production.gd
-& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --quit-after 20 -- --smoke-test
-& '..\Godot_v4.7.2-stable_win64_console.exe' --path . --rendering-method gl_compatibility -- --smoke-test
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_production.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_inventory.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --headless --path . -s tests/test_auto_recipe.gd
+& '..\Godot_v4.7.2-stable_win64_console.exe' --path . -- --smoke-test
 ```
 
-Son komut OpenGL penceresinde çalışır, arayüz işlemlerini kontrol eder ve `artifacts/production-workshop.png` görüntüsünü üretir. Test; arama, boş arama/sonuç bulunamaması, kütüphaneden ekleme, seçime bağlı panel, stok çubukları, hız değişimine tepki, durdur/çalıştır, silme ve kayıt yüklemesini kapsar. Kütüphane ve kart seçimi, viewport'a gönderilen fare giriş olaylarıyla da doğrulanır. Smoke testi normal oyuncu kaydından ayrı dosya kullanır. Fiziksel fareyle kullanıcı testi ve büyük ağ performansı ayrıca değerlendirilmelidir.
+Son komut pencerede açılır, arayüzü fare olaylarıyla dener ve `artifacts/` altına ekran görüntüleri yazar (`craft-screen.png`, `inventory-window.png` …). Smoke testi oyuncu kaydından ayrı bir dosya kullanır. Yeni eklenen `.png` dosyaları için önce `--headless --path . --import` çalıştır. Fiziksel fareyle oynanış testi, denge ve büyük ağ performansı ayrıca değerlendirilmelidir.

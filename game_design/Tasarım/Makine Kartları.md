@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Makine kartları
 
@@ -54,17 +54,24 @@ Tam kapasite yeterli girdi ve kesintisiz çıkış varsayar; gerçek üretim dah
 - Giriş ve çıkış tamponlarının sayısal kapasiteleri.
 - Kart başına makine sayısı, paralel işler ve birden fazla reçete paylaşımı.
 - Reçete değişimi, işlem iptali ve malzeme iadesi.
-- Yan ürün boşaltma/bertaraf seçeneği ve bedeli.
+- Yan ürün boşaltma/bertaraf seçeneği ve bedeli (prototipte yer tutucu `Talaş bertaraf ünitesi` var; kullanıcı kararı yok).
 - Farklı proses türleri için ayrı işleme kategorileri gerekip gerekmediği.
 - Enerji, aşınma, kalite ve altyapının işleme hızına etkisi.
 
-Dayanak: [[Yönetim/Karar Defteri#K-005 — İş miktarı ve makine işleme hızıyla üretim|K-005]], [[Kaynaklar/02 - Bu Sohbetteki Kararlar]]. Model küçük Godot prototipinde uygulandı ve otomatik olarak doğrulandı; eğlenceli oynanış veya büyük ağ ölçeği henüz doğrulanmadı. Kapsam: [[Yönetim/Uygulama Durumu]].
+Dayanak: [[Yönetim/Karar Defteri#K-005 — İş miktarı ve makine işleme hızıyla üretim|K-005]], [[Kaynaklar/02 - Bu Sohbetteki Kararlar]]. Model Godot prototipinde uygulandı ve otomatik olarak doğrulandı; eğlenceli oynanış veya büyük ağ ölçeği henüz doğrulanmadı. Prototipte bütün makinelerin hızı 20 iş/sn'dir ve kart menüsünden 40'a çıkarılabilir; tamponlar 6–12 adettir. Kapsam: [[Yönetim/Uygulama Durumu]].
 
 ## Makine ve reçete ilişkisi
 
-Makine türü hangi reçetelerin çalıştırılabileceğini belirler. Oyuncu o makinede bir reçete seçer; giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Aynı makine türü farklı kartlarda farklı ürünler için kullanılabilir. Örneğin bir CNC kartında dişli, diğerinde mil işlenebilir.
+Makine türü hangi reçetelerin çalıştırılabileceğini belirler. Aynı makine türü farklı kartlarda farklı ürünler için kullanılabilir. Örneğin bir haddehane kartında levha, diğerinde çubuk üretilebilir.
 
-Bu model, makine türünü üretim operasyonundan ayırır. Araştırma bazen yeni makine, bazen mevcut makine için yeni reçete açabilir. Makine-reçete uygunluğu henüz detaylı veri tablosuna dönüşmemiştir.
+### Onaylı reçete seçimi — K-009
+
+- **Girdileri farklı reçeteler:** Oyuncu reçete seçmez; makine bağlanan ürüne göre ne üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Prototipte ergitme fırını, çelik fırını, pres, tel sarım ve montaj istasyonu böyle çalışır.
+- **Aynı girdiden farklı ürün:** Kartın menüsünden açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir. Prototipte haddehane, CNC ve dökümhane böyledir.
+
+Dayanak: [[Yönetim/Karar Defteri#K-009 — Reçete gelen ürüne göre belirlenir|K-009]].
+
+Giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Bu model, makine türünü üretim operasyonundan ayırır. Araştırma bazen yeni makine, bazen mevcut makine için yeni reçete açabilir. Makine-reçete uygunluğu henüz detaylı veri tablosuna dönüşmemiştir.
 
 ## Kartta bulunabilecek bilgiler
 
@@ -79,6 +86,14 @@ Bu model, makine türünü üretim operasyonundan ayırır. Araştırma bazen ye
 | Makine sayısı | Gruplama seçilirse ölçeği göstermek | Açık |
 | Ekonomik bölge | Bölgesel model seçilirse kaynak erişimini göstermek | Açık |
 | Enerji, kalite ve yan ürün | İlgili sistemler seçilirse karar vermek | Açık |
+
+Prototipteki kart; makine görseli, giriş/çıkış göstergeleri (tampon sayıları), çevrim çubuğu ve durdurma düğmesi gösterir. Çıkış göstergesine tıklamak ürünü envantere alır; girişin "+" düğmesi o ürünün üreticisini kurup bağlar. Bu düzen bir uygulama seçimidir; tablodaki "Öneri" durumlarını onaylamaz.
+
+## Kurulum bedeli ve sınırı — K-010, K-011
+
+Makineler malzemeyle üretilir ve oyuncunun envanterinden tuvale yerleştirilir; kaldırılan makine envantere döner (K-011). Madenler oyun başında birer adet kurulabilir; her makine türü bir kurulum sınırı taşıyabilir (K-010). Ayrıntılar ve prototipteki bedeller: [[Tasarım/Envanter ve El Üretimi]].
+
+**Depo kartı (prototip):** Bağlanan her ürün için ayrı giriş açan, ürünü işlemeden biriktiren kart. Oyuncu içindekini envantere alır. Depo K-011'in "depodan da alınır" maddesine dayanır; kapasitesi (ürün başına 100) ilk denemedir.
 
 ## Açık seçim: tek makine veya grup
 
@@ -96,7 +111,7 @@ Konuşmada hem bir kartın tek reçete çalıştırıp farklı reçete için ayr
 
 - Makine kartını canvas üzerinde taşımak üretim maliyeti veya lojistik avantajı yaratır mı, belirlenmedi.
 - Bir makinenin reçetesi değiştirilince stoklara ve çalışan işlere ne olur, belirlenmedi.
-- Makine inşa maliyeti ve gruptaki makine sayısını artırmanın bedeli belirlenmedi.
+- Makine kurma bedelinin malzeme olduğu K-011 ile seçildi; miktarlar dengelenmedi. Gruptaki makine sayısını artırmanın bedeli belirlenmedi.
 - “İstediği kadar tesis kurabilmek” yönü kaynak ve altyapıdan bağımsız sınırsız üretim anlamına gelmez.
 
 İlişkiler: [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Tasarım/Bölgeler ve Lojistik]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].

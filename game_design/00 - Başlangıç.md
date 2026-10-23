@@ -1,7 +1,7 @@
 ---
 tur: ana-sayfa
 durum: etkin
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Flowgame — Yaşayan tasarım alanı
 
@@ -19,7 +19,7 @@ Bu vault, sonsuz canvas üzerinde makine kartlarıyla oynanan üretim zinciri oy
 2. [[Yönetim/Karar Defteri]]: kullanıcı hangi kararları gerçekten verdi?
 3. [[Yönetim/Açık Sorular]]: sıradaki tartışma başlıkları.
 4. [[Yönetim/Çalışma Düzeni]]: nasıl güncelliyoruz?
-5. [[Yönetim/Uygulama Durumu]]: ilk prototipte gerçekten ne çalışıyor, ne test edildi?
+5. [[Yönetim/Uygulama Durumu]]: prototipte gerçekten ne çalışıyor, ne test edildi?
 
 ## Tasarım notları
 
@@ -27,9 +27,10 @@ Bu vault, sonsuz canvas üzerinde makine kartlarıyla oynanan üretim zinciri oy
 |---|---|
 | Oyun kimliği ve oyuncu deneyimi | [[Tasarım/Oyun Kimliği ve Temel Döngü]] |
 | 24 ürünlük üretim ağı ve makine-reçete ilk taslağı | [[Tasarım/Ürün ve Üretim Ağı]] |
-| Makine kartları, onaylı işleme modeli, reçeteler ve kapasite | [[Tasarım/Makine Kartları]] |
+| Makine kartları, işleme modeli, reçete seçimi, kurulum sınırı | [[Tasarım/Makine Kartları]] |
 | Üretim yöntemleri, kalite, geri kazanım | [[Tasarım/Prosesler Kalite ve Yan Ürünler]] |
-| Doğrudan ürün tüketen araştırmalar | [[Tasarım/Araştırma Ekonomisi]] |
+| Kademeli laboratuvarlar ve araştırma puanı | [[Tasarım/Araştırma Ekonomisi]] |
+| Envanter, malzemeli kurulum, el üretimi, hızlı erişim | [[Tasarım/Envanter ve El Üretimi]] |
 | Ön koşullar, teknoloji ödülleri ve 9 araştırmalık ilk taslak | [[Tasarım/Teknoloji Ağacı]] |
 | Kaynak erişimi ve ekonomik konum | [[Tasarım/Bölgeler ve Lojistik]] |
 | Ana proje, genişleme ve ürün paylaşımı | [[Tasarım/Ana Proje ve Ürün Dağıtımı]] |

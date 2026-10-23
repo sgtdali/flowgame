@@ -1,7 +1,7 @@
 ---
 tur: tasarim-ozeti
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Güncel tasarım
 
@@ -9,7 +9,7 @@ guncelleme: 2026-10-20
 
 Oyuncu, sonsuz bir çalışma alanı üzerinde node tabanlı üretim kartları yerleştirir ve bunları bağlar. Kartlar **makineleri** temsil eder. Soyut proses kartı yaklaşımı yerine makine kartı yaklaşımı seçilmiştir. Kart başına makine sayısı henüz kararlaştırılmamıştır.
 
-Araştırma ekonomisi için **B — gerçek ürünleri doğrudan tüketen araştırmalar** seçilmiştir. Ayrı bilim paketi üretmek yerine endüstriyel ürünler araştırmada kullanılır. Deney süreleri, tampon kuralları ve laboratuvar paylaşımı ayrıntıları tasarım önerisidir.
+**Araştırma kademeli laboratuvarlarla yapılır (K-008, K-001'in yerine geçti):** Her laboratuvar araştırmadan bağımsız olarak hep aynı ürünleri tüketir ve kendi kademesinin araştırma puanını üretir. Puanlar depoda birikir; araştırmanın fiyatı kademe puanlarıyla yazılır. Araştırma değiştirmek laboratuvar hatlarını bozmaz. Ayrıntılar [[Tasarım/Araştırma Ekonomisi]] notundadır.
 
 Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu Sohbetteki Kararlar]] içindedir.
 
@@ -18,6 +18,12 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 **Temel ürün paylaşımı seçildi (K-006):** Bir çıkış aynı ürünü kabul edebilen bağlı tüketiciler arasında otomatik eşit paylaşılır. Giriş tamponu dolu tüketicinin payı diğerlerine gider. Hepsi doluysa ürün çıkış tamponunda birikir; yeni çevrime yer kalmadığında üretim bekler. Oyuncunun hat başına oran veya hız girmesi gerekmez. Ayrıntılar [[Tasarım/Ana Proje ve Ürün Dağıtımı#Onaylı otomatik eşit paylaşım — K-006|Ürün dağıtımı]] notundadır.
 
 **24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı kaydedildi (K-007):** 5 katmanlı 24 ilişkili ürün, bunları işleyen makine türleri (`Ergitme Fırını`, `Çelik Fırını`, `Haddehane`, `Pres`, `Torna`, `CNC`, `Dökümhane`, `Tel Çekme / Sarım Makinesi`, `Montaj İstasyonu`) ve 9 araştırmalık teknoloji ağacı (`A-01` – `A-09`) ilk taslak olarak belirlendi. Kalite sistemi (A/B/C) şu aşamada kapsam dışı bırakıldı. Sayısal reçete miktarları ve montaj makinelerinin alt ayrımı açıktır. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] ve [[Tasarım/Teknoloji Ağacı]] notlarındadır.
+
+**Reçete gelen ürüne göre belirlenir (K-009):** Girdileri farklı reçeteli makinelerde oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde simgeli reçete ekranından ürün seçilir.
+
+**Hammadde sınırlıdır (K-010):** Madenler oyun başında birer adet kurulabilir.
+
+**Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
 
 ## Üzerinde çalışılan yön
 
@@ -36,13 +42,14 @@ Oyuncu yalnızca daha fazla kart yerleştirerek değil, üretim yöntemini, kapa
 - Tek makine veya aynı tip makine grubu olarak kart ölçeği.
 - Kalite sistemi: sınıf sayısı, kabul kuralları ve dönüşüm yöntemleri.
 - Bölge edinme, kaynak kapasitesini artırma ve taşıma yatırımı bedelleri.
-- Makine kurma maliyeti, para/satış ekonomisinin olup olmayacağı.
+- Para/satış ekonomisinin olup olmayacağı. Makine kurma bedelinin malzeme olduğu K-011 ile seçildi; miktarlar dengelenmedi.
+- Kurulum sınırlarının araştırmayla artıp artmayacağı.
 - Enerji ve özel proses altyapısının kapsamı.
-- Araştırma değiştirme, ortak stok ve varsa ileri öncelik araçları; temel paylaşım K-006 ile seçildi.
+- İleri öncelik araçları; temel paylaşım K-006 ile, araştırma değiştirme ve puan deposu K-008 ile seçildi.
 - Nihai hedef, ilk ürün listesi ve ilk prototipin kesin kapsamı.
 
 ## Yetki ve doğrulama sınırı
 
-İlk Godot üretim prototipi oluşturuldu: K-005 ve K-006 küçük bir örnek ağda uygulanıp 32 simülasyon kontrolü ve arayüz smoke testiyle doğrulandı. Örnek besleyici, test tüketicileri, tampon boyutları ve tek işli kartlar geçici uygulama sınırlarıdır; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Sayısal örnekler nihai denge değerleri değildir. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
+Godot prototipi K-002 – K-012 kararlarını uyguluyor ve otomatik testlerle (üretim, envanter, otomatik reçete, kart görselleri) ve pencereli smoke testiyle doğrulanıyor. Başlangıç ağı, sayılar, tampon boyutları, kurulum bedelleri ve tek işli kartlar geçici uygulama seçimleridir; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Oynanış dengesi ve büyük ağ performansı doğrulanmadı. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
 
 Sıradaki tartışma için [[Yönetim/Açık Sorular]]; test için [[Tasarım/Prototip ve Doğrulama]].

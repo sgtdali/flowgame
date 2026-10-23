@@ -116,7 +116,8 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Karar:** Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü veride bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir.
 - **Kaynak:** “hammedde kaynakalrının sınırsız olması oyunun balansını yapmayı imkansız hale getiriyor. madenler 1 er adet kurulabilmeli en azından oyun başında”.
 - **Gerekçe:** Sınırsız hammadde dengelemeyi imkânsız kılıyor.
-- **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndür; karar değildir, uygulanmadı. Serbest modda (tümünü aç) sınır uygulanmaz.
+- **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndür; karar değildir, uygulanmadı. Serbest modda (tümünü aç) sınır uygulanmaz. İzleyen soru: S-021.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
 
 ## K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi
 
@@ -130,6 +131,20 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
   5. Hammadde el ile çıkarılamaz; oyuncu bir başlangıç kitiyle başlar.
 - **Kaynak:** “alt taraf oyuncunun inventorysi gibi olacak. ve kurulacak node lar malzeme isteyecek. oyuncu malzemeleri de node larıda bu inventery de tutabilecek. ve kendisi de recipe ekranından craft yapabilecek.” Seçimler: ürünün envantere girişi için “ikiside ancak otomatik inventory e geçmeyecek oyuncu kartta birikmiş çıktıyı ordan inventorysine isterse alacak. aynı şekilde depodan da”; el üretimi “Süreli kuyruk”; hammadde “Hayır, başlangıç kiti”; silinen kart “Envantere döner”.
 - **Sınır:** Kurulum maliyetleri, el üretimi hızı (10 iş/sn, makineler 20), makine yapım süresi (5 sn), hangi makinelerin reçetelerinin el ile yapılabildiği (haddehane, pres, torna, CNC, tel sarım, montaj) ve başlangıç kiti ilk denemedir; dengelenmemiştir. Envanterin yuva sınırı yoktur. Depo ürün başına 100 tutar.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+- **Değişiklik:** 1. madde K-012 ile değişti: alttaki çubuk artık envanterin tamamı değil, 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı pencerededir. Diğer maddeler geçerli.
+
+## K-012 — Hızlı erişim çubuğu ve envanter penceresi
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Alttaki çubuk hızlı kullanım içindir ve sabit 10 yuvadır.
+  2. Envanterin tamamı ayrı açılan, geniş bir penceredir ve bir tuşla açılır.
+  3. İki görünüm aynı envanteri paylaşır; oyuncu envanterdeki istediği öğeyi alttaki hızlı erişime sabitler.
+- **Kaynak:** “bu alttaki inentory hızlı kullanım için olsun ve sabit 10 ürün alıyor olsun. esas inventory başka açılan bir pencere olsun o geniş olsun. oyuncu istedğini altta hızlıya alabiliyor olsun. yani ikisi aynı inventory i paylaşacak ama oyuncu istediğini alta sabitleyebiliyor olacak ölye düşün. birde inventory açma tuşu koyman lazım tabi”
+- **Sınır:** Kullanıcının seçmediği, prototipte asistanın koyduğu ayrıntılar: açma tuşu I; yuvalar 1-9 ve 0 tuşlarıyla kullanılır (makine yerleştirir); sabitleme sürükle-bırak, sağ tık ya da pencerede öğenin üstündeyken numara tuşuyla yapılır; sayısı sıfıra inen öğe yuvasında soluk kalır; yeni gelen öğe boş yuva varsa ilk boş yuvaya kendiliğinden girer; başlangıç kiti çubuğa dizilir. Bunlar değiştirilebilir.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
 
 ## Henüz karar olmayan yönler
 

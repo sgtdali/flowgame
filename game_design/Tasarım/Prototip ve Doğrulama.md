@@ -1,15 +1,17 @@
 ---
 tur: dogrulama-plani
 durum: oneri
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Prototip ve doğrulama
 
 ## Bu bir uygulama emri değildir
 
-Kaynak konuşmada farklı zamanlarda önerilmiş üç deney kapsamı bulunuyor. Bunlar tek prototipte toplanmış veya kullanıcı tarafından kesinleştirilmiş değildir. Kullanıcının oyunu oluşturmaya başlama talebinden sonra, aşağıdaki üç büyük kapsamdan önce küçük bir üretim/paylaşım atölyesi uygulandı. Yapılan ve test edilen kısmın güncel kaydı [[Yönetim/Uygulama Durumu]] içindedir; aşağıdaki plan tek başına uygulama emri değildir.
+Kaynak konuşmada farklı zamanlarda önerilmiş üç deney kapsamı bulunuyor. Bunlar tek prototipte toplanmış veya kullanıcı tarafından kesinleştirilmiş değildir. Kullanıcının oyunu oluşturmaya başlama talebinden sonra prototip adım adım büyüdü: 24 ürünlük ağ, kademeli laboratuvarlar, envanter ve el üretimi çalışıyor. Bölge ve yöntem karşılaştırması deneyleri (B ve C) henüz yapılmadı. Yapılan ve test edilen kısmın güncel kaydı [[Yönetim/Uygulama Durumu]] içindedir; aşağıdaki plan tek başına uygulama emri değildir.
 
 ## Deney A — Araştırma tüketim döngüsü
+
+Not: Bu deney K-001 dönemine aittir. K-008 ile araştırma laboratuvarların ürettiği kademe puanıyla yapılır; test soruları buna göre okunmalıdır.
 
 Kaynakta ilk araştırma prototipi için önerilen kapsam: 8 araştırma, 3 alan, 15–20 ürün, çoğaltılabilir tek laboratuvar türü, çok malzemeli deney, aynı anda tek aktif araştırma, ilerlemeyi koruyan araştırma değişimi, gerçek düğüm bağlantıları, giriş/talep/darboğaz ekranı ve bir küçük ana proje aşaması. Sonsuz araştırma önerilmemiştir.
 
@@ -36,6 +38,8 @@ Test sorusu: Ham ürün taşımakla kaynak yanında işlemek arasında gerçek b
 Her deney için sürüm/tarih, kullanılan veri, oyuncunun hedefi, beklenen karar, gözlenen davranış, sorun ve bir sonraki değişiklik tutulur. “Eğlenceli” veya “çalışıyor” tek başına kanıt sayılmaz; oyuncunun hangi iki çözümü karşılaştırdığı kaydedilir.
 
 ## Teknik doğrulama hedefleri
+
+Prototipte otomatik testlerle denetlenenler [[Yönetim/Uygulama Durumu#Doğrulama kanıtı — 2026-10-23]] içindedir.
 
 - Eksik girdili deney başlamaz; girdiler birlikte tüketilir.
 - İki laboratuvar aynı stok birimini iki kez kullanamaz.

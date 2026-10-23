@@ -1,7 +1,7 @@
 ---
 tur: teknik-tasarim
 durum: karma
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Simülasyon ilkeleri
 
@@ -9,7 +9,7 @@ guncelleme: 2026-10-20
 
 Üretim ve taşıma simülasyonu görsel kartlardan bağımsız tutulmalı. Bir kartın ekrandan çıkması üretimin durmasına neden olmamalı; ekran dışındaki kartların görsel güncellemeleri gerektiğinde azaltılabilmeli. Bu bir mimari öneridir, mevcut uygulama incelemesi değildir.
 
-Godot kaynak konuşmada teknik aday olarak geçer. Bu vault kurulurken oyun motoru kurulmadı, kod çalıştırılmadı ve performans ölçülmedi.
+Prototip Godot 4.7.2 ile yazıldı. Simülasyon (`sim/production_sim.gd`) arayüzden ayrı bir sınıftır ve 0,05 saniyelik sabit adımlarla ilerler; arayüz yalnızca durumu okur ve komut verir. Performans henüz ölçülmedi.
 
 ## Veriyle tanımlanacak olası kavramlar
 
@@ -19,7 +19,10 @@ Godot kaynak konuşmada teknik aday olarak geçer. Bu vault kurulurken oyun moto
 | Makine türü | Uygun reçeteler ve işleme hızı (işleme birimi/sn); K-005 onaylı |
 | Makine kartı | Bölge, reçete, varsa makine sayısı, stok ve durum |
 | Üretim reçetesi | Girdiler, çıktılar, gereken iş; süre gereken iş / uygun makinenin işleme hızı ile hesaplanır (K-005). Altyapı ayrıca seçilecek. |
-| Araştırma | Ön koşullar, deney reçetesi, deney sayısı, ödüller |
+| Araştırma | Ön koşullar, kademe puanı fiyatı (K-008), açtığı makine ve reçeteler |
+| Laboratuvar | Tükettiği ürünler ve ürettiği kademe puanı (K-008) |
+| Envanter | Taşınan ürünler, kurulmamış makineler, el üretimi sırası, hızlı erişim yuvaları (K-011, K-012) |
+| Makine türü (kurulum) | Kurulum bedeli ve varsa kurulum sınırı (K-010, K-011) |
 | Bölge | Kaynak erişimi, tesisler ve altyapı |
 | Taşıma bağlantısı | Uçlar, kapasite, paylaşım ve varsa teslimat gecikmesi |
 | Ana proje | Aşamalar ve ürün ihtiyaçları |
@@ -42,7 +45,7 @@ Kart yerleşim koordinatları ile ekonomik bölge, bölgesel model seçilirse ay
 
 ## Kayıt ve ölçek
 
-Kayıtların kart bağlantılarını, stokları, araştırma ilerlemesini ve çalışan işleri koruması önerilir. Kayıt sürümleme/göç planı henüz seçilmedi. İlk küçük prototipte gereken güvenilirlik tanımlanmalıdır.
+Prototip kaydı kart bağlantılarını, stokları, çalışan işleri, araştırma ilerlemesini ve puan depolarını, envanteri ve hızlı erişimi korur. Kayıt bir `version` alanı taşır (şu an 4); bir önceki sürüm (3) okunmaya devam eder, bozuk veya uyumsuz kayıt reddedilir. Bu bir uygulama seçimidir; uzun vadeli göç planı seçilmedi.
 
 Simülasyon süresi, görsel güncelleme süresi, bellek ve ekranda görünen kart sayısı ayrı ölçülmeli. Toplu kartların simülasyonla eşdeğerliği gruplanmamış örnekle kontrol edilebilir. Ölçüm olmadan binlerce kart desteklendiği iddia edilmemelidir.
 

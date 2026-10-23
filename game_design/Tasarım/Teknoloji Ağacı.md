@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: ilk-taslak
-guncelleme: 2026-10-22
+guncelleme: 2026-10-23
 ---
 # Teknoloji ağacı
 
@@ -51,6 +51,12 @@ flowchart LR
 
     A06 & A08 --> A09["A-09: Otomasyon ve Kontrol"]
 ```
+
+> [!info] Prototipteki karşılığı (ilk deneme)
+> - Başlangıçta açık makineler aşağıdaki dörde ek olarak dört maden (birer adet, K-010), `Talaş bertaraf ünitesi`, `Laboratuvar 1` ve `Depo`dur.
+> - Araştırmalar laboratuvar da açar: A-03 → `Laboratuvar 2`, A-07 → `Laboratuvar 3`. A-09 `Ana proje terminali`ni açar.
+> - Açılan makineler kendiliğinden gelmez; oyuncu onları malzemeyle üretir (K-011).
+> - Üç montaj türü tek `Montaj istasyonu` altında birleşiktir.
 
 > [!warning] Tükettiği ürünler sütunu tarihseldir
 > Aşağıdaki tablolardaki "Tükettiği Ürünler" sütunu K-001 dönemine aittir. K-008 ile araştırmalar ürün değil kademe puanı ister; güncel fiyatlar ve laboratuvarlar [[Tasarım/Araştırma Ekonomisi]] notundadır.

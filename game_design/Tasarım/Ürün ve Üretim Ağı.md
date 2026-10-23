@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: ilk-taslak
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Ürün ve üretim ağı (İlk taslak — K-007)
 
@@ -18,6 +18,7 @@ Tasarımda her ürünün tek bir yerde kullanılıp unutulması yerine:
 > - **Kalite sistemi (A/B/C):** Kullanıcı kararıyla şu aşamada kapsam dışı bırakılmıştır; ürünler tek standart kalitede üretilir.
 > - **Sayısal değerler:** Reçetelerin girdi/çıktı adetleri, gereken iş miktarları ([[Tasarım/Makine Kartları#Onaylı üretim modeli — K-005|K-005]]) ve makine işleme hızları henüz sabitlenmemiştir.
 > - **Montaj makineleri:** `Montaj İstasyonu`, `Elektronik Montaj` ve `Hassas Montaj` ayrı makine kartları olarak veya tek `Montaj İstasyonu` altında birleştirilerek uygulanabilir; bu ayrım açıktır.
+> - **Prototip:** Sayısal reçeteler ilk deneme olarak `data/prototype.json` içinde; montaj tek istasyonda birleşik. Ürünler artık makine kurulumunda da harcanır (K-011); ör. çelik levha ve bağlantı elemanı hemen her makinenin bedelinde var. Bedeller [[Tasarım/Envanter ve El Üretimi]] notundadır.
 
 ---
 

@@ -66,3 +66,19 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - Kullanıcı, Codex'in dört taslağından (`art_src/craft_ekrani_stil/`) A tarzını seçti: koyu çerçeve, amber vurgu, sağda seçili öğenin ayrıntı paneli. Bu bir arayüz görünümü seçimidir, oyun kuralı değişmedi; karar defterine işlenmedi.
 - Prototipte üretim ekranında kutuya tıklamak artık seçer, ÜRET düğmesi sıraya ekler (Shift: 5). Üretilemeyen öğede düğme kapanır ve nedeni yazılır. Üretim sırası (× ile iptal) ve envanter pencerenin içinde de gösterilir.
 - Pencere çerçevesi ve zemini kullanıcının LibreSprite'ta pencerenin gerçek boyutunda çizdiği görselden 16 px kesim paylı 9-slice olarak alındı (`art_src/ui/menu_cerceve/`).
+
+## 2026-10-23 — Hızlı erişim ve envanter penceresi
+
+- K-012: Alttaki çubuğun 10 yuvalı hızlı erişim olması, envanterin tamamının ayrı bir pencerede (I) açılması ve oyuncunun istediği öğeyi hızlı erişime sabitlemesi onaylandı. K-011'in 1. maddesi değişti olarak işaretlendi.
+- Prototipte sabitlemeler simülasyonda tutulur ve kayda girer (`hotbar`, kayıt sürümü 4 kaldı; alanı olmayan eski kayıtlar yüklenir).
+
+## 2026-10-23 — Belgeler prototiple eşitlendi
+
+- Yeni konu notu: [[Tasarım/Envanter ve El Üretimi]] (K-010, K-011, K-012 ve prototipteki ilk deneme değerleri). Başlangıç sayfasına, ana panoya ve K-010/K-011/K-012 kayıtlarına bağlandı.
+- [[Yönetim/Uygulama Durumu]] baştan yazıldı: uygulanan kararlar K-002 – K-012, güncel arayüz, kayıt sürümü 4, testler ve smoke testi kapsamı. Eski sol kütüphane / sağ panel anlatımı kaldırıldı.
+- [[01 - Güncel Tasarım]]: K-001 yerine K-008; K-009 – K-012 özetlendi; açık maddeler ve doğrulama sınırı güncellendi.
+- [[Yönetim/Açık Sorular]]: S-011 ve S-012 K-008 ile kapandı, S-003 kısmen çözüldü; S-021 (kurulum sınırının artması), S-022 (envanter sınırı), S-023 (bedel ve el üretimi dengesi) eklendi.
+- Konu notlarına prototip karşılıkları eklendi: Makine Kartları (K-009, kurulum bedeli ve sınırı, Depo), Teknoloji Ağacı, Ürün ve Üretim Ağı, Araştırma Ekonomisi, Ana Proje, Arayüz, Simülasyon İlkeleri, Prototip ve Doğrulama, Oyun Kimliği; Node Editör görseli tarihsel olarak işaretlendi.
+- Panolar: ana panodaki seçimler kartı K-008 – K-012 ile güncellendi (K-001 çıkarıldı), yeni not kartı eklendi; döngü panosunda başlık ve genişleme kartı güncellendi, Otomasyon I örneği tarihsel işaretlendi. Mevcut kart konumları ve kimlikleri korundu.
+- Depo kökündeki `README.md` ve `art_src/README.md` güncel prototipe göre yeniden yazıldı.
+- Yeni kullanıcı kararı yok; prototip ayrıntıları karar olarak yazılmadı.

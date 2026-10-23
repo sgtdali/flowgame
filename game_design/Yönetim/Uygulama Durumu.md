@@ -1,37 +1,61 @@
 ---
 tur: uygulama-kaydi
 durum: prototip
-guncelleme: 2026-10-20
+guncelleme: 2026-10-23
 ---
 # Uygulama durumu
 
-## Endüstriyel üretim ve araştırma ağı — 2026-10-20
+Godot 4.7.2 prototipinde 2026-10-23 itibarıyla çalışan ve test edilen kısım. "Uygulandı" oynanışın doğrulandığı anlamına gelmez; sayılar ilk denemedir.
 
-Kullanıcının “bunları oyuna uygula şimdi” talebi üzerine K-007 ilk taslağındaki **24 ürünlük üretim ağı**, **makine türleri** ve **9 araştırmalık teknoloji ağacı (`A-01` – `A-09`)** Godot 4.7.2 projesine uygulandı.
+## Uygulanan kararlar
 
-## Uygulanan temel
+| Karar | Prototipte |
+|---|---|
+| K-002, K-003 | Sonsuz tuval üzerinde makine kartları; kartlar arasında ürün tipli port bağlantıları. |
+| K-005 | Reçete işi / makine işleme hızı; çok girdili ve çok çıktılı reçeteler; girdiler başta tüketilir, çıktılar iş bitince eklenir; giriş/çıkış tamponları; eksik girdi ya da dolu çıkış yeni çevrimi bekletir. |
+| K-006 | Kabul edebilen bağlı tüketicilere her ürün için otomatik eşit paylaşım (çıkış başına hatırlanan adil sıra). |
+| K-007 | 24 ürün, 19 makine türü, 32 reçete, 9 araştırma (`A-01` – `A-09`). Üç alt montaj türü tek `Montaj istasyonu` altında birleşik. |
+| K-008 | Laboratuvar 1/2/3 sürekli aynı ürünleri tüketip Kademe 1/2/3 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
+| K-009 | Girdisi farklı reçeteli makineler (ergitme fırını, çelik fırını, pres, tel sarım, montaj) reçeteyi gelen ürüne göre seçer, boşken tek genel girişi olur. Aynı girdili makinelerde (haddehane, CNC, dökümhane) simgeli reçete ekranından ürün seçilir. |
+| K-010 | Dört maden birer adetle sınırlı; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
+| K-011 | Envanter, malzemeli makine kurulumu, karttan/depodan elle alma, süreli el üretimi kuyruğu, başlangıç kiti, Depo kartı. |
+| K-012 | Alttaki 10 yuvalı hızlı erişim çubuğu ve I ile açılan envanter penceresi; ikisi aynı envanteri paylaşır, öğeler hızlı erişime sabitlenir. |
 
-- **K-001 & K-007:** 5 katmanlı **24 ürün kataloğu**, ilgili makine türleri (`Demir/Bakır/Kömür Madeni`, `Kuvars Ocağı`, `Ergitme Fırını`, `Çelik Fırını`, `Haddehane`, `Pres`, `Torna`, `CNC Tezgâhı`, `Dökümhane`, `Tel Çekme ve Sarım`, `Montaj İstasyonu`, `Araştırma Laboratuvarı`, `Ana Proje Terminali`, `Talaş Bertaraf Ünitesi`) ve **9 araştırmalık (`A-01` – `A-09`) teknoloji ağacı** çalışır.
-- **K-005:** Reçete işi / makine işleme hızı; çok girdili ve çok çıktılı reçeteler (`Torna` ve `CNC` işlemlerinden çıkan `Metal Talaşı` yan ürünü ve `Çelik Fırını`nda geri kazanımı); girdileri başlangıçta tüketme; çıktıları iş sonunda üretme; giriş/çıkış tamponları; eksik girdi ve dolu çıkışta yeni çevrimi bekletme.
-- **K-006:** Kabul edebilen bağlı tüketicilere her çıkış ürünü için otomatik eşit paylaşım.
-- **Çok portlu makine kartları ve reçete seçimi:** Makine kartlarında her girdi ve çıktı ürünü kendi renkli ve tipli portuna sahiptir. Sağdaki **Seçili Makine** panelinden makinenin açık reçeteleri arasında geçiş yapılabilir.
-- **Teknoloji Ağacı paneli ve Serbest Mod:** 3 kademeli araştırma ağacı ekranından (`app/research_panel.gd`) aktif araştırma seçilebilir; laboratuvarlar seçili araştırmanın ürünlerini tüketerek yeni makineleri ve reçeteleri açar. İstenirse **Serbest Mod** düğmesiyle tüm kilitler anında açılabilir.
-- Yerel tek yuvalı kayıt/yükleme (`version: 2`): kart konumları, seçili reçeteler, ağ bağlantıları, stoklar, çalışan işler, dağıtım sırası ve araştırma ilerlemesi korunur.
+Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Teknoloji Ağacı]].
+
+## Arayüz
+
+- **Üst çubuk:** Araştırma ağacı (aktif araştırma ve yüzdesi), Serbest mod, Duraklat/Devam, oyun hızı (1× ↔ 4×), Ortala, Kaydet, Yükle, Sıfırla.
+- **Makine kartı:** 128×128 makine görseli, giriş ve çıkış göstergeleri, çevrim çubuğu, durdurma düğmesi. Çıkış göstergesine tıklamak ürünü envantere alır; bir girişin "+" düğmesi o ürünü yapan makineyi envanterden kurup bağlar.
+- **Kart menüsü (sağ tık):** Ne üretilsin? (reçete ekranı), Durdur/Çalıştır, hız 20 ↔ 40 iş/sn, Envantere al, Kaldır (envantere); laboratuvarda araştırma hedefi seçimi.
+- **Üretim ekranı (C):** Kategori sekmeleri, öğe kutuları, seçili öğenin resmi/açıklaması/tarifi, ÜRET düğmesi, üretim sırası ve envanter satırı. Çerçevesi kullanıcının LibreSprite'ta çizdiği 9-slice görseldir.
+- **Envanter penceresi (I)** ve **hızlı erişim çubuğu (1–9, 0):** bkz. [[Tasarım/Envanter ve El Üretimi]].
+- **Araştırma paneli:** Kademeli araştırma ağacı, kademe puanı depoları, aktif araştırma seçimi, serbest mod.
 
 ## Geçici deney seçimleri
 
-Başlangıç ağı Kademe 0 makineleriyle 8 kart ve 10 bağlantı olarak kurulur: `Demir Madeni` + `Kömür Madeni` → `Ergitme Fırını (Pik Demir)` → `Çelik Fırını (Çelik Külçe)` → iki `Haddehane (Çelik Levha ve Çelik Çubuk)` → `Pres (Bağlantı Elemanı)` → `Araştırma Laboratuvarı (A-01: Talaşlı İmalat)`.
+- Başlangıç ağı 8 kart ve 9 bağlantıdır ve başlangıç kitinden ayrı, bedelsiz kurulur: `Demir madeni` + `Kömür madeni` → `Ergitme fırını (pik demir)` → `Çelik fırını (çelik külçe)` → iki `Haddehane` (levha, çubuk) → `Pres (bağlantı elemanı)` → `Laboratuvar 1`.
+- Bütün makinelerin işleme hızı 20 iş/sn; kart menüsünden 40'a çıkarılabilir. Tamponlar 6–12, Depo 100.
+- `Talaş bertaraf ünitesi` ve `Ana proje terminali` (A-09 sonrası, aktüatör + PLC tüketir) yer tutucudur; bertaraf ve ana proje için kullanıcı kararı yoktur.
+- Bağlantılar anlık ve sınırsız aktarım yapar. Bölge, taşıma kısıtı, enerji ve para uygulanmadı.
+- Makine görsellerinin bir kısmı yer tutucudur; kart ve görsel kuralları `art_src/STANDART.md` içindedir.
 
-Reçetelerin girdi/çıktı sayıları, gereken iş değerleri, tampon boyutları (6–12) ve araştırma deney sayıları (8–15) ilk taslak uygulama değerleridir; nihai denge kararı sayılmaz. Üç alt montaj kategorisi bu uygulamada tek `Montaj İstasyonu` altında seçilebilir reçeteler olarak birleştirilmiştir. Bağlantılar anlık ve sınırsız aktarım yapar; bölgesel kaynak, taşıma kısıtı, enerji ve inşa bedeli henüz uygulanmadı.
+## Kayıt
 
-## Doğrulama kanıtı
+Tek yuvalı yerel kayıt (`user://workshop.json`), sürüm 4: kart konumları, reçeteler, bağlantılar, tamponlar, çalışan işler, paylaşım sırası, araştırma ilerlemesi ve puan depoları, envanter, kurulmamış makineler, üretim sırası ve hızlı erişim. Sürüm 3 kayıtları başlangıç kitiyle yüklenir.
 
-- Motor: **4.7.2.stable.official.ed1daf0bf**.
-- `tests/test_production.gd`: **63 kontrol geçti**. Kademe 0'dan başlayarak 9 araştırmanın tamamının kilitlenmeden (deadlock olmadan) açıldığı ve 24 ürünün tamamının üretilebilir hale geldiği, çok girdili/çok çıktılı reçeteler, `Metal Talaşı` geri kazanımı, `Dökümhane` alternatif üretimi, çoklu laboratuvarda fazla deney başlatmama, araştırma değiştirme ve kayıt/yükleme bütünlüğü doğrulandı.
-- Headless ve OpenGL Compatibility arayüz smoke testleri geçti; `artifacts/production-workshop.png` oluşturulup görsel olarak incelendi.
+## Doğrulama kanıtı — 2026-10-23
+
+- Motor: **4.7.2.stable.official**.
+- `tests/test_production.gd`: 80 kontrol — ürünlerin ve araştırmaların kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü.
+- `tests/test_inventory.gd`: başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt.
+- `tests/test_auto_recipe.gd`: reçetenin gelen ürüne göre seçilmesi ve seçilen reçetenin korunması.
+- `tests/test_mine_visual.gd`, `tests/test_smelter_visual.gd`: makine kartı görselleri, animasyon, durdurma, hız ve port hizası.
+- Pencereli smoke testi (`-- --smoke-test`): kayıt/yükleme, üretim ekranından CNC üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, envanter penceresi ve sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Ekran görüntüleri `artifacts/` altındadır.
+- Doğrulanmayanlar: fiziksel fareyle oynanış testi, denge, büyük ağ performansı.
 
 ## Çalıştırma ve kaynaklar
 
-Depo kökündeki `Baslat.cmd` oyunu açar. `README.md` kontrolleri ve doğrulama komutlarını anlatır. Oyun `project.godot`, arayüz `app/main.gd`, `app/machine_library.gd`, `app/machine_inspector.gd`, `app/research_panel.gd`, simülasyon `sim/production_sim.gd`, katalog verisi `data/prototype.json` içindedir.
+Depo kökündeki `Baslat.cmd` oyunu açar; `README.md` kontrolleri ve komutları anlatır. Simülasyon `sim/production_sim.gd`, katalog `data/prototype.json`, arayüz `app/` (`main.gd`, `sprite_machine_card.gd`, `craft_screen.gd`, `inventory_bar.gd`, `inventory_window.gd`, `inventory_slot.gd`, `machine_menu.gd`, `recipe_picker.gd`, `research_panel.gd`).
 
-İlgili tasarım: [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Makine Kartları]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[Yönetim/Karar Defteri]].
+İlgili: [[Yönetim/Karar Defteri]], [[Tasarım/Prototip ve Doğrulama]].
