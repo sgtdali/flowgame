@@ -21,6 +21,14 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **Tek reçete ve farklı ürün ilkesi (K-017):** Her ürünün tek bir ana üretim tarifi vardır; aynı ürün için alternatif tarifler tanımlanmaz. Farklı yöntemler veya hammaddeler (örneğin döküm vs talaşlı imalat, pik demir vs çelik) aynı işlev grubunda olsalar bile farklı ürünler oluşturur (`Cast Iron Gear` vs `Steel Gear`, `Cast Iron Housing` vs `Steel Housing`). Demir ergitme kömürsüz yapılırken, çelik ergitme kömür katkısıyla çalışır; demir kolu levha, çubuk ve boru gibi ara ürünlerle genişletilmiştir. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] notundadır.
 
+**Ana proje: Son Fabrika ve Kurucu Çekirdek (K-018):** Oyuncu endüstriyel çöküşten sonra kalan son otomatik fabrikayı yönetir ve sanayiyi yeniden başlatacak Kurucu Çekirdek'i üretir. Çekirdek ayrı bir üründür; beş endüstri modülünden (Metalürji, Hassas Mekanik, Elektrik, Elektronik, Otomasyon) montajla yapılır ve ana proje terminaline teslim edilir. Final proje her modülden çok sayıda ister ve oyuncuyu fabrikayı genişletmeye zorlar. Kimya modülü ileride; Exodus senaryosu fikir olarak saklanıyor. Ayrıntılar [[Tasarım/Ana Proje ve Ürün Dağıtımı]] notundadır.
+
+**Kollar birbirine bağlı (K-019):** Ürün kolları bağımsız değildir; bazı reçeteler iki koldan malzeme ister.
+
+**Makine üreten makineler (K-020):** Elle üretilen makine kartlarını üreten kartlar da olacak; oyuncu el üretimini zamanla otomatikleştirir. Tasarımı henüz yok.
+
+**Beş modülün reçete taslağı (K-021):** Ağ sondan başa kuruldu ve 55 ürüne çıktı; her ürün bir modüle, laboratuvara ya da kuruluma gider. Adetler ilk tahmindir. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] notundadır.
+
 **Reçete seçimi (K-009, K-016):** Girdileri farklı reçeteli makinelerde (pres, tel sarım, montaj) oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde ve fırınlarda simgeli reçete ekranından ürün seçilir.
 
 **Makine kartı gösterimi (K-015):** Ürünler kartta çerçeveli kutularda adetle görünür; seçili reçetenin girdileri boş kutuda saydamdır; üretilen ürün çıktı kutusundan ayrı gösterilir.
@@ -31,11 +39,11 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 ## Üzerinde çalışılan yön
 
-Kullanıcı, farklı üretim yöntemleri fikrine olumlu yaklaşmıştır. K-017 kararıyla bu durum aynı ürüne alternatif reçete vermek yerine, her yöntemin farklı bir ürün üretmesi (döküm dişli vs çelik dişli) şeklinde somutlaştırılmıştır. Bu ürünlerin downstream tüketim ve performans dengeleri üzerinde çalışılmaktadır.
+Kullanıcı, farklı üretim yöntemleri fikrine olumlu yaklaşmıştır. K-017 kararıyla bu durum aynı ürüne alternatif reçete vermek yerine, her yöntemin farklı bir ürün üretmesi (döküm dişli vs çelik dişli) şeklinde somutlaştırılmıştır. Bu ürünlerin hepsi K-021 ile bir modüle bağlandı; adet ve süre dengeleri açıktır.
 
 Sonsuz canvas'ın sınırsız kaynak ve zahmetsiz kapasite artışına dönüşmesi bir tasarım sorunudur. Buna çözüm olarak ekonomik bölgeler ve kapasitesi sınırlı bölgeler arası taşımacılık önerilmiştir. Kullanıcı bunu “fena fikir değil” diye karşılamıştır; kesin bölge modeli, kaynak limitleri ve taşıma kuralları açık kalmıştır.
 
-Ana proje, araştırma ve fabrika genişlemesinin ortak ürünleri tüketmesi önerilmiştir. Hangi nihai projenin yapılacağı bilinmiyor. Kaynak metinde daha önce konuşulduğu belirtilen dört hikâye senaryosunun içerikleri bulunmuyor.
+Ana proje, araştırma ve fabrika genişlemesinin ortak ürünleri tüketmesi önerilmiştir. Nihai proje K-018 ile Kurucu Çekirdek olarak seçildi; modül ve çekirdek adetlerinin dengesi açıktır.
 
 ## Hedeflenen oyuncu deneyimi
 

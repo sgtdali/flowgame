@@ -93,9 +93,19 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-014: Envanterden makine girişine elle ürün koyma onaylandı; prototipte sürükle-bırak (sığdığı kadar, Shift: 1).
 - K-015: Kartta ürünler çerçeveli kutularda adetle gösterilir (0'da boş, depolar dahil bar yok); seçili reçetenin girdileri boş kutuda saydam simgedir (silüet ayırt edilemediği için değiştirildi); üretilen ürün başlıkta.
 - K-016: Fırınlarda reçeteyi oyuncu seçer; K-009'un fırın kısmı değişti olarak işaretlendi. Otomatik reçete testi tel sarım ve montaj üzerinden yeniden yazıldı.
-- Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[01 - Güncel Tasarım]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
+- Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[01 - Güncel Tasarım]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
+
 ## 2026-10-23 — Tek reçete ve farklı ürün ilkesi
 
 - K-017: Her ürünün tek bir ana reçetesi olması kuralı getirildi. Aynı ürün için makinelerde alternatif reçete seçimi kaldırıldı; döküm veya talaşlı imalat gibi farklı yöntem ve malzemeler farklı ürünler (`Cast Iron Gear` vs `Steel Gear`, `Cast Iron Housing` vs `Steel Housing`) olarak ayrıldı.
 - Demir ve çelik kolları netleştirildi: `Iron Ore -> Iron Ingot` (ergitme, kömürsüz); `Iron Ore + Coal -> Steel Ingot` (çelik fırını); talaş/hurda fırınlara geri beslenir. Demir kolu `Iron Plate`, `Iron Rod` ve `Iron Pipe` ara ürünleriyle genişletildi.
-- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[01 - Güncel Tasarım]], [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Yönetim/Açık Sorular]].
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[01 - Güncel Tasarım]], [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Yönetim/Açık Sorular]].
+
+## 2026-10-23 — Ana proje ve beş modülün reçeteleri
+
+- K-018: Ana proje Son Fabrika seçildi. Kurucu Çekirdek ayrı bir üründür, beş modülden (Metalürji, Hassas Mekanik, Elektrik, Elektronik, Otomasyon) montajla yapılır, terminale teslim edilir; final proje her modülden çok sayıda ister. Exodus senaryosu ileride kullanılmak üzere [[Tasarım/Ana Proje ve Ürün Dağıtımı]] notuna yazıldı; kullanıcının paylaştığı dört senaryo da orada. S-014 kapandı.
+- K-019: Ürün kolları birbirine bağlı; bazı reçeteler iki koldan malzeme ister.
+- K-020: Makine üreten makineler onaylı yön olarak kaydedildi; tasarımı S-024'te açık.
+- K-021: Beş modülün reçete taslağı adım adım onaylandı; ağ 24'ten 55 ürüne çıktı. Electrical Cabinet PLC'ye girer, döküm parçalar ayrı ürün, Gearbox döküm gövde ister. K-007'ye genişleme notu eklendi.
+- [[Tasarım/Ürün ve Üretim Ağı]] `data/prototype.json`'dan yeniden üretildi (akış şeması, katalog, modüller). Güncellenen notlar: [[01 - Güncel Tasarım]], [[00 - Başlangıç]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]] (S-024 – S-026 eklendi); `README.md`.
+- Prototip: 31 yeni ürün ve reçete; makine ve araştırma atamaları geçici. Simülasyon testleri geçti; pencereli smoke testi ve oyun içi deneme yapılmadı.

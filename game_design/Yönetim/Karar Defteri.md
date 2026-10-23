@@ -88,6 +88,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Sınır:** İlk taslak niteliğindedir. Reçetelerin girdi/çıktı sayıları, gereken iş miktarları (K-005), makine hızları, araştırma deney sayıları/süreleri ve montaj makinelerinin tek veya üç ayrı makine türü olması henüz sabitlenmemiştir.
 - **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Teknoloji Ağacı]].
 - **Değişiklik:** K-017 ile aynı ürüne alternatif yöntem (ör. döküm dişli vs CNC dişli) yerine "tek reçete ve farklı ürünler" (Cast Iron Gear vs Steel Gear) ilkesi benimsendi.
+- **Genişleme:** K-021 ile ağ beş modüle ve 55 ürüne genişletildi.
 
 ## K-008 — Kademeli laboratuvarlar ve depolanabilir araştırma puanı
 
@@ -204,6 +205,53 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Gerekçe:** Ürün zincirini zengin ve detaylı kılarken makinelerin aynı ürün için gereksiz çoklu tariflerle karmaşıklaşmasını önlemek.
 - **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]].
 
+## K-018 — Ana proje: Son Fabrika ve Kurucu Çekirdek
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Oyunun hikâyesi **Son Fabrika**'dır: endüstriyel çöküşten sonra oyuncu hayatta kalan son otomatik sanayi sistemini yönetir ve dünyanın sanayisini yeniden başlatacak **Kurucu Çekirdek**'i (`Founding Core`) üretir.
+  2. Kurucu Çekirdek **ayrı bir üründür**: endüstri modülleri montajda birleşip çekirdeği yapar, ana proje terminali yalnızca çekirdeği kabul eder.
+  3. Modüller: Metalürji, Hassas Mekanik, Elektrik, Elektronik ve Otomasyon. Kimya modülü yeni hammaddelerle ileride eklenecek.
+  4. Final proje her modülden çok sayıda ister ve zor tamamlanır; oyuncu fabrikayı genişletmek, çok sayıda hat kurmak ve adetleri yükseltmek zorunda kalır. Ürünlerin açılması araştırmaya bağlıdır.
+  5. Exodus senaryosu, hammaddeler genişletilirse kullanılmak üzere fikir olarak saklanır.
+- **Kaynak:** Kullanıcı dört senaryoyu paylaştı ve “son fabrika olsun. ama exodus u da bi yere not edelim” dedi; modül tablosu için “Modül tablosu uygun”; “final proje çok fazla maleme istemeli her modülden. yani zor tamamlanmalı ki oyuncu fabrikayı genişletme ihtiyacı duysun. zaten araştırma ile açılacak”; çekirdek için “Ayrı bir ürün” seçimi ve yapıya “uygundur”.
+- **Sınır:** Çekirdeğin ve modüllerin adetleri (prototipte her modülden 4) denenmemiş örneklerdir. Asistanın önerdiği 30–40 ürün sınırını kullanıcı “30 40 ı boş ver. önemli değil o” diyerek reddetti; ürün sayısı sınırı yok.
+- **Asıl notlar:** [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[Tasarım/Ürün ve Üretim Ağı]].
+
+## K-019 — Kollar birbirine bağlı olur
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:** Modüllerin ürün kolları (demir, çelik, bakır, kuvars) birbirinden tamamen bağımsız olmaz; bazı reçeteler iki ayrı koldan malzeme ister.
+- **Kaynak:** “ürünler için modüllerimiz var evet ama bunlarında birbirinden tamamen bağımsız kollar olmasını istemiyorum. bazı recipe lerde 2 koldan malzeme istese iyi olabilir”.
+- **Sınır:** Uygulamada izlenen “kademe 4 ve üstü montajlar en az iki koldan malzeme ister” ölçütü asistan önerisidir, ayrıca onaylanmadı.
+- **Asıl not:** [[Tasarım/Ürün ve Üretim Ağı]].
+
+## K-020 — Makine üreten makineler
+
+- **Durum:** Onaylı yön; tasarımı ve uygulaması yok.
+- **Tarih:** 2026-10-23.
+- **Karar:** Şu an elle üretilen makine kartlarını üreten makine kartları da olacak. Oyuncu başta elle yaptığını bir süre sonra otomatikleştirir; final projeyi bitirmek için çok sayıda üretim hattı kurması gerekir.
+- **Kaynak:** “kartlar şu an elle craft ediliyor ya bunları craft eden kartlarda olacak. yani makine üreten makineler gibi. yani oyuncu aslında ilk başta elle yaptığını bir süre sonra otomatikleştirebilecek ve final projeyi bitirmesi için fazla sayıda üretim hatları kurup adetlerini yükseltmesi gerekecek.”
+- **Sınır:** Hangi kartın hangi makineyi ürettiği, araştırmayla açılışı ve çıktının envantere mi tuvale mi gittiği açık. Kullanıcı reçete tasarımı sırasında makineleri bilerek erteledi (“şu an makinelere önemli dğeil onlara bakmıyoruz. sadece reçeteler.”).
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-021 — Beş modülün reçete taslağı
+
+- **Durum:** Onaylı ilk taslak; K-007'deki 24 ürünlük ağı genişletir.
+- **Tarih:** 2026-10-23.
+- **Karar:** Kurucu Çekirdek'in beş modülü ve onlara giden ara ürünler, kullanıcının adım adım onayladığı tariflerle tanımlandı (31 yeni ürün, toplam 55). Başlıcaları:
+  - **Demir kolu:** `Iron Plate`'ten `Iron Pipe` ve `Electrical Cabinet`; `Cast Iron Gear` ve `Cast Iron Housing` ayrı ürünler. PLC'deki çelik levha yerine `Electrical Cabinet` girer.
+  - **Metalürji:** Valve, Tank, Iron Frame, Hydraulic Cylinder, Pump, Hydraulic Power Unit, Hydraulic Press Unit → Metallurgy Module.
+  - **Hassas Mekanik:** Gearbox çelik gövde yerine `Cast Iron Housing` ister; Precision Spindle ve Linear Guide → Precision Mechanics Module.
+  - **Elektrik:** Cable, Laminated Core, Transformer, Switchgear → Electrical Module.
+  - **Elektronik:** Silicon, Microchip, Display, Control Computer → Electronics Module.
+  - **Otomasyon:** Robot Arm, Conveyor Line; PLC ile birlikte → Automation Module.
+- **Kaynak:** Her adımda kullanıcı onayı: Electrical Cabinet için “tamam bunu da önerdiğin gibi yapabilirsin”, metalürji için “tamamdır işle”, hassas mekanik için “tamamdır”, elektrik için “tamamdır”, elektronik için “evet”, otomasyon için “devam”. Precision Spindle'da bobin yerine elektrik motoru kullanılması (montaj istasyonunun iki reçeteyi ayırt edebilmesi için) asistan değişikliğidir; kullanıcı ardından Elektrik modülüne geçti.
+- **Sınır:** Adetler ve iş miktarları ilk tahmindir. Yeni reçetelerin makine ve araştırma atamaları asistan seçimidir, makineler ayrıca ele alınacak.
+- **Asıl not:** [[Tasarım/Ürün ve Üretim Ağı]].
+
 ## Henüz karar olmayan yönler
 
 | Konu | Kanıt düzeyi | Ayrıntı |
@@ -211,5 +259,5 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 | Alternatif proses dengeleri | Kullanıcı olumlu karşılamış | K-017 ile farklı ürünler (Cast Iron vs Steel) üzerinden tekil tarifler belirlendi; nihai tüketici/performans dengeleri açık. |
 | Bölgesel kaynak ve lojistik | Kullanıcı temkinli olumlu karşılamış | Bölge sistemi ve maliyetler kesinleşmemiş. |
 | Aynı kartta paralel makineler | Asistan önerisi | Kullanıcı seçimi yok. |
-| Ana proje ve ürünlerin üç tüketiciye ayrılması | Asistan önerisi | Ana hedef ve tüketim üçgeni açık; genel paylaşım kuralı K-006 ile onaylı. |
+| Ürünlerin üç tüketiciye ayrılması | Asistan önerisi | Ana hedef K-018 ile seçildi; araştırma, genişleme ve proje arasındaki tüketim üçgeni öneri olarak kalıyor. Genel paylaşım kuralı K-006 ile onaylı. |
 | Para kullanmama | Asistan önerisi | Kesin ekonomi kararı değil. |

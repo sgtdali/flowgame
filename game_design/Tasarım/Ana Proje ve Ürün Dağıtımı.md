@@ -13,7 +13,7 @@ Aynı üretim çıktısı üç amaç için kullanılabilir:
 - **Genişleme:** Yeni makineler ve altyapı kurarak gelecekteki kapasiteyi artırır.
 - **Ana proje:** Oyuncunun somut uzun vadeli hedefine ilerleme sağlar.
 
-Üçgenin iki ucu artık seçilmiş kurallara dayanıyor: araştırma laboratuvarları sürekli ürün tüketir (K-008), makine kurmak malzeme ister (K-011). Ana proje için kullanıcı kararı yoktur; prototipteki `Ana proje terminali` (A-09 sonrası, hassas aktüatör + PLC tüketir) yer tutucudur.
+Üçgenin iki ucu artık seçilmiş kurallara dayanıyor: araştırma laboratuvarları sürekli ürün tüketir (K-008), makine kurmak malzeme ister (K-011). Üçüncü uç olan ana proje K-018 ile seçildi: Kurucu Çekirdek. Prototipte `Ana proje terminali` (A-09 sonrası) 1 `Founding Core` ister.
 
 Bu model, ürünün değerini yalnızca satış fiyatına bağlamadan anlamlı tüketim yaratabilir. Ancak para veya satış ekonomisinin kesinlikle olmayacağı kararı verilmemiştir; kaynak konuşmada para gerekmeyen model asistan önerisidir.
 
@@ -43,7 +43,25 @@ Dayanak: [[Yönetim/Karar Defteri#K-006 — Otomatik eşit ürün paylaşımı|K
 
 ## Ana hedefin kimliği
 
-Kaynak metinde “Son Fabrika” ve “Kurucu Çekirdek” örneği var. Bunlar seçilmiş nihai senaryo olarak kabul edilmez. Daha önce dört hikâye senaryosu konuşulduğu belirtiliyor; bu senaryoların tam içeriği eldeki kaynakta yoktur. Eksik içerik yeniden icat edilmemelidir.
+**Seçilen senaryo: Son Fabrika (2026-10-23).** Kullanıcı dört hikâye senaryosu arasından “son fabrika olsun” diyerek bunu seçti. Büyük bir endüstriyel çöküşten sonra oyuncu hayatta kalan son otomatik sanayi sistemini yönetir. Nihai hedef, dünyanın geri kalanındaki sanayi altyapısını yeniden çalıştıracak **Kurucu Çekirdek**'i üretmektir; bunun için metalürji, kimya, elektronik, hassas mekanik ve otomasyon endüstrilerinin hepsi gerekir.
+
+Kullanıcının ürün modülleri için yönlendirmesi: modüller birbirinden tamamen bağımsız kollar olmasın; bazı reçeteler iki koldan malzeme istesin ([[Yönetim/Karar Defteri#K-019 — Kollar birbirine bağlı olur|K-019]]).
+
+### Kurucu Çekirdek (K-018)
+
+- Kurucu Çekirdek **ayrı bir üründür** (`Founding Core`). Beş modül montajda birleşip çekirdeği yapar; ana proje terminali yalnızca çekirdeği kabul eder ve oyun böyle tamamlanır. Modüllerin teslim sırası diye bir şey yoktur.
+- Modüller: Metalürji, Hassas Mekanik, Elektrik, Elektronik, Otomasyon. Kimya modülü yeni hammaddelerle ileride eklenecek.
+- Final proje her modülden çok sayıda ister ve zor tamamlanır; oyuncu hatları çoğaltmak, maden sınırını araştırmayla açmak ve makine üretimini otomatikleştirmek ([[Yönetim/Karar Defteri#K-020 — Makine üreten makineler|K-020]]) zorunda kalır.
+- Prototip değerleri (ilk tahmin): çekirdek her modülden 4 adet ister; modül tarifleri [[Tasarım/Ürün ve Üretim Ağı#Kurucu Çekirdek]] içinde. Asistan hesabıyla yalnız 4 Metalürji Modülü yaklaşık 890 demir cevheri ister; bu bir denge örneğidir, test sonucu değildir.
+
+Kullanıcının paylaştığı dört senaryo:
+
+1. **Son Fabrika — Medeniyeti yeniden başlat.** Seçildi.
+2. **Dünya Motoru — Gezegeni kurtar.** Bozulan iklimi düzelten eski bir atmosfer makinesini yeniden inşa etmek; basit mekanikten elektronik, kimya ve dev enerji sistemlerine.
+3. **Exodus — İnsanlığı taşı.** Yeni gezegene gidecek nesil gemisinin bütün endüstriyel bileşenlerini üretmek; önce çelik ve mekanik, sonra yaşam desteği, ileri malzemeler ve tahrik. **Kullanıcı bunun not edilmesini istedi: hammaddeler genişletilirse ileride fikir olarak elde dursun.**
+4. **İlk Temas — Büyük sinyali gönder.** Uzak bir sinyale cevap verecek dev bir yıldızlararası verici inşa etmek.
+
+Kaynak metinde “Son Fabrika” ve “Kurucu Çekirdek” örneği geçiyordu; dört senaryonun içeriği kaynakta yoktu, yukarıdaki metinleri kullanıcı sonradan paylaştı. Kurucu Çekirdek'in yapısı ve modül tarifleri K-018 ve K-021 ile belirlendi (aşağıda).
 
 Ana hedefin görünür aşamaları ve tatmin edici bir tamamlanma anı olması önerilir. İlk küçük proje aşamasının araştırmayla aynı ürünü tüketmesi, paylaşım problemini test etmek için kullanılabilir.
 

@@ -62,6 +62,8 @@ Bu satırların hiçbiri kullanıcı kararı değildir; I tuşu, otomatik yuvaya
 
 ## Açık kalanlar
 
+- Makine üreten makineler onaylı bir yön ([[Yönetim/Karar Defteri#K-020 — Makine üreten makineler|K-020]]): oyuncu başta elle ürettiği makineleri zamanla kartlara ürettirecek. Tasarımı S-024'te açık.
+
 - Kurulum sınırlarının araştırmayla veya başka yolla artması (K-010'daki "belki").
 - Envanterin bir taşıma sınırı olup olmayacağı.
 - Kurulum bedellerinin ve el üretimi hızının dengesi.

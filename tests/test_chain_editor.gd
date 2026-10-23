@@ -12,8 +12,8 @@ func _init() -> void:
 	await process_frame
 
 	# 1. Başlangıçta yalnızca 27 ürün kartı oluşmuş olmalı (makine/laboratuvar düğümü olmamalı)
-	assert(editor.catalog.products.size() == 27, "27 ürün yüklenmeli")
-	assert(editor.nodes.size() == 27, "Tuvalde yalnızca 27 ürün kartı olmalı")
+	assert(editor.catalog.products.size() == 55, "55 ürün yüklenmeli")
+	assert(editor.nodes.size() == 55, "Tuvalde yalnızca 55 ürün kartı olmalı")
 	assert(editor.nodes.has("gear"), "Dişli kartı tuvalde olmalı")
 	assert(editor.nodes.has("pig_iron") and editor.nodes.has("coal"), "Pik demir ve kömür kartları tuvalde olmalı")
 	assert(not editor.catalog.recipes["pig_iron"].inputs.has("coal"), "Pik demir reçetesinde kömür olmamalı (sadece demir cevheri)")
@@ -66,7 +66,7 @@ func _init() -> void:
 	editor.highlight_ancestors = true
 	editor._select_node("gear")
 	var ancestors := editor._compute_ancestors("gear")
-	assert(ancestors.has("gear") and ancestors.has("steel_rod") and ancestors.has("pig_iron") and ancestors.has("iron_ore"), "Dişlinin tüm üst öncülleri bulunmalı")
+	assert(ancestors.has("gear") and ancestors.has("steel_rod") and ancestors.has("steel_ingot") and ancestors.has("iron_ore"), "Dişlinin tüm üst öncülleri bulunmalı")
 	assert(not ancestors.has("copper_ore") and not ancestors.has("quartz"), "Bakır ve kuvars dişlinin öncülü olmamalı")
 	assert(is_equal_approx(editor.nodes["gear"].modulate.a, 1.0), "Seçili düğüm tam opak olmalı")
 	assert(is_equal_approx(editor.nodes["iron_ore"].modulate.a, 1.0), "Öncül hammadde tam opak olmalı")

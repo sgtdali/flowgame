@@ -36,7 +36,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 ## Dosyalar
 
 - `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
-- `data/prototype.json`: 24 ürün, 19 makine türü, 32 reçete, 9 araştırma, başlangıç kiti, kurulum bedelleri.
+- `data/prototype.json`: 55 ürün (beş modül ve Kurucu Çekirdek dahil), 19 makine türü, 62 reçete, 9 araştırma, başlangıç kiti, kurulum bedelleri.
 - `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
 - `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).

@@ -8,6 +8,34 @@
     "iron_plate": {"name": "Iron Plate", "tier": 2, "color": "a68a71"},
     "iron_rod": {"name": "Iron Rod", "tier": 2, "color": "b89c82"},
     "iron_pipe": {"name": "Iron Pipe", "tier": 3, "color": "9c826b"},
+    "electrical_cabinet": {"name": "Electrical Cabinet", "tier": 3, "color": "8f9a8a"},
+    "cast_iron_gear": {"name": "Cast Iron Gear", "tier": 3, "color": "b0875f"},
+    "cast_iron_housing": {"name": "Cast Iron Housing", "tier": 3, "color": "8a7563"},
+    "valve": {"name": "Valve", "tier": 3, "color": "c06a4e"},
+    "tank": {"name": "Tank", "tier": 3, "color": "7d8f96"},
+    "iron_frame": {"name": "Iron Frame", "tier": 3, "color": "9a8778"},
+    "hydraulic_cylinder": {"name": "Hydraulic Cylinder", "tier": 3, "color": "a7b3b8"},
+    "pump": {"name": "Pump", "tier": 4, "color": "4f8fb0"},
+    "hydraulic_power_unit": {"name": "Hydraulic Power Unit", "tier": 4, "color": "3f7d9e"},
+    "hydraulic_press_unit": {"name": "Hydraulic Press Unit", "tier": 5, "color": "d0703f"},
+    "metallurgy_module": {"name": "Metallurgy Module", "tier": 5, "color": "e8913a"},
+    "precision_spindle": {"name": "Precision Spindle", "tier": 4, "color": "7cc4d6"},
+    "linear_guide": {"name": "Linear Guide", "tier": 4, "color": "98aebd"},
+    "precision_module": {"name": "Precision Mechanics Module", "tier": 5, "color": "5fb3c9"},
+    "cable": {"name": "Cable", "tier": 3, "color": "d98a4a"},
+    "laminated_core": {"name": "Laminated Core", "tier": 3, "color": "8d8f93"},
+    "transformer": {"name": "Transformer", "tier": 4, "color": "c9a14a"},
+    "switchgear": {"name": "Switchgear", "tier": 4, "color": "6f9a7e"},
+    "electrical_module": {"name": "Electrical Module", "tier": 5, "color": "f2b33d"},
+    "silicon": {"name": "Silicon", "tier": 2, "color": "6c7a89"},
+    "microchip": {"name": "Microchip", "tier": 4, "color": "3fb8a0"},
+    "display": {"name": "Display", "tier": 4, "color": "8ad0e8"},
+    "control_computer": {"name": "Control Computer", "tier": 5, "color": "4fa3d9"},
+    "electronics_module": {"name": "Electronics Module", "tier": 5, "color": "47d1b0"},
+    "robot_arm": {"name": "Robot Arm", "tier": 5, "color": "c77dff"},
+    "conveyor_line": {"name": "Conveyor Line", "tier": 5, "color": "a0a87a"},
+    "automation_module": {"name": "Automation Module", "tier": 5, "color": "ff8fa3"},
+    "founding_core": {"name": "Founding Core", "tier": 5, "color": "ffd166"},
     "steel_ingot": {"name": "Steel Ingot", "tier": 2, "color": "9ab4c7"},
     "copper_ingot": {"name": "Copper Ingot", "tier": 2, "color": "e6955a"},
     "steel_plate": {"name": "Steel Plate", "tier": 2, "color": "7fa6c4"},
@@ -83,6 +111,162 @@
       "outputs": {"iron_pipe": 1},
       "work": 60.0
     },
+    "electrical_cabinet": {
+      "name": "Electrical Cabinet Forming",
+      "inputs": {"iron_plate": 3},
+      "outputs": {"electrical_cabinet": 1},
+      "work": 70.0
+    },
+    "valve": {
+      "name": "Valve Assembly",
+      "inputs": {"iron_pipe": 1, "iron_rod": 1},
+      "outputs": {"valve": 1},
+      "work": 60.0
+    },
+    "tank": {
+      "name": "Tank Forming",
+      "inputs": {"iron_plate": 4, "iron_pipe": 1},
+      "outputs": {"tank": 1},
+      "work": 80.0
+    },
+    "iron_frame": {
+      "name": "Iron Frame Assembly",
+      "inputs": {"iron_plate": 2, "iron_rod": 2},
+      "outputs": {"iron_frame": 1},
+      "work": 70.0
+    },
+    "hydraulic_cylinder": {
+      "name": "Hydraulic Cylinder Assembly",
+      "inputs": {"iron_pipe": 1, "steel_rod": 1},
+      "outputs": {"hydraulic_cylinder": 1},
+      "work": 70.0
+    },
+    "pump": {
+      "name": "Pump Assembly",
+      "inputs": {"iron_pipe": 2, "cast_iron_housing": 1, "cast_iron_gear": 1, "fastener": 2},
+      "outputs": {"pump": 1},
+      "work": 110.0
+    },
+    "hydraulic_power_unit": {
+      "name": "Hydraulic Power Unit Assembly",
+      "inputs": {"pump": 1, "tank": 1, "valve": 2},
+      "outputs": {"hydraulic_power_unit": 1},
+      "work": 130.0
+    },
+    "hydraulic_press_unit": {
+      "name": "Hydraulic Press Unit Assembly",
+      "inputs": {"hydraulic_power_unit": 1, "hydraulic_cylinder": 2, "iron_frame": 1},
+      "outputs": {"hydraulic_press_unit": 1},
+      "work": 160.0
+    },
+    "metallurgy_module": {
+      "name": "Metallurgy Module Assembly",
+      "inputs": {"hydraulic_press_unit": 8, "steel_plate": 50},
+      "outputs": {"metallurgy_module": 1},
+      "work": 300.0
+    },
+    "precision_spindle": {
+      "name": "Precision Spindle Assembly",
+      "inputs": {"shaft": 1, "bearing": 2, "housing": 1, "electric_motor": 1},
+      "outputs": {"precision_spindle": 1},
+      "work": 140.0
+    },
+    "linear_guide": {
+      "name": "Linear Guide Assembly",
+      "inputs": {"steel_rod": 2, "bearing": 2, "iron_frame": 1},
+      "outputs": {"linear_guide": 1},
+      "work": 120.0
+    },
+    "precision_module": {
+      "name": "Precision Mechanics Module Assembly",
+      "inputs": {"gearbox": 6, "precision_spindle": 4, "linear_guide": 6},
+      "outputs": {"precision_module": 1},
+      "work": 300.0
+    },
+    "cable": {
+      "name": "Cable Insulating",
+      "inputs": {"copper_wire": 3, "insulator": 1},
+      "outputs": {"cable": 2},
+      "work": 70.0
+    },
+    "laminated_core": {
+      "name": "Laminated Core Stamping",
+      "inputs": {"iron_plate": 2},
+      "outputs": {"laminated_core": 1},
+      "work": 60.0
+    },
+    "transformer": {
+      "name": "Transformer Assembly",
+      "inputs": {"coil": 2, "laminated_core": 1, "tank": 1},
+      "outputs": {"transformer": 1},
+      "work": 140.0
+    },
+    "switchgear": {
+      "name": "Switchgear Assembly",
+      "inputs": {"electrical_cabinet": 1, "cable": 4, "fastener": 2},
+      "outputs": {"switchgear": 1},
+      "work": 130.0
+    },
+    "electrical_module": {
+      "name": "Electrical Module Assembly",
+      "inputs": {"electric_motor": 6, "transformer": 4, "switchgear": 4},
+      "outputs": {"electrical_module": 1},
+      "work": 300.0
+    },
+    "silicon": {
+      "name": "Silicon Smelting",
+      "inputs": {"quartz": 2, "coal": 1},
+      "outputs": {"silicon": 1},
+      "work": 80.0
+    },
+    "microchip": {
+      "name": "Microchip Fabrication",
+      "inputs": {"silicon": 1, "copper_wire": 2},
+      "outputs": {"microchip": 1},
+      "work": 120.0
+    },
+    "display": {
+      "name": "Display Assembly",
+      "inputs": {"insulator": 2, "circuit_board": 1, "steel_plate": 1},
+      "outputs": {"display": 1},
+      "work": 120.0
+    },
+    "control_computer": {
+      "name": "Control Computer Assembly",
+      "inputs": {"microchip": 4, "circuit_board": 2, "display": 1, "electrical_cabinet": 1},
+      "outputs": {"control_computer": 1},
+      "work": 180.0
+    },
+    "electronics_module": {
+      "name": "Electronics Module Assembly",
+      "inputs": {"sensor": 6, "display": 4, "control_computer": 4},
+      "outputs": {"electronics_module": 1},
+      "work": 300.0
+    },
+    "robot_arm": {
+      "name": "Robot Arm Assembly",
+      "inputs": {"actuator": 3, "cable": 4, "iron_frame": 1},
+      "outputs": {"robot_arm": 1},
+      "work": 200.0
+    },
+    "conveyor_line": {
+      "name": "Conveyor Line Assembly",
+      "inputs": {"electric_motor": 2, "gearbox": 2, "iron_frame": 4},
+      "outputs": {"conveyor_line": 1},
+      "work": 180.0
+    },
+    "automation_module": {
+      "name": "Automation Module Assembly",
+      "inputs": {"plc": 6, "robot_arm": 4, "conveyor_line": 4},
+      "outputs": {"automation_module": 1},
+      "work": 300.0
+    },
+    "founding_core": {
+      "name": "Founding Core Assembly",
+      "inputs": {"metallurgy_module": 4, "precision_module": 4, "electrical_module": 4, "electronics_module": 4, "automation_module": 4},
+      "outputs": {"founding_core": 1},
+      "work": 600.0
+    },
     "copper_ingot": {
       "name": "Copper Ingot Smelting",
       "inputs": {"copper_ore": 2},
@@ -150,15 +334,15 @@
       "work": 100.0
     },
     "gear_cast": {
-      "name": "Gear (Casting)",
+      "name": "Cast Iron Gear Casting",
       "inputs": {"pig_iron": 2},
-      "outputs": {"gear": 1},
+      "outputs": {"cast_iron_gear": 1},
       "work": 60.0
     },
     "housing_cast": {
-      "name": "Housing (Casting)",
+      "name": "Cast Iron Housing Casting",
       "inputs": {"pig_iron": 3},
-      "outputs": {"housing": 1},
+      "outputs": {"cast_iron_housing": 1},
       "work": 70.0
     },
     "copper_wire": {
@@ -175,7 +359,7 @@
     },
     "gearbox": {
       "name": "Gearbox Assembly",
-      "inputs": {"gear": 2, "shaft": 1, "bearing": 1, "housing": 1},
+      "inputs": {"gear": 2, "shaft": 1, "bearing": 1, "cast_iron_housing": 1},
       "outputs": {"gearbox": 1},
       "work": 120.0
     },
@@ -205,7 +389,7 @@
     },
     "plc": {
       "name": "Control Unit (PLC) Assembly",
-      "inputs": {"circuit_board": 2, "sensor": 1, "steel_plate": 1, "fastener": 2},
+      "inputs": {"circuit_board": 2, "sensor": 1, "electrical_cabinet": 1, "fastener": 2},
       "outputs": {"plc": 1},
       "work": 180.0
     },
@@ -222,8 +406,8 @@
       "work": 20.0
     },
     "project_stage_1": {
-      "name": "Main Project: Automation Core",
-      "inputs": {"actuator": 1, "plc": 1},
+      "name": "Main Project: Founding Core",
+      "inputs": {"founding_core": 1},
       "outputs": {},
       "work": 100.0
     },
@@ -307,7 +491,7 @@
       "role": "METALLURGY",
       "description": "Smelts ores and quartz into Iron Ingot, Copper Ingot, or Industrial Glass.",
       "recipe": "pig_iron",
-      "recipes": ["pig_iron", "iron_from_scrap", "copper_ingot", "insulator"],
+      "recipes": ["pig_iron", "iron_from_scrap", "copper_ingot", "insulator", "silicon"],
       "recipe_mode": "choose",
       "build_cost": {"steel_plate": 4, "steel_ingot": 4},
       "speed": 20.0,
@@ -333,7 +517,7 @@
       "role": "FORMING",
       "description": "Rolls ingots into plates, rods, or pipes.",
       "recipe": "steel_rod",
-      "recipes": ["iron_plate", "iron_rod", "iron_pipe", "steel_plate", "steel_rod"],
+      "recipes": ["iron_plate", "iron_rod", "iron_pipe", "laminated_core", "steel_plate", "steel_rod"],
       "build_cost": {"steel_plate": 6, "fastener": 4},
       "handcraft": true,
       "speed": 20.0,
@@ -346,7 +530,7 @@
       "role": "MANUFACTURING",
       "description": "Presses Fasteners from Steel Rods or Housings from Steel Plates.",
       "recipe": "fastener",
-      "recipes": ["fastener", "housing_press"],
+      "recipes": ["fastener", "housing_press", "electrical_cabinet", "valve", "tank", "iron_frame", "hydraulic_cylinder"],
       "build_cost": {"steel_plate": 5, "fastener": 4},
       "handcraft": true,
       "speed": 20.0,
@@ -383,7 +567,7 @@
     "foundry": {
       "name": "Foundry",
       "role": "CASTING",
-      "description": "Casts Gears and Housings directly from Iron Ingots to relieve steel bottlenecks.",
+      "description": "Casts Cast Iron Gears and Cast Iron Housings from Iron Ingots.",
       "recipe": "gear_cast",
       "recipes": ["gear_cast", "housing_cast"],
       "build_cost": {"steel_plate": 6, "steel_ingot": 6},
@@ -397,7 +581,7 @@
       "role": "ELECTROMECHANICAL",
       "description": "Draws Copper Wire from Copper Ingots and winds Electromagnetic Coils.",
       "recipe": "copper_wire",
-      "recipes": ["copper_wire", "coil"],
+      "recipes": ["copper_wire", "coil", "cable"],
       "build_cost": {"steel_plate": 4, "gear": 2, "fastener": 4},
       "handcraft": true,
       "speed": 20.0,
@@ -410,7 +594,7 @@
       "role": "ASSEMBLY",
       "description": "Assembles Gearboxes, Circuit Boards, Electric Motors, Sensors, Actuators, and PLCs.",
       "recipe": "gearbox",
-      "recipes": ["gearbox", "circuit_board", "electric_motor", "sensor", "actuator", "plc"],
+      "recipes": ["gearbox", "circuit_board", "electric_motor", "sensor", "actuator", "plc", "pump", "hydraulic_power_unit", "hydraulic_press_unit", "metallurgy_module", "precision_spindle", "linear_guide", "precision_module", "transformer", "switchgear", "electrical_module", "microchip", "display", "control_computer", "electronics_module", "robot_arm", "conveyor_line", "automation_module", "founding_core"],
       "build_cost": {"steel_plate": 8, "gear": 4, "fastener": 8},
       "handcraft": true,
       "speed": 20.0,
@@ -482,7 +666,7 @@
     "project_hub": {
       "name": "Project Hub",
       "role": "MAIN GOAL",
-      "description": "Consumes Precision Actuators and Control Units (PLCs) to advance the Main Project.",
+      "description": "Receives the Founding Core to complete the Main Project.",
       "recipe": "project_stage_1",
       "recipes": ["project_stage_1"],
       "build_cost": {"steel_plate": 20, "gearbox": 4, "circuit_board": 6},
@@ -493,7 +677,7 @@
     }
   },
   "initial_unlocked_machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry", "smelter", "steel_furnace", "rolling_mill", "press", "scrap_disposal", "lab_1", "storage"],
-  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "iron_plate", "iron_rod", "iron_pipe", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
+  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "iron_plate", "iron_rod", "iron_pipe", "electrical_cabinet", "valve", "tank", "iron_frame", "hydraulic_cylinder", "laminated_core", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
   "hand_speed": 10.0,
   "machine_build_work": 50.0,
   "starting_inventory": {
@@ -528,7 +712,7 @@
       "prerequisites": [],
       "cost": {"k1": 30},
       "unlock_machines": ["wire_winder", "lab_2"],
-      "unlock_recipes": ["copper_wire", "insulator"],
+      "unlock_recipes": ["copper_wire", "insulator", "cable"],
       "description": "Unlocks Wire Winder, Copper Wire drawing, and Industrial Glass smelting."
     },
     "A-04": {
@@ -538,7 +722,7 @@
       "prerequisites": ["A-01"],
       "cost": {"k1": 60, "k2": 30},
       "unlock_machines": ["assembler"],
-      "unlock_recipes": ["gearbox"],
+      "unlock_recipes": ["gearbox", "pump", "hydraulic_power_unit", "hydraulic_press_unit", "metallurgy_module", "precision_spindle", "linear_guide", "precision_module"],
       "description": "Unlocks Assembly Station and Gearbox production."
     },
     "A-05": {
@@ -548,7 +732,7 @@
       "prerequisites": ["A-03"],
       "cost": {"k1": 60, "k2": 30},
       "unlock_machines": [],
-      "unlock_recipes": ["coil"],
+      "unlock_recipes": ["coil", "transformer", "switchgear", "electrical_module"],
       "description": "Unlocks Electromagnetic Coil winding from Copper Wire and Steel Rod."
     },
     "A-06": {
@@ -568,7 +752,7 @@
       "prerequisites": ["A-03"],
       "cost": {"k1": 50, "k2": 40},
       "unlock_machines": ["assembler", "lab_3"],
-      "unlock_recipes": ["circuit_board"],
+      "unlock_recipes": ["circuit_board", "silicon", "microchip", "display"],
       "description": "Unlocks Circuit Board assembly from Copper Wire and Industrial Glass."
     },
     "A-08": {
@@ -578,7 +762,7 @@
       "prerequisites": ["A-05", "A-07"],
       "cost": {"k2": 40, "k3": 30},
       "unlock_machines": [],
-      "unlock_recipes": ["sensor"],
+      "unlock_recipes": ["sensor", "control_computer", "electronics_module"],
       "description": "Unlocks Industrial Sensor assembly."
     },
     "A-09": {
@@ -588,7 +772,7 @@
       "prerequisites": ["A-06", "A-08"],
       "cost": {"k2": 60, "k3": 60},
       "unlock_machines": ["project_hub"],
-      "unlock_recipes": ["actuator", "plc", "project_stage_1"],
+      "unlock_recipes": ["actuator", "plc", "robot_arm", "conveyor_line", "automation_module", "founding_core", "project_stage_1"],
       "description": "Unlocks Precision Actuator, Control Unit (PLC), and Project Hub."
     }
   },

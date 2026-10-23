@@ -26,7 +26,7 @@ Bu vault, sonsuz canvas üzerinde makine kartlarıyla oynanan üretim zinciri oy
 | Konu | Asıl not |
 |---|---|
 | Oyun kimliği ve oyuncu deneyimi | [[Tasarım/Oyun Kimliği ve Temel Döngü]] |
-| 24 ürünlük üretim ağı ve makine-reçete ilk taslağı | [[Tasarım/Ürün ve Üretim Ağı]] |
+| Kurucu Çekirdek'e giden 55 ürünlük üretim ağı ve beş modül | [[Tasarım/Ürün ve Üretim Ağı]] |
 | Makine kartları, işleme modeli, reçete seçimi, kurulum sınırı | [[Tasarım/Makine Kartları]] |
 | Üretim yöntemleri, kalite, geri kazanım | [[Tasarım/Prosesler Kalite ve Yan Ürünler]] |
 | Kademeli laboratuvarlar ve araştırma puanı | [[Tasarım/Araştırma Ekonomisi]] |

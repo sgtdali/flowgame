@@ -18,6 +18,7 @@ K-007'de daha önce sunulan "aynı ürüne (ör. Dişli) birden fazla alternatif
   - `Cast Iron Housing` (Dökümhane: Iron Ingot)
   - `Steel Housing` (Pres: Steel Plate + Fasteners)
 - Böylece makinelerde çoklu tarif karmaşası yaşanmaz; ürün çeşitliliği ve zincir derinliği artar.
+- K-021 ile döküm parçaların tüketicisi belli oldu: `Cast Iron Gear` Pump'a, `Cast Iron Housing` Pump'a ve Gearbox'a girer. Çelik `Gear` ve `Housing` hassas parçalarda kalır.
 
 ## Yöntem karşılaştırması: Döküm ve Talaşlı İmalat
 
@@ -37,4 +38,5 @@ K-007'de daha önce sunulan "aynı ürüne (ör. Dişli) birden fazla alternatif
 
 Bu döngü, oyuncuya talaşı biriktirip fırın hattına geri besleyerek hammadde tüketimini optimize etme kararı sunar.
 
-Bkz. [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Makine Kartları]], [[Tasarım/Prototip ve Doğrulama]].
+Bkz. [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Makine Kartları]], [[Tasarım/Prototip ve Doğrulama]].
+

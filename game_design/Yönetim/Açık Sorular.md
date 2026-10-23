@@ -22,7 +22,7 @@ guncelleme: 2026-10-23
 | S-011 | Laboratuvarlar ortak araştırmada hangi stok yapısını kullanır? | Paralellik ve kaynak yarışması | Çözüldü (K-008): laboratuvarlar kademe puanı üretir, puanlar ortak depoda birikir |
 | S-012 | Araştırma değişirken çalışan deney ve ayrılmış malzeme ne olur? | Oyuncu kontrolü, kayıt | Çözüldü (K-008): laboratuvar araştırmadan bağımsız çalışır; değişim hatları bozmaz, puan depoda kalır |
 | S-013 | Para, satış veya sipariş var mı? | Ekonominin tüketicileri | Açık |
-| S-014 | Somut nihai proje ve ilk aşaması ne? | Uzun vadeli motivasyon | Açık |
+| S-014 | Somut nihai proje ve ilk aşaması ne? | Uzun vadeli motivasyon | Çözüldü (K-018): Son Fabrika; beş modülden yapılan Kurucu Çekirdek |
 | S-015 | İlk prototipte hangi ürün ve hangi alternatif yöntemler denenir? | Üretimin anlamlı tercih üretmesi | Çözüldü (K-007, K-017): Tek reçete ve farklı ürün ilkesi; döküm ve talaşlı ürünler (Cast Iron vs Steel) ayrıldı |
 | S-016 | İlk 60 dakika hangi başarılar ve darboğazlardan oluşur? | Öğrenme ve ilerleme temposu | Açık |
 | S-017 | Hedef cihaz ve kabul edilebilir simülasyon/arayüz performansı ne? | Ölçek bütçesi | Açık |
@@ -32,6 +32,9 @@ guncelleme: 2026-10-23
 | S-021 | Kurulum sınırları (ör. maden başına 1) araştırmayla veya başka yolla artar mı? | Hammadde dengesi, uzun vadeli büyüme | Açık; kullanıcı “belki” dedi (K-010) |
 | S-022 | Envanterin taşıma veya yuva sınırı olacak mı? | Lojistik anlamı, Depo kartının rolü | Açık; prototipte sınır yok |
 | S-023 | Kurulum bedelleri ve el üretimi hızı nasıl dengelenir? | İlk dakikaların temposu | Açık; prototip değerleri ilk deneme |
+| S-024 | Makine üreten makineler nasıl çalışır: hangi kart hangi makineyi üretir, ne zaman açılır, çıktı nereye gider? | Otomasyona geçiş, K-020 | Açık |
+| S-025 | Kurucu Çekirdek ve modüller kaç adet ister, tam bir oyun ne kadar sürer? | Final projenin zorluğu, K-018 | Açık; prototipte her modülden 4 (ilk tahmin) |
+| S-026 | Kimya modülü hangi hammaddelerle ve ne zaman eklenir? | Kurucu Çekirdek'in tamamlanması | Açık |
 
 ## Kapanan sorular
 
@@ -52,5 +55,8 @@ Kart ölçeği (S-001) için kullanıcı bu aşamada karar vermek istemediğini 
 | Oyun hazır bir ağla mı başlar? | Hayır: boş tuval ve başlangıç kiti | [[Yönetim/Karar Defteri#K-013 — Oyun boş tuvalle başlar|K-013]] |
 | Ağa bağlı olmayan makine çalıştırılabilir mi? | Evet: envanterden girişe elle ürün konur | [[Yönetim/Karar Defteri#K-014 — Envanterden makine girişine elle malzeme konur|K-014]] |
 | Fırının reçetesini kim seçer? | Oyuncu (K-009'un fırın kısmı değişti) | [[Yönetim/Karar Defteri#K-016 — Fırınlarda reçeteyi oyuncu seçer|K-016]] |
+| Ana proje ne? | Son Fabrika: beş modülden yapılan Kurucu Çekirdek, terminale teslim | [[Yönetim/Karar Defteri#K-018 — Ana proje: Son Fabrika ve Kurucu Çekirdek|K-018]] |
+| Ürün kolları bağımsız mı? | Hayır: bazı reçeteler iki koldan malzeme ister | [[Yönetim/Karar Defteri#K-019 — Kollar birbirine bağlı olur|K-019]] |
+| Makineler hep elle mi üretilir? | Hayır: makine üreten makineler olacak (tasarımı açık) | [[Yönetim/Karar Defteri#K-020 — Makine üreten makineler|K-020]] |
 
 Yeni cevap geldiğinde satırı ilgili karara bağla. Açık sorunun yanında bulunan öneri, cevap yerine geçmez.

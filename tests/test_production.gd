@@ -129,7 +129,7 @@ func _inputs_and_blocking() -> void:
 	var foundry := sim.add_machine("foundry", "gear_cast")
 	sim.add_link(smelter, foundry)
 	sim.advance(3.05)
-	_check(sim.machines[foundry].output.gear == 1, "Dökümhane pik demirden alternatif yöntemle dişli üretmeli")
+	_check(sim.machines[foundry].output.cast_iron_gear == 1, "Dökümhane pik demirden döküm dişli üretmeli")
 
 func _sharing_and_byproducts() -> void:
 	var sim := Simulation.new()

@@ -57,6 +57,7 @@ flowchart LR
 > - Araştırmalar laboratuvar da açar: A-03 → `Laboratuvar 2`, A-07 → `Laboratuvar 3`. A-09 `Ana proje terminali`ni açar.
 > - Açılan makineler kendiliğinden gelmez; oyuncu onları malzemeyle üretir (K-011).
 > - Üç montaj türü tek `Montaj istasyonu` altında birleşiktir.
+> - K-021 ile eklenen reçetelerin açılışı (asistan seçimi): demir kolu (Electrical Cabinet, Valve, Tank, Iron Frame, Hydraulic Cylinder, Laminated Core) baştan açık; A-02 döküm parçaları; A-03 Cable; A-04 Pump, Hydraulic Power Unit, Hydraulic Press Unit, Metallurgy Module, Precision Spindle, Linear Guide, Precision Mechanics Module; A-05 Transformer, Switchgear, Electrical Module; A-07 Silicon, Microchip, Display; A-08 Control Computer, Electronics Module; A-09 Robot Arm, Conveyor Line, Automation Module, Founding Core.
 
 > [!warning] Tükettiği ürünler sütunu tarihseldir
 > Aşağıdaki tablolardaki "Tükettiği Ürünler" sütunu K-001 dönemine aittir. K-008 ile araştırmalar ürün değil kademe puanı ister; güncel fiyatlar ve laboratuvarlar [[Tasarım/Araştırma Ekonomisi]] notundadır.

@@ -14,7 +14,9 @@ Godot 4.7.2 prototipinde 2026-10-23 itibarıyla çalışan ve test edilen kısı
 | K-002, K-003 | Sonsuz tuval üzerinde makine kartları; kartlar arasında ürün tipli port bağlantıları. |
 | K-005 | Reçete işi / makine işleme hızı; çok girdili ve çok çıktılı reçeteler; girdiler başta tüketilir, çıktılar iş bitince eklenir; giriş/çıkış tamponları; eksik girdi ya da dolu çıkış yeni çevrimi bekletir. |
 | K-006 | Kabul edebilen bağlı tüketicilere her ürün için otomatik eşit paylaşım (çıkış başına hatırlanan adil sıra). |
-| K-007 | 24 ürün, 19 makine türü, 32 reçete, 9 araştırma (`A-01` – `A-09`). Üç alt montaj türü tek `Montaj istasyonu` altında birleşik. |
+| K-007, K-021 | 55 ürün, 19 makine türü, 62 reçete, 9 araştırma (`A-01` – `A-09`). Üç alt montaj türü tek `Montaj istasyonu` altında birleşik. Beş modül ve Kurucu Çekirdek tanımlı; yeni ürünlerin piksel simgesi yok, renkten üretilen simge kullanılır. |
+| K-017 | Döküm parçalar ayrı ürün (`cast_iron_gear`, `cast_iron_housing`); Gearbox döküm gövde ister. |
+| K-018 | `Ana proje terminali` 1 `Founding Core` ister; çekirdek her modülden 4 ister (ilk tahmin). |
 | K-008 | Laboratuvar 1/2/3 sürekli aynı ürünleri tüketip Kademe 1/2/3 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
 | K-009, K-016 | Pres, tel sarım ve montaj reçeteyi gelen ya da elle konan ürüne göre seçer, boşken tek genel girişi olur. Haddehane, CNC, dökümhane ve fırınlarda (K-016) simgeli reçete ekranından ürün seçilir. |
 | K-010 | Dört maden birer adetle sınırlı; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
@@ -39,7 +41,9 @@ Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]],
 
 - Eski 8 kartlık başlangıç ağı (`Demir madeni` + `Kömür madeni` → `Ergitme fırını` → `Çelik fırını` → iki `Haddehane` → `Pres` → `Laboratuvar 1`) oyundan kalktı; yalnızca smoke testi ve kart görsel testleri onu `build_sample_network()` ile kurar.
 - Bütün makinelerin işleme hızı 20 iş/sn; kart menüsünden 40'a çıkarılabilir. Tamponlar 6–12, Depo 100.
-- `Talaş bertaraf ünitesi` ve `Ana proje terminali` (A-09 sonrası, aktüatör + PLC tüketir) yer tutucudur; bertaraf ve ana proje için kullanıcı kararı yoktur.
+- `Talaş bertaraf ünitesi` yer tutucudur; bertaraf için kullanıcı kararı yoktur.
+- Makine üreten makineler (K-020) uygulanmadı. Yeni reçetelerin makine ve araştırma atamaları geçicidir.
+- Kurucu Çekirdek'e kadar tam bir oyun denenmedi; adetler ve süreler dengelenmedi.
 - Bağlantılar anlık ve sınırsız aktarım yapar. Bölge, taşıma kısıtı, enerji ve para uygulanmadı.
 - Makine görsellerinin bir kısmı yer tutucudur; kart ve görsel kuralları `art_src/STANDART.md` içindedir.
 
