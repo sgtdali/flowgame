@@ -14,7 +14,7 @@ K-007'de daha önce sunulan "aynı ürüne (ör. Dişli) birden fazla alternatif
 - Her ürünün **tek bir ana tarifi** vardır.
 - Farklı proseslerden (ör. Talaşlı İmalat vs. Döküm) veya farklı hammaddelerden (Demir vs. Çelik) gelen ürünler **farklı ürünler** olarak ayrılmıştır:
   - `Cast Iron Gear` (Dökümhane: Iron Ingot)
-  - `Steel Gear` (CNC: Steel Rod)
+  - `Steel Gear` (Tezgâh Atölyesi: Steel Rod)
   - `Cast Iron Housing` (Dökümhane: Iron Ingot)
   - `Steel Housing` (Pres: Steel Plate + Fasteners)
 - Böylece makinelerde çoklu tarif karmaşası yaşanmaz; ürün çeşitliliği ve zincir derinliği artar.
@@ -25,16 +25,16 @@ K-007'de daha önce sunulan "aynı ürüne (ör. Dişli) birden fazla alternatif
 | Özellik | Döküm Yöntemi (`Cast Iron`) | Talaşlı / Pres Yöntemi (`Steel`) |
 |---|---|---|
 | **Hammadde** | `Iron Ingot` (kömürsüz eritme) | `Steel Ingot` (demir cevheri + kömür) |
-| **İmalat Makinesi** | `Dökümhane` | `CNC`, `Torna`, `Pres` |
+| **İmalat Makinesi** | `Dökümhane` | `Tezgâh Atölyesi`, `Pres` |
 | **Ürün Örnekleri** | `Cast Iron Gear`, `Cast Iron Housing` | `Steel Gear`, `Steel Housing`, `Fasteners` |
 | **Yan Ürün** | Talaş çıkmaz | `Metal Scrap` (talaş/hurda) çıkar |
 | **Rolü** | Hızlı, kütleli, doğrudan döküm parçalar | Yüksek hassasiyet ve mukavemet gerektiren mekanizmalar |
 
 ## Yan ürün ekonomisi (Metal Talaşı / Hurda)
 
-`Torna` ve `CNC` operasyonlarından talaş olarak çıkan `Metal Scrap`, geri dönüşümle fırınlara yönlendirilir:
+`Tezgâh Atölyesi` operasyonlarından talaş olarak çıkan `Metal Scrap`, geri dönüşümle fırınlara yönlendirilir:
 - Ergitme Fırını: `2x Metal Scrap -> 1x Iron Ingot` (cevher tasarrufu)
-- Çelik Fırını: `2x Metal Scrap + 1x Coal -> 1x Steel Ingot` (cevher tasarrufu)
+- Ergitme Fırını (çelik reçetesi): `2x Metal Scrap + 1x Coal -> 1x Steel Ingot` (cevher tasarrufu)
 
 Bu döngü, oyuncuya talaşı biriktirip fırın hattına geri besleyerek hammadde tüketimini optimize etme kararı sunar.
 

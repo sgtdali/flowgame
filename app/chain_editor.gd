@@ -33,6 +33,11 @@ var _syncing := false
 
 var status_label: Label
 var dirty_badge: Label
+## Tablo görünümü: her reçete bir satır (ürün | süre + girdiler → çıktılar | makine).
+var table_view: VBoxContainer
+var table_rows: VBoxContainer
+var table_filter: LineEdit
+var view_button: Button
 var inspector_scroll: ScrollContainer
 var inspector_box: VBoxContainer
 var new_product_modal: PanelContainer
@@ -124,6 +129,8 @@ func _mark_dirty(msg: String = "") -> void:
 	dirty = true
 	_refresh_sim_helper()
 	_update_dirty_badge()
+	if table_view != null and table_view.visible:
+		_refresh_table()
 	if not msg.is_empty() and status_label != null:
 		status_label.text = msg
 
@@ -161,6 +168,9 @@ func _build_ui() -> void:
 	head.add_child(title)
 	head.add_child(VSeparator.new())
 
+	view_button = _button("☰ Tablo", _toggle_table_view, head, GOLD)
+	view_button.tooltip_text = "Node görünümü ile reçete tablosu arasında geçiş yapar."
+
 	_button("+ Yeni Ürün", _open_new_product_modal, head, TEAL).tooltip_text = "Üretim zincirine yeni bir ürün ekler."
 	_button("Otomatik Diz", _on_auto_layout_pressed, head).tooltip_text = "Ürün kartlarını kademelerine (K1–K5) göre soldan sağa düzenli hizalar."
 	_button("Tümünü Gör", _frame_graph, head).tooltip_text = "Bütün ürün ağını ekrana sığdırır."
@@ -195,9 +205,14 @@ func _build_ui() -> void:
 	split.split_offset = -360
 	root_vbox.add_child(split)
 
+	# Sol alan: node grafiği ve reçete tablosu üst üste; biri görünür.
+	var work_area := Control.new()
+	work_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	work_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	split.add_child(work_area)
+
 	graph = FlowGraph.new()
-	graph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	graph.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	graph.right_disconnects = true
 	graph.minimap_enabled = true
 	graph.snapping_enabled = true
@@ -213,7 +228,8 @@ func _build_ui() -> void:
 	graph.node_selected.connect(func(node: Node) -> void: _select_node(str(node.name)))
 	graph.node_deselected.connect(func(_node: Node) -> void: _on_node_deselected.call_deferred())
 	graph.delete_nodes_request.connect(_on_delete_nodes_request)
-	split.add_child(graph)
+	work_area.add_child(graph)
+	_build_table_view(work_area)
 
 	# Sağ Denetçi Paneli
 	var inspector_panel := PanelContainer.new()
@@ -262,6 +278,188 @@ func _build_ui() -> void:
 	_build_new_product_modal()
 	_update_dirty_badge()
 	_refresh_inspector()
+
+func _build_table_view(parent: Control) -> void:
+	table_view = VBoxContainer.new()
+	table_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	table_view.add_theme_constant_override("separation", 0)
+	table_view.visible = false
+	parent.add_child(table_view)
+
+	var bar := PanelContainer.new()
+	bar.add_theme_stylebox_override("panel", _box(Color("0b1620"), BORDER, 0, 12, 6))
+	table_view.add_child(bar)
+	var bar_box := HBoxContainer.new()
+	bar_box.add_theme_constant_override("separation", 10)
+	bar.add_child(bar_box)
+	bar_box.add_child(_label("Reçete tablosu", 14, GOLD))
+	table_filter = LineEdit.new()
+	table_filter.placeholder_text = "Ara: ürün ya da girdi adı…"
+	table_filter.custom_minimum_size.x = 260
+	table_filter.clear_button_enabled = true
+	table_filter.text_changed.connect(func(_t: String) -> void: _refresh_table())
+	bar_box.add_child(table_filter)
+	bar_box.add_child(_label("Satıra tıkla: seç · Çift tıkla: node görünümünde göster", 12, MUTED))
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.add_theme_stylebox_override("panel", _box(Color("09131c"), Color.TRANSPARENT, 0, 0, 0))
+	table_view.add_child(scroll)
+	table_rows = VBoxContainer.new()
+	table_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table_rows.add_theme_constant_override("separation", 0)
+	scroll.add_child(table_rows)
+
+func _toggle_table_view() -> void:
+	table_view.visible = not table_view.visible
+	graph.visible = not table_view.visible
+	view_button.text = "◈ Node" if table_view.visible else "☰ Tablo"
+	if table_view.visible:
+		_refresh_table()
+	else:
+		_frame_graph.call_deferred()
+
+## Reçetenin çevrim süresi (saniye): gereken iş / makinenin işleme hızı (K-005).
+func _recipe_seconds(recipe_id: String) -> float:
+	var kind := _machine_for_recipe(recipe_id)
+	var speed := 20.0
+	if not kind.is_empty():
+		speed = float(catalog.machines[kind].get("speed", 20.0))
+	return float(catalog.recipes[recipe_id].get("work", 0.0)) / maxf(speed, 0.001)
+
+func _product_name(product_id: String) -> String:
+	return str(catalog.products.get(product_id, {}).get("name", product_id))
+
+func _refresh_table() -> void:
+	for child in table_rows.get_children():
+		child.queue_free()
+	var query := table_filter.text.strip_edges().to_lower()
+	var ids: Array = catalog.products.keys()
+	ids.sort_custom(func(a, b) -> bool:
+		var ta := int(catalog.products[a].get("tier", 1))
+		var tb := int(catalog.products[b].get("tier", 1))
+		return ta < tb if ta != tb else catalog.products.keys().find(a) < catalog.products.keys().find(b))
+	var tier := -1
+	var index := 0
+	for p_var in ids:
+		var p_id := str(p_var)
+		var recipes := _recipes_for_product(p_id)
+		if recipes.is_empty():
+			recipes.append("")
+		for r_id in recipes:
+			if not query.is_empty() and not _row_matches(p_id, r_id, query):
+				continue
+			var p_tier := int(catalog.products[p_id].get("tier", 1))
+			if p_tier != tier:
+				tier = p_tier
+				var head := PanelContainer.new()
+				head.add_theme_stylebox_override("panel", _box(CARD_HEADER, BORDER, 0, 14, 4))
+				head.add_child(_label("KADEME %d" % tier, 12, TEAL))
+				table_rows.add_child(head)
+			table_rows.add_child(_table_row(p_id, r_id, index))
+			index += 1
+	if index == 0:
+		table_rows.add_child(_label("  Eşleşen reçete yok.", 13, MUTED))
+
+func _row_matches(product_id: String, recipe_id: String, query: String) -> bool:
+	if _product_name(product_id).to_lower().contains(query) or product_id.contains(query):
+		return true
+	if recipe_id.is_empty():
+		return false
+	for in_id in catalog.recipes[recipe_id].get("inputs", {}):
+		if _product_name(str(in_id)).to_lower().contains(query):
+			return true
+	return false
+
+func _table_row(product_id: String, recipe_id: String, index: int) -> Control:
+	var row := PanelContainer.new()
+	var selected := product_id == selected_node_id
+	var bg := Color("12202c") if index % 2 == 0 else Color("0e1a24")
+	row.add_theme_stylebox_override("panel", _box(Color("1d3a4a") if selected else bg, GOLD if selected else Color("1a2c3a"), 0, 10, 4, 1))
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	row.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_select_node(product_id)
+			if event.double_click:
+				_toggle_table_view()
+				_zoom_selected_or_center.call_deferred()
+			else:
+				_refresh_table())
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 6)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(line)
+
+	# Ürün hücresi: simge + ad
+	var name_cell := HBoxContainer.new()
+	name_cell.custom_minimum_size.x = 250
+	name_cell.add_theme_constant_override("separation", 8)
+	name_cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	line.add_child(name_cell)
+	name_cell.add_child(Icons.Slot.new(Icons.product(sim_helper, product_id), 1))
+	var name_lbl := _label(_product_name(product_id), 14, GOLD if selected else Color("e8b86a"))
+	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	name_cell.add_child(name_lbl)
+	line.add_child(VSeparator.new())
+
+	if recipe_id.is_empty():
+		var none := _label("Reçetesi yok", 13, DANGER)
+		none.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		line.add_child(none)
+		return row
+
+	var spec: Dictionary = catalog.recipes[recipe_id]
+	var time_chip := PanelContainer.new()
+	time_chip.add_theme_stylebox_override("panel", _box(Color("1b2b38"), Color("3a5366"), 4, 6, 2))
+	time_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	time_chip.custom_minimum_size = Vector2(62, 36)
+	var secs := _recipe_seconds(recipe_id)
+	var time_lbl := _label("⏱ %s" % (str(int(secs)) if is_equal_approx(secs, roundf(secs)) else "%.1f" % secs), 13, INK)
+	time_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	time_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	time_chip.add_child(time_lbl)
+	time_chip.tooltip_text = "Çevrim süresi (saniye) = iş %s / makine hızı" % str(spec.get("work", 0))
+	line.add_child(time_chip)
+
+	var inputs: Dictionary = spec.get("inputs", {})
+	for in_id in inputs:
+		line.add_child(_table_op("+"))
+		line.add_child(_table_slot(str(in_id), int(inputs[in_id])))
+	line.add_child(_table_op("→"))
+	var outputs: Dictionary = spec.get("outputs", {})
+	var first := true
+	for out_id in outputs:
+		if not first:
+			line.add_child(_table_op("+"))
+		first = false
+		line.add_child(_table_slot(str(out_id), int(outputs[out_id])))
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	line.add_child(spacer)
+	var kind := _machine_for_recipe(recipe_id)
+	var machine_lbl := _label(str(catalog.machines[kind].get("name", kind)) if not kind.is_empty() else "Makine yok", 12, MUTED if not kind.is_empty() else DANGER)
+	machine_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	line.add_child(machine_lbl)
+	return row
+
+func _table_op(text: String) -> Label:
+	var op := _label(text, 16, MUTED)
+	op.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return op
+
+## Tablo hücresindeki ürün kutusu: koyu çerçeve, simge, sağ altta adet.
+func _table_slot(product_id: String, amount: int) -> Control:
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", _box(Color("1b2b38"), Color("3a5366"), 4, 1, 1))
+	frame.tooltip_text = "%d × %s" % [amount, _product_name(product_id)]
+	var slot := Icons.Slot.new(Icons.product(sim_helper, product_id), amount)
+	slot.show_one = true
+	frame.add_child(slot)
+	return frame
 
 ## Ürünü ana çıktı olarak üreten reçeteleri döndürür (`outputs` içindeki ilk anahtar o ürün olanlar).
 func _recipes_for_product(product_id: String) -> Array[String]:
@@ -774,7 +972,7 @@ func _add_alternative_recipe(product_id: String) -> void:
 		"outputs": {product_id: 1},
 		"work": 60.0
 	}
-	var default_machine := "assembler"
+	var default_machine := "mechanical_assembly"
 	if not existing.is_empty():
 		var m := _machine_for_recipe(existing[0])
 		if not m.is_empty():
@@ -1137,7 +1335,7 @@ func _confirm_create_product() -> void:
 		"outputs": {p_id: 1},
 		"work": 60.0
 	}
-	_assign_recipe_to_machine(p_id, "assembler" if tier >= 4 else ("press" if tier >= 2 else "iron_mine"))
+	_assign_recipe_to_machine(p_id, "mechanical_assembly" if tier >= 4 else ("press" if tier >= 2 else "iron_mine"))
 	_set_unlock_source_for_recipe(p_id, "")
 
 	new_product_modal.visible = false
@@ -1194,6 +1392,8 @@ func _reload_from_disk() -> void:
 	else:
 		_apply_saved_layout()
 	_refresh_inspector()
+	if table_view.visible:
+		_refresh_table()
 	status_label.text = "↺ Diskteki data/prototype.json yeniden yüklendi."
 
 func _launch_game_instance() -> void:
@@ -1208,6 +1408,8 @@ func _run_smoke_test() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_select_node("gear")
+	if "--table" in OS.get_cmdline_user_args():
+		_toggle_table_view()
 	await get_tree().create_timer(0.15).timeout
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://artifacts"))
 	var img := get_viewport().get_texture().get_image()

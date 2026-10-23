@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2aiofgscy0yt"
-path="res://.godot/imported/cnc.png-473182c6349fc8aebfed0a5bb913168e.ctex"
+uid="uid://bemkjmbep0hhb"
+path="res://.godot/imported/machine_factory.png-15d05abda7927729a4d5478723b8f02d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://app/art/placeholder/cnc.png"
-dest_files=["res://.godot/imported/cnc.png-473182c6349fc8aebfed0a5bb913168e.ctex"]
+source_file="res://app/art/placeholder/machine_factory.png"
+dest_files=["res://.godot/imported/machine_factory.png-15d05abda7927729a4d5478723b8f02d.ctex"]
 
 [params]
 

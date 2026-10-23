@@ -419,7 +419,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 	var spec: Dictionary = sim.catalog.machines[machine.kind]
 	var recipe: Dictionary = sim.recipe_for(id)
 	var product: String = sim.output_product(id)
-	var seconds := float(recipe.work) / float(machine.speed)
+	var seconds: float = float(recipe.work) / sim.effective_speed(id)
 	rate_label.text = "%.0f/dk" % (int(recipe.outputs.get(product, 1)) * 60.0 / seconds)
 	# Labs make research points instead of goods: their rate takes the tier colour.
 	for tier in recipe.get("research_points", {}):
@@ -431,7 +431,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 	for input in input_gauges:
 		var gauge: PortGauge = input_gauges[input]
 		gauge.count = int(machine.input.get(input, 0))
-		gauge.capacity = int(spec.input_capacity)
+		gauge.capacity = sim.capacity(str(machine.kind), "input")
 		gauge.amount = int(recipe.inputs.get(input, 1))
 		gauge.add_button.visible = not _storage and (gauge.open or not sim.is_input_linked(id, input))
 		if gauge.open and _storage:
@@ -451,7 +451,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 	for output in output_gauges:
 		var gauge: PortGauge = output_gauges[output]
 		gauge.count = int(machine.output.get(output, 0))
-		gauge.capacity = int(spec.output_capacity)
+		gauge.capacity = sim.capacity(str(machine.kind), "output")
 		gauge.amount = int(recipe.outputs.get(output, 1))
 		gauge.tooltip_text = "%s %d/%d\nTıkla: envantere al" % [sim.product_name(output), gauge.count, gauge.capacity]
 		details.append(gauge.tooltip_text)
@@ -463,7 +463,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		rate_label.text = str(stored)
 		rate_label.tooltip_text = "Depodaki toplam ürün"
 	else:
-		details.append("%.0f birim iş · %.0f iş/sn · %.1f sn · %s" % [float(recipe.work), float(machine.speed), seconds, rate_label.text])
+		details.append("%.0f birim iş · %.0f iş/sn · %.1f sn · %s" % [float(recipe.work), sim.effective_speed(id), seconds, rate_label.text])
 	tooltip_text = "\n".join(details)
 	is_working = bool(machine.running)
 	animation_active = is_working and not simulation_paused

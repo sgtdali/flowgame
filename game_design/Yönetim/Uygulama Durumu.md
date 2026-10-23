@@ -14,12 +14,16 @@ Godot 4.7.2 prototipinde 2026-10-23 itibarıyla çalışan ve test edilen kısı
 | K-002, K-003 | Sonsuz tuval üzerinde makine kartları; kartlar arasında ürün tipli port bağlantıları. |
 | K-005 | Reçete işi / makine işleme hızı; çok girdili ve çok çıktılı reçeteler; girdiler başta tüketilir, çıktılar iş bitince eklenir; giriş/çıkış tamponları; eksik girdi ya da dolu çıkış yeni çevrimi bekletir. |
 | K-006 | Kabul edebilen bağlı tüketicilere her ürün için otomatik eşit paylaşım (çıkış başına hatırlanan adil sıra). |
-| K-007, K-021 | 55 ürün, 19 makine türü, 62 reçete, 9 araştırma (`A-01` – `A-09`). Üç alt montaj türü tek `Montaj istasyonu` altında birleşik. Beş modül ve Kurucu Çekirdek tanımlı; yeni ürünlerin piksel simgesi yok, renkten üretilen simge kullanılır. |
+| K-007, K-021 | 55 ürün, 23 makine türü, 63 reçete (+ Makine Fabrikası'nın makine reçeteleri). Beş modül ve Kurucu Çekirdek tanımlı; yeni ürünlerin piksel simgesi yok, renkten üretilen simge kullanılır. |
+| K-022 | Tezgâh Atölyesi, tek Ergitme Fırını, dört montaj makinesi ve Modül Tesisi; yeni makineler yer tutucu görsel kullanır. |
+| K-023 | Demir ağırlıklı başlangıç bedelleri ve yeni başlangıç kiti. |
+| K-024 | Makine Fabrikası (AL-01): her sınırsız makine için kurulum bedelli reçete; çıktı kartta (3) ya da bağlı depoda birikir, alınınca taşınan makine olur. |
+| K-025 | 63 araştırma; maden sınırı, makine ve el hızı, tampon ve depo kapasitesi araştırma etkileri; Laboratuvar 4 ve K4. Araştırma paneli 9 kolu satır satır gösterir ve kayar. |
 | K-017 | Döküm parçalar ayrı ürün (`cast_iron_gear`, `cast_iron_housing`); Gearbox döküm gövde ister. |
 | K-018 | `Ana proje terminali` 1 `Founding Core` ister; çekirdek her modülden 4 ister (ilk tahmin). |
-| K-008 | Laboratuvar 1/2/3 sürekli aynı ürünleri tüketip Kademe 1/2/3 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
-| K-009, K-016 | Pres, tel sarım ve montaj reçeteyi gelen ya da elle konan ürüne göre seçer, boşken tek genel girişi olur. Haddehane, CNC, dökümhane ve fırınlarda (K-016) simgeli reçete ekranından ürün seçilir. |
-| K-010 | Dört maden birer adetle sınırlı; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
+| K-008 | Laboratuvar 1–4 sürekli aynı ürünleri tüketip Kademe 1–4 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
+| K-009, K-016 | Tel sarım, montaj makineleri ve Modül Tesisi reçeteyi gelen ya da elle konan ürüne göre seçer, boşken tek genel girişi olur. Haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve fırında (K-016) simgeli reçete ekranından ürün seçilir. |
+| K-010 | Dört maden birer adetle başlar, maden genişletme araştırmalarıyla artar; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
 | K-011 | Envanter, malzemeli makine kurulumu, karttan/depodan elle alma, süreli el üretimi kuyruğu, başlangıç kiti, Depo kartı. |
 | K-012 | Alttaki 10 yuvalı hızlı erişim çubuğu ve I ile açılan envanter penceresi; ikisi aynı envanteri paylaşır, öğeler hızlı erişime sabitlenir. |
 | K-013 | Oyun boş tuvalle başlar; Sıfırla da boş tuvale ve başlangıç kitine döner. |
@@ -39,10 +43,9 @@ Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]],
 
 ## Geçici deney seçimleri
 
-- Eski 8 kartlık başlangıç ağı (`Demir madeni` + `Kömür madeni` → `Ergitme fırını` → `Çelik fırını` → iki `Haddehane` → `Pres` → `Laboratuvar 1`) oyundan kalktı; yalnızca smoke testi ve kart görsel testleri onu `build_sample_network()` ile kurar.
+- Eski 8 kartlık başlangıç ağı (`Demir madeni` + `Kömür madeni` → iki `Ergitme fırını` (demir, çelik) → iki `Haddehane` → `Pres` → `Laboratuvar 1`) oyundan kalktı; yalnızca smoke testi ve kart görsel testleri onu `build_sample_network()` ile kurar.
 - Bütün makinelerin işleme hızı 20 iş/sn; kart menüsünden 40'a çıkarılabilir. Tamponlar 6–12, Depo 100.
 - `Talaş bertaraf ünitesi` yer tutucudur; bertaraf için kullanıcı kararı yoktur.
-- Makine üreten makineler (K-020) uygulanmadı. Yeni reçetelerin makine ve araştırma atamaları geçicidir.
 - Kurucu Çekirdek'e kadar tam bir oyun denenmedi; adetler ve süreler dengelenmedi.
 - Bağlantılar anlık ve sınırsız aktarım yapar. Bölge, taşıma kısıtı, enerji ve para uygulanmadı.
 - Makine görsellerinin bir kısmı yer tutucudur; kart ve görsel kuralları `art_src/STANDART.md` içindedir.
@@ -54,11 +57,12 @@ Tek yuvalı yerel kayıt (`user://workshop.json`), sürüm 4: kart konumları, r
 ## Doğrulama kanıtı — 2026-10-23
 
 - Motor: **4.7.2.stable.official**.
-- `tests/test_production.gd`: 80 kontrol — ürünlerin ve araştırmaların kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü.
-- `tests/test_inventory.gd`: boş başlangıcın çıkmaz olmaması (kitten Laboratuvar 1'e), makineye elle koyma, başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt.
-- `tests/test_auto_recipe.gd`: fırınların seçimli olması, reçetenin gelen ürüne göre seçilmesi (tel sarım, montaj) ve seçilen reçetenin korunması.
+- `tests/test_production.gd`: 64 kontrol — ürünlerin ve 63 araştırmanın kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü.
+- `tests/test_inventory.gd`: boş başlangıcın çıkmaz olmaması (kitten Laboratuvar 1'e), makineye elle koyma, başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt; Makine Fabrikası; araştırma etkileri (maden sınırı, hız, tampon, depo, el hızı) ve kayıtları.
+- `tests/test_auto_recipe.gd`: fırının ve aynı girdili makinelerin seçimli olması, reçetenin gelen ürüne göre seçilmesi (tel sarım, montaj makineleri) ve seçilen reçetenin korunması.
+- `tests/test_chain_editor.gd`: Zincir Editörü'nün veri modeli.
 - `tests/test_mine_visual.gd`, `tests/test_smelter_visual.gd`: makine kartı görselleri, animasyon, durdurma, hız ve port hizası.
-- Pencereli smoke testi (`-- --smoke-test`, son çalıştırma K-013 – K-016 öncesi): kayıt/yükleme, üretim ekranından CNC üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, envanter penceresi ve sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Smoke testi boş başlangıcı denetleyip örnek ağı kurarak devam eder. Ekran görüntüleri `artifacts/` altındadır.
+- Pencereli smoke testi (`-- --smoke-test`, son çalıştırma K-025 sonrası, geçti): kayıt/yükleme, üretim ekranından Tezgâh Atölyesi üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, envanter penceresi ve sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Smoke testi boş başlangıcı denetleyip örnek ağı kurarak devam eder. Ekran görüntüleri `artifacts/` altındadır.
 - Doğrulanmayanlar: fiziksel fareyle oynanış testi, denge, büyük ağ performansı.
 
 ## Çalıştırma ve kaynaklar

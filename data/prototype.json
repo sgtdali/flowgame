@@ -322,7 +322,7 @@
       "work": 80.0
     },
     "gear_cnc": {
-      "name": "Gear (CNC Machining)",
+      "name": "Gear Machining",
       "inputs": {"steel_rod": 2},
       "outputs": {"gear": 1, "metal_scrap": 1},
       "work": 100.0
@@ -431,6 +431,13 @@
       "outputs": {},
       "research_points": {"k3": 1},
       "work": 40.0
+    },
+    "points_k4": {
+      "name": "Tier 4 Points",
+      "inputs": {"electric_motor": 1, "microchip": 1, "hydraulic_cylinder": 1},
+      "outputs": {},
+      "research_points": {"k4": 1},
+      "work": 40.0
     }
   },
   "machines": {
@@ -440,7 +447,7 @@
       "description": "Extracts Iron Ore for smelting into Iron Ingots.",
       "recipe": "mine_iron",
       "recipes": ["mine_iron"],
-      "build_cost": {"steel_plate": 5, "fastener": 4},
+      "build_cost": {"iron_plate": 6, "iron_rod": 4},
       "build_limit": 1,
       "speed": 20.0,
       "input_capacity": 8,
@@ -453,7 +460,7 @@
       "description": "Extracts Copper Ore for conductive and electronic chains.",
       "recipe": "mine_copper",
       "recipes": ["mine_copper"],
-      "build_cost": {"steel_plate": 5, "fastener": 4},
+      "build_cost": {"iron_plate": 6, "iron_rod": 4},
       "build_limit": 1,
       "speed": 20.0,
       "input_capacity": 8,
@@ -466,7 +473,7 @@
       "description": "Provides Coal for steel production and furnaces.",
       "recipe": "mine_coal",
       "recipes": ["mine_coal"],
-      "build_cost": {"steel_plate": 5, "fastener": 4},
+      "build_cost": {"iron_plate": 6, "iron_rod": 4},
       "build_limit": 1,
       "speed": 20.0,
       "input_capacity": 8,
@@ -479,7 +486,7 @@
       "description": "Extracts Quartz for Industrial Glass production.",
       "recipe": "mine_quartz",
       "recipes": ["mine_quartz"],
-      "build_cost": {"steel_plate": 5, "fastener": 4},
+      "build_cost": {"iron_plate": 6, "iron_rod": 4},
       "build_limit": 1,
       "speed": 20.0,
       "input_capacity": 8,
@@ -489,36 +496,23 @@
     "smelter": {
       "name": "Smelter",
       "role": "METALLURGY",
-      "description": "Smelts ores and quartz into Iron Ingot, Copper Ingot, or Industrial Glass.",
+      "description": "Smelts ores, scrap and quartz into Iron or Steel Ingots, Copper Ingots, Industrial Glass or Silicon.",
       "recipe": "pig_iron",
-      "recipes": ["pig_iron", "iron_from_scrap", "copper_ingot", "insulator", "silicon"],
+      "recipes": ["pig_iron", "steel_ingot", "copper_ingot", "insulator", "silicon", "iron_from_scrap", "steel_from_scrap"],
       "recipe_mode": "choose",
-      "build_cost": {"steel_plate": 4, "steel_ingot": 4},
+      "build_cost": {"iron_plate": 8, "iron_rod": 4},
       "speed": 20.0,
       "input_capacity": 12,
       "output_capacity": 12,
       "color": "d9824b"
     },
-    "steel_furnace": {
-      "name": "Steel Furnace",
-      "role": "METALLURGY",
-      "description": "Produces Steel Ingots from Iron Ingots and Coal, or by recycling Metal Scrap.",
-      "recipe": "steel_ingot",
-      "recipes": ["steel_ingot", "steel_from_scrap"],
-      "recipe_mode": "choose",
-      "build_cost": {"steel_plate": 6, "steel_ingot": 4},
-      "speed": 20.0,
-      "input_capacity": 12,
-      "output_capacity": 12,
-      "color": "9ab4c7"
-    },
     "rolling_mill": {
       "name": "Rolling Mill",
       "role": "FORMING",
-      "description": "Rolls ingots into plates, rods, or pipes.",
+      "description": "Rolls ingots into plates and rods, and plates into pipes.",
       "recipe": "steel_rod",
-      "recipes": ["iron_plate", "iron_rod", "iron_pipe", "laminated_core", "steel_plate", "steel_rod"],
-      "build_cost": {"steel_plate": 6, "fastener": 4},
+      "recipes": ["iron_plate", "iron_rod", "iron_pipe", "steel_plate", "steel_rod"],
+      "build_cost": {"iron_plate": 8, "iron_rod": 6},
       "handcraft": true,
       "speed": 20.0,
       "input_capacity": 10,
@@ -528,35 +522,22 @@
     "press": {
       "name": "Press",
       "role": "MANUFACTURING",
-      "description": "Presses Fasteners from Steel Rods or Housings from Steel Plates.",
+      "description": "Forms Fasteners, Housings, Electrical Cabinets, Tanks and Laminated Cores from rods and plates.",
       "recipe": "fastener",
-      "recipes": ["fastener", "housing_press", "electrical_cabinet", "valve", "tank", "iron_frame", "hydraulic_cylinder"],
-      "build_cost": {"steel_plate": 5, "fastener": 4},
+      "recipes": ["fastener", "housing_press", "electrical_cabinet", "tank", "laminated_core"],
+      "build_cost": {"iron_plate": 6, "iron_rod": 4, "iron_pipe": 2},
       "handcraft": true,
       "speed": 20.0,
       "input_capacity": 12,
       "output_capacity": 12,
       "color": "a3bfd1"
     },
-    "lathe": {
-      "name": "Lathe",
+    "machine_shop": {
+      "name": "Machine Shop",
       "role": "MACHINING",
-      "description": "Turns Steel Rods into Shafts and produces Metal Scrap as a byproduct.",
+      "description": "Machines Shafts, Gears and Bearings from Steel Rods; outputs Metal Scrap.",
       "recipe": "shaft",
-      "recipes": ["shaft"],
-      "build_cost": {"steel_plate": 4, "steel_rod": 4, "fastener": 4},
-      "handcraft": true,
-      "speed": 20.0,
-      "input_capacity": 10,
-      "output_capacity": 10,
-      "color": "87c5b8"
-    },
-    "cnc": {
-      "name": "CNC Machine",
-      "role": "MACHINING",
-      "description": "Machines precision Gears or Bearings from Steel Rods; outputs Metal Scrap.",
-      "recipe": "gear_cnc",
-      "recipes": ["gear_cnc", "bearing"],
+      "recipes": ["shaft", "gear_cnc", "bearing"],
       "build_cost": {"steel_plate": 6, "steel_rod": 4, "fastener": 6},
       "handcraft": true,
       "speed": 20.0,
@@ -564,13 +545,27 @@
       "output_capacity": 10,
       "color": "efb65a"
     },
+    "machine_factory": {
+      "name": "Machine Factory",
+      "role": "MACHINE MAKING",
+      "description": "Builds machines from their build materials; finished machines wait in the output or go to a linked Storage.",
+      "recipe": "",
+      "recipes": [],
+      "builds_machines": true,
+      "recipe_mode": "choose",
+      "build_cost": {"iron_plate": 8, "steel_plate": 8, "gear": 4, "fastener": 6},
+      "speed": 20.0,
+      "input_capacity": 30,
+      "output_capacity": 3,
+      "color": "d9a441"
+    },
     "foundry": {
       "name": "Foundry",
       "role": "CASTING",
       "description": "Casts Cast Iron Gears and Cast Iron Housings from Iron Ingots.",
       "recipe": "gear_cast",
       "recipes": ["gear_cast", "housing_cast"],
-      "build_cost": {"steel_plate": 6, "steel_ingot": 6},
+      "build_cost": {"iron_plate": 8, "iron_pipe": 4, "fastener": 4},
       "speed": 20.0,
       "input_capacity": 12,
       "output_capacity": 12,
@@ -582,25 +577,76 @@
       "description": "Draws Copper Wire from Copper Ingots and winds Electromagnetic Coils.",
       "recipe": "copper_wire",
       "recipes": ["copper_wire", "coil", "cable"],
-      "build_cost": {"steel_plate": 4, "gear": 2, "fastener": 4},
+      "build_cost": {"steel_plate": 4, "steel_rod": 4, "fastener": 4},
       "handcraft": true,
       "speed": 20.0,
       "input_capacity": 12,
       "output_capacity": 12,
       "color": "f0a35e"
     },
-    "assembler": {
-      "name": "Assembly Station",
+    "mechanical_assembly": {
+      "name": "Mechanical Assembly",
       "role": "ASSEMBLY",
-      "description": "Assembles Gearboxes, Circuit Boards, Electric Motors, Sensors, Actuators, and PLCs.",
-      "recipe": "gearbox",
-      "recipes": ["gearbox", "circuit_board", "electric_motor", "sensor", "actuator", "plc", "pump", "hydraulic_power_unit", "hydraulic_press_unit", "metallurgy_module", "precision_spindle", "linear_guide", "precision_module", "transformer", "switchgear", "electrical_module", "microchip", "display", "control_computer", "electronics_module", "robot_arm", "conveyor_line", "automation_module", "founding_core"],
-      "build_cost": {"steel_plate": 8, "gear": 4, "fastener": 8},
+      "description": "Assembles valves, frames, cylinders, pumps, gearboxes, guides, spindles and hydraulic units.",
+      "recipe": "valve",
+      "recipes": ["valve", "iron_frame", "hydraulic_cylinder", "pump", "gearbox", "linear_guide", "precision_spindle", "hydraulic_power_unit", "hydraulic_press_unit"],
+      "build_cost": {"steel_plate": 6, "gear": 4, "bearing": 4, "fastener": 6},
       "handcraft": true,
       "speed": 20.0,
       "input_capacity": 12,
-      "output_capacity": 10,
+      "output_capacity": 12,
+      "color": "6da8ba"
+    },
+    "electrical_assembly": {
+      "name": "Electrical Assembly",
+      "role": "ASSEMBLY",
+      "description": "Assembles Electric Motors, Transformers and Switchgear.",
+      "recipe": "electric_motor",
+      "recipes": ["electric_motor", "transformer", "switchgear"],
+      "build_cost": {"steel_plate": 6, "coil": 4, "fastener": 6},
+      "handcraft": true,
+      "speed": 20.0,
+      "input_capacity": 12,
+      "output_capacity": 12,
+      "color": "52b5d8"
+    },
+    "electronics_assembly": {
+      "name": "Electronics Assembly",
+      "role": "ASSEMBLY",
+      "description": "Assembles Circuit Boards, Microchips, Displays, Sensors, Control Computers and PLCs.",
+      "recipe": "circuit_board",
+      "recipes": ["circuit_board", "microchip", "display", "sensor", "control_computer", "plc"],
+      "build_cost": {"steel_plate": 6, "copper_wire": 6, "insulator": 4, "electrical_cabinet": 2},
+      "handcraft": true,
+      "speed": 20.0,
+      "input_capacity": 12,
+      "output_capacity": 12,
       "color": "58c99c"
+    },
+    "robotics_assembly": {
+      "name": "Robotics Assembly",
+      "role": "ASSEMBLY",
+      "description": "Assembles Precision Actuators, Robot Arms and Conveyor Lines.",
+      "recipe": "actuator",
+      "recipes": ["actuator", "robot_arm", "conveyor_line"],
+      "build_cost": {"steel_plate": 8, "electric_motor": 4, "gearbox": 4, "sensor": 2},
+      "handcraft": true,
+      "speed": 20.0,
+      "input_capacity": 12,
+      "output_capacity": 12,
+      "color": "b98eff"
+    },
+    "module_plant": {
+      "name": "Module Plant",
+      "role": "MAIN GOAL",
+      "description": "Builds the five industry modules and joins them into the Founding Core.",
+      "recipe": "metallurgy_module",
+      "recipes": ["metallurgy_module", "precision_module", "electrical_module", "electronics_module", "automation_module", "founding_core"],
+      "build_cost": {"steel_plate": 20, "iron_frame": 10, "gearbox": 4},
+      "speed": 20.0,
+      "input_capacity": 60,
+      "output_capacity": 4,
+      "color": "e8913a"
     },
     "scrap_disposal": {
       "name": "Scrap Disposal",
@@ -608,7 +654,7 @@
       "description": "Disposes of excess Metal Scrap before steel recycling is set up.",
       "recipe": "dispose_scrap",
       "recipes": ["dispose_scrap"],
-      "build_cost": {"steel_plate": 3, "fastener": 2},
+      "build_cost": {"iron_plate": 4, "iron_pipe": 2},
       "speed": 20.0,
       "input_capacity": 12,
       "output_capacity": 8,
@@ -620,7 +666,7 @@
       "description": "Stores connected products; click to transfer into player inventory.",
       "recipe": "store",
       "recipes": ["store"],
-      "build_cost": {"steel_plate": 4, "fastener": 2},
+      "build_cost": {"iron_plate": 4, "iron_rod": 2},
       "storage": true,
       "speed": 20.0,
       "input_capacity": 100,
@@ -633,7 +679,7 @@
       "description": "Consumes Steel Plates and Fasteners to generate Tier 1 research points.",
       "recipe": "points_k1",
       "recipes": ["points_k1"],
-      "build_cost": {"steel_plate": 6, "fastener": 6},
+      "build_cost": {"iron_plate": 4, "steel_plate": 4, "fastener": 4},
       "speed": 20.0,
       "input_capacity": 6,
       "output_capacity": 8,
@@ -645,7 +691,7 @@
       "description": "Consumes Gears, Copper Wire, and Industrial Glass to generate Tier 2 research points.",
       "recipe": "points_k2",
       "recipes": ["points_k2"],
-      "build_cost": {"steel_plate": 6, "gear": 4, "copper_wire": 6},
+      "build_cost": {"steel_plate": 6, "copper_wire": 6, "insulator": 4},
       "speed": 20.0,
       "input_capacity": 6,
       "output_capacity": 8,
@@ -657,11 +703,23 @@
       "description": "Consumes Circuit Boards, Coils, and Shafts to generate Tier 3 research points.",
       "recipe": "points_k3",
       "recipes": ["points_k3"],
-      "build_cost": {"steel_plate": 8, "circuit_board": 4, "coil": 4},
+      "build_cost": {"steel_plate": 6, "circuit_board": 4, "cable": 4},
       "speed": 20.0,
       "input_capacity": 6,
       "output_capacity": 8,
       "color": "52b5d8"
+    },
+    "lab_4": {
+      "name": "Lab 4",
+      "role": "RESEARCH",
+      "description": "Consumes Electric Motors, Microchips, and Hydraulic Cylinders to generate Tier 4 research points.",
+      "recipe": "points_k4",
+      "recipes": ["points_k4"],
+      "build_cost": {"steel_plate": 8, "microchip": 4, "electric_motor": 2, "hydraulic_cylinder": 2},
+      "speed": 20.0,
+      "input_capacity": 6,
+      "output_capacity": 8,
+      "color": "b98eff"
     },
     "project_hub": {
       "name": "Project Hub",
@@ -669,116 +727,714 @@
       "description": "Receives the Founding Core to complete the Main Project.",
       "recipe": "project_stage_1",
       "recipes": ["project_stage_1"],
-      "build_cost": {"steel_plate": 20, "gearbox": 4, "circuit_board": 6},
+      "build_cost": {"steel_plate": 10, "plc": 4, "display": 2},
       "speed": 20.0,
       "input_capacity": 6,
       "output_capacity": 8,
       "color": "b98eff"
     }
   },
-  "initial_unlocked_machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry", "smelter", "steel_furnace", "rolling_mill", "press", "scrap_disposal", "lab_1", "storage"],
-  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "iron_plate", "iron_rod", "iron_pipe", "electrical_cabinet", "valve", "tank", "iron_frame", "hydraulic_cylinder", "laminated_core", "copper_ingot", "steel_ingot", "steel_plate", "steel_rod", "fastener", "housing_press", "dispose_scrap", "points_k1", "points_k2", "points_k3"],
+  "initial_unlocked_machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry", "smelter", "rolling_mill", "press", "scrap_disposal", "lab_1", "storage"],
+  "initial_unlocked_recipes": ["mine_iron", "mine_copper", "mine_coal", "mine_quartz", "pig_iron", "steel_ingot", "copper_ingot", "iron_plate", "iron_rod", "iron_pipe", "steel_plate", "steel_rod", "fastener", "dispose_scrap", "points_k1", "points_k2", "points_k3", "points_k4"],
   "hand_speed": 10.0,
   "machine_build_work": 50.0,
   "starting_inventory": {
-    "products": {"steel_plate": 20, "fastener": 10, "steel_ingot": 10},
+    "products": {"iron_plate": 30, "iron_rod": 20, "steel_plate": 6, "fastener": 6},
     "machines": {"copper_mine": 1, "quartz_quarry": 1, "storage": 1}
   },
   "researches": {
-    "A-01": {
-      "name": "A-01: Machining",
-      "tier": 1,
-      "category": "mekanik",
+    "DM-01": {
+      "name": "DM-01: Sac Şekillendirme",
+      "category": "metalurji",
       "prerequisites": [],
-      "cost": {"k1": 30},
-      "unlock_machines": ["lathe", "cnc"],
-      "unlock_recipes": ["shaft", "gear_cnc", "bearing"],
-      "description": "Unlocks Lathe and CNC Machine; enables Shaft, Gear, and Bearing machining."
+      "cost": {"k1": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["housing_press", "tank"],
+      "description": "Unlocks Housing (Pressing), Tank Forming."
     },
-    "A-02": {
-      "name": "A-02: Casting & Recycling",
-      "tier": 1,
-      "category": "malzeme",
+    "DM-02": {
+      "name": "DM-02: Döküm",
+      "category": "metalurji",
       "prerequisites": [],
       "cost": {"k1": 30},
       "unlock_machines": ["foundry"],
-      "unlock_recipes": ["gear_cast", "housing_cast", "iron_from_scrap", "steel_from_scrap"],
-      "description": "Unlocks Foundry casting for Gears/Housings and Steel recovery from Metal Scrap."
+      "unlock_recipes": ["gear_cast", "housing_cast"],
+      "description": "Unlocks Foundry, Cast Iron Gear Casting, Cast Iron Housing Casting."
     },
-    "A-03": {
-      "name": "A-03: Conductors & Insulation",
-      "tier": 1,
+    "DM-03": {
+      "name": "DM-03: Hurda Geri Kazanımı",
+      "category": "metalurji",
+      "prerequisites": ["MK-01"],
+      "cost": {"k1": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["iron_from_scrap", "steel_from_scrap"],
+      "description": "Unlocks Iron Recovery from Scrap, Steel Recovery from Scrap."
+    },
+    "DM-04": {
+      "name": "DM-04: Hidrolik Silindir",
+      "category": "metalurji",
+      "prerequisites": ["MK-04"],
+      "cost": {"k2": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["hydraulic_cylinder"],
+      "description": "Unlocks Hydraulic Cylinder Assembly."
+    },
+    "DM-05": {
+      "name": "DM-05: Pompa",
+      "category": "metalurji",
+      "prerequisites": ["MK-04", "DM-02"],
+      "cost": {"k2": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["pump"],
+      "description": "Unlocks Pump Assembly."
+    },
+    "DM-06": {
+      "name": "DM-06: Hidrolik Güç Ünitesi",
+      "category": "metalurji",
+      "prerequisites": ["DM-05", "DM-01"],
+      "cost": {"k2": 50},
+      "unlock_machines": [],
+      "unlock_recipes": ["hydraulic_power_unit"],
+      "description": "Unlocks Hydraulic Power Unit Assembly."
+    },
+    "DM-07": {
+      "name": "DM-07: Hidrolik Pres Ünitesi",
+      "category": "metalurji",
+      "prerequisites": ["DM-06", "DM-04"],
+      "cost": {"k2": 60, "k3": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["hydraulic_press_unit"],
+      "description": "Unlocks Hydraulic Press Unit Assembly."
+    },
+    "DM-08": {
+      "name": "DM-08: Metalürji Modülü",
+      "category": "metalurji",
+      "prerequisites": ["DM-07", "AL-04"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["metallurgy_module"],
+      "description": "Unlocks Metallurgy Module Assembly."
+    },
+    "MK-01": {
+      "name": "MK-01: Talaşlı İmalat",
+      "category": "mekanik",
+      "prerequisites": [],
+      "cost": {"k1": 30},
+      "unlock_machines": ["machine_shop"],
+      "unlock_recipes": ["shaft"],
+      "description": "Unlocks Machine Shop, Shaft Turning."
+    },
+    "MK-02": {
+      "name": "MK-02: Dişli İşleme",
+      "category": "mekanik",
+      "prerequisites": ["MK-01"],
+      "cost": {"k1": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["gear_cnc"],
+      "description": "Unlocks Gear Machining."
+    },
+    "MK-03": {
+      "name": "MK-03: Rulman",
+      "category": "mekanik",
+      "prerequisites": ["MK-01"],
+      "cost": {"k1": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["bearing"],
+      "description": "Unlocks Bearing Machining."
+    },
+    "MK-04": {
+      "name": "MK-04: Mekanik Montaj",
+      "category": "mekanik",
+      "prerequisites": ["MK-02", "MK-03"],
+      "cost": {"k1": 40, "k2": 20},
+      "unlock_machines": ["mechanical_assembly"],
+      "unlock_recipes": ["valve", "iron_frame"],
+      "description": "Unlocks Mechanical Assembly, Valve Assembly, Iron Frame Assembly."
+    },
+    "MK-05": {
+      "name": "MK-05: Dişli Kutusu",
+      "category": "mekanik",
+      "prerequisites": ["MK-04", "DM-02"],
+      "cost": {"k1": 50, "k2": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["gearbox"],
+      "description": "Unlocks Gearbox Assembly."
+    },
+    "MK-06": {
+      "name": "MK-06: Lineer Kızak",
+      "category": "mekanik",
+      "prerequisites": ["MK-04"],
+      "cost": {"k2": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["linear_guide"],
+      "description": "Unlocks Linear Guide Assembly."
+    },
+    "MK-07": {
+      "name": "MK-07: Hassas İş Mili",
+      "category": "mekanik",
+      "prerequisites": ["MK-06", "EL-04"],
+      "cost": {"k2": 50, "k3": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["precision_spindle"],
+      "description": "Unlocks Precision Spindle Assembly."
+    },
+    "MK-08": {
+      "name": "MK-08: Hassas Mekanik Modülü",
+      "category": "mekanik",
+      "prerequisites": ["MK-05", "MK-07", "AL-04"],
+      "cost": {"k3": 60, "k4": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["precision_module"],
+      "description": "Unlocks Precision Mechanics Module Assembly."
+    },
+    "EL-01": {
+      "name": "EL-01: Tel Çekme",
       "category": "elektrik",
       "prerequisites": [],
       "cost": {"k1": 30},
-      "unlock_machines": ["wire_winder", "lab_2"],
-      "unlock_recipes": ["copper_wire", "insulator", "cable"],
-      "description": "Unlocks Wire Winder, Copper Wire drawing, and Industrial Glass smelting."
+      "unlock_machines": ["wire_winder"],
+      "unlock_recipes": ["copper_wire"],
+      "description": "Unlocks Wire Winder, Copper Wire Drawing."
     },
-    "A-04": {
-      "name": "A-04: Mechanical Transmission",
-      "tier": 2,
-      "category": "mekanik",
-      "prerequisites": ["A-01"],
-      "cost": {"k1": 60, "k2": 30},
-      "unlock_machines": ["assembler"],
-      "unlock_recipes": ["gearbox", "pump", "hydraulic_power_unit", "hydraulic_press_unit", "metallurgy_module", "precision_spindle", "linear_guide", "precision_module"],
-      "description": "Unlocks Assembly Station and Gearbox production."
-    },
-    "A-05": {
-      "name": "A-05: Electromagnetic Winding",
-      "tier": 2,
+    "EL-02": {
+      "name": "EL-02: Kablo",
       "category": "elektrik",
-      "prerequisites": ["A-03"],
-      "cost": {"k1": 60, "k2": 30},
+      "prerequisites": ["EL-01", "EK-01"],
+      "cost": {"k1": 40},
       "unlock_machines": [],
-      "unlock_recipes": ["coil", "transformer", "switchgear", "electrical_module"],
-      "description": "Unlocks Electromagnetic Coil winding from Copper Wire and Steel Rod."
+      "unlock_recipes": ["cable"],
+      "description": "Unlocks Cable Insulating."
     },
-    "A-06": {
-      "name": "A-06: Electric Motors",
-      "tier": 2,
+    "EL-03": {
+      "name": "EL-03: Bobin",
       "category": "elektrik",
-      "prerequisites": ["A-04", "A-05"],
-      "cost": {"k1": 60, "k2": 60},
+      "prerequisites": ["EL-01"],
+      "cost": {"k1": 40, "k2": 20},
       "unlock_machines": [],
+      "unlock_recipes": ["coil"],
+      "description": "Unlocks Electromagnetic Coil Winding."
+    },
+    "EL-04": {
+      "name": "EL-04: Elektrik Motoru",
+      "category": "elektrik",
+      "prerequisites": ["EL-03", "MK-03", "DM-01"],
+      "cost": {"k2": 50},
+      "unlock_machines": ["electrical_assembly"],
       "unlock_recipes": ["electric_motor"],
-      "description": "Combines Coil, Shaft, Bearing, and Housing to assemble Electric Motors."
+      "description": "Unlocks Electrical Assembly, Electric Motor Assembly."
     },
-    "A-07": {
-      "name": "A-07: Basic Electronics",
-      "tier": 2,
-      "category": "kontrol",
-      "prerequisites": ["A-03"],
-      "cost": {"k1": 50, "k2": 40},
-      "unlock_machines": ["assembler", "lab_3"],
-      "unlock_recipes": ["circuit_board", "silicon", "microchip", "display"],
-      "description": "Unlocks Circuit Board assembly from Copper Wire and Industrial Glass."
-    },
-    "A-08": {
-      "name": "A-08: Industrial Sensing",
-      "tier": 3,
-      "category": "kontrol",
-      "prerequisites": ["A-05", "A-07"],
-      "cost": {"k2": 40, "k3": 30},
+    "EL-05": {
+      "name": "EL-05: Trafo",
+      "category": "elektrik",
+      "prerequisites": ["EL-03", "EL-04"],
+      "cost": {"k2": 50},
       "unlock_machines": [],
-      "unlock_recipes": ["sensor", "control_computer", "electronics_module"],
-      "description": "Unlocks Industrial Sensor assembly."
+      "unlock_recipes": ["laminated_core", "transformer"],
+      "description": "Unlocks Laminated Core Stamping, Transformer Assembly."
     },
-    "A-09": {
-      "name": "A-09: Automation & Control",
-      "tier": 3,
-      "category": "kontrol",
-      "prerequisites": ["A-06", "A-08"],
-      "cost": {"k2": 60, "k3": 60},
+    "EL-06": {
+      "name": "EL-06: Elektrik Panosu",
+      "category": "elektrik",
+      "prerequisites": ["DM-01"],
+      "cost": {"k1": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["electrical_cabinet"],
+      "description": "Unlocks Electrical Cabinet Forming."
+    },
+    "EL-07": {
+      "name": "EL-07: Şalt Panosu",
+      "category": "elektrik",
+      "prerequisites": ["EL-02", "EL-06", "EL-04"],
+      "cost": {"k2": 50},
+      "unlock_machines": [],
+      "unlock_recipes": ["switchgear"],
+      "description": "Unlocks Switchgear Assembly."
+    },
+    "EL-08": {
+      "name": "EL-08: Elektrik Modülü",
+      "category": "elektrik",
+      "prerequisites": ["EL-04", "EL-05", "EL-07", "AL-04"],
+      "cost": {"k3": 50, "k4": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["electrical_module"],
+      "description": "Unlocks Electrical Module Assembly."
+    },
+    "EK-01": {
+      "name": "EK-01: Endüstriyel Cam",
+      "category": "elektronik",
+      "prerequisites": [],
+      "cost": {"k1": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["insulator"],
+      "description": "Unlocks Industrial Glass Smelting."
+    },
+    "EK-02": {
+      "name": "EK-02: Devre Kartı",
+      "category": "elektronik",
+      "prerequisites": ["EL-01", "EK-01"],
+      "cost": {"k2": 40},
+      "unlock_machines": ["electronics_assembly"],
+      "unlock_recipes": ["circuit_board"],
+      "description": "Unlocks Electronics Assembly, Circuit Board Assembly."
+    },
+    "EK-03": {
+      "name": "EK-03: Silisyum",
+      "category": "elektronik",
+      "prerequisites": ["EK-01"],
+      "cost": {"k2": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["silicon"],
+      "description": "Unlocks Silicon Smelting."
+    },
+    "EK-04": {
+      "name": "EK-04: Mikroçip",
+      "category": "elektronik",
+      "prerequisites": ["EK-02", "EK-03"],
+      "cost": {"k2": 50, "k3": 20},
+      "unlock_machines": [],
+      "unlock_recipes": ["microchip"],
+      "description": "Unlocks Microchip Fabrication."
+    },
+    "EK-05": {
+      "name": "EK-05: Sensör",
+      "category": "elektronik",
+      "prerequisites": ["EK-02", "EL-03"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["sensor"],
+      "description": "Unlocks Industrial Sensor Assembly."
+    },
+    "EK-06": {
+      "name": "EK-06: Ekran",
+      "category": "elektronik",
+      "prerequisites": ["EK-02"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["display"],
+      "description": "Unlocks Display Assembly."
+    },
+    "EK-07": {
+      "name": "EK-07: Kontrol Bilgisayarı",
+      "category": "elektronik",
+      "prerequisites": ["EK-04", "EK-06", "EL-06"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": ["control_computer"],
+      "description": "Unlocks Control Computer Assembly."
+    },
+    "EK-08": {
+      "name": "EK-08: Elektronik Modülü",
+      "category": "elektronik",
+      "prerequisites": ["EK-05", "EK-07", "AL-04"],
+      "cost": {"k3": 60, "k4": 30},
+      "unlock_machines": [],
+      "unlock_recipes": ["electronics_module"],
+      "description": "Unlocks Electronics Module Assembly."
+    },
+    "OT-01": {
+      "name": "OT-01: Hassas Aktüatör",
+      "category": "otomasyon",
+      "prerequisites": ["EL-04", "MK-05", "EK-05"],
+      "cost": {"k3": 50},
+      "unlock_machines": ["robotics_assembly"],
+      "unlock_recipes": ["actuator"],
+      "description": "Unlocks Robotics Assembly, Precision Actuator Assembly."
+    },
+    "OT-02": {
+      "name": "OT-02: PLC",
+      "category": "otomasyon",
+      "prerequisites": ["EK-05", "EL-06"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": ["plc"],
+      "description": "Unlocks Control Unit (PLC) Assembly."
+    },
+    "OT-03": {
+      "name": "OT-03: Konveyör Hattı",
+      "category": "otomasyon",
+      "prerequisites": ["OT-01"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": ["conveyor_line"],
+      "description": "Unlocks Conveyor Line Assembly."
+    },
+    "OT-04": {
+      "name": "OT-04: Robot Kol",
+      "category": "otomasyon",
+      "prerequisites": ["OT-01", "EL-02"],
+      "cost": {"k4": 40},
+      "unlock_machines": [],
+      "unlock_recipes": ["robot_arm"],
+      "description": "Unlocks Robot Arm Assembly."
+    },
+    "OT-05": {
+      "name": "OT-05: Otomasyon Modülü",
+      "category": "otomasyon",
+      "prerequisites": ["OT-02", "OT-03", "OT-04", "AL-04"],
+      "cost": {"k4": 60},
+      "unlock_machines": [],
+      "unlock_recipes": ["automation_module"],
+      "description": "Unlocks Automation Module Assembly."
+    },
+    "OT-06": {
+      "name": "OT-06: Kurucu Çekirdek",
+      "category": "otomasyon",
+      "prerequisites": ["DM-08", "MK-08", "EL-08", "EK-08", "OT-05"],
+      "cost": {"k4": 100},
       "unlock_machines": ["project_hub"],
-      "unlock_recipes": ["actuator", "plc", "robot_arm", "conveyor_line", "automation_module", "founding_core", "project_stage_1"],
-      "description": "Unlocks Precision Actuator, Control Unit (PLC), and Project Hub."
+      "unlock_recipes": ["founding_core", "project_stage_1"],
+      "description": "Unlocks Project Hub, Founding Core Assembly, Main Project: Founding Core."
+    },
+    "AL-01": {
+      "name": "AL-01: Makine Fabrikası",
+      "category": "altyapi",
+      "prerequisites": ["MK-02"],
+      "cost": {"k1": 40},
+      "unlock_machines": ["machine_factory"],
+      "unlock_recipes": [],
+      "description": "Unlocks Machine Factory."
+    },
+    "AL-02": {
+      "name": "AL-02: Laboratuvar 2",
+      "category": "altyapi",
+      "prerequisites": ["MK-02", "EL-01", "EK-01"],
+      "cost": {"k1": 40},
+      "unlock_machines": ["lab_2"],
+      "unlock_recipes": [],
+      "description": "Unlocks Lab 2."
+    },
+    "AL-03": {
+      "name": "AL-03: Laboratuvar 3",
+      "category": "altyapi",
+      "prerequisites": ["EK-02", "EL-03"],
+      "cost": {"k2": 60},
+      "unlock_machines": ["lab_3"],
+      "unlock_recipes": [],
+      "description": "Unlocks Lab 3."
+    },
+    "AL-04": {
+      "name": "AL-04: Modül Tesisi",
+      "category": "altyapi",
+      "prerequisites": ["MK-05", "DM-01"],
+      "cost": {"k2": 60, "k3": 30},
+      "unlock_machines": ["module_plant"],
+      "unlock_recipes": [],
+      "description": "Unlocks Module Plant."
+    },
+    "AL-05": {
+      "name": "AL-05: Laboratuvar 4",
+      "category": "altyapi",
+      "prerequisites": ["EL-04", "EK-04", "DM-04"],
+      "cost": {"k3": 80},
+      "unlock_machines": ["lab_4"],
+      "unlock_recipes": [],
+      "description": "Unlocks Lab 4."
+    },
+    "MD-01": {
+      "name": "MD-01: Demir Madeni II",
+      "category": "maden",
+      "prerequisites": [],
+      "cost": {"k1": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["iron_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Demir Madeni kurulum sınırı +1."
+    },
+    "MD-02": {
+      "name": "MD-02: Kömür Madeni II",
+      "category": "maden",
+      "prerequisites": [],
+      "cost": {"k1": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["coal_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Kömür Madeni kurulum sınırı +1."
+    },
+    "MD-03": {
+      "name": "MD-03: Bakır Madeni II",
+      "category": "maden",
+      "prerequisites": [],
+      "cost": {"k2": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["copper_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Bakır Madeni kurulum sınırı +1."
+    },
+    "MD-04": {
+      "name": "MD-04: Kuvars Ocağı II",
+      "category": "maden",
+      "prerequisites": [],
+      "cost": {"k2": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["quartz_quarry"],
+          "add": 1
+        }
+      ],
+      "description": "Kuvars Ocağı kurulum sınırı +1."
+    },
+    "MD-05": {
+      "name": "MD-05: Demir Madeni III",
+      "category": "maden",
+      "prerequisites": ["MD-01"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["iron_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Demir Madeni kurulum sınırı +1."
+    },
+    "MD-06": {
+      "name": "MD-06: Kömür Madeni III",
+      "category": "maden",
+      "prerequisites": ["MD-02"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["coal_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Kömür Madeni kurulum sınırı +1."
+    },
+    "MD-07": {
+      "name": "MD-07: Bakır Madeni III",
+      "category": "maden",
+      "prerequisites": ["MD-03"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["copper_mine"],
+          "add": 1
+        }
+      ],
+      "description": "Bakır Madeni kurulum sınırı +1."
+    },
+    "MD-08": {
+      "name": "MD-08: Kuvars Ocağı III",
+      "category": "maden",
+      "prerequisites": ["MD-04"],
+      "cost": {"k3": 60},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "build_limit",
+          "machines": ["quartz_quarry"],
+          "add": 1
+        }
+      ],
+      "description": "Kuvars Ocağı kurulum sınırı +1."
+    },
+    "VR-01": {
+      "name": "VR-01: El Becerisi",
+      "category": "verim",
+      "prerequisites": [],
+      "cost": {"k1": 20},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {"type": "hand_speed", "add": 0.5}
+      ],
+      "description": "El üretimi %50 hızlanır."
+    },
+    "VR-02": {
+      "name": "VR-02: Fırın Verimi I",
+      "category": "verim",
+      "prerequisites": [],
+      "cost": {"k1": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["smelter"],
+          "add": 0.25
+        }
+      ],
+      "description": "Fırın %25 hızlanır."
+    },
+    "VR-03": {
+      "name": "VR-03: Şekillendirme Hızı",
+      "category": "verim",
+      "prerequisites": ["DM-01"],
+      "cost": {"k2": 30},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["rolling_mill", "press"],
+          "add": 0.25
+        }
+      ],
+      "description": "Haddehane ve Pres %25 hızlanır."
+    },
+    "VR-04": {
+      "name": "VR-04: Atölye Hızı",
+      "category": "verim",
+      "prerequisites": ["MK-01", "DM-02"],
+      "cost": {"k2": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["machine_shop", "foundry"],
+          "add": 0.25
+        }
+      ],
+      "description": "Tezgâh Atölyesi ve Dökümhane %25 hızlanır."
+    },
+    "VR-05": {
+      "name": "VR-05: Montaj Hızı I",
+      "category": "verim",
+      "prerequisites": ["MK-04"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["mechanical_assembly", "electrical_assembly", "electronics_assembly", "robotics_assembly", "wire_winder"],
+          "add": 0.25
+        }
+      ],
+      "description": "Montaj makineleri ve Tel Sarım %25 hızlanır."
+    },
+    "VR-06": {
+      "name": "VR-06: Fırın Verimi II",
+      "category": "verim",
+      "prerequisites": ["VR-02"],
+      "cost": {"k3": 50},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["smelter"],
+          "add": 0.25
+        }
+      ],
+      "description": "Fırın %25 daha hızlanır."
+    },
+    "VR-07": {
+      "name": "VR-07: Montaj Hızı II",
+      "category": "verim",
+      "prerequisites": ["VR-05"],
+      "cost": {"k4": 60},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["mechanical_assembly", "electrical_assembly", "electronics_assembly", "robotics_assembly", "wire_winder"],
+          "add": 0.25
+        }
+      ],
+      "description": "Montaj makineleri ve Tel Sarım %25 daha hızlanır."
+    },
+    "VR-08": {
+      "name": "VR-08: Fabrika Hızı",
+      "category": "verim",
+      "prerequisites": ["AL-01"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {
+          "type": "speed",
+          "machines": ["machine_factory"],
+          "add": 0.5
+        }
+      ],
+      "description": "Makine Fabrikası %50 hızlanır."
+    },
+    "LJ-01": {
+      "name": "LJ-01: Depo Kapasitesi I",
+      "category": "kapasite",
+      "prerequisites": [],
+      "cost": {"k1": 30},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {"type": "storage", "add": 100}
+      ],
+      "description": "Depo +100."
+    },
+    "LJ-02": {
+      "name": "LJ-02: Tampon Kapasitesi I",
+      "category": "kapasite",
+      "prerequisites": [],
+      "cost": {"k2": 30},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {"type": "buffer", "add": 0.5}
+      ],
+      "description": "Makine giriş ve çıkış tamponları %50 büyür."
+    },
+    "LJ-03": {
+      "name": "LJ-03: Depo Kapasitesi II",
+      "category": "kapasite",
+      "prerequisites": ["LJ-01"],
+      "cost": {"k3": 40},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {"type": "storage", "add": 200}
+      ],
+      "description": "Depo +200."
+    },
+    "LJ-04": {
+      "name": "LJ-04: Tampon Kapasitesi II",
+      "category": "kapasite",
+      "prerequisites": ["LJ-02"],
+      "cost": {"k3": 50},
+      "unlock_machines": [],
+      "unlock_recipes": [],
+      "effects": [
+        {"type": "buffer", "add": 0.5}
+      ],
+      "description": "Tamponlar %50 daha büyür."
     }
   },
   "research_tiers": [
     {"id": "k1", "name": "Tier 1", "color": "efb65a"},
     {"id": "k2", "name": "Tier 2", "color": "61d8bb"},
-    {"id": "k3", "name": "Tier 3", "color": "52b5d8"}
+    {"id": "k3", "name": "Tier 3", "color": "52b5d8"},
+    {"id": "k4", "name": "Tier 4", "color": "b98eff"}
   ]
 }

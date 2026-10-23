@@ -66,7 +66,7 @@
       "y": 760,
       "width": 460,
       "height": 330,
-      "text": "## Açık seçimler\n**K-002/003:** Tuvalde makine kartları.\n**K-005:** Çevrim süresi = gereken iş / makine işleme hızı.\n**K-006:** Kabul edebilen tüketicilere otomatik eşit paylaşım.\n**K-007/017/021:** 55 ürünlük ağ, tek reçete, 9 araştırma (kalite kapsam dışı).\n**K-008:** Kademeli laboratuvar puanı, depolanır.\n**K-009/016:** Reçete gelen ürünle; aynı girdide ve fırında oyuncu seçer.\n**K-010:** Madenler başta birer adet.\n**K-011/012:** Envanter, malzemeli kurulum, el üretimi, 10 yuvalı hızlı erişim.\n**K-013/014:** Boş başlangıç; envanterden makineye elle koyma.\n**K-015:** Kartta adetli ürün kutuları.\n**K-018:** Son Fabrika; beş modülden Kurucu Çekirdek.\n**K-019/020:** Kollar bağlı; makine üreten makineler.",
+      "text": "## Açık seçimler\n**K-002/003:** Tuvalde makine kartları.\n**K-005:** Çevrim süresi = gereken iş / makine işleme hızı.\n**K-006:** Kabul edebilen tüketicilere otomatik eşit paylaşım.\n**K-007/017/021:** 55 ürünlük ağ, tek reçete, 9 araştırma (kalite kapsam dışı).\n**K-008:** Kademeli laboratuvar puanı, depolanır.\n**K-009/016:** Reçete gelen ürünle; aynı girdide ve fırında oyuncu seçer.\n**K-010/025:** Madenler başta birer adet, araştırmayla artar.\n**K-011/012:** Envanter, malzemeli kurulum, el üretimi, 10 yuvalı hızlı erişim.\n**K-013/014:** Boş başlangıç; envanterden makineye elle koyma.\n**K-015:** Kartta adetli ürün kutuları.\n**K-018:** Son Fabrika; beş modülden Kurucu Çekirdek.\n**K-019/020:** Kollar bağlı; makine üreten makineler.\n**K-022/024:** Tezgâh Atölyesi, dört montaj, Modül Tesisi, Makine Fabrikası.\n**K-025:** 9 kolda 63 araştırma, K4.",
       "color": "4"
     },
     {

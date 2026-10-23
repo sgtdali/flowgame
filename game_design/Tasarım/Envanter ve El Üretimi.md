@@ -37,7 +37,7 @@ Oyuncu envanterdeki bir ürünü, uygunsa bir makine kartının girişine bırak
 
 ### Hammadde sınırı — K-010
 
-Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir. Sınırın araştırmayla artırılması kullanıcının "belki" dediği bir yöndür, karar değildir.
+Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir. Maden sınırı araştırmayla artar: her maden için II ve III araştırmaları sınırı birer artırır (K-025).
 
 Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|K-010]], [[Yönetim/Karar Defteri#K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi|K-011]], [[Yönetim/Karar Defteri#K-012 — Hızlı erişim çubuğu ve envanter penceresi|K-012]].
 
@@ -45,11 +45,12 @@ Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|
 
 | Konu | Prototipte |
 |---|---|
-| Başlangıç | Tuval boştur (K-013). Kit: 20 çelik levha, 10 bağlantı elemanı, 10 çelik külçe; Bakır madeni, Kuvars ocağı ve Depo birer adet. Kit demir ve kömür madenini, ergitme ve çelik fırınını üretmeye yeter; fırının külçesinden el ile levha, çubuk ve bağlantı elemanı yapılarak Laboratuvar 1'e ulaşılır (testle denetlenir). |
-| Kurulum bedeli | Her makinenin malzeme listesi var; ör. maden 5 levha + 4 bağlantı elemanı, CNC 6 levha + 4 çubuk + 6 bağlantı elemanı, ana proje terminali 20 levha + 4 dişli kutusu + 6 devre kartı. Liste `data/prototype.json` içindedir. |
-| El üretimi | Hız 10 iş/sn (makineler 20). Makine yapımı 50 iş, yani 5 sn. El ile yapılabilen reçeteler haddehane, pres, torna, CNC, tel sarım ve montaj makinelerinin reçeteleridir; fırın, döküm ve maden reçeteleri el ile yapılamaz. Malzeme sıraya alınırken düşer; iptal edilen işin malzemesi geri döner. |
+| Başlangıç | Tuval boştur (K-013). Kit (K-023): 30 demir levha, 20 demir çubuk, 6 çelik levha, 6 bağlantı elemanı; Bakır madeni, Kuvars ocağı ve Depo birer adet. Kit demir ve kömür madenini, ergitme fırınını ve Laboratuvar 1'i üretmeye yeter (testle denetlenir). |
+| Kurulum bedeli | K-023: başlangıç makineleri demirden (ör. maden 6 demir levha + 4 demir çubuk), sonrakiler kendi aşamasının ürünlerinden (ör. Mekanik Montaj 6 çelik levha + 4 dişli + 4 rulman + 6 bağlantı elemanı, Modül Tesisi 20 çelik levha + 10 demir şasi + 4 dişli kutusu). Liste `data/prototype.json` içindedir. |
+| El üretimi | Hız 10 iş/sn (makineler 20). Makine yapımı 50 iş, yani 5 sn. El ile yapılabilen reçeteler haddehane, pres, Tezgâh Atölyesi, tel sarım ve dört montaj makinesinin reçeteleridir; fırın, döküm, maden ve Modül Tesisi reçeteleri el ile yapılamaz. Malzeme sıraya alınırken düşer; iptal edilen işin malzemesi geri döner. |
 | Kurulum sınırı | Sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar; sınırı dolan makine üretilemez ve yerleştirilemez. Serbest modda sınır yoktur. |
-| Depo | Her bağlı ürün için ayrı giriş açan, ürün başına 100 tutan kart. Ürünü kendisi işlemez; oyuncu içindekini envantere alır. |
+| Depo | Her bağlı ürün için ayrı giriş açan, ürün başına 100 tutan kart (kapasite araştırmalarıyla büyür). Ürünü kendisi işlemez; oyuncu içindekini envantere alır. Makine Fabrikası'nın ürettiği makineleri de tutar. |
+| Makine Fabrikası | K-024: AL-01 ile açılır. Reçete ekranından seçilen makineyi kurulum bedelinden 2,5 sn'de üretir; madenler gibi sınırlı makineleri üretmez. Çıktıda en fazla 3 makine birikir; bağlı depoya da gider. Alınan makine envantere taşınan makine olarak geçer. |
 | Karttan alma | Çıkış kutusuna tıklamak ya da kart menüsündeki "Envantere al" çıktıyı envantere taşır. |
 | Makineye koyma | Hızlı erişimden ya da envanter penceresinden ürünü giriş kutusuna sürükle-bırak; varsayılan girişe sığdığı kadar, Shift ile 1 adet. Normal giriş yalnızca kendi ürününü, otomatik makinenin genel girişi reçetesi olan her ürünü, depo her ürünü alır. Envanter penceresi açıkken sürüklenen ürün arkadaki karta bırakılabilir. |
 | Envanter yuvası | Envanterin yuva veya ağırlık sınırı yoktur. |
@@ -62,7 +63,7 @@ Bu satırların hiçbiri kullanıcı kararı değildir; I tuşu, otomatik yuvaya
 
 ## Açık kalanlar
 
-- Makine üreten makineler onaylı bir yön ([[Yönetim/Karar Defteri#K-020 — Makine üreten makineler|K-020]]): oyuncu başta elle ürettiği makineleri zamanla kartlara ürettirecek. Tasarımı S-024'te açık.
+- Makine Fabrikası'nın dengesi (bedeli, hızı, açılış zamanı) denenmedi ([[Yönetim/Karar Defteri#K-024 — Makine Fabrikası|K-024]]).
 
 - Kurulum sınırlarının araştırmayla veya başka yolla artması (K-010'daki "belki").
 - Envanterin bir taşıma sınırı olup olmayacağı.

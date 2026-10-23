@@ -89,6 +89,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Asıl notlar:** [[Tasarım/Ürün ve Üretim Ağı]], [[Tasarım/Teknoloji Ağacı]].
 - **Değişiklik:** K-017 ile aynı ürüne alternatif yöntem (ör. döküm dişli vs CNC dişli) yerine "tek reçete ve farklı ürünler" (Cast Iron Gear vs Steel Gear) ilkesi benimsendi.
 - **Genişleme:** K-021 ile ağ beş modüle ve 55 ürüne genişletildi.
+- **Değişiklik:** 9 araştırmalık ağacın yerine K-025 ile 63 araştırmalık ağaç geçti; montaj ayrımı K-022 ile kapandı.
 
 ## K-008 — Kademeli laboratuvarlar ve depolanabilir araştırma puanı
 
@@ -119,7 +120,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Karar:** Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü veride bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir.
 - **Kaynak:** “hammedde kaynakalrının sınırsız olması oyunun balansını yapmayı imkansız hale getiriyor. madenler 1 er adet kurulabilmeli en azından oyun başında”.
 - **Gerekçe:** Sınırsız hammadde dengelemeyi imkânsız kılıyor.
-- **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndür; karar değildir, uygulanmadı. Serbest modda (tümünü aç) sınır uygulanmaz. İzleyen soru: S-021.
+- **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndü; K-025 ile maden genişletme araştırmaları onaylandı. Serbest modda (tümünü aç) sınır uygulanmaz.
 - **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
 
 ## K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi
@@ -230,7 +231,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 
 ## K-020 — Makine üreten makineler
 
-- **Durum:** Onaylı yön; tasarımı ve uygulaması yok.
+- **Durum:** Onaylı; K-024 (Makine Fabrikası) ile uygulandı.
 - **Tarih:** 2026-10-23.
 - **Karar:** Şu an elle üretilen makine kartlarını üreten makine kartları da olacak. Oyuncu başta elle yaptığını bir süre sonra otomatikleştirir; final projeyi bitirmek için çok sayıda üretim hattı kurması gerekir.
 - **Kaynak:** “kartlar şu an elle craft ediliyor ya bunları craft eden kartlarda olacak. yani makine üreten makineler gibi. yani oyuncu aslında ilk başta elle yaptığını bir süre sonra otomatikleştirebilecek ve final projeyi bitirmesi için fazla sayıda üretim hatları kurup adetlerini yükseltmesi gerekecek.”
@@ -251,6 +252,52 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** Her adımda kullanıcı onayı: Electrical Cabinet için “tamam bunu da önerdiğin gibi yapabilirsin”, metalürji için “tamamdır işle”, hassas mekanik için “tamamdır”, elektrik için “tamamdır”, elektronik için “evet”, otomasyon için “devam”. Precision Spindle'da bobin yerine elektrik motoru kullanılması (montaj istasyonunun iki reçeteyi ayırt edebilmesi için) asistan değişikliğidir; kullanıcı ardından Elektrik modülüne geçti.
 - **Sınır:** Adetler ve iş miktarları ilk tahmindir. Yeni reçetelerin makine ve araştırma atamaları asistan seçimidir, makineler ayrıca ele alınacak.
 - **Asıl not:** [[Tasarım/Ürün ve Üretim Ağı]].
+
+## K-022 — Makine düzeni
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Torna ve CNC tek makinede birleşir: **Tezgâh Atölyesi** (`Machine Shop`) mil, dişli ve rulman yapar.
+  2. Çelik fırını kalkar; çelik ve hurdadan çelik **Ergitme Fırını**'nda yapılır.
+  3. Montaj işin türüne göre ayrılır: **Mekanik Montaj**, **Elektrik Montaj**, **Elektronik Montaj**, **Robotik Montaj**; beş modül ve Kurucu Çekirdek ayrı ve büyük bir **Modül Tesisi**'nde yapılır.
+- **Kaynak:** “torna ve cnc i birleştirebiliriz. buna güzel bir isim bulursun. ama cnc gibi fazla teknik olmasın. çelik fırınına da gere kyok gibi orda ergitme ile birleşsin.”; güncel makine tablosuna “işle evet”.
+- **Sınır:** Montajın dörde bölünmesi ve Modül Tesisi asistan önerisiydi, kullanıcı tabloyla onayladı. “Tezgâh Atölyesi” adı asistan seçimidir. Reçetelerin makinelere dağılımı [[Tasarım/Makine Kartları]] notundadır. K-007'nin açık bıraktığı montaj ayrımı böylece kapandı.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-023 — Kurulum bedelleri ve başlangıç kiti
+
+- **Durum:** Onaylı ilk değerler.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Başlangıç makineleri (madenler, fırın, haddehane, pres, depo, talaş imha) demirden kurulur; sonraki makineler açıldıkları aşamanın ürünlerini ister.
+  2. Bir makine yalnızca açıldığı anda yapılabilen şeyleri ister.
+  3. Başlangıç kiti: 30 Iron Plate, 20 Iron Rod, 6 Steel Plate, 6 Fastener; Bakır Madeni, Kuvars Ocağı ve Depo.
+- **Kaynak:** Bedel tablosu ve kit önerisine “uygun”.
+- **Sınır:** Adetler ilk tahmindir; bedellerin listesi `data/prototype.json` içindedir.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-024 — Makine Fabrikası
+
+- **Durum:** Onaylı; K-020'nin uygulaması.
+- **Tarih:** 2026-10-23.
+- **Karar:** Makineleri tek bir **Makine Fabrikası** kartı üretir. Oyuncu hangi makinenin üretileceğini reçete ekranından seçer; girdiler o makinenin kurulum bedelidir. Biten makine kartta az sayıda birikir, kart bir Depo'ya bağlanırsa depoda birikir; oyuncu oradan envantere alır. Fabrika erken bir araştırmayla açılır.
+- **Kaynak:** Soru kartında “Tek Makine Fabrikası (Önerilen)”, “kartta birikir az miktarda bağlanırsa depoda birikebilir”, “Erken bir araştırmayla (Önerilen)”.
+- **Sınır:** Kurulum sınırı olan makineleri (madenler) üretmemesi, çıktı kapasitesinin 3 olması, bedeli ve açılan araştırma (AL-01) asistan seçimidir.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-025 — 63 araştırmalık teknoloji ağacı
+
+- **Durum:** Onaylı ilk taslak; K-007'deki 9 araştırmalık ağacın yerine geçer.
+- **Tarih:** 2026-10-23.
+- **Karar:**
+  1. Araştırma sayısı en az 40–50 olur; onaylanan taslak 9 kolda 63 araştırmadır: Demir ve hidrolik (DM), Çelik ve mekanik (MK), Bakır ve elektrik (EL), Kuvars ve elektronik (EK), Otomasyon ve final (OT), Altyapı ve laboratuvar (AL), Maden genişletme (MD), Verim (VR), Kapasite (LJ).
+  2. Açılış araştırmaları bir ya da iki ürün açar; kollar birbirini ön koşul olarak ister (K-019).
+  3. Maden sınırı araştırmayla artar (her maden için II ve III); hız ve kapasite araştırmaları değer değiştirir.
+  4. Dördüncü puan kademesi (K4) ve onu üreten Laboratuvar 4 eklenir.
+- **Kaynak:** “oyunumuzda sadece toplam 9 tane mi araştırma var. bunun en az 40 50 falan olması lazım”; araştırma türleri önerisine “Anlastik devam et”; 63 araştırmalık tabloya “Tablo uygun”.
+- **Sınır:** Bedeller, etki oranları ve Laboratuvar 4'ün girdileri ilk tahmindir. Araştırmaların tam listesi [[Tasarım/Teknoloji Ağacı]] notundadır.
+- **Asıl not:** [[Tasarım/Teknoloji Ağacı]].
 
 ## Henüz karar olmayan yönler
 

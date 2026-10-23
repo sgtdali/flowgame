@@ -1,6 +1,8 @@
 extends PanelContainer
 ## Technology tree: flows left to right by prerequisite depth, one horizontal lane per
-## category (research "category" in prototype.json). Click an available node to research it.
+## category (research "category" in prototype.json). Researches of a lane at the same depth
+## stack in rows, so a lane is as tall as its busiest column. The tree scrolls both ways.
+## Click an available node to research it.
 
 signal research_selected(tech_id: String)
 signal unlock_all_requested()
@@ -12,26 +14,35 @@ const TEAL := Color("61d8bb")
 const GOLD := Color("efb65a")
 ## Lane order, title and accent colour.
 const CATEGORIES := [
-	{"id": "mekanik", "name": "Mekanik", "color": Color("efb65a")},
-	{"id": "malzeme", "name": "Malzeme", "color": Color("c87d55")},
-	{"id": "elektrik", "name": "Elektrik", "color": Color("f0a35e")},
-	{"id": "kontrol", "name": "Elektronik ve kontrol", "color": Color("52b5d8")},
+	{"id": "metalurji", "name": "Demir ve hidrolik", "color": Color("c87d55")},
+	{"id": "mekanik", "name": "Çelik ve mekanik", "color": Color("efb65a")},
+	{"id": "elektrik", "name": "Bakır ve elektrik", "color": Color("f0a35e")},
+	{"id": "elektronik", "name": "Kuvars ve elektronik", "color": Color("52b5d8")},
+	{"id": "otomasyon", "name": "Otomasyon ve final", "color": Color("b98eff")},
+	{"id": "altyapi", "name": "Altyapı ve laboratuvar", "color": Color("61d8bb")},
+	{"id": "maden", "name": "Maden genişletme", "color": Color("a8d5e5")},
+	{"id": "verim", "name": "Verim", "color": Color("ff9f6e")},
+	{"id": "kapasite", "name": "Kapasite", "color": Color("8c9ba5")},
 ]
-const LANE_W := 150.0
-const COL_W := 290.0
-const LANE_H := 124.0
-const NODE := Vector2(236, 96)
+const LANE_W := 140.0
+const COL_W := 226.0
+const ROW_H := 84.0
+const LANE_PAD := 10.0
+const NODE := Vector2(200, 72)
+## Visible part of the tree; the rest scrolls.
+const VIEW := Vector2(1300, 660)
 
 ## Draws lane bands and step connectors behind the research nodes.
 class TreeCanvas extends Control:
+	## {color, top, height} per lane
 	var lanes: Array = []
 	var edges: Array = []
 
 	func _draw() -> void:
 		for i in range(lanes.size()):
-			var band := Rect2(0, i * LANE_H, size.x, LANE_H)
+			var band := Rect2(0, lanes[i].top, size.x, lanes[i].height)
 			draw_rect(band, Color("12222e") if i % 2 == 0 else Color("0f1d28"))
-			draw_rect(Rect2(0, i * LANE_H, 4, LANE_H), lanes[i].color)
+			draw_rect(Rect2(0, lanes[i].top, 4, lanes[i].height), lanes[i].color)
 		for edge in edges:
 			var a: Vector2 = edge.from
 			var b: Vector2 = edge.to
@@ -115,26 +126,45 @@ func build(catalog: Dictionary) -> void:
 	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
 	header.add_child(close_btn)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = VIEW
+	vbox.add_child(scroll)
 	tree = TreeCanvas.new()
-	tree.lanes = CATEGORIES
-	vbox.add_child(tree)
+	scroll.add_child(tree)
 	var lane_of := {}
 	for i in range(CATEGORIES.size()):
 		lane_of[CATEGORIES[i].id] = i
-		var lane_title := _label(str(CATEGORIES[i].name), 14, CATEGORIES[i].color)
-		lane_title.position = Vector2(16, i * LANE_H + 12)
-		lane_title.size = Vector2(LANE_W - 24, 40)
-		lane_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		tree.add_child(lane_title)
+	# Place each research: lane by category, column by depth, row by order within the cell.
+	var cell_rows := {}
+	var lane_rows: Array = []
+	lane_rows.resize(CATEGORIES.size())
+	lane_rows.fill(1)
+	var place := {}
 	var max_depth := 0
 	for tech_id in catalog.researches:
-		var spec: Dictionary = catalog.researches[tech_id]
 		var depth := _depth(catalog, str(tech_id))
 		max_depth = maxi(max_depth, depth)
-		var lane: int = lane_of.get(str(spec.get("category", "")), CATEGORIES.size() - 1)
-		var pos := Vector2(LANE_W + depth * COL_W, lane * LANE_H + (LANE_H - NODE.y) * 0.5)
-		cards[str(tech_id)] = _node(catalog, str(tech_id), pos)
-	tree.custom_minimum_size = Vector2(LANE_W + (max_depth + 1) * COL_W - (COL_W - NODE.x) + 16, CATEGORIES.size() * LANE_H)
+		var lane: int = lane_of.get(str(catalog.researches[tech_id].get("category", "")), CATEGORIES.size() - 1)
+		var cell := "%d:%d" % [lane, depth]
+		var row: int = cell_rows.get(cell, 0)
+		cell_rows[cell] = row + 1
+		lane_rows[lane] = maxi(lane_rows[lane], row + 1)
+		place[str(tech_id)] = [lane, depth, row]
+	var top := 0.0
+	for i in range(CATEGORIES.size()):
+		var height: float = lane_rows[i] * ROW_H + LANE_PAD * 2.0
+		tree.lanes.append({"color": CATEGORIES[i].color, "top": top, "height": height})
+		var lane_title := _label(str(CATEGORIES[i].name), 13, CATEGORIES[i].color)
+		lane_title.position = Vector2(14, top + 10)
+		lane_title.size = Vector2(LANE_W - 22, 40)
+		lane_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tree.add_child(lane_title)
+		top += height
+	for tech_id in place:
+		var at: Array = place[tech_id]
+		var pos := Vector2(LANE_W + at[1] * COL_W, tree.lanes[at[0]].top + LANE_PAD + at[2] * ROW_H + (ROW_H - NODE.y) * 0.5)
+		cards[tech_id] = _node(catalog, tech_id, pos)
+	tree.custom_minimum_size = Vector2(LANE_W + (max_depth + 1) * COL_W - (COL_W - NODE.x) + 40, top)
 	for tech_id in catalog.researches:
 		for prereq in catalog.researches[tech_id].get("prerequisites", []):
 			_edges.append({"from_id": str(prereq), "to_id": str(tech_id)})
@@ -170,6 +200,9 @@ func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
 	if recipes > 0:
 		machines.append("+%d reçete" % recipes)
 	var unlocks := " · ".join(machines)
+	# Upgrades (more mines, speed, capacity) open nothing; show what they do instead.
+	if unlocks.is_empty():
+		unlocks = str(spec.get("description", ""))
 	var unlock_lbl := _label(unlocks, 12, MUTED)
 	unlock_lbl.clip_text = true
 	box.add_child(unlock_lbl)
@@ -259,7 +292,8 @@ func refresh(sim: RefCounted) -> void:
 			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", MUTED)
 			_style(view, Color("101c26"), Color("22394a"), 1)
-		button.modulate.a = 0.6 if button.disabled and not (tech_id in sim.completed_researches) and sim.active_research != tech_id else 1.0
+		# Locked cards stay opaque so the connectors behind them do not show through.
+		button.self_modulate.a = 1.0
 		button.mouse_default_cursor_shape = Control.CURSOR_ARROW if button.disabled else Control.CURSOR_POINTING_HAND
 	tree.edges.clear()
 	# Each line leaving the same column bends on its own track so lines never merge.
@@ -272,7 +306,7 @@ func refresh(sim: RefCounted) -> void:
 		tree.edges.append({
 			"from": from.position + Vector2(NODE.x, NODE.y * 0.5),
 			"to": to.position + Vector2(0, NODE.y * 0.5),
-			"bend_x": from.position.x + NODE.x + 14.0 + track * 9.0,
-			"color": TEAL if edge.from_id in sim.completed_researches else Color("3d6178"),
+			"bend_x": from.position.x + NODE.x + 6.0 + (track % 4) * 3.0,
+			"color": Color(TEAL, 0.55) if edge.from_id in sim.completed_researches else Color("3d6178", 0.35),
 		})
 	tree.queue_redraw()

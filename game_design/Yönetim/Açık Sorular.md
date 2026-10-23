@@ -28,11 +28,11 @@ guncelleme: 2026-10-23
 | S-017 | Hedef cihaz ve kabul edilebilir simülasyon/arayüz performansı ne? | Ölçek bütçesi | Açık |
 | S-018 | Giriş/çıkış tamponlarının kapasitesi ne olacak? | Akış ve stok sınırı | Açık; tamponların varlığı K-005 ile onaylı |
 | S-019 | Reçete değişimi veya çevrim iptalinde iş ve malzeme ne olur? | Oyuncu kontrolü ve stok bütünlüğü | Açık |
-| S-020 | Farklı prosesler için ayrı işleme birimleri gerekir mi? | Uyumluluk ve dengeleme | Açık; makine-reçete uygunluğu K-005 ile onaylı |
-| S-021 | Kurulum sınırları (ör. maden başına 1) araştırmayla veya başka yolla artar mı? | Hammadde dengesi, uzun vadeli büyüme | Açık; kullanıcı “belki” dedi (K-010) |
+| S-020 | Farklı prosesler için ayrı işleme birimleri gerekir mi? | Uyumluluk ve dengeleme | Kısmen çözüldü (K-022): montaj dört makineye ayrıldı, torna ve CNC birleşti |
+| S-021 | Kurulum sınırları (ör. maden başına 1) araştırmayla veya başka yolla artar mı? | Hammadde dengesi, uzun vadeli büyüme | Çözüldü (K-025): maden genişletme araştırmaları her maden için sınırı +1, +1 artırır |
 | S-022 | Envanterin taşıma veya yuva sınırı olacak mı? | Lojistik anlamı, Depo kartının rolü | Açık; prototipte sınır yok |
 | S-023 | Kurulum bedelleri ve el üretimi hızı nasıl dengelenir? | İlk dakikaların temposu | Açık; prototip değerleri ilk deneme |
-| S-024 | Makine üreten makineler nasıl çalışır: hangi kart hangi makineyi üretir, ne zaman açılır, çıktı nereye gider? | Otomasyona geçiş, K-020 | Açık |
+| S-024 | Makine üreten makineler nasıl çalışır: hangi kart hangi makineyi üretir, ne zaman açılır, çıktı nereye gider? | Otomasyona geçiş, K-020 | Çözüldü (K-024): tek Makine Fabrikası, kartta ya da bağlı depoda birikir, erken araştırma |
 | S-025 | Kurucu Çekirdek ve modüller kaç adet ister, tam bir oyun ne kadar sürer? | Final projenin zorluğu, K-018 | Açık; prototipte her modülden 4 (ilk tahmin) |
 | S-026 | Kimya modülü hangi hammaddelerle ve ne zaman eklenir? | Kurucu Çekirdek'in tamamlanması | Açık |
 
@@ -57,6 +57,8 @@ Kart ölçeği (S-001) için kullanıcı bu aşamada karar vermek istemediğini 
 | Fırının reçetesini kim seçer? | Oyuncu (K-009'un fırın kısmı değişti) | [[Yönetim/Karar Defteri#K-016 — Fırınlarda reçeteyi oyuncu seçer|K-016]] |
 | Ana proje ne? | Son Fabrika: beş modülden yapılan Kurucu Çekirdek, terminale teslim | [[Yönetim/Karar Defteri#K-018 — Ana proje: Son Fabrika ve Kurucu Çekirdek|K-018]] |
 | Ürün kolları bağımsız mı? | Hayır: bazı reçeteler iki koldan malzeme ister | [[Yönetim/Karar Defteri#K-019 — Kollar birbirine bağlı olur|K-019]] |
-| Makineler hep elle mi üretilir? | Hayır: makine üreten makineler olacak (tasarımı açık) | [[Yönetim/Karar Defteri#K-020 — Makine üreten makineler|K-020]] |
+| Makineler hep elle mi üretilir? | Hayır: Makine Fabrikası makineleri üretir | [[Yönetim/Karar Defteri#K-024 — Makine Fabrikası|K-024]] |
+| Montaj tek makine mi? | Hayır: Mekanik, Elektrik, Elektronik, Robotik Montaj ve Modül Tesisi | [[Yönetim/Karar Defteri#K-022 — Makine düzeni|K-022]] |
+| Kaç araştırma var? | 9 kolda 63; maden sınırı araştırmayla artar, K4 laboratuvarı var | [[Yönetim/Karar Defteri#K-025 — 63 araştırmalık teknoloji ağacı|K-025]] |
 
 Yeni cevap geldiğinde satırı ilgili karara bağla. Açık sorunun yanında bulunan öneri, cevap yerine geçmez.

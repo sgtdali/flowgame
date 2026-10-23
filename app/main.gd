@@ -489,13 +489,13 @@ func _demo() -> void:
 	message.text = "Tuval boş: C ile makine üret, hızlı erişimden (1-0) ya da envanterden (I) yerleştir."
 	_refresh()
 
-## The old starting network: mines → smelter → steel furnace → two mills → press → lab 1.
+## The old starting network: mines → two smelters (iron, steel) → two mills → press → lab 1.
 ## The game starts empty; the smoke and card tests build this to have something running.
 func build_sample_network() -> void:
 	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
 	var coal_mine := _add_card("coal_mine", Vector2(20, 250))
 	var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
-	var steel_furnace := _add_card("steel_furnace", Vector2(340, 250), "", "steel_ingot")
+	var steel_furnace := _add_card("smelter", Vector2(340, 250), "", "steel_ingot")
 	var mill_plate := _add_card("rolling_mill", Vector2(660, 20), "", "steel_plate")
 	var mill_rod := _add_card("rolling_mill", Vector2(660, 250), "", "steel_rod")
 	var press := _add_card("press", Vector2(660, 480), "", "fastener")
@@ -625,8 +625,11 @@ func _smoke_test() -> void:
 	storage_path = "user://smoke-state.json"
 	sim.advance(180.0)
 	_refresh()
-	assert("A-01" in sim.completed_researches, "Başlangıç ağı A-01 araştırmasını tamamlamalı")
-	assert(sim.is_machine_unlocked("cnc") and sim.is_machine_unlocked("lathe"), "A-01 sonrası Torna ve CNC açılmalı")
+	assert("MK-01" in sim.completed_researches, "Başlangıç ağı MK-01 araştırmasını tamamlamalı")
+	assert(sim.is_machine_unlocked("machine_shop"), "MK-01 sonrası Tezgâh Atölyesi açılmalı")
+	# Gear and bearing have researches of their own; the recipe screen below needs all three.
+	sim._complete_research("MK-02")
+	sim._complete_research("MK-03")
 	_save_game()
 	var before := sim.snapshot()
 	_load_game()
@@ -634,15 +637,16 @@ func _smoke_test() -> void:
 		push_error("UI kayıt/yükleme eşleşmedi")
 		get_tree().quit(1)
 		return
-	# Hand-craft a CNC: the rod line feeds the press, so the test hands over the rods it needs.
+	# Hand-craft a Machine Shop: the rod line feeds the press, so the test hands over the rods it needs.
 	sim.inventory["steel_rod"] = 4
+	sim.inventory["steel_plate"] = int(sim.inventory.get("steel_plate", 0)) + 6
 	craft_screen.toggle()
 	craft_screen.open_category(3)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	assert(craft_screen.tiles["machine:cnc"].is_visible_in_tree() and not craft_screen.tiles["machine:iron_mine"].is_visible_in_tree())
-	await _smoke_click(craft_screen.tiles["machine:cnc"].get_global_rect().get_center())
-	assert(craft_screen.selected == "machine:cnc" and not craft_screen.craft_button.disabled)
+	assert(craft_screen.tiles["machine:machine_shop"].is_visible_in_tree() and not craft_screen.tiles["machine:iron_mine"].is_visible_in_tree())
+	await _smoke_click(craft_screen.tiles["machine:machine_shop"].get_global_rect().get_center())
+	assert(craft_screen.selected == "machine:machine_shop" and not craft_screen.craft_button.disabled)
 	await _smoke_click(craft_screen.craft_button.get_global_rect().get_center())
 	_refresh()
 	await get_tree().process_frame
@@ -653,15 +657,15 @@ func _smoke_test() -> void:
 	craft_screen.hide()
 	sim.advance(5.1)
 	_refresh()
-	assert(sim.machine_inventory.get("cnc", 0) == 1 and sim.craft_queue.is_empty())
+	assert(sim.machine_inventory.get("machine_shop", 0) == 1 and sim.craft_queue.is_empty())
 	await get_tree().process_frame
 	await get_tree().process_frame
-	# The crafted CNC took a free quick-use slot; place it from there.
-	assert(inventory_bar.slot_for("machine:cnc") != null)
-	await _smoke_click(inventory_bar.slot_for("machine:cnc").get_global_rect().get_center())
+	# The crafted Machine Shop took a free quick-use slot; place it from there.
+	assert(inventory_bar.slot_for("machine:machine_shop") != null)
+	await _smoke_click(inventory_bar.slot_for("machine:machine_shop").get_global_rect().get_center())
 	var cnc_card := selected_id
-	assert(cards.size() == 9 and sim.machines[cnc_card].kind == "cnc")
-	# CNC makes gear or bearing from the same rod, so placing it opens the recipe screen.
+	assert(cards.size() == 9 and sim.machines[cnc_card].kind == "machine_shop")
+	# The Machine Shop makes shaft, gear or bearing from the same rod, so placing it opens the recipe screen.
 	assert(recipe_picker.visible and recipe_picker.target_id == cnc_card)
 	recipe_picker.tiles["bearing"].pressed.emit()
 	assert(sim.machines[cnc_card].recipe == "bearing" and not recipe_picker.visible)
@@ -701,14 +705,16 @@ func _smoke_test() -> void:
 	assert(not inventory_window.visible)
 	_toggle_research_panel()
 	assert(research_panel.visible)
-	_select_research("A-02")
-	assert(sim.active_research == "A-02")
-	_select_research("A-04")
-	assert(sim.active_research == "A-04")
+	_select_research("DM-01")
+	assert(sim.active_research == "DM-01")
+	_select_research("EL-01")
+	assert(sim.active_research == "EL-01")
+	if DisplayServer.get_name() != "headless":
+		get_viewport().get_texture().get_image().save_png("res://artifacts/research-panel.png")
 	_toggle_research_panel()
 	assert(not research_panel.visible)
 	_delete_cards([StringName(cnc_card)])
-	assert(cards.size() == 8 and sim.machine_inventory.get("cnc", 0) == 1, "Kaldırılan makine envantere dönmeli")
+	assert(cards.size() == 8 and sim.machine_inventory.get("machine_shop", 0) == 1, "Kaldırılan makine envantere dönmeli")
 	# The demo already has the one iron mine allowed, so it cannot be crafted or placed again.
 	craft_screen.toggle()
 	craft_screen.open_category(0)
@@ -752,7 +758,7 @@ func _smoke_test() -> void:
 		DirAccess.make_dir_recursive_absolute("res://artifacts")
 		image.save_png("res://artifacts/production-workshop.png")
 		image.save_png("res://artifacts/production-workshop-%dx%d.png" % [image.get_width(), image.get_height()])
-	print("UI_SMOKE_OK: envanter, el üretimi, yerleştirme, çıkıştan alma, A-01 araştırma ve kayıt/yükleme doğrulandı")
+	print("UI_SMOKE_OK: envanter, el üretimi, yerleştirme, çıkıştan alma, MK-01 araştırma ve kayıt/yükleme doğrulandı")
 	get_tree().quit()
 
 func _smoke_click(position_in_view: Vector2) -> void:

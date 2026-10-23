@@ -27,6 +27,14 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **Makine üreten makineler (K-020):** Elle üretilen makine kartlarını üreten kartlar da olacak; oyuncu el üretimini zamanla otomatikleştirir. Tasarımı henüz yok.
 
+**Makine düzeni (K-022):** Torna ve CNC tek Tezgâh Atölyesi oldu, çelik fırını Ergitme Fırını'na katıldı; montaj dört makineye (Mekanik, Elektrik, Elektronik, Robotik) ayrıldı, modüller Modül Tesisi'nde yapılır.
+
+**Kurulum bedelleri ve kit (K-023):** Başlangıç makineleri demirden kurulur; her makine yalnız açıldığı anda yapılabilen şeyleri ister.
+
+**Makine Fabrikası (K-024):** Makineleri kurulum bedelinden üreten kart; çıktı kartta ya da bağlı depoda birikir.
+
+**63 araştırma (K-025):** 9 kolda 63 araştırma; maden sınırı araştırmayla artar, verim ve kapasite araştırmaları var, K4 puanı ve Laboratuvar 4 eklendi. Ayrıntılar [[Tasarım/Teknoloji Ağacı]] notundadır.
+
 **Beş modülün reçete taslağı (K-021):** Ağ sondan başa kuruldu ve 55 ürüne çıktı; her ürün bir modüle, laboratuvara ya da kuruluma gider. Adetler ilk tahmindir. Ayrıntılar [[Tasarım/Ürün ve Üretim Ağı]] notundadır.
 
 **Reçete seçimi (K-009, K-016):** Girdileri farklı reçeteli makinelerde (pres, tel sarım, montaj) oyuncu reçete seçmez; makine bağlanan ürüne göre üretir. Aynı girdiden farklı ürün yapan makinelerde ve fırınlarda simgeli reçete ekranından ürün seçilir.

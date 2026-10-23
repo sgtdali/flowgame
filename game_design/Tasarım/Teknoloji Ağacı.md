@@ -1,116 +1,143 @@
 ---
 tur: sistem
-durum: ilk-taslak
+durum: onayli-ilk-taslak
 guncelleme: 2026-10-23
 ---
 # Teknoloji ağacı
 
-## İlk taslak: 24 ürüne bağlı 9 araştırmalık teknoloji ağacı (K-007)
+## Güncel ağaç: 63 araştırma (K-025)
 
-[[Tasarım/Ürün ve Üretim Ağı|24 ürünlük üretim ağı]] ile birlikte çalışan, tek koridor olmayan (3 paralel koldan başlayıp kesişen) ve eski üretim hatlarını boşa çıkarmayan **9 araştırmalık ilk taslak** kaydedilmiştir ([[Yönetim/Karar Defteri#K-007 — 24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı|K-007]]).
+Ağaç [[Yönetim/Karar Defteri#K-025 — 63 araştırmalık teknoloji ağacı|K-025]] ile onaylandı ve 9 araştırmalık ilk taslağın (K-007) yerine geçti. Tablolar `data/prototype.json` ile aynıdır; bedeller ve etki oranları ilk tahmindir.
 
-> [!note] İlk taslak sınırları
-> - Her araştırmanın tükettiği ürün türleri ve açtığı makine/reçeteler ilk taslak olarak belirlenmiştir.
-> - Deney sayıları, deney başına ürün miktarları ve deney süreleri henüz sabitlenmemiştir.
-> - Montaj makinelerinin 3 ayrı tür (`Montaj İstasyonu`, `Elektronik Montaj`, `Hassas Montaj`) veya tek `Montaj İstasyonu` olması açıktır.
+**Başlangıçta açık:** madenler (her türden birer adet), Ergitme Fırını (Iron Ingot, Steel Ingot, Copper Ingot), Haddehane (Iron Plate, Iron Rod, Iron Pipe, Steel Plate, Steel Rod), Pres (yalnız Fastener), Depo, Talaş İmha, Laboratuvar 1.
 
----
+**Puan kademeleri:** K1 Laboratuvar 1 (Steel Plate + Fastener), K2 Laboratuvar 2 (Gear + Copper Wire + Industrial Glass), K3 Laboratuvar 3 (Circuit Board + Coil + Shaft), K4 Laboratuvar 4 (Electric Motor + Microchip + Hydraulic Cylinder).
 
-### Başlangıç durumu (Kademe 0 — Oyuna başlarken açık olanlar)
+**Etki araştırmaları:** Maden genişletme sınırı +1 artırır; verim araştırmaları makine ya da el üretimi hızına yüzde ekler; kapasite araştırmaları makine tamponlarını yüzdeyle, depoyu sabit miktarla büyütür. Etkiler kayda girer.
 
-Hiçbir araştırmanın kilitlenmemesi (deadlock oluşmaması) için oyuncu temel metalürji ve kaba şekillendirme ile başlar:
+### Demir ve hidrolik (DM)
 
-- **Açık Hammaddeler (4):** `1. Demir Cevheri`, `2. Bakır Cevheri`, `3. Kömür`, `4. Kuvars`
-- **Açık Makineler (4):** `Ergitme Fırını`, `Çelik Fırını`, `Haddehane`, `Pres`
-- **Başlangıçta Üretilebilen Ürünler (7):**
-  - `5. Pik Demir` (Demir Cevheri + Kömür → Ergitme Fırını)
-  - `6. Çelik Külçe` (Pik Demir + Kömür → Çelik Fırını)
-  - `7. Bakır Külçe` (Bakır Cevheri → Ergitme Fırını)
-  - `8. Çelik Levha` (Çelik Külçe → Haddehane)
-  - `9. Çelik Çubuk` (Çelik Külçe → Haddehane)
-  - `11. Bağlantı Elemanları` (Çelik Çubuk → Pres)
-  - `17. Gövde — Pres Yöntemi` (Çelik Levha + Bağlantı Elemanı → Pres)
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| DM-01 | Sac Şekillendirme | — | 20 K1 | `Housing`, `Tank` |
+| DM-02 | Döküm | — | 30 K1 | **Foundry**, `Cast Iron Gear`, `Cast Iron Housing` |
+| DM-03 | Hurda Geri Kazanımı | MK-01 | 30 K1 | `Iron Ingot`, `Steel Ingot` |
+| DM-04 | Hidrolik Silindir | MK-04 | 30 K2 | `Hydraulic Cylinder` |
+| DM-05 | Pompa | MK-04, DM-02 | 40 K2 | `Pump` |
+| DM-06 | Hidrolik Güç Ünitesi | DM-05, DM-01 | 50 K2 | `Hydraulic Power Unit` |
+| DM-07 | Hidrolik Pres Ünitesi | DM-06, DM-04 | 60 K2 + 20 K3 | `Hydraulic Press Unit` |
+| DM-08 | Metalürji Modülü | DM-07, AL-04 | 40 K3 | `Metallurgy Module` |
 
----
+### Çelik ve mekanik (MK)
 
-### Teknoloji ağacı akış şeması
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| MK-01 | Talaşlı İmalat | — | 30 K1 | **Machine Shop**, `Shaft` |
+| MK-02 | Dişli İşleme | MK-01 | 30 K1 | `Gear` |
+| MK-03 | Rulman | MK-01 | 40 K1 | `Bearing` |
+| MK-04 | Mekanik Montaj | MK-02, MK-03 | 40 K1 + 20 K2 | **Mechanical Assembly**, `Valve`, `Iron Frame` |
+| MK-05 | Dişli Kutusu | MK-04, DM-02 | 50 K1 + 30 K2 | `Gearbox` |
+| MK-06 | Lineer Kızak | MK-04 | 40 K2 | `Linear Guide` |
+| MK-07 | Hassas İş Mili | MK-06, EL-04 | 50 K2 + 20 K3 | `Precision Spindle` |
+| MK-08 | Hassas Mekanik Modülü | MK-05, MK-07, AL-04 | 60 K3 + 20 K4 | `Precision Mechanics Module` |
 
-```mermaid
-flowchart LR
-    START(["Başlangıç (Kademe 0): Metalürji & Pres"]) --> A01["A-01: Talaşlı İmalat"]
-    START --> A02["A-02: Döküm ve Geri Kazanım"]
-    START --> A03["A-03: İletkenler ve Yalıtım"]
+### Bakır ve elektrik (EL)
 
-    A01 --> A04["A-04: Mekanik Aktarma"]
-    A02 -.->|Çelik darboğazını rahatlatır| A04
-    A03 --> A05["A-05: Elektromanyetik Sarım"]
-    A03 --> A07["A-07: Temel Elektronik"]
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| EL-01 | Tel Çekme | — | 30 K1 | **Wire Winder**, `Copper Wire` |
+| EL-02 | Kablo | EL-01, EK-01 | 40 K1 | `Cable` |
+| EL-03 | Bobin | EL-01 | 40 K1 + 20 K2 | `Electromagnetic Coil` |
+| EL-04 | Elektrik Motoru | EL-03, MK-03, DM-01 | 50 K2 | **Electrical Assembly**, `Electric Motor` |
+| EL-05 | Trafo | EL-03, EL-04 | 50 K2 | `Laminated Core`, `Transformer` |
+| EL-06 | Elektrik Panosu | DM-01 | 30 K1 | `Electrical Cabinet` |
+| EL-07 | Şalt Panosu | EL-02, EL-06, EL-04 | 50 K2 | `Switchgear` |
+| EL-08 | Elektrik Modülü | EL-04, EL-05, EL-07, AL-04 | 50 K3 + 20 K4 | `Electrical Module` |
 
-    A04 & A05 --> A06["A-06: Elektrik Motorları"]
-    A05 & A07 --> A08["A-08: Endüstriyel Algılama"]
+### Kuvars ve elektronik (EK)
 
-    A06 & A08 --> A09["A-09: Otomasyon ve Kontrol"]
-```
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| EK-01 | Endüstriyel Cam | — | 30 K1 | `Industrial Glass` |
+| EK-02 | Devre Kartı | EL-01, EK-01 | 40 K2 | **Electronics Assembly**, `Circuit Board` |
+| EK-03 | Silisyum | EK-01 | 30 K2 | `Silicon` |
+| EK-04 | Mikroçip | EK-02, EK-03 | 50 K2 + 20 K3 | `Microchip` |
+| EK-05 | Sensör | EK-02, EL-03 | 40 K3 | `Industrial Sensor` |
+| EK-06 | Ekran | EK-02 | 40 K3 | `Display` |
+| EK-07 | Kontrol Bilgisayarı | EK-04, EK-06, EL-06 | 60 K3 | `Control Computer` |
+| EK-08 | Elektronik Modülü | EK-05, EK-07, AL-04 | 60 K3 + 30 K4 | `Electronics Module` |
 
-> [!info] Prototipteki karşılığı (ilk deneme)
-> - Başlangıçta açık makineler aşağıdaki dörde ek olarak dört maden (birer adet, K-010), `Talaş bertaraf ünitesi`, `Laboratuvar 1` ve `Depo`dur.
-> - Araştırmalar laboratuvar da açar: A-03 → `Laboratuvar 2`, A-07 → `Laboratuvar 3`. A-09 `Ana proje terminali`ni açar.
-> - Açılan makineler kendiliğinden gelmez; oyuncu onları malzemeyle üretir (K-011).
-> - Üç montaj türü tek `Montaj istasyonu` altında birleşiktir.
-> - K-021 ile eklenen reçetelerin açılışı (asistan seçimi): demir kolu (Electrical Cabinet, Valve, Tank, Iron Frame, Hydraulic Cylinder, Laminated Core) baştan açık; A-02 döküm parçaları; A-03 Cable; A-04 Pump, Hydraulic Power Unit, Hydraulic Press Unit, Metallurgy Module, Precision Spindle, Linear Guide, Precision Mechanics Module; A-05 Transformer, Switchgear, Electrical Module; A-07 Silicon, Microchip, Display; A-08 Control Computer, Electronics Module; A-09 Robot Arm, Conveyor Line, Automation Module, Founding Core.
+### Otomasyon ve final (OT)
 
-> [!warning] Tükettiği ürünler sütunu tarihseldir
-> Aşağıdaki tablolardaki "Tükettiği Ürünler" sütunu K-001 dönemine aittir. K-008 ile araştırmalar ürün değil kademe puanı ister; güncel fiyatlar ve laboratuvarlar [[Tasarım/Araştırma Ekonomisi]] notundadır.
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| OT-01 | Hassas Aktüatör | EL-04, MK-05, EK-05 | 50 K3 | **Robotics Assembly**, `Precision Actuator` |
+| OT-02 | PLC | EK-05, EL-06 | 60 K3 | `Control Unit (PLC)` |
+| OT-03 | Konveyör Hattı | OT-01 | 60 K3 | `Conveyor Line` |
+| OT-04 | Robot Kol | OT-01, EL-02 | 40 K4 | `Robot Arm` |
+| OT-05 | Otomasyon Modülü | OT-02, OT-03, OT-04, AL-04 | 60 K4 | `Automation Module` |
+| OT-06 | Kurucu Çekirdek | DM-08, MK-08, EL-08, EK-08, OT-05 | 100 K4 | **Project Hub**, `Founding Core`, Main Project: Founding Core |
 
----
+### Altyapı ve laboratuvarlar (AL)
 
-### 1. Kademe: Üç bağımsız kol (İstenen sırada açılabilir)
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| AL-01 | Makine Fabrikası | MK-02 | 40 K1 | **Machine Factory** |
+| AL-02 | Laboratuvar 2 | MK-02, EL-01, EK-01 | 40 K1 | **Lab 2** |
+| AL-03 | Laboratuvar 3 | EK-02, EL-03 | 60 K2 | **Lab 3** |
+| AL-04 | Modül Tesisi | MK-05, DM-01 | 60 K2 + 30 K3 | **Module Plant** |
+| AL-05 | Laboratuvar 4 | EL-04, EK-04, DM-04 | 80 K3 | **Lab 4** |
 
-| Kod | Araştırma Adı | Ön Koşul | Tükettiği Ürünler (K-001) | Açtığı Makine | Açtığı Ürün ve Reçeteler |
-|---|---|---|---|---|---|
-| **A-01** | **Talaşlı İmalat** | Başlangıç | `8. Çelik Levha`<br>`9. Çelik Çubuk`<br>`11. Bağlantı Elemanları` | `Torna`, `CNC` | `12. Mil` (Torna)<br>`13. Dişli — CNC Yöntemi` (CNC)<br>`14. Rulman` (CNC)<br>`16. Metal Talaşı` *(yan ürün olarak çıkar)* |
-| **A-02** | **Döküm ve Geri Kazanım** | Başlangıç | `5. Pik Demir`<br>`6. Çelik Külçe`<br>`8. Çelik Levha` | `Dökümhane` | `13. Dişli — Döküm Yöntemi` (Pik Demir)<br>`17. Gövde — Döküm Yöntemi` (Pik Demir)<br>`16. Metal Talaşı → 6. Çelik Külçe` *(Geri kazanım reçetesi)* |
-| **A-03** | **İletkenler ve Yalıtım** | Başlangıç | `7. Bakır Külçe`<br>`8. Çelik Levha`<br>`11. Bağlantı Elemanları` | `Tel Çekme / Sarım Makinesi` | `15. Bakır Tel` (Tel Çekme)<br>`10. Endüstriyel Cam / Yalıtkan` (Fırın) |
+### Maden genişletme (MD)
 
-> [!tip] Tasarım Notu — A-02'nin Rolü
-> Oyuncu **A-01**'i açtığında `Bağlantı Elemanı`, `Mil`, `Dişli` ve `Rulman` aynı anda `Çelik Çubuk` için yarışmaya başlar; ayrıca `Torna` ve `CNC`'den `Metal Talaşı` birikir. Oyuncu **A-02**'yi araştırdığında hem talaşı tekrar `Çelik Külçe`'ye dönüştürür hem de `Dişli` ve `Gövde` üretimini `Pik Demir` (`Dökümhane`) hattına kaydırarak çelik darboğazını çözer.
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| MD-01 | Demir Madeni II | — | 40 K1 | Demir Madeni kurulum sınırı +1. |
+| MD-02 | Kömür Madeni II | — | 40 K1 | Kömür Madeni kurulum sınırı +1. |
+| MD-03 | Bakır Madeni II | — | 40 K2 | Bakır Madeni kurulum sınırı +1. |
+| MD-04 | Kuvars Ocağı II | — | 40 K2 | Kuvars Ocağı kurulum sınırı +1. |
+| MD-05 | Demir Madeni III | MD-01 | 60 K3 | Demir Madeni kurulum sınırı +1. |
+| MD-06 | Kömür Madeni III | MD-02 | 60 K3 | Kömür Madeni kurulum sınırı +1. |
+| MD-07 | Bakır Madeni III | MD-03 | 60 K3 | Bakır Madeni kurulum sınırı +1. |
+| MD-08 | Kuvars Ocağı III | MD-04 | 60 K3 | Kuvars Ocağı kurulum sınırı +1. |
 
----
+### Verim (VR)
 
-### 2. Kademe: Mekanik, elektromekanik ve elektronik alt sistemler
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| VR-01 | El Becerisi | — | 20 K1 | El üretimi %50 hızlanır. |
+| VR-02 | Fırın Verimi I | — | 40 K1 | Fırın %25 hızlanır. |
+| VR-03 | Şekillendirme Hızı | DM-01 | 30 K2 | Haddehane ve Pres %25 hızlanır. |
+| VR-04 | Atölye Hızı | MK-01, DM-02 | 40 K2 | Tezgâh Atölyesi ve Dökümhane %25 hızlanır. |
+| VR-05 | Montaj Hızı I | MK-04 | 40 K3 | Montaj makineleri ve Tel Sarım %25 hızlanır. |
+| VR-06 | Fırın Verimi II | VR-02 | 50 K3 | Fırın %25 daha hızlanır. |
+| VR-07 | Montaj Hızı II | VR-05 | 60 K4 | Montaj makineleri ve Tel Sarım %25 daha hızlanır. |
+| VR-08 | Fabrika Hızı | AL-01 | 40 K3 | Makine Fabrikası %50 hızlanır. |
 
-| Kod | Araştırma Adı | Ön Koşul | Tükettiği Ürünler (K-001) | Açtığı Makine | Açtığı Ürün ve Reçeteler |
-|---|---|---|---|---|---|
-| **A-04** | **Mekanik Aktarma Sistemleri** | A-01 | `12. Mil`<br>`13. Dişli`<br>`14. Rulman`<br>`17. Gövde` | `Montaj İstasyonu` | `19. Dişli Kutusu (Redüktör)` |
-| **A-05** | **Elektromanyetik Sarım** | A-03 | `15. Bakır Tel`<br>`9. Çelik Çubuk`<br>`10. Endüstriyel Cam / Yalıtkan` | *(Sarım reçetesi)* | `18. Elektromanyetik Bobin` |
-| **A-06** | **Elektrik Motorları** | A-04, A-05 | `18. Elektromanyetik Bobin`<br>`12. Mil`<br>`14. Rulman`<br>`17. Gövde` | *(Montaj reçetesi)* | `21. Elektrik Motoru` |
-| **A-07** | **Temel Elektronik** | A-03 | `15. Bakır Tel`<br>`10. Endüstriyel Cam / Yalıtkan`<br>`11. Bağlantı Elemanları` | `Elektronik Montaj` *(veya Montaj İstasyonu)* | `20. Devre Kartı` |
+### Kapasite (LJ)
 
-> [!tip] Tasarım Notu — K-006 Ortak Paylaşım Testi
-> Hem **A-04 (Dişli Kutusu)** hem **A-06 (Elektrik Motoru)** aynı `Mil`, `Rulman` ve `Gövde` hatlarını paylaşır. Benzer şekilde **A-05 (Bobin)** ve **A-07 (Devre Kartı)** aynı `Bakır Tel` ve `Endüstriyel Cam / Yalıtkan` hatlarını paylaşır.
+| Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
+|---|---|---|---|---|
+| LJ-01 | Depo Kapasitesi I | — | 30 K1 | Depo +100. |
+| LJ-02 | Tampon Kapasitesi I | — | 30 K2 | Makine giriş ve çıkış tamponları %50 büyür. |
+| LJ-03 | Depo Kapasitesi II | LJ-01 | 40 K3 | Depo +200. |
+| LJ-04 | Tampon Kapasitesi II | LJ-02 | 50 K3 | Tamponlar %50 daha büyür. |
 
----
+Kilitlenme denetimi: `tests/test_production.gd` bütün araştırmaların sırayla açılabildiğini, her araştırmanın puanını üreten laboratuvarın o anda beslenebildiğini ve sonunda bütün ürünlerin üretilebildiğini doğrular.
 
-### 3. Kademe: Algılama, otomasyon ve ileri sistemler
+## Tarihsel: 9 araştırmalık ilk taslak (K-007)
 
-| Kod | Araştırma Adı | Ön Koşul | Tükettiği Ürünler (K-001) | Açtığı Makine | Açtığı Ürün ve Reçeteler |
-|---|---|---|---|---|---|
-| **A-08** | **Endüstriyel Algılama** | A-05, A-07 | `20. Devre Kartı`<br>`18. Elektromanyetik Bobin`<br>`10. Endüstriyel Cam / Yalıtkan` | `Hassas Montaj` *(veya Montaj İstasyonu)* | `22. Endüstriyel Sensör` |
-| **A-09** | **Otomasyon ve Kontrol Sistemleri** | A-06, A-08 | `19. Dişli Kutusu`<br>`21. Elektrik Motoru`<br>`22. Endüstriyel Sensör`<br>`20. Devre Kartı` | *(İleri Montaj reçeteleri)* | `23. Hassas Aktüatör (Servo Kolu)`<br>`24. Kontrol Ünitesi (PLC)` |
-
-**A-09 Sonrası Tüketim:** `23. Hassas Aktüatör` ve `24. Kontrol Ünitesi` (diğer alt sistemlerle birlikte) **Ana Proje aşamalarını** ve **yüksek kapasiteli fabrika genişlemesini** besleyen uç ürünler olur.
-
----
+İlk taslak 24 ürüne bağlı 9 araştırmadan (A-01 – A-09) oluşuyordu: üç bağımsız kol (talaşlı imalat, döküm, iletkenler) ve onlardan mekanik aktarım, elektromanyetik sarım, elektrik motoru, temel elektronik, endüstriyel algılama ve otomasyona giden kesişen kollar. K-025 ile yerine geçti.
 
 ## Genel yapı ilkeleri ve tarihsel bağlam
 
 ### Ödül türleri
-1. **Yeni yetenek:** Yeni makine veya daha önce üretilemeyen ürün (`Torna`, `CNC`, `Montaj İstasyonu`).
-2. **Mevcut üretimin gelişimi:** Alternatif yöntem, kapasite artışı veya kaynak tasarrufu (`A-02: Döküm ve Geri Kazanım`).
+1. **Yeni yetenek:** Yeni makine veya daha önce üretilemeyen ürün (`Tezgâh Atölyesi`, `Mekanik Montaj`, `Makine Fabrikası`).
+2. **Mevcut üretimin gelişimi:** Kapasite artışı, hız veya kaynak tasarrufu (`DM-03: Hurda Geri Kazanımı`; verim, kapasite ve maden genişletme kolları).
 3. **Ağ yönetimi:** İleride eklenebilecek dağıtıcı, filtre veya kapasite kontrol araçları.
 
 ### Kilitlenmeyi (Deadlock) önleme kontrolü
-Bir araştırma yalnızca kendisinin açacağı teknolojiyle üretilebilen ürünü isteyemez. Yukarıdaki `A-01` – `A-09` ağında her araştırma, yalnızca Kademe 0 veya kendi ön koşul araştırmalarının açtığı ürünlerle beslenir; doğrudan veya dolaylı erişilemeyen döngü bulunmaz.
+Bir araştırma yalnızca kendisinin açacağı teknolojiyle üretilebilen ürünü isteyemez. 63 araştırmalık ağda her araştırmanın puanı, o anda açık ve beslenebilir bir laboratuvardan gelir; bu `tests/test_production.gd` ile denetlenir.
 
 ### Oyuncuya gösterim önerisi
 Gelecek ürünlerin nerede kullanılacağı önceden görülebilmeli. Kilitli teknoloji hangi ön koşul, üretim kabiliyeti veya malzeme nedeniyle erişilemez olduğunu açıklamalı. Alternatif yolların avantajları anlaşılabilir olmalı.

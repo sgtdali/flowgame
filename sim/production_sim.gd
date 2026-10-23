@@ -10,6 +10,9 @@ const EPSILON := 0.000001
 const ANY := "*"
 ## Port types for ANY ports start here (one per machine kind).
 const ANY_PORT_BASE := 1000
+## Machine items made by a machine factory: product id prefix and recipe id prefix.
+const MACHINE_ITEM := "machine_item__"
+const MACHINE_RECIPE := "build__"
 var catalog: Dictionary
 var machines: Dictionary = {}
 var links: Array = []
@@ -21,7 +24,7 @@ var completed_researches: Array = []
 var research_progress: Dictionary = {}
 ## tier -> stored points not yet spent
 var research_points: Dictionary = {}
-var active_research := "A-01"
+var active_research := "MK-01"
 var sandbox_mode := false
 var elapsed := 0.0
 var next_id := 1
@@ -39,11 +42,14 @@ var craft_queue: Array = []
 var hand_speed := 10.0
 ## Quick-use bar: HOTBAR_SIZE pinned inventory keys ("machine:<kind>", "product:<id>" or "").
 ## It shares the inventory's counts; a pinned slot stays put even while its count is zero.
+## Research effects of the completed researches, see _bonuses_for().
+var _bonus: Dictionary = {}
 const HOTBAR_SIZE := 10
 var hotbar: Array = []
 
 func _init() -> void:
 	catalog = JSON.parse_string(FileAccess.get_file_as_string("res://data/prototype.json"))
+	_add_machine_recipes()
 	hand_speed = float(catalog.get("hand_speed", hand_speed))
 	var kit: Dictionary = catalog.get("starting_inventory", {})
 	for product in kit.get("products", {}):
@@ -77,6 +83,41 @@ func _init() -> void:
 		# recipes take different inputs.
 		mode = str(catalog.machines[kind].get("recipe_mode", mode))
 		recipe_modes[str(kind)] = mode
+
+## Machines that build machines ("builds_machines" in the catalog) get one recipe per
+## machine kind: its build cost in, one machine item out. The item is a product of its own
+## (MACHINE_ITEM + kind) so it can wait in the output and travel to a depot; taken into the
+## inventory it becomes a carried machine. Kinds with a build limit (mines) are left out.
+func _add_machine_recipes() -> void:
+	var kinds: Array = []
+	for kind in catalog.machines:
+		if int(catalog.machines[kind].get("build_limit", -1)) < 0:
+			kinds.append(str(kind))
+	for maker in catalog.machines:
+		var spec: Dictionary = catalog.machines[maker]
+		if not spec.get("builds_machines", false):
+			continue
+		var list: Array = []
+		for kind: String in kinds:
+			var item: String = MACHINE_ITEM + kind
+			catalog.products[item] = {"name": str(catalog.machines[kind].name), "tier": 0, "color": str(catalog.machines[kind].get("color", "7fa6c4")), "machine": kind}
+			catalog.recipes[MACHINE_RECIPE + kind] = {"name": str(catalog.machines[kind].name), "inputs": catalog.machines[kind].get("build_cost", {}).duplicate(), "outputs": {item: 1}, "work": float(catalog.get("machine_build_work", 50.0)), "builds": kind}
+			list.append(MACHINE_RECIPE + kind)
+		spec.recipes = list
+		spec.recipe = list[0]
+
+## The machine kind a machine item stands for, or "" for an ordinary product.
+func machine_of_item(product: String) -> String:
+	return product.trim_prefix(MACHINE_ITEM) if product.begins_with(MACHINE_ITEM) else ""
+
+## Moves `count` of `product` into the inventory; machine items become carried machines.
+func _receive(product: String, count: int) -> void:
+	var kind := machine_of_item(product)
+	if kind.is_empty():
+		_add_items(product, count)
+		return
+	for i in range(count):
+		_add_machine_item(kind)
 
 func _input_key(recipe_id: String) -> String:
 	var keys: Array = catalog.recipes[recipe_id].inputs.keys()
@@ -155,11 +196,44 @@ func port_signature(id: String) -> String:
 func is_machine_unlocked(kind: String) -> bool:
 	return sandbox_mode or kind in unlocked_machines
 
-## How many of this kind may stand at once; -1 means no limit.
+## How many of this kind may stand at once; -1 means no limit. Research raises it.
 func build_limit(kind: String) -> int:
 	if sandbox_mode:
 		return -1
-	return int(catalog.machines[kind].get("build_limit", -1))
+	var limit := int(catalog.machines[kind].get("build_limit", -1))
+	return limit if limit < 0 else limit + int(bonus("build_limit", kind))
+
+## Research effects ("effects" in a research) summed by "type:kind", or "type:" for the
+## ones that apply everywhere: build_limit (count), speed / hand_speed / buffer (share
+## added, 0.25 = +25%), storage (flat depot capacity).
+func _bonuses_for(techs: Array) -> Dictionary:
+	var sums := {}
+	for tech_id in techs:
+		for effect in catalog.researches.get(str(tech_id), {}).get("effects", []):
+			var kinds: Array = effect.get("machines", [""])
+			for kind in kinds:
+				var key := "%s:%s" % [str(effect.type), str(kind)]
+				sums[key] = float(sums.get(key, 0.0)) + float(effect.add)
+	return sums
+
+func _refresh_bonuses() -> void:
+	_bonus = _bonuses_for(completed_researches)
+
+func bonus(type: String, kind: String = "") -> float:
+	return float(_bonus.get("%s:%s" % [type, kind], 0.0))
+
+## Work per second a placed machine really does: its own speed plus research bonuses.
+func effective_speed(id: String) -> float:
+	var machine: Dictionary = machines[id]
+	return float(machine.speed) * (1.0 + bonus("speed", str(machine.kind)))
+
+## A machine's input or output buffer size after research ("input" / "output").
+func capacity(kind: String, field: String, saved: Variant = null) -> int:
+	var bonuses: Dictionary = _bonus if saved == null else saved
+	var base := int(catalog.machines[kind][field + "_capacity"])
+	if is_storage(kind):
+		return base + int(bonuses.get("storage:", 0.0)) if field == "input" else base
+	return int(round(base * (1.0 + float(bonuses.get("buffer:", 0.0)))))
 
 func built_count(kind: String) -> int:
 	var count := 0
@@ -206,7 +280,7 @@ func can_deposit(id: String, product: String) -> int:
 	if not is_storage(kind) and not recipe_for(id).inputs.has(product):
 		if recipe_mode(kind) != "auto" or not accepts_new_input(id, product):
 			return 0
-	var space := int(catalog.machines[kind].input_capacity) - int(machine.input.get(product, 0))
+	var space := capacity(kind, "input") - int(machine.input.get(product, 0))
 	return clampi(mini(space, int(inventory.get(product, 0))), 0, space)
 
 ## Puts up to `count` (-1: as many as fit) of `product` from the inventory into machine
@@ -248,7 +322,7 @@ func pick_up_machine(id: String) -> void:
 	var machine: Dictionary = machines[id]
 	for field in ["input", "output"]:
 		for product in machine[field]:
-			_add_items(str(product), int(machine[field][product]))
+			_receive(str(product), int(machine[field][product]))
 	_add_machine_item(str(machine.kind))
 	remove_machine(id)
 
@@ -262,7 +336,7 @@ func take(id: String, product: String) -> int:
 	if count <= 0:
 		return 0
 	buffer[product] = 0
-	_add_items(product, count)
+	_receive(product, count)
 	if storage and not is_input_linked(id, product):
 		buffer.erase(product)
 	return count
@@ -340,7 +414,7 @@ func cancel_craft(index: int) -> void:
 	craft_queue.remove_at(index)
 
 func _craft(delta: float) -> void:
-	var budget := delta * hand_speed
+	var budget := delta * hand_speed * (1.0 + bonus("hand_speed"))
 	while budget > EPSILON and not craft_queue.is_empty():
 		var job: Dictionary = craft_queue[0]
 		var used := minf(budget, float(job.remaining))
@@ -357,6 +431,9 @@ func _craft(delta: float) -> void:
 				_add_items(str(product), int(outputs[product]))
 
 func is_recipe_unlocked(recipe_id: String) -> bool:
+	var builds := str(catalog.recipes.get(recipe_id, {}).get("builds", ""))
+	if not builds.is_empty():
+		return is_machine_unlocked(builds)
 	return sandbox_mode or recipe_id in unlocked_recipes
 
 func unlock_all() -> void:
@@ -436,9 +513,9 @@ func set_recipe(id: String, recipe_id: String) -> bool:
 	var new_inputs := {}
 	var new_outputs := {}
 	for product in new_recipe.inputs:
-		new_inputs[product] = mini(int(machine.input.get(product, 0)), int(spec.input_capacity))
+		new_inputs[product] = mini(int(machine.input.get(product, 0)), capacity(str(machine.kind), "input"))
 	for product in new_recipe.outputs:
-		new_outputs[product] = mini(int(machine.output.get(product, 0)), int(spec.output_capacity))
+		new_outputs[product] = mini(int(machine.output.get(product, 0)), capacity(str(machine.kind), "output"))
 	machine.recipe = recipe_id
 	machine.running = false
 	machine.remaining = 0.0
@@ -709,6 +786,7 @@ func _complete_research(tech_id: String) -> void:
 	for r_id in spec.get("unlock_recipes", []):
 		if not (str(r_id) in unlocked_recipes):
 			unlocked_recipes.append(str(r_id))
+	_refresh_bonuses()
 
 func _start(id: String) -> bool:
 	var machine: Dictionary = machines[id]
@@ -722,7 +800,7 @@ func _start(id: String) -> bool:
 			machine.status = "Girdi bekliyor"
 			return false
 	for product in recipe.outputs:
-		if int(machine.output.get(product, 0)) + int(recipe.outputs[product]) > int(spec.output_capacity):
+		if int(machine.output.get(product, 0)) + int(recipe.outputs[product]) > capacity(str(machine.kind), "output"):
 			machine.status = "Çıkış tamponu dolu"
 			return false
 	for product in recipe.inputs:
@@ -739,8 +817,9 @@ func _process_machine(id: String, delta: float) -> void:
 		if not machine.running and not _start(id):
 			return
 		var recipe: Dictionary = recipe_for(id)
-		var duration := minf(budget, float(machine.remaining) / float(machine.speed))
-		machine.remaining = maxf(0.0, float(machine.remaining) - duration * float(machine.speed))
+		var speed := effective_speed(id)
+		var duration := minf(budget, float(machine.remaining) / speed)
+		machine.remaining = maxf(0.0, float(machine.remaining) - duration * speed)
 		budget -= duration
 		if float(machine.remaining) <= EPSILON:
 			for product in recipe.outputs:
@@ -774,7 +853,7 @@ func _transfer() -> void:
 					var spec: Dictionary = catalog.machines[machines[target].kind]
 					if not machines[target].input.has(product):
 						continue
-					if int(machines[target].input[product]) >= int(spec.input_capacity):
+					if int(machines[target].input[product]) >= capacity(str(machines[target].kind), "input"):
 						continue
 					machines[source].output[product] -= 1
 					machines[target].input[product] += 1
@@ -890,6 +969,8 @@ func restore(data: Dictionary) -> bool:
 			for key in data.hotbar:
 				if not key is String or (not key.is_empty() and not _valid_inventory_key(key)):
 					return false
+	# Buffers may hold what the saved research allowed.
+	var saved_bonus := _bonuses_for(data.completed_researches if data.get("completed_researches") is Array else [])
 	for id in data.machines:
 		var m: Variant = data.machines[id]
 		if not m is Dictionary or not catalog.machines.has(m.get("kind", "")):
@@ -922,7 +1003,7 @@ func restore(data: Dictionary) -> bool:
 			# A depot's inputs are whatever products it holds.
 			if field == "input" and is_storage(kind_str):
 				products = m.input
-			var cap: int = int(spec[field + "_capacity"])
+			var cap: int = capacity(kind_str, field, saved_bonus)
 			if m[field].size() != products.size():
 				return false
 			for product in products:
@@ -933,7 +1014,7 @@ func restore(data: Dictionary) -> bool:
 					return false
 		if m.running:
 			for product in recipe.outputs:
-				if int(m.output[product]) + int(recipe.outputs[product]) > int(spec.output_capacity):
+				if int(m.output[product]) + int(recipe.outputs[product]) > capacity(kind_str, "output", saved_bonus):
 					return false
 		var pos: Variant = m.get("position")
 		if not pos is Array or pos.size() != 2:
@@ -1010,6 +1091,7 @@ func restore(data: Dictionary) -> bool:
 	completed_researches.clear()
 	for tech_id in data.completed_researches:
 		completed_researches.append(str(tech_id))
+	_refresh_bonuses()
 	research_progress.clear()
 	for tech_id in catalog.researches:
 		research_progress[str(tech_id)] = {}
@@ -1031,7 +1113,7 @@ func restore(data: Dictionary) -> bool:
 			craft_queue.append({"type": str(job.type), "id": str(job.id), "remaining": float(job.remaining)})
 		if data.has("hotbar"):
 			hotbar = data.hotbar.duplicate()
-	active_research = str(data.get("active_research", "A-01"))
+	active_research = str(data.get("active_research", "MK-01"))
 	sandbox_mode = bool(data.get("sandbox_mode", false))
 	elapsed = float(data.elapsed)
 	accumulator = float(data.accumulator)

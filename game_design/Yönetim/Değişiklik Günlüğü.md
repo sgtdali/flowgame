@@ -109,3 +109,13 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-021: Beş modülün reçete taslağı adım adım onaylandı; ağ 24'ten 55 ürüne çıktı. Electrical Cabinet PLC'ye girer, döküm parçalar ayrı ürün, Gearbox döküm gövde ister. K-007'ye genişleme notu eklendi.
 - [[Tasarım/Ürün ve Üretim Ağı]] `data/prototype.json`'dan yeniden üretildi (akış şeması, katalog, modüller). Güncellenen notlar: [[01 - Güncel Tasarım]], [[00 - Başlangıç]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[Tasarım/Envanter ve El Üretimi]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]] (S-024 – S-026 eklendi); `README.md`.
 - Prototip: 31 yeni ürün ve reçete; makine ve araştırma atamaları geçici. Simülasyon testleri geçti; pencereli smoke testi ve oyun içi deneme yapılmadı.
+
+## 2026-10-23 — Makineler, makine fabrikası ve 63 araştırma
+
+- K-022: Torna ve CNC Tezgâh Atölyesi'nde birleşti, çelik fırını Ergitme Fırını'na katıldı; montaj Mekanik, Elektrik, Elektronik ve Robotik Montaj'a ayrıldı, modüller Modül Tesisi'nde yapılır. S-020 kısmen kapandı.
+- K-023: Başlangıç makineleri demirden kurulur, her makine açıldığı anda yapılabilen şeyleri ister; yeni başlangıç kiti. Tel Sarım, Laboratuvar 2 ve 3'ün açılamayan bedelleri düzeltildi.
+- K-024: Makine Fabrikası; K-020 uygulandı, S-024 kapandı.
+- K-025: 9 araştırmanın yerine 9 kolda 63 araştırma; maden genişletme (S-021 kapandı), verim ve kapasite etkileri; Laboratuvar 4 ve K4. Araştırmalar arası açılış kopuklukları betikle denetlendi. K-007 ve K-010'a değişiklik notu eklendi.
+- Zincir Editörü'ne reçete tablosu görünümü eklendi (araç; oyun kuralı değil).
+- [[Tasarım/Teknoloji Ağacı]] 63 araştırmayla veriden yeniden yazıldı; eski ağaç tarihsel özet olarak kaldı. [[Tasarım/Ürün ve Üretim Ağı]] yeni makine adlarıyla yeniden üretildi. Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Araştırma Ekonomisi]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[01 - Güncel Tasarım]], [[00 - Başlangıç]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
+- Bütün testler ve pencereli smoke testi geçti.

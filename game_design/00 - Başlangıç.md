@@ -31,7 +31,7 @@ Bu vault, sonsuz canvas üzerinde makine kartlarıyla oynanan üretim zinciri oy
 | Üretim yöntemleri, kalite, geri kazanım | [[Tasarım/Prosesler Kalite ve Yan Ürünler]] |
 | Kademeli laboratuvarlar ve araştırma puanı | [[Tasarım/Araştırma Ekonomisi]] |
 | Envanter, malzemeli kurulum, el üretimi, hızlı erişim | [[Tasarım/Envanter ve El Üretimi]] |
-| Ön koşullar, teknoloji ödülleri ve 9 araştırmalık ilk taslak | [[Tasarım/Teknoloji Ağacı]] |
+| 9 kolda 63 araştırmalık teknoloji ağacı | [[Tasarım/Teknoloji Ağacı]] |
 | Kaynak erişimi ve ekonomik konum | [[Tasarım/Bölgeler ve Lojistik]] |
 | Ana proje, genişleme ve ürün paylaşımı | [[Tasarım/Ana Proje ve Ürün Dağıtımı]] |
 | Oyuncuya durum ve darboğaz gösterimi | [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]] |

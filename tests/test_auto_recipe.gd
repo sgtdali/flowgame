@@ -13,13 +13,12 @@ func _check(condition: bool, text: String) -> void:
 func _initialize() -> void:
 	var sim := Simulation.new()
 	sim.unlock_all()
-	for kind in ["press", "wire_winder", "assembler"]:
+	for kind in ["wire_winder", "mechanical_assembly", "electrical_assembly", "electronics_assembly", "robotics_assembly", "module_plant"]:
 		_check(sim.recipe_mode(kind) == "auto", "%s girdisine göre reçete seçmeli" % kind)
-	for kind in ["rolling_mill", "cnc", "foundry"]:
+	for kind in ["rolling_mill", "press", "machine_shop", "foundry"]:
 		_check(sim.recipe_mode(kind) == "choose", "%s aynı girdiden farklı ürün yaptığı için seçimli olmalı" % kind)
-	# Furnaces are chosen by the player (catalog "recipe_mode"), although their inputs differ.
-	for kind in ["smelter", "steel_furnace"]:
-		_check(sim.recipe_mode(kind) == "choose", "%s reçetesi oyuncu tarafından seçilmeli" % kind)
+	# The furnace is chosen by the player (catalog "recipe_mode"), although its inputs differ.
+	_check(sim.recipe_mode("smelter") == "choose", "Fırının reçetesi oyuncu tarafından seçilmeli")
 	_check(sim.recipe_mode("iron_mine") == "fixed" and sim.recipe_mode("lab_1") == "fixed", "Tek reçeteli makineler ve laboratuvar sabit kalmalı")
 
 	var smelter := sim.add_machine("smelter", "copper_ingot")
@@ -45,24 +44,24 @@ func _initialize() -> void:
 	sim.advance(4.1)
 	_check(sim.machines[winder].output.get("coil", 0) == 1, "Otomatik seçilen reçete üretmeli")
 
-	# Assembler: a shaft fits several recipes, so the open input stays until the next product.
-	var asm := sim.add_machine("assembler")
-	var lathe_src := sim.add_machine("lathe")
-	_check(sim.add_link(lathe_src, asm, 0, 0), "Mil montaja bağlanmalı")
+	# Mechanical assembly: a shaft fits several recipes, so the open input stays until the next product.
+	var asm := sim.add_machine("mechanical_assembly")
+	var shafts := sim.add_machine("machine_shop", "shaft")
+	_check(sim.add_link(shafts, asm, 0, 0), "Mil montaja bağlanmalı")
 	_check(sim.input_products(asm) == ["shaft", sim.ANY], "Belirsizken bağlı ürün ve genel giriş görünmeli")
-	var coils := sim.add_machine("wire_winder", "coil")
-	_check(sim.add_link(coils, asm, 0, 1), "Bobin kalan genel girişe bağlanmalı")
-	_check(sim.machines[asm].recipe == "electric_motor", "Mil + bobin elektrik motoru reçetesini seçmeli")
+	var motors := sim.add_machine("electrical_assembly", "electric_motor")
+	_check(sim.add_link(motors, asm, 0, 1), "Motor kalan genel girişe bağlanmalı")
+	_check(sim.machines[asm].recipe == "precision_spindle", "Mil + motor hassas iş mili reçetesini seçmeli")
 
 	# Choose machines keep their recipe whatever is linked.
-	var cnc := sim.add_machine("cnc", "bearing")
+	var shop := sim.add_machine("machine_shop", "bearing")
 	var mill := sim.add_machine("rolling_mill", "steel_rod")
-	_check(sim.add_link(mill, cnc, 0, 0) and sim.machines[cnc].recipe == "bearing", "Seçimli makinenin reçetesi bağlantıyla değişmemeli")
+	_check(sim.add_link(mill, shop, 0, 0) and sim.machines[shop].recipe == "bearing", "Seçimli makinenin reçetesi bağlantıyla değişmemeli")
 
 	# Locked recipes are never picked automatically.
 	var fresh := Simulation.new()
-	var locked_asm := fresh.add_machine("assembler")
-	var lathe := fresh.add_machine("lathe")
+	var locked_asm := fresh.add_machine("mechanical_assembly")
+	var lathe := fresh.add_machine("machine_shop", "shaft")
 	_check(not fresh.add_link(lathe, locked_asm), "Kilitli reçeteye götüren bağlantı kurulmamalı")
 
 	if failures == 0:

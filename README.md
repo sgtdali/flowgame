@@ -11,10 +11,11 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 
 ## Oyunun başı
 
-- Tuval boştur (K-013). İlk makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit; demir ve kömür madeni, ergitme ve çelik fırınına yeter, fırının külçesinden el ile levha, çubuk ve bağlantı elemanı yapıp `Laboratuvar 1`'e ulaşılır.
+- Tuval boştur (K-013). İlk makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit demir ve kömür madenine, ergitme fırınına ve `Laboratuvar 1`'e yeter (K-023).
 - `Laboratuvar 1` sürekli çelik levha ve bağlantı elemanı tüketip Kademe 1 puanı üretir. Puanlar depoda birikir; aktif araştırma fiyatını depodan çeker (K-008).
-- Envanterde bir başlangıç kiti vardır: çelik levha, bağlantı elemanı, çelik külçe, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
-- Madenler oyun başında birer adet kurulabilir (K-010).
+- Envanterde bir başlangıç kiti vardır: demir levha, demir çubuk, çelik levha, bağlantı elemanı, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
+- Madenler oyun başında birer adet kurulabilir (K-010); maden genişletme araştırmaları sınırı artırır (K-025).
+- `Makine Fabrikası` (AL-01) makineleri kurulum bedelinden üretir; çıktıyı karttan ya da bağlı depodan alırsın (K-024).
 
 ## Kontroller
 
@@ -24,20 +25,20 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 | Envanter penceresi | **I** ya da alt çubuktaki sandık. Makineye tıklamak onu yerleştirir. |
 | Hızlı erişim | Alttaki 10 yuva, **1–9 ve 0** tuşları. Makine yuvası makineyi yerleştirir. Envanterden yuvaya sürükle, sağ tıkla ya da öğenin üstündeyken numara tuşuna bas: öğe o yuvaya sabitlenir. Yuvada sağ tık sabitlemeyi kaldırır. |
 | Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). |
-| Reçete | Pres, tel sarım ve montaj gelen ürüne göre üretir. Haddehane, CNC, dökümhane ve fırınlarda sağ tık → **Ne üretilsin?** ile reçete ekranı açılır (K-009, K-016). Seçili reçetenin girdileri boş giriş kutularında saydam görünür. |
+| Reçete | Tel sarım, montaj makineleri ve Modül Tesisi gelen ürüne göre üretir. Haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve fırında sağ tık → **Ne üretilsin?** ile reçete ekranı açılır (K-009, K-016). Seçili reçetenin girdileri boş giriş kutularında saydam görünür. |
 | Kart menüsü | Kartta sağ tık: reçete, Durdur/Çalıştır, hız 20 ↔ 40 iş/sn, Envantere al, Kaldır (envantere). Laboratuvarda araştırma hedefi. |
 | Ürün alma | Karttaki çıkış kutusuna tıkla: biriken ürün envantere geçer. Depo'da giriş kutusuna tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
 | Elle besleme | Hızlı erişimden ya da envanter penceresinden bir ürünü makinenin giriş kutusuna sürükle: sığdığı kadar konur, Shift ile 1 adet. Ağa bağlı olmayan makine de böyle çalışır (K-014). |
 | Üretici kurma | Bir girişin **+** düğmesi o ürünü yapan makineyi envanterden kurup bağlar. |
-| Araştırma | Üst çubuktaki araştırma düğmesi; **Serbest mod** bütün kilitleri ve sınırları kaldırır. |
+| Araştırma | Üst çubuktaki araştırma düğmesi: 9 kolda 63 araştırma, kaydırılabilir ağaç. **Serbest mod** bütün kilitleri ve sınırları kaldırır. |
 | Zaman | Duraklat/Devam, 1× ↔ 4× hız. |
 | Kayıt | Kaydet / Yükle (`user://workshop.json`), Sıfırla oyunu boş tuval ve başlangıç kitiyle yeniden başlatır. |
 
 ## Dosyalar
 
 - `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
-- `data/prototype.json`: 55 ürün (beş modül ve Kurucu Çekirdek dahil), 19 makine türü, 62 reçete, 9 araştırma, başlangıç kiti, kurulum bedelleri.
-- `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü.
+- `data/prototype.json`: 55 ürün (beş modül ve Kurucu Çekirdek dahil), 23 makine türü, 63 reçete, 63 araştırma (etkileriyle), 4 puan kademesi, başlangıç kiti, kurulum bedelleri.
+- `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü; **☰ Tablo** düğmesi reçeteleri süre + girdiler → çıktılar tablosu olarak gösterir.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
 - `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).
 - `app/craft_screen.gd`: üretim ekranı. `app/inventory_window.gd`, `app/inventory_bar.gd`, `app/inventory_slot.gd`: envanter penceresi, hızlı erişim çubuğu ve ortak yuva.

@@ -24,11 +24,11 @@ const EDGE := Color("363d45")
 ## the last category is the craft button's symbol.
 const CATEGORIES := [
 	{"name": "Hammadde", "tab": "Hammadde", "machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry"]},
-	{"name": "Metalürji", "tab": "Metalürji", "machines": ["smelter", "steel_furnace"]},
+	{"name": "Metalürji", "tab": "Metalürji", "machines": ["smelter"]},
 	{"name": "Şekillendirme", "tab": "Şekillendirme", "machines": ["rolling_mill", "press", "foundry"]},
-	{"name": "Talaşlı imalat", "tab": "Talaşlı", "machines": ["lathe", "cnc"]},
-	{"name": "Montaj", "tab": "Montaj", "machines": ["assembler", "wire_winder"]},
-	{"name": "Araştırma ve hedefler", "tab": "Araştırma", "machines": ["lab_1", "lab_2", "lab_3", "project_hub", "scrap_disposal"]},
+	{"name": "Talaşlı imalat", "tab": "Talaşlı", "machines": ["machine_shop"]},
+	{"name": "Montaj", "tab": "Montaj", "machines": ["machine_factory", "wire_winder", "mechanical_assembly", "electrical_assembly", "electronics_assembly", "robotics_assembly"]},
+	{"name": "Araştırma ve hedefler", "tab": "Araştırma", "machines": ["lab_1", "lab_2", "lab_3", "module_plant", "project_hub", "scrap_disposal"]},
 	{"name": "Depo", "tab": "Depo", "machines": ["storage"]},
 ]
 const CRAFT_ICON := 7

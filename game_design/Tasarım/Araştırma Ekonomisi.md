@@ -14,12 +14,13 @@ Prototipteki ilk deneme (dengelenmemiş):
 | Laboratuvar | Sürekli tükettiği | Ürettiği | Açılış |
 |---|---|---|---|
 | Laboratuvar 1 | çelik levha + bağlantı elemanı | Kademe 1 puanı | Başlangıç |
-| Laboratuvar 2 | dişli + bakır tel + endüstriyel cam | Kademe 2 puanı | A-03 |
-| Laboratuvar 3 | devre kartı + bobin + mil | Kademe 3 puanı | A-07 |
+| Laboratuvar 2 | dişli + bakır tel + endüstriyel cam | Kademe 2 puanı | AL-02 |
+| Laboratuvar 3 | devre kartı + bobin + mil | Kademe 3 puanı | AL-03 |
+| Laboratuvar 4 | elektrik motoru + mikroçip + hidrolik silindir | Kademe 4 puanı | AL-05 (K-025) |
 
 Laboratuvarlar puanları ağ bağlantılarıyla gelen ürünlerden üretir; oyuncunun envanteri (K-011) laboratuvarı kendiliğinden beslemez.
 
-Fiyatlar: A-01/A-02/A-03 30 K1; A-04 ve A-05 60 K1 + 30 K2; A-07 50 K1 + 40 K2; A-06 60 K1 + 60 K2; A-08 40 K2 + 30 K3; A-09 60 K2 + 60 K3.
+Fiyatlar 63 araştırmanın her biri için [[Tasarım/Teknoloji Ağacı]] notunda; ilk araştırmalar 20–40 K1, son araştırmalar K3 ve K4 ister (Kurucu Çekirdek 100 K4).
 
 ## Tarihsel: doğrudan ürün tüketen araştırma (K-001)
 

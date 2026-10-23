@@ -66,10 +66,31 @@ Makine türü hangi reçetelerin çalıştırılabileceğini belirler. Aynı mak
 
 ### Onaylı reçete seçimi — K-009
 
-- **Girdileri farklı reçeteler:** Oyuncu reçete seçmez; makine bağlanan ya da elle konan ürüne göre ne üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Prototipte pres, tel sarım ve montaj istasyonu böyle çalışır.
-- **Aynı girdiden farklı ürün ve fırınlar:** Kartın menüsünden açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir. Prototipte haddehane, CNC, dökümhane ve — K-016 ile — ergitme fırını ve çelik fırını böyledir. Seçili reçeteye uymayan ürün bağlanamaz ve konamaz.
+- **Girdileri farklı reçeteler:** Oyuncu reçete seçmez; makine bağlanan ya da elle konan ürüne göre ne üreteceğini belirler. Boş makinenin tek bir genel girişi olur. Prototipte tel sarım ve dört montaj makinesi ile Modül Tesisi böyle çalışır.
+- **Aynı girdiden farklı ürün ve fırınlar:** Kartın menüsünden açılan simgeli reçete ekranından ürün seçilir; ekran ürünün girdilerini de gösterir. Prototipte haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve — K-016 ile — ergitme fırını böyledir. Seçili reçeteye uymayan ürün bağlanamaz ve konamaz.
 
 Dayanak: [[Yönetim/Karar Defteri#K-009 — Reçete gelen ürüne göre belirlenir|K-009]], [[Yönetim/Karar Defteri#K-016 — Fırınlarda reçeteyi oyuncu seçer|K-016]]. Prototipte bir makinenin seçim biçimi katalogda zorlanabilir (`recipe_mode`).
+
+### Makine düzeni — K-022
+
+| Makine | Reçeteler |
+|---|---|
+| 4 maden | Cevher, kömür, kuvars |
+| Ergitme Fırını | Iron Ingot, Steel Ingot, Copper Ingot, Industrial Glass, Silicon, hurdadan demir ve çelik |
+| Haddehane | Iron Plate, Iron Rod, Iron Pipe, Steel Plate, Steel Rod |
+| Pres | Fastener, Housing, Electrical Cabinet, Tank, Laminated Core |
+| Tezgâh Atölyesi | Shaft, Gear, Bearing (+ Metal Scrap) |
+| Dökümhane | Cast Iron Gear, Cast Iron Housing |
+| Tel Sarım | Copper Wire, Coil, Cable |
+| Mekanik Montaj | Valve, Iron Frame, Hydraulic Cylinder, Pump, Gearbox, Linear Guide, Precision Spindle, Hydraulic Power Unit, Hydraulic Press Unit |
+| Elektrik Montaj | Electric Motor, Transformer, Switchgear |
+| Elektronik Montaj | Circuit Board, Microchip, Display, Sensor, Control Computer, PLC |
+| Robotik Montaj | Actuator, Robot Arm, Conveyor Line |
+| Modül Tesisi | Beş modül ve Founding Core |
+| Makine Fabrikası (K-024) | Sınırı olmayan her makine |
+| Depo, Talaş İmha, Laboratuvar 1–4, Ana Proje Terminali | Kendi işleri |
+
+Dayanak: [[Yönetim/Karar Defteri#K-022 — Makine düzeni|K-022]].
 
 Giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Bu model, makine türünü üretim operasyonundan ayırır. Araştırma bazen yeni makine, bazen mevcut makine için yeni reçete açabilir. Makine-reçete uygunluğu henüz detaylı veri tablosuna dönüşmemiştir.
 

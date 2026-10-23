@@ -54,6 +54,11 @@ static func product(sim: RefCounted, product_id: String) -> Texture2D:
 	if not sim.catalog.products.has(product_id):
 		return null
 	var spec: Dictionary = sim.catalog.products[product_id]
+	# A machine item (made by the machine factory) shows the machine's own picture.
+	if spec.has("machine"):
+		var art := machine(load("res://app/sprite_machine_card.gd").art_path(str(spec.machine)))
+		_cache[product_id] = art
+		return art
 	var index: int = int(spec.get("icon_index", ATLAS_ORDER.find(product_id)))
 	var tex := atlas_icon(index)
 	if tex == null:

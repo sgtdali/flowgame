@@ -180,76 +180,76 @@ Tablolar `data/prototype.json` ile aynıdır.
 | Ürün | Tarif | Makine | Kullanıldığı yer |
 |---|---|---|---|
 | `Iron Ingot` (Demir külçe) | 2 `Iron Ore` → 2 `Iron Ingot`<br>2 `Metal Scrap` → 1 `Iron Ingot` | Ergitme fırını | `Iron Plate`, `Iron Rod`, `Cast Iron Gear`, `Cast Iron Housing` |
-| `Steel Ingot` (Çelik külçe) | 2 `Iron Ore` + 1 `Coal` → 2 `Steel Ingot`<br>2 `Metal Scrap` + 1 `Coal` → 1 `Steel Ingot` | Çelik fırını | `Steel Plate`, `Steel Rod`, kurulum: Ergitme fırını, Çelik fırını, Dökümhane |
+| `Steel Ingot` (Çelik külçe) | 2 `Iron Ore` + 1 `Coal` → 2 `Steel Ingot`<br>2 `Metal Scrap` + 1 `Coal` → 1 `Steel Ingot` | Ergitme fırını | `Steel Plate`, `Steel Rod` |
 | `Copper Ingot` (Bakır külçe) | 2 `Copper Ore` → 2 `Copper Ingot` | Ergitme fırını | `Copper Wire` |
-| `Industrial Glass` (Endüstriyel cam) | 2 `Quartz` → 1 `Industrial Glass` | Ergitme fırını | `Cable`, `Display`, `Circuit Board`, `Industrial Sensor`, Laboratuvar (K2) |
+| `Industrial Glass` (Endüstriyel cam) | 2 `Quartz` → 1 `Industrial Glass` | Ergitme fırını | `Cable`, `Display`, `Circuit Board`, `Industrial Sensor`, Laboratuvar (K2), kurulum: Elektronik montaj, Laboratuvar 2 |
 | `Silicon` (Silisyum) | 2 `Quartz` + 1 `Coal` → 1 `Silicon` | Ergitme fırını | `Microchip` |
-| `Iron Plate` (Demir levha) | 1 `Iron Ingot` → 1 `Iron Plate` | Haddehane | `Iron Pipe`, `Electrical Cabinet`, `Tank`, `Iron Frame`, `Laminated Core` |
-| `Iron Rod` (Demir çubuk) | 1 `Iron Ingot` → 2 `Iron Rod` | Haddehane | `Valve`, `Iron Frame` |
-| `Iron Pipe` (Demir boru) | 1 `Iron Plate` → 1 `Iron Pipe` | Haddehane | `Valve`, `Tank`, `Hydraulic Cylinder`, `Pump` |
-| `Steel Plate` (Çelik levha) | 1 `Steel Ingot` → 1 `Steel Plate` | Haddehane | `Metallurgy Module`, `Display`, `Housing`, Laboratuvar (K1), kurulum: Demir madeni, Bakır madeni, Kömür madeni, Kuvars ocağı, Ergitme fırını, Çelik fırını, Haddehane, Pres, Torna, CNC, Dökümhane, Tel sarım, Montaj istasyonu, Talaş imha, Depo, Laboratuvar 1, Laboratuvar 2, Laboratuvar 3, Ana proje terminali |
-| `Steel Rod` (Çelik çubuk) | 1 `Steel Ingot` → 2 `Steel Rod` | Haddehane | `Hydraulic Cylinder`, `Linear Guide`, `Fastener`, `Shaft`, `Gear`, `Bearing`, `Electromagnetic Coil`, kurulum: Torna, CNC |
-| `Copper Wire` (Bakır tel) | 1 `Copper Ingot` → 2 `Copper Wire` | Tel sarım | `Cable`, `Microchip`, `Electromagnetic Coil`, `Circuit Board`, Laboratuvar (K2), kurulum: Laboratuvar 2 |
+| `Iron Plate` (Demir levha) | 1 `Iron Ingot` → 1 `Iron Plate` | Haddehane | `Iron Pipe`, `Electrical Cabinet`, `Tank`, `Iron Frame`, `Laminated Core`, kurulum: Demir madeni, Bakır madeni, Kömür madeni, Kuvars ocağı, Ergitme fırını, Haddehane, Pres, Makine fabrikası, Dökümhane, Talaş imha, Depo, Laboratuvar 1 |
+| `Iron Rod` (Demir çubuk) | 1 `Iron Ingot` → 2 `Iron Rod` | Haddehane | `Valve`, `Iron Frame`, kurulum: Demir madeni, Bakır madeni, Kömür madeni, Kuvars ocağı, Ergitme fırını, Haddehane, Pres, Depo |
+| `Iron Pipe` (Demir boru) | 1 `Iron Plate` → 1 `Iron Pipe` | Haddehane | `Valve`, `Tank`, `Hydraulic Cylinder`, `Pump`, kurulum: Pres, Dökümhane, Talaş imha |
+| `Steel Plate` (Çelik levha) | 1 `Steel Ingot` → 1 `Steel Plate` | Haddehane | `Metallurgy Module`, `Display`, `Housing`, Laboratuvar (K1), kurulum: Tezgâh atölyesi, Makine fabrikası, Tel sarım, Mekanik montaj, Elektrik montaj, Elektronik montaj, Robotik montaj, Modül tesisi, Laboratuvar 1, Laboratuvar 2, Laboratuvar 3, Laboratuvar 4, Ana proje terminali |
+| `Steel Rod` (Çelik çubuk) | 1 `Steel Ingot` → 2 `Steel Rod` | Haddehane | `Hydraulic Cylinder`, `Linear Guide`, `Fastener`, `Shaft`, `Gear`, `Bearing`, `Electromagnetic Coil`, kurulum: Tezgâh atölyesi, Tel sarım |
+| `Copper Wire` (Bakır tel) | 1 `Copper Ingot` → 2 `Copper Wire` | Tel sarım | `Cable`, `Microchip`, `Electromagnetic Coil`, `Circuit Board`, Laboratuvar (K2), kurulum: Elektronik montaj, Laboratuvar 2 |
 
 ### Temel parçalar
 
 | Ürün | Tarif | Makine | Kullanıldığı yer |
 |---|---|---|---|
-| `Fastener` (Bağlantı elemanı) | 1 `Steel Rod` → 2 `Fastener` | Pres | `Pump`, `Switchgear`, `Housing`, `Control Unit (PLC)`, Laboratuvar (K1), kurulum: Demir madeni, Bakır madeni, Kömür madeni, Kuvars ocağı, Haddehane, Pres, Torna, CNC, Tel sarım, Montaj istasyonu, Talaş imha, Depo, Laboratuvar 1 |
-| `Shaft` (Mil) | 2 `Steel Rod` → 1 `Shaft`, 1 `Metal Scrap` | Torna | `Precision Spindle`, `Gearbox`, `Electric Motor`, Laboratuvar (K3) |
-| `Gear` (Çelik dişli) | 2 `Steel Rod` → 1 `Gear`, 1 `Metal Scrap` | CNC | `Gearbox`, Laboratuvar (K2), kurulum: Tel sarım, Montaj istasyonu, Laboratuvar 2 |
-| `Bearing` (Rulman) | 2 `Steel Rod` → 1 `Bearing`, 1 `Metal Scrap` | CNC | `Precision Spindle`, `Linear Guide`, `Gearbox`, `Electric Motor` |
-| `Metal Scrap` (Metal talaşı) | 2 `Steel Rod` → 1 `Shaft`, 1 `Metal Scrap`<br>2 `Steel Rod` → 1 `Gear`, 1 `Metal Scrap`<br>2 `Steel Rod` → 1 `Bearing`, 1 `Metal Scrap` | Torna, CNC | `Iron Ingot`, `Steel Ingot`, Talaş imha |
+| `Fastener` (Bağlantı elemanı) | 1 `Steel Rod` → 2 `Fastener` | Pres | `Pump`, `Switchgear`, `Housing`, `Control Unit (PLC)`, Laboratuvar (K1), kurulum: Tezgâh atölyesi, Makine fabrikası, Dökümhane, Tel sarım, Mekanik montaj, Elektrik montaj, Laboratuvar 1 |
+| `Shaft` (Mil) | 2 `Steel Rod` → 1 `Shaft`, 1 `Metal Scrap` | Tezgâh atölyesi | `Precision Spindle`, `Gearbox`, `Electric Motor`, Laboratuvar (K3) |
+| `Gear` (Çelik dişli) | 2 `Steel Rod` → 1 `Gear`, 1 `Metal Scrap` | Tezgâh atölyesi | `Gearbox`, Laboratuvar (K2), kurulum: Makine fabrikası, Mekanik montaj |
+| `Bearing` (Rulman) | 2 `Steel Rod` → 1 `Bearing`, 1 `Metal Scrap` | Tezgâh atölyesi | `Precision Spindle`, `Linear Guide`, `Gearbox`, `Electric Motor`, kurulum: Mekanik montaj |
+| `Metal Scrap` (Metal talaşı) | 2 `Steel Rod` → 1 `Shaft`, 1 `Metal Scrap`<br>2 `Steel Rod` → 1 `Gear`, 1 `Metal Scrap`<br>2 `Steel Rod` → 1 `Bearing`, 1 `Metal Scrap` | Tezgâh atölyesi | `Iron Ingot`, `Steel Ingot`, Talaş imha |
 | `Cast Iron Gear` (Döküm dişli) | 2 `Iron Ingot` → 1 `Cast Iron Gear` | Dökümhane | `Pump` |
 | `Cast Iron Housing` (Döküm gövde) | 3 `Iron Ingot` → 1 `Cast Iron Housing` | Dökümhane | `Pump`, `Gearbox` |
 | `Housing` (Çelik gövde) | 2 `Steel Plate` + 2 `Fastener` → 1 `Housing` | Pres | `Precision Spindle`, `Electric Motor` |
-| `Electrical Cabinet` (Elektrik panosu) | 3 `Iron Plate` → 1 `Electrical Cabinet` | Pres | `Switchgear`, `Control Computer`, `Control Unit (PLC)` |
-| `Laminated Core` (Trafo çekirdeği) | 2 `Iron Plate` → 1 `Laminated Core` | Haddehane | `Transformer` |
-| `Cable` (Kablo) | 3 `Copper Wire` + 1 `Industrial Glass` → 2 `Cable` | Tel sarım | `Switchgear`, `Robot Arm` |
-| `Valve` (Vana) | 1 `Iron Pipe` + 1 `Iron Rod` → 1 `Valve` | Pres | `Hydraulic Power Unit` |
+| `Electrical Cabinet` (Elektrik panosu) | 3 `Iron Plate` → 1 `Electrical Cabinet` | Pres | `Switchgear`, `Control Computer`, `Control Unit (PLC)`, kurulum: Elektronik montaj |
+| `Laminated Core` (Trafo çekirdeği) | 2 `Iron Plate` → 1 `Laminated Core` | Pres | `Transformer` |
+| `Cable` (Kablo) | 3 `Copper Wire` + 1 `Industrial Glass` → 2 `Cable` | Tel sarım | `Switchgear`, `Robot Arm`, kurulum: Laboratuvar 3 |
+| `Valve` (Vana) | 1 `Iron Pipe` + 1 `Iron Rod` → 1 `Valve` | Mekanik montaj | `Hydraulic Power Unit` |
 | `Tank` (Tank) | 4 `Iron Plate` + 1 `Iron Pipe` → 1 `Tank` | Pres | `Hydraulic Power Unit`, `Transformer` |
-| `Iron Frame` (Demir şasi) | 2 `Iron Plate` + 2 `Iron Rod` → 1 `Iron Frame` | Pres | `Hydraulic Press Unit`, `Linear Guide`, `Robot Arm`, `Conveyor Line` |
-| `Hydraulic Cylinder` (Hidrolik silindir) | 1 `Iron Pipe` + 1 `Steel Rod` → 1 `Hydraulic Cylinder` | Pres | `Hydraulic Press Unit` |
+| `Iron Frame` (Demir şasi) | 2 `Iron Plate` + 2 `Iron Rod` → 1 `Iron Frame` | Mekanik montaj | `Hydraulic Press Unit`, `Linear Guide`, `Robot Arm`, `Conveyor Line`, kurulum: Modül tesisi |
+| `Hydraulic Cylinder` (Hidrolik silindir) | 1 `Iron Pipe` + 1 `Steel Rod` → 1 `Hydraulic Cylinder` | Mekanik montaj | `Hydraulic Press Unit`, Laboratuvar (K4), kurulum: Laboratuvar 4 |
 
 ### Alt sistemler
 
 | Ürün | Tarif | Makine | Kullanıldığı yer |
 |---|---|---|---|
-| `Electromagnetic Coil` (Bobin) | 2 `Copper Wire` + 1 `Steel Rod` → 1 `Electromagnetic Coil` | Tel sarım | `Transformer`, `Electric Motor`, `Industrial Sensor`, Laboratuvar (K3), kurulum: Laboratuvar 3 |
-| `Gearbox` (Dişli kutusu) | 2 `Gear` + 1 `Shaft` + 1 `Bearing` + 1 `Cast Iron Housing` → 1 `Gearbox` | Montaj istasyonu | `Precision Mechanics Module`, `Conveyor Line`, `Precision Actuator`, kurulum: Ana proje terminali |
-| `Circuit Board` (Devre kartı) | 2 `Copper Wire` + 1 `Industrial Glass` → 1 `Circuit Board` | Montaj istasyonu | `Display`, `Control Computer`, `Industrial Sensor`, `Control Unit (PLC)`, Laboratuvar (K3), kurulum: Laboratuvar 3, Ana proje terminali |
-| `Electric Motor` (Elektrik motoru) | 2 `Electromagnetic Coil` + 1 `Shaft` + 1 `Bearing` + 1 `Housing` → 1 `Electric Motor` | Montaj istasyonu | `Precision Spindle`, `Electrical Module`, `Conveyor Line`, `Precision Actuator` |
-| `Microchip` (Mikroçip) | 1 `Silicon` + 2 `Copper Wire` → 1 `Microchip` | Montaj istasyonu | `Control Computer` |
-| `Display` (Ekran) | 2 `Industrial Glass` + 1 `Circuit Board` + 1 `Steel Plate` → 1 `Display` | Montaj istasyonu | `Control Computer`, `Electronics Module` |
-| `Pump` (Pompa) | 2 `Iron Pipe` + 1 `Cast Iron Housing` + 1 `Cast Iron Gear` + 2 `Fastener` → 1 `Pump` | Montaj istasyonu | `Hydraulic Power Unit` |
-| `Hydraulic Power Unit` (Hidrolik güç ünitesi) | 1 `Pump` + 1 `Tank` + 2 `Valve` → 1 `Hydraulic Power Unit` | Montaj istasyonu | `Hydraulic Press Unit` |
-| `Precision Spindle` (Hassas iş mili) | 1 `Shaft` + 2 `Bearing` + 1 `Housing` + 1 `Electric Motor` → 1 `Precision Spindle` | Montaj istasyonu | `Precision Mechanics Module` |
-| `Linear Guide` (Lineer kızak) | 2 `Steel Rod` + 2 `Bearing` + 1 `Iron Frame` → 1 `Linear Guide` | Montaj istasyonu | `Precision Mechanics Module` |
-| `Transformer` (Trafo) | 2 `Electromagnetic Coil` + 1 `Laminated Core` + 1 `Tank` → 1 `Transformer` | Montaj istasyonu | `Electrical Module` |
-| `Switchgear` (Şalt panosu) | 1 `Electrical Cabinet` + 4 `Cable` + 2 `Fastener` → 1 `Switchgear` | Montaj istasyonu | `Electrical Module` |
+| `Electromagnetic Coil` (Bobin) | 2 `Copper Wire` + 1 `Steel Rod` → 1 `Electromagnetic Coil` | Tel sarım | `Transformer`, `Electric Motor`, `Industrial Sensor`, Laboratuvar (K3), kurulum: Elektrik montaj |
+| `Gearbox` (Dişli kutusu) | 2 `Gear` + 1 `Shaft` + 1 `Bearing` + 1 `Cast Iron Housing` → 1 `Gearbox` | Mekanik montaj | `Precision Mechanics Module`, `Conveyor Line`, `Precision Actuator`, kurulum: Robotik montaj, Modül tesisi |
+| `Circuit Board` (Devre kartı) | 2 `Copper Wire` + 1 `Industrial Glass` → 1 `Circuit Board` | Elektronik montaj | `Display`, `Control Computer`, `Industrial Sensor`, `Control Unit (PLC)`, Laboratuvar (K3), kurulum: Laboratuvar 3 |
+| `Electric Motor` (Elektrik motoru) | 2 `Electromagnetic Coil` + 1 `Shaft` + 1 `Bearing` + 1 `Housing` → 1 `Electric Motor` | Elektrik montaj | `Precision Spindle`, `Electrical Module`, `Conveyor Line`, `Precision Actuator`, Laboratuvar (K4), kurulum: Robotik montaj, Laboratuvar 4 |
+| `Microchip` (Mikroçip) | 1 `Silicon` + 2 `Copper Wire` → 1 `Microchip` | Elektronik montaj | `Control Computer`, Laboratuvar (K4), kurulum: Laboratuvar 4 |
+| `Display` (Ekran) | 2 `Industrial Glass` + 1 `Circuit Board` + 1 `Steel Plate` → 1 `Display` | Elektronik montaj | `Control Computer`, `Electronics Module`, kurulum: Ana proje terminali |
+| `Pump` (Pompa) | 2 `Iron Pipe` + 1 `Cast Iron Housing` + 1 `Cast Iron Gear` + 2 `Fastener` → 1 `Pump` | Mekanik montaj | `Hydraulic Power Unit` |
+| `Hydraulic Power Unit` (Hidrolik güç ünitesi) | 1 `Pump` + 1 `Tank` + 2 `Valve` → 1 `Hydraulic Power Unit` | Mekanik montaj | `Hydraulic Press Unit` |
+| `Precision Spindle` (Hassas iş mili) | 1 `Shaft` + 2 `Bearing` + 1 `Housing` + 1 `Electric Motor` → 1 `Precision Spindle` | Mekanik montaj | `Precision Mechanics Module` |
+| `Linear Guide` (Lineer kızak) | 2 `Steel Rod` + 2 `Bearing` + 1 `Iron Frame` → 1 `Linear Guide` | Mekanik montaj | `Precision Mechanics Module` |
+| `Transformer` (Trafo) | 2 `Electromagnetic Coil` + 1 `Laminated Core` + 1 `Tank` → 1 `Transformer` | Elektrik montaj | `Electrical Module` |
+| `Switchgear` (Şalt panosu) | 1 `Electrical Cabinet` + 4 `Cable` + 2 `Fastener` → 1 `Switchgear` | Elektrik montaj | `Electrical Module` |
 
 ### İleri ürünler
 
 | Ürün | Tarif | Makine | Kullanıldığı yer |
 |---|---|---|---|
-| `Industrial Sensor` (Endüstriyel sensör) | 1 `Circuit Board` + 1 `Electromagnetic Coil` + 1 `Industrial Glass` → 1 `Industrial Sensor` | Montaj istasyonu | `Electronics Module`, `Precision Actuator`, `Control Unit (PLC)` |
-| `Precision Actuator` (Hassas aktüatör) | 1 `Electric Motor` + 1 `Gearbox` + 1 `Industrial Sensor` → 1 `Precision Actuator` | Montaj istasyonu | `Robot Arm` |
-| `Control Unit (PLC)` (Kontrol ünitesi (PLC)) | 2 `Circuit Board` + 1 `Industrial Sensor` + 1 `Electrical Cabinet` + 2 `Fastener` → 1 `Control Unit (PLC)` | Montaj istasyonu | `Automation Module` |
-| `Control Computer` (Kontrol bilgisayarı) | 4 `Microchip` + 2 `Circuit Board` + 1 `Display` + 1 `Electrical Cabinet` → 1 `Control Computer` | Montaj istasyonu | `Electronics Module` |
-| `Hydraulic Press Unit` (Hidrolik pres ünitesi) | 1 `Hydraulic Power Unit` + 2 `Hydraulic Cylinder` + 1 `Iron Frame` → 1 `Hydraulic Press Unit` | Montaj istasyonu | `Metallurgy Module` |
-| `Robot Arm` (Robot kol) | 3 `Precision Actuator` + 4 `Cable` + 1 `Iron Frame` → 1 `Robot Arm` | Montaj istasyonu | `Automation Module` |
-| `Conveyor Line` (Konveyör hattı) | 2 `Electric Motor` + 2 `Gearbox` + 4 `Iron Frame` → 1 `Conveyor Line` | Montaj istasyonu | `Automation Module` |
+| `Industrial Sensor` (Endüstriyel sensör) | 1 `Circuit Board` + 1 `Electromagnetic Coil` + 1 `Industrial Glass` → 1 `Industrial Sensor` | Elektronik montaj | `Electronics Module`, `Precision Actuator`, `Control Unit (PLC)`, kurulum: Robotik montaj |
+| `Precision Actuator` (Hassas aktüatör) | 1 `Electric Motor` + 1 `Gearbox` + 1 `Industrial Sensor` → 1 `Precision Actuator` | Robotik montaj | `Robot Arm` |
+| `Control Unit (PLC)` (Kontrol ünitesi (PLC)) | 2 `Circuit Board` + 1 `Industrial Sensor` + 1 `Electrical Cabinet` + 2 `Fastener` → 1 `Control Unit (PLC)` | Elektronik montaj | `Automation Module`, kurulum: Ana proje terminali |
+| `Control Computer` (Kontrol bilgisayarı) | 4 `Microchip` + 2 `Circuit Board` + 1 `Display` + 1 `Electrical Cabinet` → 1 `Control Computer` | Elektronik montaj | `Electronics Module` |
+| `Hydraulic Press Unit` (Hidrolik pres ünitesi) | 1 `Hydraulic Power Unit` + 2 `Hydraulic Cylinder` + 1 `Iron Frame` → 1 `Hydraulic Press Unit` | Mekanik montaj | `Metallurgy Module` |
+| `Robot Arm` (Robot kol) | 3 `Precision Actuator` + 4 `Cable` + 1 `Iron Frame` → 1 `Robot Arm` | Robotik montaj | `Automation Module` |
+| `Conveyor Line` (Konveyör hattı) | 2 `Electric Motor` + 2 `Gearbox` + 4 `Iron Frame` → 1 `Conveyor Line` | Robotik montaj | `Automation Module` |
 
 ### Modüller ve Kurucu Çekirdek
 
 | Ürün | Tarif | Makine | Kullanıldığı yer |
 |---|---|---|---|
-| `Metallurgy Module` (Metalürji modülü) | 8 `Hydraulic Press Unit` + 50 `Steel Plate` → 1 `Metallurgy Module` | Montaj istasyonu | `Founding Core` |
-| `Precision Mechanics Module` (Hassas mekanik modülü) | 6 `Gearbox` + 4 `Precision Spindle` + 6 `Linear Guide` → 1 `Precision Mechanics Module` | Montaj istasyonu | `Founding Core` |
-| `Electrical Module` (Elektrik modülü) | 6 `Electric Motor` + 4 `Transformer` + 4 `Switchgear` → 1 `Electrical Module` | Montaj istasyonu | `Founding Core` |
-| `Electronics Module` (Elektronik modülü) | 6 `Industrial Sensor` + 4 `Display` + 4 `Control Computer` → 1 `Electronics Module` | Montaj istasyonu | `Founding Core` |
-| `Automation Module` (Otomasyon modülü) | 6 `Control Unit (PLC)` + 4 `Robot Arm` + 4 `Conveyor Line` → 1 `Automation Module` | Montaj istasyonu | `Founding Core` |
-| `Founding Core` (Kurucu Çekirdek) | 4 `Metallurgy Module` + 4 `Precision Mechanics Module` + 4 `Electrical Module` + 4 `Electronics Module` + 4 `Automation Module` → 1 `Founding Core` | Montaj istasyonu | Ana proje terminali |
+| `Metallurgy Module` (Metalürji modülü) | 8 `Hydraulic Press Unit` + 50 `Steel Plate` → 1 `Metallurgy Module` | Modül tesisi | `Founding Core` |
+| `Precision Mechanics Module` (Hassas mekanik modülü) | 6 `Gearbox` + 4 `Precision Spindle` + 6 `Linear Guide` → 1 `Precision Mechanics Module` | Modül tesisi | `Founding Core` |
+| `Electrical Module` (Elektrik modülü) | 6 `Electric Motor` + 4 `Transformer` + 4 `Switchgear` → 1 `Electrical Module` | Modül tesisi | `Founding Core` |
+| `Electronics Module` (Elektronik modülü) | 6 `Industrial Sensor` + 4 `Display` + 4 `Control Computer` → 1 `Electronics Module` | Modül tesisi | `Founding Core` |
+| `Automation Module` (Otomasyon modülü) | 6 `Control Unit (PLC)` + 4 `Robot Arm` + 4 `Conveyor Line` → 1 `Automation Module` | Modül tesisi | `Founding Core` |
+| `Founding Core` (Kurucu Çekirdek) | 4 `Metallurgy Module` + 4 `Precision Mechanics Module` + 4 `Electrical Module` + 4 `Electronics Module` + 4 `Automation Module` → 1 `Founding Core` | Modül tesisi | Ana proje terminali |
 
 ## Tasarım kesişimleri
 

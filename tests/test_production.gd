@@ -29,7 +29,7 @@ func _check(condition: bool, description: String) -> void:
 func _catalog_and_reachability() -> void:
 	var sim := Simulation.new()
 	_check(sim.catalog.products.size() >= 24, "Katalogda en az 24 ürün bulunmalı")
-	_check(sim.catalog.researches.size() == 9, "Katalogda tam 9 araştırma (A-01 – A-09) bulunmalı")
+	_check(sim.catalog.researches.size() == 63, "Katalogda 63 araştırma bulunmalı")
 	# Kademe 0'dan başlayarak 9 araştırmanın tamamının kilitlenmeden (deadlock olmadan)
 	# yalnızca o an açık makine/reçetelerle üretilebilen ürünlerle açılabildiğini doğrula.
 	var producible := {}
@@ -55,27 +55,36 @@ func _catalog_and_reachability() -> void:
 								changed = true
 	update_producible.call()
 	_check(producible.size() >= 11, "Başlangıçta (Kademe 0) temel ürünler üretilebilir olmalı")
-	var order := ["A-01", "A-02", "A-03", "A-04", "A-05", "A-06", "A-07", "A-08", "A-09"]
-	for tech_id in order:
-		_check(sim.can_research(tech_id), "%s araştırması ön koşul sırasıyla açılabilir olmalı" % tech_id)
-		# Every tier the research is priced in needs an unlocked lab whose inputs can be made.
-		var inputs_ready := true
+	# Every research must become reachable: open by its prerequisites, priced only in tiers
+	# whose lab is already unlocked and can be fed (no deadlock).
+	var lab_ready := func(tech_id: String) -> bool:
 		for tier in sim.catalog.researches[tech_id].cost:
-			var lab_ready := false
+			var ready := false
 			for m_kind in sim.unlocked_machines:
 				var recipe: Dictionary = sim.catalog.recipes[sim.catalog.machines[m_kind].recipe]
-				if recipe.get("research_points", {}).has(tier):
-					lab_ready = recipe.inputs.keys().all(func(p: String) -> bool: return producible.has(p))
-			if not lab_ready:
-				inputs_ready = false
-		_check(inputs_ready, "%s araştırmasının puanlarını üreten laboratuvar önceden beslenebilir olmalı (kilitlenme olmamalı)" % tech_id)
-		sim._complete_research(tech_id)
+				if recipe.get("research_points", {}).has(tier) and recipe.inputs.keys().all(func(p: String) -> bool: return producible.has(p)):
+					ready = true
+			if not ready:
+				return false
+		return true
+	var remaining: Array = sim.catalog.researches.keys()
+	while not remaining.is_empty():
+		var next := ""
+		for tech_id in remaining:
+			if sim.can_research(tech_id) and lab_ready.call(tech_id):
+				next = tech_id
+				break
+		if next.is_empty():
+			_check(false, "Araştırılamayan araştırmalar kaldı (kilitlenme): %s" % ", ".join(PackedStringArray(remaining)))
+			break
+		sim._complete_research(next)
+		remaining.erase(next)
 		update_producible.call()
-	_check(producible.size() == sim.catalog.products.size(), "9 araştırma tamamlandığında tüm ürünler üretilebilir olmalı")
+	_check(producible.size() == sim.catalog.products.size(), "Bütün araştırmalar tamamlandığında tüm ürünler üretilebilir olmalı")
 
 func _timing() -> void:
 	var sim := Simulation.new()
-	var cnc := sim.add_machine("cnc", "gear_cnc")
+	var cnc := sim.add_machine("machine_shop", "gear_cnc")
 	sim.machines[cnc].input.steel_rod = 2
 	sim.advance(4.95)
 	_check(sim.machines[cnc].completed == 0, "5 saniyeden önce dişli oluşmamalı")
@@ -83,13 +92,13 @@ func _timing() -> void:
 	sim.advance(0.05)
 	_check(sim.machines[cnc].completed == 1 and sim.machines[cnc].output.gear == 1 and sim.machines[cnc].output.metal_scrap == 1, "100/20=5 saniyede 1 dişli + 1 metal talaşı üretilmeli")
 	var fast := Simulation.new()
-	var fast_id := fast.add_machine("cnc", "gear_cnc")
+	var fast_id := fast.add_machine("machine_shop", "gear_cnc")
 	fast.machines[fast_id].speed = 40.0
 	fast.machines[fast_id].input.steel_rod = 2
 	fast.advance(2.5)
 	_check(fast.machines[fast_id].completed == 1, "100/40=2.5 saniye")
 	var sliced := Simulation.new()
-	var sliced_id := sliced.add_machine("cnc", "gear_cnc")
+	var sliced_id := sliced.add_machine("machine_shop", "gear_cnc")
 	sliced.machines[sliced_id].input.steel_rod = 2
 	for i in range(300):
 		sliced.advance(1.0 / 60.0)
@@ -98,7 +107,7 @@ func _timing() -> void:
 
 func _inputs_and_blocking() -> void:
 	var sim := Simulation.new()
-	var id := sim.add_machine("cnc", "gear_cnc")
+	var id := sim.add_machine("machine_shop", "gear_cnc")
 	sim.machines[id].input.steel_rod = 1
 	sim.advance(10.0)
 	_check(sim.machines[id].input.steel_rod == 1 and sim.machines[id].completed == 0, "Eksik girdi tüketilmemeli")
@@ -115,7 +124,7 @@ func _inputs_and_blocking() -> void:
 	sim.advance(10.0)
 	_check(sim.machines[id].completed == 1, "Durdurulan makine yeni iş başlatmamalı")
 	# Çok girdili reçete ve alternatif yöntem testi (Çelik fırını + Ergitme fırını + Dökümhane)
-	var steel_f := sim.add_machine("steel_furnace", "steel_ingot")
+	var steel_f := sim.add_machine("smelter", "steel_ingot")
 	sim.machines[steel_f].input.iron_ore = 2
 	sim.advance(5.0)
 	_check(sim.machines[steel_f].input.iron_ore == 2 and sim.machines[steel_f].completed == 0, "Kömür eksikse demir cevheri tek başına tüketilmemeli")
@@ -164,11 +173,11 @@ func _sharing_and_byproducts() -> void:
 	# Yan ürün (Metal Talaşı) geri kazanım bağlantısı testi
 	# Otomatik reçeteli makineler yalnız açık reçetelere bağlanır; bu test araştırmayı atlar.
 	sim.unlocked_recipes.append_array(["gearbox", "steel_from_scrap"])
-	var cnc := sim.add_machine("cnc", "gear_cnc")
-	var furnace := sim.add_machine("steel_furnace", "steel_from_scrap")
-	var gearbox_asm := sim.add_machine("assembler", "gearbox")
-	_check(sim.add_link(cnc, gearbox_asm, 0, 0), "CNC 0. çıkış portu (dişli) montaj istasyonuna bağlanmalı")
-	_check(sim.add_link(cnc, furnace, 1, 0), "CNC 1. çıkış portu (metal talaşı) çelik fırınına bağlanmalı")
+	var cnc := sim.add_machine("machine_shop", "gear_cnc")
+	var furnace := sim.add_machine("smelter", "steel_from_scrap")
+	var gearbox_asm := sim.add_machine("mechanical_assembly", "gearbox")
+	_check(sim.add_link(cnc, gearbox_asm, 0, 0), "Atölyenin 0. çıkış portu (dişli) mekanik montaja bağlanmalı")
+	_check(sim.add_link(cnc, furnace, 1, 0), "Atölyenin 1. çıkış portu (metal talaşı) fırına bağlanmalı")
 	sim.machines[cnc].input.steel_rod = 4
 	sim.machines[furnace].input.coal = 1
 	sim.advance(14.0)
@@ -181,25 +190,27 @@ func _research_progression() -> void:
 	var mill := sim.add_machine("rolling_mill", "steel_plate")
 	_check(sim.add_link(mill, lab), "Laboratuvar 1 çelik levhayı kabul etmeli")
 	# Points made while no research can use them stay in the store.
-	sim.active_research = "A-04"
+	sim.active_research = "MK-04"
 	sim.machines[lab].input.steel_plate = 6
 	sim.machines[lab].input.fastener = 6
 	sim.advance(20.0)
 	_check(sim.research_points.k1 == 6, "Laboratuvar 1 her levha + bağlantı elemanı için 1 K1 puanı üretmeli")
-	_check(sim.research_progress["A-04"].is_empty(), "Ön koşulu eksik araştırma puan harcamamalı")
-	_check(sim.set_active_research("A-01"), "A-01 seçilebilmeli")
+	_check(sim.research_progress["MK-04"].is_empty(), "Ön koşulu eksik araştırma puan harcamamalı")
+	_check(sim.set_active_research("MK-01"), "MK-01 seçilebilmeli")
 	sim.advance(0.05)
-	_check(sim.research_progress["A-01"].k1 == 6 and sim.research_points.k1 == 0, "Aktif araştırma depodaki puanı çekmeli")
+	_check(sim.research_progress["MK-01"].k1 == 6 and sim.research_points.k1 == 0, "Aktif araştırma depodaki puanı çekmeli")
 	sim.research_points.k1 = 100
 	sim.advance(0.05)
-	_check("A-01" in sim.completed_researches and sim.research_points.k1 == 76, "Fiyat dolunca araştırma bitmeli, artan puan depoda kalmalı")
-	_check(sim.is_machine_unlocked("cnc") and sim.is_machine_unlocked("lathe"), "A-01 bitince Torna ve CNC açılmalı")
-	_check(sim.set_active_research("A-04"), "A-01 sonrası A-04 seçilebilmeli")
+	_check("MK-01" in sim.completed_researches and sim.research_points.k1 == 76, "Fiyat dolunca araştırma bitmeli, artan puan depoda kalmalı")
+	_check(sim.is_machine_unlocked("machine_shop"), "MK-01 bitince Tezgâh Atölyesi açılmalı")
+	_check(not sim.set_active_research("MK-04"), "MK-02 ve MK-03 bitmeden MK-04 seçilmemeli")
+	sim.completed_researches.append_array(["MK-02", "MK-03"])
+	_check(sim.set_active_research("MK-04"), "MK-02 ve MK-03 sonrası MK-04 seçilebilmeli")
 	sim.advance(0.05)
-	_check(sim.research_progress["A-04"].k1 == 60 and not ("A-04" in sim.completed_researches), "Eksik K2 varken araştırma bitmemeli")
-	sim.research_points.k2 = 30
+	_check(sim.research_progress["MK-04"].k1 == 40 and not ("MK-04" in sim.completed_researches), "Eksik K2 varken araştırma bitmemeli")
+	sim.research_points.k2 = 20
 	sim.advance(0.05)
-	_check("A-04" in sim.completed_researches, "K1 ve K2 fiyatı dolunca A-04 bitmeli")
+	_check("MK-04" in sim.completed_researches, "K1 ve K2 fiyatı dolunca MK-04 bitmeli")
 	_check(sim.links.size() == 1, "Araştırma değişince laboratuvar bağlantıları silinmemeli")
 
 func _build_limits() -> void:
@@ -218,7 +229,7 @@ func _build_limits() -> void:
 
 func _save_resume() -> void:
 	var sim := Simulation.new()
-	var id := sim.add_machine("cnc", "gear_cnc")
+	var id := sim.add_machine("machine_shop", "gear_cnc")
 	sim.machines[id].input.steel_rod = 8
 	sim.advance(2.15)
 	var restored := Simulation.new()
@@ -230,10 +241,10 @@ func _save_resume() -> void:
 	_check(restored.machines[id].output == sim.machines[id].output, "Kayıttan devam ürün miktarını değiştirmemeli")
 	_check(is_equal_approx(restored.machines[id].remaining, sim.machines[id].remaining), "Kayıttan devam iş zamanını değiştirmemeli")
 	sim.research_points.k1 = 12
-	sim.research_progress["A-01"] = {"k1": 5}
+	sim.research_progress["MK-01"] = {"k1": 5}
 	var research_copy := Simulation.new()
 	_check(research_copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))), "Puan deposu ve ilerleme kayda girmeli")
-	_check(research_copy.research_points.k1 == 12 and research_copy.research_progress["A-01"].k1 == 5, "Kayıttan sonra puan deposu ve ilerleme korunmalı")
+	_check(research_copy.research_points.k1 == 12 and research_copy.research_progress["MK-01"].k1 == 5, "Kayıttan sonra puan deposu ve ilerleme korunmalı")
 	var broken := restored.snapshot()
 	broken.machines[id].input.steel_rod = -1
 	var before: String = JSON.stringify(restored.snapshot())
@@ -243,10 +254,10 @@ func _save_resume() -> void:
 func _conservation() -> void:
 	var sim := Simulation.new()
 	var mill := sim.add_machine("rolling_mill", "steel_rod")
-	var cnc := sim.add_machine("cnc", "gear_cnc")
+	var cnc := sim.add_machine("machine_shop", "gear_cnc")
 	var disposal := sim.add_machine("scrap_disposal")
-	var a := sim.add_machine("assembler", "gearbox")
-	var b := sim.add_machine("assembler", "gearbox")
+	var a := sim.add_machine("mechanical_assembly", "gearbox")
+	var b := sim.add_machine("mechanical_assembly", "gearbox")
 	sim.machines[mill].input.steel_ingot = 10
 	sim.add_link(mill, cnc)
 	sim.add_link(cnc, disposal, 1, 0)

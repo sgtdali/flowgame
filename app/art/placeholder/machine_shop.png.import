@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0mlxfsn4ksln"
-path="res://.godot/imported/steel_furnace.png-827332823ef418c792824050860c416b.ctex"
+uid="uid://df2ccm0ag0gjq"
+path="res://.godot/imported/machine_shop.png-519188f31d2046612ddac724fb0a603e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://app/art/placeholder/steel_furnace.png"
-dest_files=["res://.godot/imported/steel_furnace.png-827332823ef418c792824050860c416b.ctex"]
+source_file="res://app/art/placeholder/machine_shop.png"
+dest_files=["res://.godot/imported/machine_shop.png-519188f31d2046612ddac724fb0a603e.ctex"]
 
 [params]
 

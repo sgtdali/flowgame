@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://byeie8pw1q7gg"
-path="res://.godot/imported/lathe.png-febaa35bab95468c6447095ecd7d8d1f.ctex"
+uid="uid://dcyfnsf046p63"
+path="res://.godot/imported/module_plant.png-da0b398055813e7af3509da5876cd6b0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://app/art/placeholder/lathe.png"
-dest_files=["res://.godot/imported/lathe.png-febaa35bab95468c6447095ecd7d8d1f.ctex"]
+source_file="res://app/art/placeholder/module_plant.png"
+dest_files=["res://.godot/imported/module_plant.png-da0b398055813e7af3509da5876cd6b0.ctex"]
 
 [params]
 
