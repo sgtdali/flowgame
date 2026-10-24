@@ -70,7 +70,7 @@ func build() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	bar.add_child(row)
-	inventory_button = _icon_button(INVENTORY_ICON, "Envanter ve üretim (I, C)")
+	inventory_button = _icon_button(INVENTORY_ICON, "Inventory and crafting (I, C)")
 	inventory_button.pressed.connect(func() -> void: inventory_requested.emit())
 	row.add_child(inventory_button)
 	row.add_child(VSeparator.new())
@@ -154,7 +154,7 @@ func _refresh_queue(sim: RefCounted) -> void:
 			bar.offset_right = -3
 			bar.offset_bottom = -2
 			button.add_child(bar)
-			button.tooltip_text = "Tıkla: iptal et"
+			button.tooltip_text = "Click: cancel"
 			button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			button.pressed.connect(func() -> void: craft_cancelled.emit(i))
 			_queue_row.add_child(button)

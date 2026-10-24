@@ -744,7 +744,7 @@
   },
   "researches": {
     "DM-01": {
-      "name": "DM-01: Sac Şekillendirme",
+      "name": "DM-01: Sheet Forming",
       "category": "metalurji",
       "prerequisites": [],
       "cost": {"k1": 20},
@@ -753,7 +753,7 @@
       "description": "Unlocks Housing (Pressing), Tank Forming."
     },
     "DM-02": {
-      "name": "DM-02: Döküm",
+      "name": "DM-02: Casting",
       "category": "metalurji",
       "prerequisites": [],
       "cost": {"k1": 30},
@@ -762,7 +762,7 @@
       "description": "Unlocks Foundry, Cast Iron Gear Casting, Cast Iron Housing Casting."
     },
     "DM-03": {
-      "name": "DM-03: Hurda Geri Kazanımı",
+      "name": "DM-03: Scrap Recovery",
       "category": "metalurji",
       "prerequisites": ["MK-01"],
       "cost": {"k1": 30},
@@ -771,7 +771,7 @@
       "description": "Unlocks Iron Recovery from Scrap, Steel Recovery from Scrap."
     },
     "DM-04": {
-      "name": "DM-04: Hidrolik Silindir",
+      "name": "DM-04: Hydraulic Cylinder",
       "category": "metalurji",
       "prerequisites": ["MK-04"],
       "cost": {"k2": 30},
@@ -780,7 +780,7 @@
       "description": "Unlocks Hydraulic Cylinder Assembly."
     },
     "DM-05": {
-      "name": "DM-05: Pompa",
+      "name": "DM-05: Pump",
       "category": "metalurji",
       "prerequisites": ["MK-04", "DM-02"],
       "cost": {"k2": 40},
@@ -789,7 +789,7 @@
       "description": "Unlocks Pump Assembly."
     },
     "DM-06": {
-      "name": "DM-06: Hidrolik Güç Ünitesi",
+      "name": "DM-06: Hydraulic Power Unit",
       "category": "metalurji",
       "prerequisites": ["DM-05", "DM-01"],
       "cost": {"k2": 50},
@@ -798,7 +798,7 @@
       "description": "Unlocks Hydraulic Power Unit Assembly."
     },
     "DM-07": {
-      "name": "DM-07: Hidrolik Pres Ünitesi",
+      "name": "DM-07: Hydraulic Press Unit",
       "category": "metalurji",
       "prerequisites": ["DM-06", "DM-04"],
       "cost": {"k2": 60, "k3": 20},
@@ -807,7 +807,7 @@
       "description": "Unlocks Hydraulic Press Unit Assembly."
     },
     "DM-08": {
-      "name": "DM-08: Metalürji Modülü",
+      "name": "DM-08: Metallurgy Module",
       "category": "metalurji",
       "prerequisites": ["DM-07", "AL-04"],
       "cost": {"k3": 40},
@@ -816,7 +816,7 @@
       "description": "Unlocks Metallurgy Module Assembly."
     },
     "MK-01": {
-      "name": "MK-01: Talaşlı İmalat",
+      "name": "MK-01: Machining",
       "category": "mekanik",
       "prerequisites": [],
       "cost": {"k1": 30},
@@ -825,7 +825,7 @@
       "description": "Unlocks Machine Shop, Shaft Turning."
     },
     "MK-02": {
-      "name": "MK-02: Dişli İşleme",
+      "name": "MK-02: Gear Machining",
       "category": "mekanik",
       "prerequisites": ["MK-01"],
       "cost": {"k1": 30},
@@ -834,7 +834,7 @@
       "description": "Unlocks Gear Machining."
     },
     "MK-03": {
-      "name": "MK-03: Rulman",
+      "name": "MK-03: Bearings",
       "category": "mekanik",
       "prerequisites": ["MK-01"],
       "cost": {"k1": 40},
@@ -843,7 +843,7 @@
       "description": "Unlocks Bearing Machining."
     },
     "MK-04": {
-      "name": "MK-04: Mekanik Montaj",
+      "name": "MK-04: Mechanical Assembly",
       "category": "mekanik",
       "prerequisites": ["MK-02", "MK-03"],
       "cost": {"k1": 40, "k2": 20},
@@ -852,7 +852,7 @@
       "description": "Unlocks Mechanical Assembly, Valve Assembly, Iron Frame Assembly."
     },
     "MK-05": {
-      "name": "MK-05: Dişli Kutusu",
+      "name": "MK-05: Gearbox",
       "category": "mekanik",
       "prerequisites": ["MK-04", "DM-02"],
       "cost": {"k1": 50, "k2": 30},
@@ -861,7 +861,7 @@
       "description": "Unlocks Gearbox Assembly."
     },
     "MK-06": {
-      "name": "MK-06: Lineer Kızak",
+      "name": "MK-06: Linear Guide",
       "category": "mekanik",
       "prerequisites": ["MK-04"],
       "cost": {"k2": 40},
@@ -870,7 +870,7 @@
       "description": "Unlocks Linear Guide Assembly."
     },
     "MK-07": {
-      "name": "MK-07: Hassas İş Mili",
+      "name": "MK-07: Precision Spindle",
       "category": "mekanik",
       "prerequisites": ["MK-06", "EL-04"],
       "cost": {"k2": 50, "k3": 20},
@@ -879,7 +879,7 @@
       "description": "Unlocks Precision Spindle Assembly."
     },
     "MK-08": {
-      "name": "MK-08: Hassas Mekanik Modülü",
+      "name": "MK-08: Precision Module",
       "category": "mekanik",
       "prerequisites": ["MK-05", "MK-07", "AL-04"],
       "cost": {"k3": 60, "k4": 20},
@@ -888,7 +888,7 @@
       "description": "Unlocks Precision Mechanics Module Assembly."
     },
     "EL-01": {
-      "name": "EL-01: Tel Çekme",
+      "name": "EL-01: Wire Drawing",
       "category": "elektrik",
       "prerequisites": [],
       "cost": {"k1": 30},
@@ -897,7 +897,7 @@
       "description": "Unlocks Wire Winder, Copper Wire Drawing."
     },
     "EL-02": {
-      "name": "EL-02: Kablo",
+      "name": "EL-02: Cable",
       "category": "elektrik",
       "prerequisites": ["EL-01", "EK-01"],
       "cost": {"k1": 40},
@@ -906,7 +906,7 @@
       "description": "Unlocks Cable Insulating."
     },
     "EL-03": {
-      "name": "EL-03: Bobin",
+      "name": "EL-03: Coil",
       "category": "elektrik",
       "prerequisites": ["EL-01"],
       "cost": {"k1": 40, "k2": 20},
@@ -915,7 +915,7 @@
       "description": "Unlocks Electromagnetic Coil Winding."
     },
     "EL-04": {
-      "name": "EL-04: Elektrik Motoru",
+      "name": "EL-04: Electric Motor",
       "category": "elektrik",
       "prerequisites": ["EL-03", "MK-03", "DM-01"],
       "cost": {"k2": 50},
@@ -924,7 +924,7 @@
       "description": "Unlocks Electrical Assembly, Electric Motor Assembly."
     },
     "EL-05": {
-      "name": "EL-05: Trafo",
+      "name": "EL-05: Transformer",
       "category": "elektrik",
       "prerequisites": ["EL-03", "EL-04"],
       "cost": {"k2": 50},
@@ -933,7 +933,7 @@
       "description": "Unlocks Laminated Core Stamping, Transformer Assembly."
     },
     "EL-06": {
-      "name": "EL-06: Elektrik Panosu",
+      "name": "EL-06: Electrical Cabinet",
       "category": "elektrik",
       "prerequisites": ["DM-01"],
       "cost": {"k1": 30},
@@ -942,7 +942,7 @@
       "description": "Unlocks Electrical Cabinet Forming."
     },
     "EL-07": {
-      "name": "EL-07: Şalt Panosu",
+      "name": "EL-07: Switchgear",
       "category": "elektrik",
       "prerequisites": ["EL-02", "EL-06", "EL-04"],
       "cost": {"k2": 50},
@@ -951,7 +951,7 @@
       "description": "Unlocks Switchgear Assembly."
     },
     "EL-08": {
-      "name": "EL-08: Elektrik Modülü",
+      "name": "EL-08: Electrical Module",
       "category": "elektrik",
       "prerequisites": ["EL-04", "EL-05", "EL-07", "AL-04"],
       "cost": {"k3": 50, "k4": 20},
@@ -960,7 +960,7 @@
       "description": "Unlocks Electrical Module Assembly."
     },
     "EK-01": {
-      "name": "EK-01: Endüstriyel Cam",
+      "name": "EK-01: Industrial Glass",
       "category": "elektronik",
       "prerequisites": [],
       "cost": {"k1": 30},
@@ -969,7 +969,7 @@
       "description": "Unlocks Industrial Glass Smelting."
     },
     "EK-02": {
-      "name": "EK-02: Devre Kartı",
+      "name": "EK-02: Circuit Board",
       "category": "elektronik",
       "prerequisites": ["EL-01", "EK-01"],
       "cost": {"k2": 40},
@@ -978,7 +978,7 @@
       "description": "Unlocks Electronics Assembly, Circuit Board Assembly."
     },
     "EK-03": {
-      "name": "EK-03: Silisyum",
+      "name": "EK-03: Silicon",
       "category": "elektronik",
       "prerequisites": ["EK-01"],
       "cost": {"k2": 30},
@@ -987,7 +987,7 @@
       "description": "Unlocks Silicon Smelting."
     },
     "EK-04": {
-      "name": "EK-04: Mikroçip",
+      "name": "EK-04: Microchip",
       "category": "elektronik",
       "prerequisites": ["EK-02", "EK-03"],
       "cost": {"k2": 50, "k3": 20},
@@ -996,7 +996,7 @@
       "description": "Unlocks Microchip Fabrication."
     },
     "EK-05": {
-      "name": "EK-05: Sensör",
+      "name": "EK-05: Sensor",
       "category": "elektronik",
       "prerequisites": ["EK-02", "EL-03"],
       "cost": {"k3": 40},
@@ -1005,7 +1005,7 @@
       "description": "Unlocks Industrial Sensor Assembly."
     },
     "EK-06": {
-      "name": "EK-06: Ekran",
+      "name": "EK-06: Display",
       "category": "elektronik",
       "prerequisites": ["EK-02"],
       "cost": {"k3": 40},
@@ -1014,7 +1014,7 @@
       "description": "Unlocks Display Assembly."
     },
     "EK-07": {
-      "name": "EK-07: Kontrol Bilgisayarı",
+      "name": "EK-07: Control Computer",
       "category": "elektronik",
       "prerequisites": ["EK-04", "EK-06", "EL-06"],
       "cost": {"k3": 60},
@@ -1023,7 +1023,7 @@
       "description": "Unlocks Control Computer Assembly."
     },
     "EK-08": {
-      "name": "EK-08: Elektronik Modülü",
+      "name": "EK-08: Electronics Module",
       "category": "elektronik",
       "prerequisites": ["EK-05", "EK-07", "AL-04"],
       "cost": {"k3": 60, "k4": 30},
@@ -1032,7 +1032,7 @@
       "description": "Unlocks Electronics Module Assembly."
     },
     "OT-01": {
-      "name": "OT-01: Hassas Aktüatör",
+      "name": "OT-01: Precision Actuator",
       "category": "otomasyon",
       "prerequisites": ["EL-04", "MK-05", "EK-05"],
       "cost": {"k3": 50},
@@ -1050,7 +1050,7 @@
       "description": "Unlocks Control Unit (PLC) Assembly."
     },
     "OT-03": {
-      "name": "OT-03: Konveyör Hattı",
+      "name": "OT-03: Conveyor Line",
       "category": "otomasyon",
       "prerequisites": ["OT-01"],
       "cost": {"k3": 60},
@@ -1059,7 +1059,7 @@
       "description": "Unlocks Conveyor Line Assembly."
     },
     "OT-04": {
-      "name": "OT-04: Robot Kol",
+      "name": "OT-04: Robot Arm",
       "category": "otomasyon",
       "prerequisites": ["OT-01", "EL-02"],
       "cost": {"k4": 40},
@@ -1068,7 +1068,7 @@
       "description": "Unlocks Robot Arm Assembly."
     },
     "OT-05": {
-      "name": "OT-05: Otomasyon Modülü",
+      "name": "OT-05: Automation Module",
       "category": "otomasyon",
       "prerequisites": ["OT-02", "OT-03", "OT-04", "AL-04"],
       "cost": {"k4": 60},
@@ -1077,7 +1077,7 @@
       "description": "Unlocks Automation Module Assembly."
     },
     "OT-06": {
-      "name": "OT-06: Kurucu Çekirdek",
+      "name": "OT-06: Founding Core",
       "category": "otomasyon",
       "prerequisites": ["DM-08", "MK-08", "EL-08", "EK-08", "OT-05"],
       "cost": {"k4": 100},
@@ -1086,7 +1086,7 @@
       "description": "Unlocks Project Hub, Founding Core Assembly, Main Project: Founding Core."
     },
     "AL-01": {
-      "name": "AL-01: Makine Fabrikası",
+      "name": "AL-01: Machine Factory",
       "category": "altyapi",
       "prerequisites": ["MK-02"],
       "cost": {"k1": 40},
@@ -1095,7 +1095,7 @@
       "description": "Unlocks Machine Factory."
     },
     "AL-02": {
-      "name": "AL-02: Laboratuvar 2",
+      "name": "AL-02: Lab 2",
       "category": "altyapi",
       "prerequisites": ["MK-02", "EL-01", "EK-01"],
       "cost": {"k1": 40},
@@ -1104,7 +1104,7 @@
       "description": "Unlocks Lab 2."
     },
     "AL-03": {
-      "name": "AL-03: Laboratuvar 3",
+      "name": "AL-03: Lab 3",
       "category": "altyapi",
       "prerequisites": ["EK-02", "EL-03"],
       "cost": {"k2": 60},
@@ -1113,7 +1113,7 @@
       "description": "Unlocks Lab 3."
     },
     "AL-04": {
-      "name": "AL-04: Modül Tesisi",
+      "name": "AL-04: Module Plant",
       "category": "altyapi",
       "prerequisites": ["MK-05", "DM-01"],
       "cost": {"k2": 60, "k3": 30},
@@ -1122,7 +1122,7 @@
       "description": "Unlocks Module Plant."
     },
     "AL-05": {
-      "name": "AL-05: Laboratuvar 4",
+      "name": "AL-05: Lab 4",
       "category": "altyapi",
       "prerequisites": ["EL-04", "EK-04", "DM-04"],
       "cost": {"k3": 80},
@@ -1131,7 +1131,7 @@
       "description": "Unlocks Lab 4."
     },
     "MD-01": {
-      "name": "MD-01: Demir Madeni II",
+      "name": "MD-01: Iron Mine II",
       "category": "maden",
       "prerequisites": [],
       "cost": {"k1": 40},
@@ -1144,10 +1144,10 @@
           "add": 1
         }
       ],
-      "description": "Demir Madeni kurulum sınırı +1."
+      "description": "Iron Mine build limit +1."
     },
     "MD-02": {
-      "name": "MD-02: Kömür Madeni II",
+      "name": "MD-02: Coal Mine II",
       "category": "maden",
       "prerequisites": [],
       "cost": {"k1": 40},
@@ -1160,10 +1160,10 @@
           "add": 1
         }
       ],
-      "description": "Kömür Madeni kurulum sınırı +1."
+      "description": "Coal Mine build limit +1."
     },
     "MD-03": {
-      "name": "MD-03: Bakır Madeni II",
+      "name": "MD-03: Copper Mine II",
       "category": "maden",
       "prerequisites": [],
       "cost": {"k2": 40},
@@ -1176,10 +1176,10 @@
           "add": 1
         }
       ],
-      "description": "Bakır Madeni kurulum sınırı +1."
+      "description": "Copper Mine build limit +1."
     },
     "MD-04": {
-      "name": "MD-04: Kuvars Ocağı II",
+      "name": "MD-04: Quartz Quarry II",
       "category": "maden",
       "prerequisites": [],
       "cost": {"k2": 40},
@@ -1192,10 +1192,10 @@
           "add": 1
         }
       ],
-      "description": "Kuvars Ocağı kurulum sınırı +1."
+      "description": "Quartz Quarry build limit +1."
     },
     "MD-05": {
-      "name": "MD-05: Demir Madeni III",
+      "name": "MD-05: Iron Mine III",
       "category": "maden",
       "prerequisites": ["MD-01"],
       "cost": {"k3": 60},
@@ -1208,10 +1208,10 @@
           "add": 1
         }
       ],
-      "description": "Demir Madeni kurulum sınırı +1."
+      "description": "Iron Mine build limit +1."
     },
     "MD-06": {
-      "name": "MD-06: Kömür Madeni III",
+      "name": "MD-06: Coal Mine III",
       "category": "maden",
       "prerequisites": ["MD-02"],
       "cost": {"k3": 60},
@@ -1224,10 +1224,10 @@
           "add": 1
         }
       ],
-      "description": "Kömür Madeni kurulum sınırı +1."
+      "description": "Coal Mine build limit +1."
     },
     "MD-07": {
-      "name": "MD-07: Bakır Madeni III",
+      "name": "MD-07: Copper Mine III",
       "category": "maden",
       "prerequisites": ["MD-03"],
       "cost": {"k3": 60},
@@ -1240,10 +1240,10 @@
           "add": 1
         }
       ],
-      "description": "Bakır Madeni kurulum sınırı +1."
+      "description": "Copper Mine build limit +1."
     },
     "MD-08": {
-      "name": "MD-08: Kuvars Ocağı III",
+      "name": "MD-08: Quartz Quarry III",
       "category": "maden",
       "prerequisites": ["MD-04"],
       "cost": {"k3": 60},
@@ -1256,10 +1256,10 @@
           "add": 1
         }
       ],
-      "description": "Kuvars Ocağı kurulum sınırı +1."
+      "description": "Quartz Quarry build limit +1."
     },
     "VR-01": {
-      "name": "VR-01: El Becerisi",
+      "name": "VR-01: Dexterity",
       "category": "verim",
       "prerequisites": [],
       "cost": {"k1": 20},
@@ -1268,10 +1268,10 @@
       "effects": [
         {"type": "hand_speed", "add": 0.5}
       ],
-      "description": "El üretimi %50 hızlanır."
+      "description": "Hand crafting 50% faster."
     },
     "VR-02": {
-      "name": "VR-02: Fırın Verimi I",
+      "name": "VR-02: Furnace Speed I",
       "category": "verim",
       "prerequisites": [],
       "cost": {"k1": 40},
@@ -1284,10 +1284,10 @@
           "add": 0.25
         }
       ],
-      "description": "Fırın %25 hızlanır."
+      "description": "Smelter 25% faster."
     },
     "VR-03": {
-      "name": "VR-03: Şekillendirme Hızı",
+      "name": "VR-03: Forming Speed",
       "category": "verim",
       "prerequisites": ["DM-01"],
       "cost": {"k2": 30},
@@ -1300,10 +1300,10 @@
           "add": 0.25
         }
       ],
-      "description": "Haddehane ve Pres %25 hızlanır."
+      "description": "Rolling Mill and Press 25% faster."
     },
     "VR-04": {
-      "name": "VR-04: Atölye Hızı",
+      "name": "VR-04: Workshop Speed",
       "category": "verim",
       "prerequisites": ["MK-01", "DM-02"],
       "cost": {"k2": 40},
@@ -1316,10 +1316,10 @@
           "add": 0.25
         }
       ],
-      "description": "Tezgâh Atölyesi ve Dökümhane %25 hızlanır."
+      "description": "Machine Shop and Foundry 25% faster."
     },
     "VR-05": {
-      "name": "VR-05: Montaj Hızı I",
+      "name": "VR-05: Assembly Speed I",
       "category": "verim",
       "prerequisites": ["MK-04"],
       "cost": {"k3": 40},
@@ -1332,10 +1332,10 @@
           "add": 0.25
         }
       ],
-      "description": "Montaj makineleri ve Tel Sarım %25 hızlanır."
+      "description": "Assembly machines and Wire Winder 25% faster."
     },
     "VR-06": {
-      "name": "VR-06: Fırın Verimi II",
+      "name": "VR-06: Furnace Speed II",
       "category": "verim",
       "prerequisites": ["VR-02"],
       "cost": {"k3": 50},
@@ -1348,10 +1348,10 @@
           "add": 0.25
         }
       ],
-      "description": "Fırın %25 daha hızlanır."
+      "description": "Smelter another 25% faster."
     },
     "VR-07": {
-      "name": "VR-07: Montaj Hızı II",
+      "name": "VR-07: Assembly Speed II",
       "category": "verim",
       "prerequisites": ["VR-05"],
       "cost": {"k4": 60},
@@ -1364,10 +1364,10 @@
           "add": 0.25
         }
       ],
-      "description": "Montaj makineleri ve Tel Sarım %25 daha hızlanır."
+      "description": "Assembly machines and Wire Winder another 25% faster."
     },
     "VR-08": {
-      "name": "VR-08: Fabrika Hızı",
+      "name": "VR-08: Factory Speed",
       "category": "verim",
       "prerequisites": ["AL-01"],
       "cost": {"k3": 40},
@@ -1380,10 +1380,10 @@
           "add": 0.5
         }
       ],
-      "description": "Makine Fabrikası %50 hızlanır."
+      "description": "Machine Factory 50% faster."
     },
     "LJ-01": {
-      "name": "LJ-01: Depo Kapasitesi I",
+      "name": "LJ-01: Storage Capacity I",
       "category": "kapasite",
       "prerequisites": [],
       "cost": {"k1": 30},
@@ -1395,7 +1395,7 @@
       "description": "Depo +100."
     },
     "LJ-02": {
-      "name": "LJ-02: Tampon Kapasitesi I",
+      "name": "LJ-02: Buffer Capacity I",
       "category": "kapasite",
       "prerequisites": [],
       "cost": {"k2": 30},
@@ -1404,10 +1404,10 @@
       "effects": [
         {"type": "buffer", "add": 0.5}
       ],
-      "description": "Makine giriş ve çıkış tamponları %50 büyür."
+      "description": "Machine input and output buffers 50% larger."
     },
     "LJ-03": {
-      "name": "LJ-03: Depo Kapasitesi II",
+      "name": "LJ-03: Storage Capacity II",
       "category": "kapasite",
       "prerequisites": ["LJ-01"],
       "cost": {"k3": 40},
@@ -1419,7 +1419,7 @@
       "description": "Depo +200."
     },
     "LJ-04": {
-      "name": "LJ-04: Tampon Kapasitesi II",
+      "name": "LJ-04: Buffer Capacity II",
       "category": "kapasite",
       "prerequisites": ["LJ-02"],
       "cost": {"k3": 50},
@@ -1428,7 +1428,7 @@
       "effects": [
         {"type": "buffer", "add": 0.5}
       ],
-      "description": "Tamponlar %50 daha büyür."
+      "description": "Buffers another 50% larger."
     }
   },
   "research_tiers": [

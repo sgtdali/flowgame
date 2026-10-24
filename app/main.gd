@@ -41,9 +41,22 @@ func _ready() -> void:
 	if "--smoke-test" in OS.get_cmdline_user_args():
 		_smoke_test.call_deferred()
 
+## Text in Nunito; headings (labels with theme_type_variation "Heading") in Pixelify Sans,
+## which matches the pixel-art icons. Both are OFL fonts in app/fonts.
+static func _font(path: String, weight: int) -> FontVariation:
+	var font := FontVariation.new()
+	font.base_font = load(path)
+	font.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): weight}
+	return font
+
 func _build_theme() -> void:
 	var skin := Theme.new()
 	skin.default_font_size = 14
+	skin.default_font = _font("res://app/fonts/Nunito.ttf", 600)
+	# Counts and other text drawn by hand (_draw) use the fallback font.
+	ThemeDB.fallback_font = _font("res://app/fonts/Nunito.ttf", 800)
+	skin.set_type_variation("Heading", "Label")
+	skin.set_font("font", "Heading", _font("res://app/fonts/PixelifySans.ttf", 500))
 	skin.set_color("font_color", "Label", INK)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		skin.set_color(state, "Button", INK)
@@ -112,24 +125,25 @@ func _build_ui() -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
 	header.add_child(head)
-	var brand := _label("FLOWGAME", 18, TEAL)
+	var brand := _label("FLOWGAME", 20, TEAL)
+	brand.theme_type_variation = "Heading"
 	head.add_child(brand)
 	var sep1 := VSeparator.new()
 	head.add_child(sep1)
-	research_button = _button("🔬 Araştırma Ağacı", _toggle_research_panel, head)
-	unlock_button = _button("Serbest Mod", _unlock_all_sandbox, head)
-	unlock_button.tooltip_text = "Tüm 24 ürünü ve makineleri hemen denemek için kilitleri açar."
+	research_button = _button("🔬 Research Tree", _toggle_research_panel, head)
+	unlock_button = _button("Sandbox", _unlock_all_sandbox, head)
+	unlock_button.tooltip_text = "Unlocks every product and machine so you can try them right away."
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
-	pause_button = _button("Duraklat", _toggle_pause, head)
+	pause_button = _button("Pause", _toggle_pause, head)
 	speed_button = _button("1×", _toggle_speed, head)
 	var sep2 := VSeparator.new()
 	head.add_child(sep2)
-	_button("Ortala", _frame_graph, head)
-	_button("Kaydet", _save_game, head)
-	_button("Yükle", _load_game, head)
-	_button("Sıfırla", _demo, head).tooltip_text = "Oyunu boş tuval ve başlangıç kitiyle yeniden başlatır."
+	_button("Center", _frame_graph, head)
+	_button("Save", _save_game, head)
+	_button("Load", _load_game, head)
+	_button("Reset", _demo, head).tooltip_text = "Restarts with an empty canvas and the starting kit."
 	var workspace := HBoxContainer.new()
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 0)
@@ -194,7 +208,7 @@ func _build_ui() -> void:
 	var foot_spacer := Control.new()
 	foot_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(foot_spacer)
-	message = _label("I / C: envanter ve üretim · 1-0: hızlı erişim · Çıkışa tıkla: envantere al · Sağ tık: makine menüsü", 12, MUTED)
+	message = _label("I / C: inventory and crafting · 1-0: quick bar · Click an output: take to inventory · Right-click: machine menu", 12, MUTED)
 	bottom.add_child(message)
 	recipe_picker = RecipePicker.new()
 	add_child(recipe_picker)
@@ -221,21 +235,21 @@ func _toggle_research_panel() -> void:
 
 func _select_research(tech_id: String) -> void:
 	if not sim.set_active_research(tech_id):
-		message.text = "Bu araştırma henüz seçilemez; ön koşulları tamamlanmalı."
+		message.text = "This research isn't available yet; finish its prerequisites first."
 		return
 	research_panel.refresh(sim)
 	_refresh()
-	message.text = "Aktif araştırma: %s" % sim.catalog.researches[tech_id].name
+	message.text = "Active research: %s" % sim.catalog.researches[tech_id].name
 
 func _unlock_all_sandbox() -> void:
 	sim.unlock_all()
 	research_panel.refresh(sim)
 	_refresh()
-	message.text = "Serbest mod: 24 ürünün tüm makineleri ve reçeteleri açıldı."
+	message.text = "Sandbox: every machine and recipe is unlocked."
 
 func _change_machine_recipe(id: String, recipe_id: String) -> void:
 	if not sim.is_recipe_unlocked(recipe_id):
-		message.text = "Bu reçete henüz kilitli."
+		message.text = "This recipe is still locked."
 		return
 	if not sim.set_recipe(id, recipe_id):
 		return
@@ -243,12 +257,12 @@ func _change_machine_recipe(id: String, recipe_id: String) -> void:
 	_sync_graph_connections()
 	_select_card(id)
 	_refresh()
-	message.text = "Reçete: %s" % sim.catalog.recipes[recipe_id].get("name", recipe_id)
+	message.text = "Recipe: %s" % sim.catalog.recipes[recipe_id].get("name", recipe_id)
 
 func _take_all(id: String) -> void:
 	var count := sim.take_all(id)
 	_refresh()
-	message.text = "+%d ürün envantere alındı." % count if count > 0 else "Alınacak ürün yok."
+	message.text = "+%d items taken to inventory." % count if count > 0 else "Nothing to take."
 
 func _take_product(id: String, product: String) -> void:
 	var count := sim.take(id, product)
@@ -261,7 +275,7 @@ func _deposit(id: String, product: String) -> void:
 	var count := sim.deposit(id, product, 1 if Input.is_key_pressed(KEY_SHIFT) else -1)
 	_refresh()
 	if count > 0:
-		message.text = "%d %s makineye kondu." % [count, sim.product_name(product)]
+		message.text = "%d %s put into the machine." % [count, sim.product_name(product)]
 
 func _craft(type: String, id: String, count: int) -> void:
 	var queued := 0
@@ -270,14 +284,14 @@ func _craft(type: String, id: String, count: int) -> void:
 			queued += 1
 	_refresh()
 	if queued == 0:
-		message.text = "Üretilemez: malzeme eksik, kilitli ya da sınıra ulaşıldı."
+		message.text = "Can't craft: missing materials, locked or at the limit."
 
 func _toggle_inventory() -> void:
 	craft_screen.toggle()
 
 func _pin(key: String, slot: int) -> void:
 	if not sim.pin(key, slot):
-		message.text = "Hızlı erişim dolu: önce bir yuvayı sağ tıkla boşalt."
+		message.text = "Quick bar is full: right-click a slot to free it first."
 	_refresh()
 
 func _unpin(slot: int) -> void:
@@ -293,29 +307,29 @@ func _add_at_view(kind: String) -> void:
 
 func _add_at_view_with_recipe(kind: String, recipe_id: String) -> void:
 	if not sim.is_machine_unlocked(kind):
-		message.text = "Bu makine henüz kilitli."
+		message.text = "This machine is still locked."
 		return
 	if not sim.can_build(kind):
-		message.text = "%s sınırına ulaşıldı (en fazla %d)." % [sim.catalog.machines[kind].name, sim.build_limit(kind)]
+		message.text = "%s limit reached (at most %d)." % [sim.catalog.machines[kind].name, sim.build_limit(kind)]
 		return
 	var placed := sim.place_machine(kind, recipe_id)
 	if placed.is_empty():
-		message.text = "Envanterde %s yok; C ile üret." % sim.catalog.machines[kind].name
+		message.text = "No %s in the inventory; craft one with C." % sim.catalog.machines[kind].name
 		return
 	var pos := (graph.scroll_offset + graph.size * 0.35) / graph.zoom
 	var id := _add_card(kind, pos + Vector2(cards.size() % 4 * 28, cards.size() % 3 * 24), placed)
 	_select_card(id)
 	_refresh()
-	message.text = "%s eklendi." % sim.catalog.machines[kind].name
+	message.text = "%s added." % sim.catalog.machines[kind].name
 	if sim.recipe_mode(kind) == "choose" and recipe_id.is_empty():
 		recipe_picker.show_machine(sim, id)
 
 func _spawn_supplier(target_id: String, product: String, supplier_kind: String, supplier_recipe: String) -> void:
 	if not cards.has(target_id) or not sim.is_machine_unlocked(supplier_kind) or not sim.is_recipe_unlocked(supplier_recipe):
-		message.text = "Bu üretici makine veya reçete henüz kilitli."
+		message.text = "That supplier machine or recipe is still locked."
 		return
 	if not sim.can_place(supplier_kind):
-		message.text = "Envanterde %s yok ya da sınıra ulaşıldı." % sim.catalog.machines[supplier_kind].name
+		message.text = "No %s in the inventory, or its limit is reached." % sim.catalog.machines[supplier_kind].name
 		return
 	var target_node: GraphNode = cards[target_id].node
 	var in_idx := sim.input_products(target_id).find(product)
@@ -339,7 +353,7 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 		sim.add_link(supplier_id, target_id, out_port, in_port)
 		_sync_graph_connections()
 	_refresh()
-	message.text = "%s (%s) kuruldu ve %s girişine bağlandı." % [
+	message.text = "%s (%s) placed and linked to the %s input." % [
 		sim.catalog.machines[supplier_kind].name,
 		sim.catalog.products[product].name,
 		sim.catalog.machines[sim.machines[target_id].kind].name
@@ -448,12 +462,12 @@ func _sync_graph_connections() -> void:
 
 func _connect_cards(from: StringName, from_port: int, to: StringName, to_port: int) -> void:
 	if not sim.add_link(str(from), str(to), from_port, to_port):
-		message.text = "Bağlanamadı: çıkış ve giriş aynı ürün olmalı."
+		message.text = "Can't link: output and input must be the same product."
 		return
 	_sync_graph_connections()
 	# Linking into an auto machine can settle its recipe and change its ports.
 	_refresh.call_deferred()
-	message.text = "Bağlantı kuruldu (K-006 eşit paylaşım)."
+	message.text = "Linked (output is shared evenly)."
 
 func _disconnect_cards(from: StringName, from_port: int, to: StringName, to_port: int) -> void:
 	sim.remove_link(str(from), str(to), from_port, to_port)
@@ -472,7 +486,7 @@ func _delete_cards(ids: Array[StringName]) -> void:
 		cards.erase(id)
 	_sync_graph_connections()
 	_sync_selection()
-	message.text = "Makine envantere kaldırıldı."
+	message.text = "Machine moved to inventory."
 	_refresh()
 
 func _clear_cards() -> void:
@@ -488,11 +502,11 @@ func _demo() -> void:
 	sim = Simulation.new()
 	last_completed_count = 0
 	paused = false
-	pause_button.text = "Duraklat"
+	pause_button.text = "Pause"
 	graph.scroll_offset = Vector2.ZERO
 	graph.zoom = 1.0
 	_select_card("")
-	message.text = "Tuval boş: C ile makine üret, hızlı erişimden (1-0) ya da envanterden (I) yerleştir."
+	message.text = "The canvas is empty: craft a machine with C, then place it from the quick bar (1-0) or the inventory (I)."
 	_refresh()
 
 ## The old starting network: mines → two smelters (iron, steel) → two mills → press → lab 1.
@@ -524,7 +538,7 @@ func _toggle_machine(id: String) -> void:
 		return
 	sim.machines[id].enabled = not sim.machines[id].enabled
 	var m: Dictionary = sim.machines[id]
-	m.status = ("İşleniyor" if m.enabled else "İşleniyor · duracak") if m.running else ("Hazır" if m.enabled else "Durduruldu")
+	m.status = ("Working" if m.enabled else "Working · will stop") if m.running else ("Ready" if m.enabled else "Stopped")
 	_refresh()
 
 func _change_machine_speed(id: String) -> void:
@@ -533,7 +547,7 @@ func _change_machine_speed(id: String) -> void:
 
 func _toggle_pause() -> void:
 	paused = not paused
-	pause_button.text = "Devam" if paused else "Duraklat"
+	pause_button.text = "Resume" if paused else "Pause"
 
 func _toggle_speed() -> void:
 	time_scale = 4.0 if time_scale == 1.0 else 1.0
@@ -559,25 +573,25 @@ func _refresh() -> void:
 		last_completed_count = sim.completed_researches.size()
 		var latest := str(sim.completed_researches.back()) if not sim.completed_researches.is_empty() else ""
 		if not latest.is_empty():
-			message.text = "✓ %s tamamlandı! Yeni makineler ve reçeteler açıldı." % sim.catalog.researches[latest].name
+			message.text = "✓ %s complete! New machines and recipes unlocked." % sim.catalog.researches[latest].name
 	for id in cards:
 		var machine: Dictionary = sim.machines[id]
 		var view: Dictionary = cards[id]
 		if view.node.has_method("set_simulation_playback"):
 			view.node.set_simulation_playback(paused, time_scale)
 		view.node.update_from_sim(sim, id)
-	var active_text := "Tüm araştırmalar tamamlandı"
+	var active_text := "All research complete"
 	if sim.can_research(sim.active_research):
 		var percent := roundi(sim.research_fraction(sim.active_research) * 100.0)
-		active_text = "%s (%%%d)" % [sim.catalog.researches[sim.active_research].name, percent]
-		research_button.text = "🔬 %s  %%%d" % [sim.active_research, percent]
+		active_text = "%s (%d%%)" % [sim.catalog.researches[sim.active_research].name, percent]
+		research_button.text = "🔬 %s  %d%%" % [sim.active_research, percent]
 	elif sim.completed_researches.size() < sim.catalog.researches.size():
-		active_text = "%s bitti — Yeni hedef seç" % sim.active_research
-		research_button.text = "🔬 Hedef Seç (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
+		active_text = "%s done — choose a new goal" % sim.active_research
+		research_button.text = "🔬 Choose goal (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
 	else:
-		research_button.text = "🔬 Araştırmalar (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
+		research_button.text = "🔬 Research (%d/%d)" % [sim.completed_researches.size(), sim.catalog.researches.size()]
 	var whole_seconds := int(sim.elapsed + Simulation.EPSILON)
-	summary.text = "⏱ %02d:%02d   ·   %d Makine / %d Hat   ·   %s   ·   Teknoloji: %d/%d" % [
+	summary.text = "⏱ %02d:%02d   ·   %d Machines / %d Links   ·   %s   ·   Tech: %d/%d" % [
 		whole_seconds / 60, whole_seconds % 60, cards.size(), sim.links.size(),
 		active_text, sim.completed_researches.size(), sim.catalog.researches.size()
 	]
@@ -588,20 +602,20 @@ func _refresh() -> void:
 func _save_game() -> void:
 	var file := FileAccess.open(storage_path, FileAccess.WRITE)
 	if file == null:
-		message.text = "Kayıt yazılamadı: %s" % error_string(FileAccess.get_open_error())
+		message.text = "Couldn't write the save: %s" % error_string(FileAccess.get_open_error())
 		return
 	file.store_string(JSON.stringify(sim.snapshot(), "\t"))
 	file.close()
-	message.text = "Oyun kaydedildi."
+	message.text = "Game saved."
 
 func _load_game() -> void:
 	if not FileAccess.file_exists(storage_path):
-		message.text = "Henüz kayıt yok."
+		message.text = "No save yet."
 		return
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(storage_path))
 	var restored := Simulation.new()
 	if not data is Dictionary or not restored.restore(data):
-		message.text = "Kayıt bozuk veya uyumsuz."
+		message.text = "The save is damaged or incompatible."
 		return
 	var previous_selection := selected_id
 	_clear_cards()
@@ -615,7 +629,7 @@ func _load_game() -> void:
 		_select_card(previous_selection)
 	_frame_graph.call_deferred()
 	_refresh()
-	message.text = "Kayıt yüklendi."
+	message.text = "Save loaded."
 
 func _smoke_test() -> void:
 	assert(cards.is_empty() and sim.machines.is_empty(), "Oyun boş tuvalle başlamalı")
@@ -626,7 +640,7 @@ func _smoke_test() -> void:
 		get_viewport().get_texture().get_image().save_png("res://artifacts/start-empty.png")
 	build_sample_network()
 	paused = true
-	pause_button.text = "Devam"
+	pause_button.text = "Resume"
 	storage_path = "user://smoke-state.json"
 	sim.advance(180.0)
 	_refresh()

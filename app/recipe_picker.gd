@@ -43,7 +43,8 @@ func build() -> void:
 	box.add_theme_constant_override("separation", 10)
 	dialog.add_child(box)
 	_title = Label.new()
-	_title.add_theme_font_size_override("font_size", 15)
+	_title.add_theme_font_size_override("font_size", 16)
+	_title.theme_type_variation = "Heading"
 	_title.add_theme_color_override("font_color", INK)
 	box.add_child(_title)
 	var grid_panel := PanelContainer.new()
@@ -77,7 +78,7 @@ func show_machine(sim: RefCounted, id: String) -> void:
 		var tile := Button.new()
 		tile.custom_minimum_size = Vector2(48, 48)
 		tile.disabled = not unlocked
-		tile.tooltip_text = str(recipe.get("name", r_id)) if unlocked else "Kilitli: %s" % sim.unlock_tech_for_recipe(r_id)
+		tile.tooltip_text = str(recipe.get("name", r_id)) if unlocked else "Locked: %s" % sim.unlock_tech_for_recipe(r_id)
 		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if unlocked else Control.CURSOR_FORBIDDEN
 		for state in ["normal", "disabled", "focus"]:
 			tile.add_theme_stylebox_override(state, _box(Color("f3e6cc") if current else Color("ece6da"), Color("b98330") if current else Color("cfc6b3"), 2 if current else 1, 4))
@@ -115,7 +116,7 @@ func _show_recipe(r_id: String) -> void:
 	for product in recipe.outputs:
 		_preview.add_child(Icons.Slot.new(Icons.product(_sim, str(product)), int(recipe.outputs[product])))
 	var time := Label.new()
-	time.text = "  %.1f sn" % (float(recipe.work) / _sim.effective_speed(target_id))
+	time.text = "  %.1f s" % (float(recipe.work) / _sim.effective_speed(target_id))
 	time.add_theme_font_size_override("font_size", 12)
 	time.add_theme_color_override("font_color", MUTED)
 	_preview.add_child(time)

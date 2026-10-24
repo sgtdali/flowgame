@@ -14,15 +14,15 @@ const TEAL := Color("4f9a8a")
 const GOLD := Color("b98330")
 ## Lane order, title and accent colour.
 const CATEGORIES := [
-	{"id": "metalurji", "name": "Demir ve hidrolik", "color": Color("b0663f")},
-	{"id": "mekanik", "name": "Çelik ve mekanik", "color": Color("b98330")},
-	{"id": "elektrik", "name": "Bakır ve elektrik", "color": Color("c77a3a")},
-	{"id": "elektronik", "name": "Kuvars ve elektronik", "color": Color("3f8fb0")},
-	{"id": "otomasyon", "name": "Otomasyon ve final", "color": Color("8a6cc4")},
-	{"id": "altyapi", "name": "Altyapı ve laboratuvar", "color": Color("4f9a8a")},
-	{"id": "maden", "name": "Maden genişletme", "color": Color("6a9fb3")},
-	{"id": "verim", "name": "Verim", "color": Color("c96f45")},
-	{"id": "kapasite", "name": "Kapasite", "color": Color("7d8a93")},
+	{"id": "metalurji", "name": "Iron and hydraulics", "color": Color("b0663f")},
+	{"id": "mekanik", "name": "Steel and mechanics", "color": Color("b98330")},
+	{"id": "elektrik", "name": "Copper and electrics", "color": Color("c77a3a")},
+	{"id": "elektronik", "name": "Quartz and electronics", "color": Color("3f8fb0")},
+	{"id": "otomasyon", "name": "Automation and final", "color": Color("8a6cc4")},
+	{"id": "altyapi", "name": "Infrastructure and labs", "color": Color("4f9a8a")},
+	{"id": "maden", "name": "Mine expansion", "color": Color("6a9fb3")},
+	{"id": "verim", "name": "Speed", "color": Color("c96f45")},
+	{"id": "kapasite", "name": "Capacity", "color": Color("7d8a93")},
 ]
 const LANE_W := 140.0
 const COL_W := 226.0
@@ -100,7 +100,9 @@ func build(catalog: Dictionary) -> void:
 	var title_box := VBoxContainer.new()
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title_box)
-	title_box.add_child(_label("Teknoloji ağacı", 20, INK))
+	var title := _label("Technology tree", 22, INK)
+	title.theme_type_variation = "Heading"
+	title_box.add_child(title)
 	status_label = _label("", 13, MUTED)
 	title_box.add_child(status_label)
 	# Point store: what the labs have produced and no research has spent yet.
@@ -112,7 +114,7 @@ func build(catalog: Dictionary) -> void:
 		var chip := _chip(catalog, str(t.id), 0)
 		chip.get_node("Amount").add_theme_font_size_override("font_size", 15)
 		chip.get_child(0).custom_minimum_size = Vector2(12, 12)
-		chip.tooltip_text = "%s puan deposu" % t.name
+		chip.tooltip_text = "%s point storage" % t.name
 		store.add_child(chip)
 		store_chips[str(t.id)] = chip
 	unlock_all_button = Button.new()
@@ -121,7 +123,7 @@ func build(catalog: Dictionary) -> void:
 	unlock_all_button.pressed.connect(func() -> void: unlock_all_requested.emit())
 	header.add_child(unlock_all_button)
 	var close_btn := Button.new()
-	close_btn.text = "Kapat"
+	close_btn.text = "Close"
 	close_btn.custom_minimum_size = Vector2(84, 34)
 	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
@@ -198,7 +200,7 @@ func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
 		machines.append(str(catalog.machines[kind].name))
 	var recipes: int = spec.get("unlock_recipes", []).size()
 	if recipes > 0:
-		machines.append("+%d reçete" % recipes)
+		machines.append("+%d recipes" % recipes)
 	var unlocks := " · ".join(machines)
 	# Upgrades (more mines, speed, capacity) open nothing; show what they do instead.
 	if unlocks.is_empty():
@@ -263,11 +265,11 @@ func _style(view: Dictionary, background: Color, border: Color, width: int) -> v
 func refresh(sim: RefCounted) -> void:
 	if not visible:
 		return
-	status_label.text = "%d / %d tamamlandı  ·  Aktif: %s" % [sim.completed_researches.size(), sim.catalog.researches.size(),
-		sim.active_research if sim.can_research(sim.active_research) else "seçilmedi"]
+	status_label.text = "%d / %d complete  ·  Active: %s" % [sim.completed_researches.size(), sim.catalog.researches.size(),
+		sim.active_research if sim.can_research(sim.active_research) else "none"]
 	for tier in store_chips:
 		store_chips[tier].get_node("Amount").text = str(int(sim.research_points.get(tier, 0)))
-	unlock_all_button.text = "Serbest mod açık" if sim.sandbox_mode else "Serbest mod"
+	unlock_all_button.text = "Sandbox on" if sim.sandbox_mode else "Sandbox"
 	unlock_all_button.disabled = sim.sandbox_mode
 	for tech_id in cards:
 		var view: Dictionary = cards[tech_id]

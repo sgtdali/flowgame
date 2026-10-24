@@ -37,18 +37,18 @@ func show_machine(sim: RefCounted, id: String, at: Vector2) -> void:
 	var spec: Dictionary = sim.catalog.machines[machine.kind]
 	add_separator(str(spec.name))
 	if sim.is_lab(str(machine.kind)):
-		add_item("Araştırma hedefi seç", RESEARCH)
+		add_item("Choose research goal", RESEARCH)
 		add_separator()
 	elif sim.recipe_mode(str(machine.kind)) == "choose":
-		add_item("Ne üretilsin?", RECIPE)
+		add_item("Choose recipe", RECIPE)
 		add_separator()
-	add_item("Durdur" if machine.enabled else "Çalıştır", TOGGLE)
+	add_item("Stop" if machine.enabled else "Run", TOGGLE)
 	if not sim.is_storage(str(machine.kind)):
-		add_item("Hız: %d → %d iş/sn" % [int(machine.speed), 40 if float(machine.speed) == 20.0 else 20], SPEED)
+		add_item("Speed: %d → %d work/s" % [int(machine.speed), 40 if float(machine.speed) == 20.0 else 20], SPEED)
 	if not sim.output_products(id).is_empty() or sim.is_storage(str(machine.kind)):
-		add_item("Envantere al", TAKE)
+		add_item("Take to inventory", TAKE)
 	add_separator()
-	add_item("Kaldır (envantere)", DELETE)
+	add_item("Remove (to inventory)", DELETE)
 	_open(at)
 
 ## Producers that can feed `product` into `id`; locked ones are listed but disabled.
@@ -62,7 +62,7 @@ func show_suppliers(sim: RefCounted, id: String, product: String, at: Vector2) -
 		# An open input lists producers for everything the machine could still take.
 		products = sim.recipe_input_union(str(sim.machines[id].kind)).filter(func(p: String) -> bool:
 			return sim.accepts_new_input(id, p) and not sim.is_input_linked(id, p))
-	add_separator("Üretici kur" if product == sim.ANY else "%s üreticisi kur" % sim.product_name(product))
+	add_separator("Build supplier" if product == sim.ANY else "Build %s supplier" % sim.product_name(product))
 	for p in products:
 		for info in sim.producers_for(str(p)):
 			var index := item_count

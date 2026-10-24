@@ -181,7 +181,7 @@ func recipe_input_union(kind: String) -> Array:
 	return products
 
 func product_name(product: String) -> String:
-	return "Herhangi bir girdi" if product == ANY else str(catalog.products[product].name)
+	return "Any input" if product == ANY else str(catalog.products[product].name)
 
 func product_color(product: String) -> Color:
 	return Color("7f99aa") if product == ANY else Color(catalog.products[product].color)
@@ -495,7 +495,7 @@ func add_machine(kind: String, recipe_override: String = "") -> String:
 		"kind": kind, "recipe": recipe_id, "speed": float(spec.speed),
 		"enabled": true, "running": false, "remaining": 0.0,
 		"input": inputs, "output": outputs, "completed": 0,
-		"received": 0, "status": "Hazır", "position": [0.0, 0.0]
+		"received": 0, "status": "Ready", "position": [0.0, 0.0]
 	}
 	return id
 
@@ -521,7 +521,7 @@ func set_recipe(id: String, recipe_id: String) -> bool:
 	machine.remaining = 0.0
 	machine.input = new_inputs
 	machine.output = new_outputs
-	machine.status = "Hazır" if machine.enabled else "Durduruldu"
+	machine.status = "Ready" if machine.enabled else "Stopped"
 	links = links.filter(func(link: Dictionary) -> bool:
 		if link.from == id and not new_recipe.outputs.has(link.product):
 			return false
@@ -596,7 +596,7 @@ func producers_for(product: String) -> Array:
 			var in_parts: PackedStringArray = []
 			for in_p in r_spec.inputs:
 				in_parts.append("%d %s" % [int(r_spec.inputs[in_p]), catalog.products[in_p].name.to_lower()])
-			var inputs_str := "Hammadde çıkarımı" if in_parts.is_empty() else " + ".join(in_parts)
+			var inputs_str := "Raw extraction" if in_parts.is_empty() else " + ".join(in_parts)
 			var m_unlocked := is_machine_unlocked(str(kind))
 			var r_unlocked := is_recipe_unlocked(r_id)
 			var req_tech := unlock_tech_for_recipe(r_id)
@@ -619,11 +619,11 @@ func machine_outputs_summary(kind: String) -> String:
 	if not catalog.machines.has(kind):
 		return ""
 	if is_lab(kind):
-		return "Araştırma puanı üretir"
+		return "Makes research points"
 	if kind == "project_hub":
-		return "Ana proje parçalarını tüketir"
+		return "Consumes main project parts"
 	if kind == "scrap_disposal":
-		return "Fazla metal talaşını eritir"
+		return "Melts surplus metal scrap"
 	var m_spec: Dictionary = catalog.machines[kind]
 	var names: PackedStringArray = []
 	for r_var in m_spec.get("recipes", [m_spec.recipe]):
@@ -635,7 +635,7 @@ func machine_outputs_summary(kind: String) -> String:
 		var p_name: String = str(catalog.products[primary].name)
 		if not (p_name in names):
 			names.append(p_name)
-	return "Üretir: " + " · ".join(names) if not names.is_empty() else str(m_spec.get("role", ""))
+	return "Makes: " + " · ".join(names) if not names.is_empty() else str(m_spec.get("role", ""))
 
 func product_tooltip(product: String) -> String:
 	if not catalog.products.has(product):
@@ -644,13 +644,13 @@ func product_tooltip(product: String) -> String:
 	var producers := producers_for(product)
 	if producers.is_empty():
 		if product == "metal_scrap":
-			return "Metal talaşı (Yan ürün)\nTorna ve CNC tezgâhında işleme sırasında yan ürün olarak çıkar.\nÇelik fırınında Çelik külçeye geri kazanılır."
+			return "Metal Scrap (by-product)\nComes off machining in the Machine Shop.\nThe Smelter recovers it into Steel Ingot."
 		return p_name
-	var lines: PackedStringArray = ["%s — Nerede üretilir?" % p_name]
+	var lines: PackedStringArray = ["%s — where is it made?" % p_name]
 	for info in producers:
 		var lock_tag := "" if info.unlocked else " [Kilitli: %s]" % info.unlock_tech
 		lines.append("• %s: %s → %d %s%s" % [info.machine_name, info.inputs_text, info.output_amount, p_name.to_lower(), lock_tag])
-	lines.append("(Karta tıklayıp sağ panelden tek tıkla üretici makine kurup bağlayabilirsin)")
+	lines.append("(Click a card to build and link a supplier in one click)")
 	return "\n".join(lines)
 
 func add_link(from: String, to: String, from_port: int = -1, to_port: int = -1) -> bool:
@@ -791,23 +791,23 @@ func _complete_research(tech_id: String) -> void:
 func _start(id: String) -> bool:
 	var machine: Dictionary = machines[id]
 	if not machine.enabled:
-		machine.status = "Durduruldu"
+		machine.status = "Stopped"
 		return false
 	var recipe: Dictionary = recipe_for(id)
 	var spec: Dictionary = catalog.machines[machine.kind]
 	for product in recipe.inputs:
 		if int(machine.input.get(product, 0)) < int(recipe.inputs[product]):
-			machine.status = "Girdi bekliyor"
+			machine.status = "Waiting for input"
 			return false
 	for product in recipe.outputs:
 		if int(machine.output.get(product, 0)) + int(recipe.outputs[product]) > capacity(str(machine.kind), "output"):
-			machine.status = "Çıkış tamponu dolu"
+			machine.status = "Output buffer full"
 			return false
 	for product in recipe.inputs:
 		machine.input[product] -= int(recipe.inputs[product])
 	machine.running = true
 	machine.remaining = float(recipe.work)
-	machine.status = "İşleniyor"
+	machine.status = "Working"
 	return true
 
 func _process_machine(id: String, delta: float) -> void:
@@ -829,7 +829,7 @@ func _process_machine(id: String, delta: float) -> void:
 			machine.remaining = 0.0
 			for tier in recipe.get("research_points", {}):
 				research_points[tier] = int(research_points.get(tier, 0)) + int(recipe.research_points[tier])
-			machine.status = "Çevrim tamamlandı"
+			machine.status = "Cycle complete"
 
 func _transfer() -> void:
 	# K-006: Her üretici çıkışındaki her ürün kendi adil sırasıyla dağıtılır.

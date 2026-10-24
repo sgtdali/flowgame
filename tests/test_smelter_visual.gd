@@ -35,7 +35,7 @@ func _run() -> void:
 		card = main.cards[id].node
 		assert(card.get_input_port_count() == main.sim.input_products(id).size())
 		assert(card.get_output_port_type(0) == main.sim.product_port_type(main.sim.output_product(id)))
-		assert(card.rate_label.text == ("15/dk" if recipe == "insulator" else "40/dk"))
+		assert(card.rate_label.text == ("15/min" if recipe == "insulator" else "40/min"))
 	main._select_card(id)
 	main.graph.zoom = 1.0
 	main.graph.scroll_offset = Vector2(0, -10)

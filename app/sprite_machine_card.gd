@@ -110,16 +110,16 @@ class StatusIcon extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		match state:
-			"İşleniyor", "Son deney sürüyor":
+			"Working", "Last experiment running":
 				draw_circle(c, 4.0, TEAL)
-			"Girdi bekliyor", "Ön koşul bekliyor":
+			"Waiting for input", "Waiting for prerequisite":
 				# hourglass
 				draw_colored_polygon(PackedVector2Array([c + Vector2(-5, -6), c + Vector2(5, -6), c, c + Vector2(5, 6), c + Vector2(-5, 6)]), GOLD)
-			"Çıkış tamponu dolu":
+			"Output buffer full":
 				# full crate with an up arrow
 				draw_rect(Rect2(c + Vector2(-6, -2), Vector2(12, 8)), GOLD)
 				draw_colored_polygon(PackedVector2Array([c + Vector2(-4, -3), c + Vector2(0, -7), c + Vector2(4, -3)]), GOLD)
-			"Durduruldu", "Oyun duraklatıldı":
+			"Stopped", "Game paused":
 				draw_rect(Rect2(c + Vector2(-4, -4), Vector2(8, 8)), MUTED)
 			_:
 				draw_circle(c, 4.0, MUTED)
@@ -198,7 +198,8 @@ func _build(accent: Color) -> void:
 	add_theme_color_override("title_color", INK)
 	var title_label := get_titlebar_hbox().get_child(0) as Label
 	if title_label != null:
-		title_label.add_theme_font_size_override("font_size", 13)
+		title_label.add_theme_font_size_override("font_size", 14)
+		title_label.theme_type_variation = "Heading"
 	header_icon = TextureRect.new()
 	header_icon.custom_minimum_size = Vector2(16, 16)
 	header_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
@@ -268,7 +269,7 @@ func _show_target(sim: RefCounted, id: String) -> void:
 	if sim.recipe_mode(kind) == "auto" and sim.linked_inputs(id).is_empty():
 		target_icon.visible = false
 		target_label.text = "?"
-		chip.tooltip_text = "Bağlanan ya da konan ürüne göre belirlenir"
+		chip.tooltip_text = "Set by the product linked or put in"
 	elif product.is_empty():
 		target_icon.visible = false
 		target_label.text = str(sim.recipe_for(id).get("name", ""))
@@ -277,7 +278,7 @@ func _show_target(sim: RefCounted, id: String) -> void:
 		target_icon.texture = Icons.product(sim, product)
 		target_icon.visible = true
 		target_label.text = sim.product_name(product)
-		chip.tooltip_text = "Üretiyor: %s" % target_label.text
+		chip.tooltip_text = "Making: %s" % target_label.text
 
 func set_header_icon(texture: Texture2D) -> void:
 	header_icon.texture = texture
@@ -405,7 +406,7 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 		add.add_theme_font_size_override("font_size", 20)
 		add.add_theme_color_override("font_color", TEAL)
 		add.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		add.tooltip_text = "Üretici kur" if gauge.open else "%s üreticisi kur" % sim.product_name(product)
+		add.tooltip_text = "Build supplier" if gauge.open else "Build %s supplier" % sim.product_name(product)
 		add.pressed.connect(func() -> void: supplier_requested.emit(card_id, product, add.global_position + Vector2(0, add.size.y)))
 		gauge.add_child(add)
 		gauge.add_button = add
@@ -420,13 +421,13 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 	var recipe: Dictionary = sim.recipe_for(id)
 	var product: String = sim.output_product(id)
 	var seconds: float = float(recipe.work) / sim.effective_speed(id)
-	rate_label.text = "%.0f/dk" % (int(recipe.outputs.get(product, 1)) * 60.0 / seconds)
+	rate_label.text = "%.0f/min" % (int(recipe.outputs.get(product, 1)) * 60.0 / seconds)
 	# Labs make research points instead of goods: their rate takes the tier colour.
 	for tier in recipe.get("research_points", {}):
 		for t in sim.catalog.get("research_tiers", []):
 			if str(t.id) == str(tier):
 				rate_label.add_theme_color_override("font_color", Color(t.color))
-				rate_label.tooltip_text = "%s puanı/dk" % t.name
+				rate_label.tooltip_text = "%s per min" % t.name
 	var details := PackedStringArray([str(spec.name), str(recipe.name), str(machine.status)])
 	for input in input_gauges:
 		var gauge: PortGauge = input_gauges[input]
@@ -435,17 +436,17 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		gauge.amount = int(recipe.inputs.get(input, 1))
 		gauge.add_button.visible = not _storage and (gauge.open or not sim.is_input_linked(id, input))
 		if gauge.open and _storage:
-			gauge.tooltip_text = "Her ürün bağlanabilir"
+			gauge.tooltip_text = "Any product can be linked"
 		elif gauge.open:
 			var accepted := PackedStringArray()
 			for product_id in sim.recipe_input_union(kind):
 				if sim.accepts_new_input(id, product_id) and not sim.is_input_linked(id, product_id):
 					accepted.append(sim.product_name(product_id))
-			gauge.tooltip_text = "Bağlanabilir: %s" % ", ".join(accepted)
+			gauge.tooltip_text = "Can link: %s" % ", ".join(accepted)
 		else:
 			gauge.tooltip_text = "%s %d/%d" % [sim.product_name(input), gauge.count, gauge.capacity]
 			if _storage:
-				gauge.tooltip_text += "\nTıkla: envantere al"
+				gauge.tooltip_text += "\nClick: take to inventory"
 		details.append(gauge.tooltip_text)
 		gauge.queue_redraw()
 	for output in output_gauges:
@@ -453,7 +454,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		gauge.count = int(machine.output.get(output, 0))
 		gauge.capacity = sim.capacity(str(machine.kind), "output")
 		gauge.amount = int(recipe.outputs.get(output, 1))
-		gauge.tooltip_text = "%s %d/%d\nTıkla: envantere al" % [sim.product_name(output), gauge.count, gauge.capacity]
+		gauge.tooltip_text = "%s %d/%d\nClick: take to inventory" % [sim.product_name(output), gauge.count, gauge.capacity]
 		details.append(gauge.tooltip_text)
 		gauge.queue_redraw()
 	if _storage:
@@ -461,22 +462,22 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		for product_id in machine.input:
 			stored += int(machine.input[product_id])
 		rate_label.text = str(stored)
-		rate_label.tooltip_text = "Depodaki toplam ürün"
+		rate_label.tooltip_text = "Total items in storage"
 	else:
-		details.append("%.0f birim iş · %.0f iş/sn · %.1f sn · %s" % [float(recipe.work), sim.effective_speed(id), seconds, rate_label.text])
+		details.append("%.0f work · %.0f work/s · %.1f s · %s" % [float(recipe.work), sim.effective_speed(id), seconds, rate_label.text])
 	tooltip_text = "\n".join(details)
 	is_working = bool(machine.running)
 	animation_active = is_working and not simulation_paused
 	cycle_bar.value = (1.0 - float(machine.remaining) / float(recipe.work)) * 100.0 if is_working else 0.0
 	var status_color := TEAL if animation_active else (MUTED if simulation_paused or not machine.enabled else GOLD)
 	cycle_bar.add_theme_stylebox_override("fill", _box(status_color, Color.TRANSPARENT, 0, 0, 3))
-	status_icon.state = "Oyun duraklatıldı" if simulation_paused else str(machine.status)
+	status_icon.state = "Game paused" if simulation_paused else str(machine.status)
 	status_icon.tooltip_text = status_icon.state
 	status_icon.queue_redraw()
 	if _machine_enabled != bool(machine.enabled):
 		_machine_enabled = bool(machine.enabled)
 		pause_btn.queue_redraw()
-	pause_btn.tooltip_text = "Durdur" if machine.enabled else "Çalıştır"
+	pause_btn.tooltip_text = "Stop" if machine.enabled else "Run"
 
 func set_simulation_playback(paused: bool, speed: float) -> void:
 	simulation_paused = paused

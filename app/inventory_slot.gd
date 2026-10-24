@@ -20,6 +20,10 @@ var pinned := false
 var selected := false
 ## Inventory window: not researched yet, drawn with a small padlock.
 var locked := false
+## Inventory window: shown instead of a locked machine's art (its category symbol), so
+## unresearched machines are told apart by kind rather than by look-alike placeholders.
+var locked_icon: Texture2D
+var _art_hidden := false
 var _slot: Icons.Slot
 var _number: Label
 
@@ -60,11 +64,16 @@ func show_number(index: int) -> void:
 	add_child(_number)
 
 func set_item(sim: RefCounted, new_key: String) -> void:
-	if new_key != key or _slot.texture == null and not new_key.is_empty():
+	var hide_art := locked and locked_icon != null
+	if new_key != key or _slot.texture == null and not new_key.is_empty() or hide_art != _art_hidden:
 		key = new_key
+		_art_hidden = hide_art
 		var parts := key.split(":")
 		if key.is_empty():
 			_slot.texture = null
+		elif hide_art:
+			_slot.texture = locked_icon
+			_slot.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		elif parts[0] == "machine":
 			_slot.texture = Icons.machine(SpriteMachineCard.art_path(parts[1]))
 			_slot.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -74,17 +83,19 @@ func set_item(sim: RefCounted, new_key: String) -> void:
 	var count: int = sim.carried_count(key) if not key.is_empty() else 0
 	_slot.count = count
 	_slot.show_one = not key.is_empty()
-	_slot.modulate.a = 1.0 if count > 0 else 0.35
+	_slot.modulate = Color(1, 1, 1, 1.0 if count > 0 else 0.35)
+	if _art_hidden:
+		_slot.modulate = Color(0.55, 0.52, 0.46, 0.45)
 	if key.is_empty():
-		tooltip_text = "Boş yuva: envanterden (I) bir öğe sürükle"
+		tooltip_text = "Empty slot: drag an item here from the inventory (I)"
 	else:
 		var parts := key.split(":")
 		tooltip_text = str(sim.catalog.machines[parts[1]].name) if parts[0] == "machine" else sim.product_name(parts[1])
 		if hotbar_index < 0:
-			tooltip_text += " (%d)\nTıkla: nasıl üretildiğini gör" % count
+			tooltip_text += " (%d)\nClick: see how it's made" % count
 		if parts[0] == "machine" and count > 0:
-			tooltip_text += "\nTıkla: yerleştir" if hotbar_index >= 0 else "\nÇift tık: yerleştir"
-		tooltip_text += "\nSağ tık: hızlı erişimden çıkar" if hotbar_index >= 0 else ("\nSağ tık: hızlı erişimden çıkar" if pinned else "\nSağ tık ya da sürükle: hızlı erişime sabitle")
+			tooltip_text += "\nClick: place" if hotbar_index >= 0 else "\nDouble-click: place"
+		tooltip_text += "\nRight-click: unpin from quick bar" if hotbar_index >= 0 else ("\nRight-click: unpin from quick bar" if pinned else "\nRight-click or drag: pin to quick bar")
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if key.begins_with("machine:") and count > 0 else Control.CURSOR_ARROW
 	_slot.queue_redraw()
 	queue_redraw()
