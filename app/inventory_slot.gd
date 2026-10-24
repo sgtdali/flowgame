@@ -8,6 +8,7 @@ const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const TEAL := Color("4f9a8a")
 const AMBER := Color("b98330")
 const MUTED := Color("7a7466")
+const PLATE := preload("res://app/art/ui/icon_slot_bg.png")
 
 ## Called with (hotbar_index, dropped key) when an item is dropped on a quick-use slot.
 var on_drop: Callable
@@ -45,11 +46,21 @@ func _box(background: Color, border: Color) -> StyleBoxFlat:
 	style.set_content_margin_all(4)
 	return style
 
+## Drawn at 48 x 48 (the inventory slot size) and nine-sliced, so the rim stays crisp at other sizes.
+func _plate(tint: Color) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = PLATE
+	style.set_texture_margin_all(8)
+	style.set_content_margin_all(4)
+	style.modulate_color = tint
+	return style
+
 func _style() -> void:
-	add_theme_stylebox_override("normal", _box(Color("ece6da"), Color("cfc6b3")))
-	add_theme_stylebox_override("hover", _box(Color("e8dfcc"), TEAL))
-	add_theme_stylebox_override("pressed", _box(Color("ddd2bb"), TEAL))
-	add_theme_stylebox_override("disabled", _box(Color("e4ddd0"), Color("cfc6b3")))
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_theme_stylebox_override("normal", _plate(Color.WHITE))
+	add_theme_stylebox_override("hover", _plate(Color(1.25, 1.25, 1.25)))
+	add_theme_stylebox_override("pressed", _plate(Color(0.85, 0.85, 0.85)))
+	add_theme_stylebox_override("disabled", _plate(Color(0.9, 0.9, 0.9)))
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 ## Number key shown in the corner of a quick-use slot (1-9, then 0).

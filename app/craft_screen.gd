@@ -48,6 +48,10 @@ const SLOT := 48
 const USES_SHOWN := 6
 const TEAL := Color("4f9a8a")
 const CARD := Color("fbf8f2")
+## Window rim, nine-sliced with 9 px corners; the body texture and header sit inside it.
+const WINDOW_FRAME := preload("res://app/art/ui/craft_window_frame.png")
+## Flow map sheet, drawn for a 784 x 463 panel; nine-sliced to the panel's actual size.
+const FLOW_BACKGROUND := preload("res://app/art/ui/craft_flow_bg.png")
 
 ## "machine:<kind>" or "product:<id>" -> slot in the left grids
 var items: Dictionary = {}
@@ -110,8 +114,13 @@ func _box(background: Color, border: Color, width: int = 1, pad: int = 12, radiu
 
 ## Window frame and background: a light workshop panel with a heavier rim (rivets and the
 ## header band are drawn by WorkshopFrame).
-func _frame() -> StyleBoxFlat:
-	return _box(Color("f0eadf"), Color("a89d88"), 3, 6, 6)
+func _frame() -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = WINDOW_FRAME
+	style.set_texture_margin_all(9)
+	style.set_content_margin_all(6)
+	style.content_margin_right = 5
+	return style
 
 ## A label in the heading font (Pixelify Sans, set up in main's theme).
 func _heading(text: String, font_size: int, color: Color) -> Label:
@@ -142,9 +151,11 @@ func build(sim: RefCounted) -> void:
 	frame.custom_minimum_size = SIZE
 	frame.add_theme_stylebox_override("panel", _frame())
 	center.add_child(frame)
+	# No right margin: the flow map runs up to the window rim; the header keeps its inset below.
 	var margin := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
+	for side in ["left", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 14)
+	margin.add_theme_constant_override("margin_right", 0)
 	frame.add_child(margin)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
@@ -171,6 +182,9 @@ func build(sim: RefCounted) -> void:
 	close.add_theme_color_override("font_pressed_color", RED)
 	close.pressed.connect(hide)
 	header.add_child(close)
+	var inset := Control.new()
+	inset.custom_minimum_size.x = 15
+	header.add_child(inset)
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.add_theme_constant_override("separation", 10)
@@ -258,9 +272,15 @@ func _item(grid: GridContainer, key: String) -> void:
 
 ## Flow map: inputs | item card | uses, with room between the columns for the links.
 func _build_flow(middle: HBoxContainer) -> void:
-	var panel := Blueprint.new()
+	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", _box(PANEL, EDGE, 1, 12))
+	var sheet := StyleBoxTexture.new()
+	sheet.texture = FLOW_BACKGROUND
+	# Nine-sliced so its metal rim stays crisp now that the panel is a little wider than the art.
+	sheet.set_texture_margin_all(12)
+	sheet.set_content_margin_all(12)
+	panel.add_theme_stylebox_override("panel", sheet)
+	panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	middle.add_child(panel)
 	_flow = FlowMap.new()
 	_flow.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -876,10 +896,19 @@ class WorkshopFrame extends PanelContainer:
 	const RIVET := Color("b3a78f")
 	const SHINE := Color("ddd4c2")
 	const HEADER := 50.0
+	## Width of the rim drawn by the frame style box around the body.
+	const RIM := 5.0
+	## Hand-made texture for the body, drawn at exactly its size (1114 x 714).
+	const BODY_TEXTURE := preload("res://app/art/ui/craft_body_bg.png")
+
+	func _ready() -> void:
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	func _draw() -> void:
-		draw_rect(Rect2(3, 3, size.x - 6, HEADER - 3), BAND)
-		draw_rect(Rect2(3, HEADER, size.x - 6, 1), Color("cfc6b3"))
+		var body := Rect2(RIM, RIM, size.x - 2 * RIM, size.y - 2 * RIM)
+		draw_texture_rect_region(BODY_TEXTURE, body, Rect2(Vector2.ZERO, body.size))
+		draw_rect(Rect2(RIM, RIM, size.x - 2 * RIM, HEADER - RIM), BAND)
+		draw_rect(Rect2(RIM, HEADER, size.x - 2 * RIM, 1), Color("cfc6b3"))
 		var xs: Array[float] = []
 		var count := maxi(int(size.x / 180.0), 1)
 		for i in range(count + 1):
@@ -894,18 +923,3 @@ class WorkshopFrame extends PanelContainer:
 	func _rivet(at: Vector2) -> void:
 		draw_circle(at, 3.0, RIVET)
 		draw_circle(at + Vector2(-1, -1), 1.0, SHINE)
-
-## The flow map's sheet: a faint grid like the factory canvas behind it.
-class Blueprint extends PanelContainer:
-	const LINE := Color("ebe4d6")
-	const STEP := 20.0
-
-	func _draw() -> void:
-		var x := STEP
-		while x < size.x - 1.0:
-			draw_rect(Rect2(x, 1, 1, size.y - 2), LINE)
-			x += STEP
-		var y := STEP
-		while y < size.y - 1.0:
-			draw_rect(Rect2(1, y, size.x - 2, 1), LINE)
-			y += STEP
