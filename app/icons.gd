@@ -99,5 +99,5 @@ class Slot extends Control:
 			var font := ThemeDB.fallback_font
 			var text := str(count)
 			var at := Vector2(size.x - 2 - font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, size.y - 2)
-			draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 4, Color("09131c"))
-			draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("e0634b") if short else Color("dce9ef"))
+			draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 4, Color("f6f2ea"))
+			draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("b5452f") if short else Color("3d3a33"))

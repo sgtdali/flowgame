@@ -20,14 +20,14 @@ const SHEETS := {
 const ART := 128.0
 const PLACEHOLDER := "res://app/art/placeholder/%s.png"
 const SIDE := 64.0
-const INK := Color("dce9ef")
-const MUTED := Color("7f99aa")
-const TEAL := Color("61d8bb")
-const GOLD := Color("efb65a")
-const PLATE := Color("16242f")
-const HEADER := Color("1e3141")
-const EDGE := Color("2c4356")
-const RIVET := Color("4d6a7e")
+const INK := Color("3d3a33")
+const MUTED := Color("7a7466")
+const TEAL := Color("4f9a8a")
+const GOLD := Color("b98330")
+const PLATE := Color("f3eee4")
+const HEADER := Color("e9e2d3")
+const EDGE := Color("c4b9a3")
+const RIVET := Color("b3a78f")
 const FRAME := 2
 ## Port slot size on the card (px).
 const SLOT := 40.0
@@ -72,8 +72,8 @@ class PortGauge extends Control:
 		var box := slot_rect()
 		var full := count >= capacity and count > 0
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color("0d161d")
-		style.border_color = GOLD if full else Color("8a98a3")
+		style.bg_color = Color("ece6da")
+		style.border_color = GOLD if full else Color("a89d88")
 		style.set_border_width_all(2)
 		style.set_corner_radius_all(5)
 		draw_style_box(style, box)
@@ -100,7 +100,7 @@ class PortGauge extends Control:
 		var font := ThemeDB.fallback_font
 		var text := str(count)
 		var at := Vector2(box.end.x - 3.0 - font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, box.end.y - 3.0)
-		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, Color("09131c"))
+		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, Color("f6f2ea"))
 		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, GOLD if full else INK)
 
 ## Small status symbol beside the cycle bar; the status text is its tooltip.
@@ -298,7 +298,7 @@ func _draw() -> void:
 	draw_rect(Rect2(FRAME, header_h - 2, size.x - FRAME * 2, 2), accent_color)
 	draw_rect(Rect2(FRAME, FRAME, size.x - FRAME * 2, 1), HEADER.lightened(0.12))
 	# Dark outline just outside the rim so the plate stands off the grid.
-	draw_rect(Rect2(-1, -1, size.x + 2, size.y + 2), Color("070d13"), false, 1.0)
+	draw_rect(Rect2(-1, -1, size.x + 2, size.y + 2), Color("b9ae97"), false, 1.0)
 	for corner in [Vector2(5, header_h + 4), Vector2(size.x - 8, header_h + 4), Vector2(5, size.y - 8), Vector2(size.x - 8, size.y - 8)]:
 		draw_rect(Rect2(corner, Vector2(3, 3)), RIVET)
 		draw_rect(Rect2(corner, Vector2(1, 1)), RIVET.lightened(0.35))
@@ -356,7 +356,7 @@ func setup_from_sim(sim: RefCounted, id: String) -> void:
 	cycle_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cycle_bar.custom_minimum_size.y = 6
 	cycle_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cycle_bar.add_theme_stylebox_override("background", _box(Color("09131c"), Color.TRANSPARENT, 0, 0, 3))
+	cycle_bar.add_theme_stylebox_override("background", _box(Color("e2dacb"), Color.TRANSPARENT, 0, 0, 3))
 	footer.add_child(cycle_bar)
 	cycle_bar.modulate.a = 0.0 if _storage else 1.0
 	rate_label = Label.new()

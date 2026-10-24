@@ -5,9 +5,9 @@ extends Button
 
 const Icons = preload("res://app/icons.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
-const TEAL := Color("61d8bb")
-const AMBER := Color("f2a33a")
-const MUTED := Color("8ca5b6")
+const TEAL := Color("4f9a8a")
+const AMBER := Color("b98330")
+const MUTED := Color("7a7466")
 
 ## Called with (hotbar_index, dropped key) when an item is dropped on a quick-use slot.
 var on_drop: Callable
@@ -16,6 +16,10 @@ var key := ""
 var hotbar_index := -1
 ## Inventory window: drawn with a small marker when the item is on the quick-use bar.
 var pinned := false
+## Inventory window: the item shown on the craft side, drawn with an amber frame.
+var selected := false
+## Inventory window: not researched yet, drawn with a small padlock.
+var locked := false
 var _slot: Icons.Slot
 var _number: Label
 
@@ -38,10 +42,10 @@ func _box(background: Color, border: Color) -> StyleBoxFlat:
 	return style
 
 func _style() -> void:
-	add_theme_stylebox_override("normal", _box(Color("12222e"), Color("294356")))
-	add_theme_stylebox_override("hover", _box(Color("213b4d"), TEAL))
-	add_theme_stylebox_override("pressed", _box(Color("295258"), TEAL))
-	add_theme_stylebox_override("disabled", _box(Color("0d1a24"), Color("1c3142")))
+	add_theme_stylebox_override("normal", _box(Color("ece6da"), Color("cfc6b3")))
+	add_theme_stylebox_override("hover", _box(Color("e8dfcc"), TEAL))
+	add_theme_stylebox_override("pressed", _box(Color("ddd2bb"), TEAL))
+	add_theme_stylebox_override("disabled", _box(Color("e4ddd0"), Color("cfc6b3")))
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 ## Number key shown in the corner of a quick-use slot (1-9, then 0).
@@ -76,8 +80,10 @@ func set_item(sim: RefCounted, new_key: String) -> void:
 	else:
 		var parts := key.split(":")
 		tooltip_text = str(sim.catalog.machines[parts[1]].name) if parts[0] == "machine" else sim.product_name(parts[1])
-		if parts[0] == "machine":
-			tooltip_text += "\nTıkla: yerleştir"
+		if hotbar_index < 0:
+			tooltip_text += " (%d)\nTıkla: nasıl üretildiğini gör" % count
+		if parts[0] == "machine" and count > 0:
+			tooltip_text += "\nTıkla: yerleştir" if hotbar_index >= 0 else "\nÇift tık: yerleştir"
 		tooltip_text += "\nSağ tık: hızlı erişimden çıkar" if hotbar_index >= 0 else ("\nSağ tık: hızlı erişimden çıkar" if pinned else "\nSağ tık ya da sürükle: hızlı erişime sabitle")
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if key.begins_with("machine:") and count > 0 else Control.CURSOR_ARROW
 	_slot.queue_redraw()
@@ -86,6 +92,12 @@ func set_item(sim: RefCounted, new_key: String) -> void:
 func _draw() -> void:
 	if pinned and hotbar_index < 0:
 		draw_rect(Rect2(size.x - 9, 3, 6, 6), AMBER)
+	if selected:
+		draw_rect(Rect2(Vector2.ONE, size - Vector2(2, 2)), AMBER, false, 2.0)
+	if locked:
+		var c := Vector2(10, size.y - 10)
+		draw_arc(c + Vector2(0, -3), 3, PI, TAU, 8, MUTED, 1.5)
+		draw_rect(Rect2(c + Vector2(-5, -3), Vector2(10, 8)), MUTED)
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
 	if key.is_empty():

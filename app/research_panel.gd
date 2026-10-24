@@ -8,21 +8,21 @@ signal research_selected(tech_id: String)
 signal unlock_all_requested()
 signal close_requested()
 
-const INK := Color("dce9ef")
-const MUTED := Color("8ca5b6")
-const TEAL := Color("61d8bb")
-const GOLD := Color("efb65a")
+const INK := Color("3d3a33")
+const MUTED := Color("7a7466")
+const TEAL := Color("4f9a8a")
+const GOLD := Color("b98330")
 ## Lane order, title and accent colour.
 const CATEGORIES := [
-	{"id": "metalurji", "name": "Demir ve hidrolik", "color": Color("c87d55")},
-	{"id": "mekanik", "name": "Çelik ve mekanik", "color": Color("efb65a")},
-	{"id": "elektrik", "name": "Bakır ve elektrik", "color": Color("f0a35e")},
-	{"id": "elektronik", "name": "Kuvars ve elektronik", "color": Color("52b5d8")},
-	{"id": "otomasyon", "name": "Otomasyon ve final", "color": Color("b98eff")},
-	{"id": "altyapi", "name": "Altyapı ve laboratuvar", "color": Color("61d8bb")},
-	{"id": "maden", "name": "Maden genişletme", "color": Color("a8d5e5")},
-	{"id": "verim", "name": "Verim", "color": Color("ff9f6e")},
-	{"id": "kapasite", "name": "Kapasite", "color": Color("8c9ba5")},
+	{"id": "metalurji", "name": "Demir ve hidrolik", "color": Color("b0663f")},
+	{"id": "mekanik", "name": "Çelik ve mekanik", "color": Color("b98330")},
+	{"id": "elektrik", "name": "Bakır ve elektrik", "color": Color("c77a3a")},
+	{"id": "elektronik", "name": "Kuvars ve elektronik", "color": Color("3f8fb0")},
+	{"id": "otomasyon", "name": "Otomasyon ve final", "color": Color("8a6cc4")},
+	{"id": "altyapi", "name": "Altyapı ve laboratuvar", "color": Color("4f9a8a")},
+	{"id": "maden", "name": "Maden genişletme", "color": Color("6a9fb3")},
+	{"id": "verim", "name": "Verim", "color": Color("c96f45")},
+	{"id": "kapasite", "name": "Kapasite", "color": Color("7d8a93")},
 ]
 const LANE_W := 140.0
 const COL_W := 226.0
@@ -41,7 +41,7 @@ class TreeCanvas extends Control:
 	func _draw() -> void:
 		for i in range(lanes.size()):
 			var band := Rect2(0, lanes[i].top, size.x, lanes[i].height)
-			draw_rect(band, Color("12222e") if i % 2 == 0 else Color("0f1d28"))
+			draw_rect(band, Color("ece6da") if i % 2 == 0 else Color("f6f2ea"))
 			draw_rect(Rect2(0, lanes[i].top, 4, lanes[i].height), lanes[i].color)
 		for edge in edges:
 			var a: Vector2 = edge.from
@@ -83,11 +83,11 @@ func _depth(catalog: Dictionary, tech_id: String) -> int:
 func build(catalog: Dictionary) -> void:
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_theme_stylebox_override("panel", _box(Color(0.02, 0.05, 0.08, 0.72), Color.TRANSPARENT, 0, 0))
+	add_theme_stylebox_override("panel", _box(Color(0.24, 0.2, 0.14, 0.3), Color.TRANSPARENT, 0, 0))
 	var center := CenterContainer.new()
 	add_child(center)
 	var dialog := PanelContainer.new()
-	var dialog_style := _box(Color("0f1d28"), Color("30495b"), 2, 10)
+	var dialog_style := _box(Color("f6f2ea"), Color("b9ae97"), 2, 10)
 	dialog_style.set_content_margin_all(18)
 	dialog.add_theme_stylebox_override("panel", dialog_style)
 	center.add_child(dialog)
@@ -222,7 +222,7 @@ func _node(catalog: Dictionary, tech_id: String, pos: Vector2) -> Dictionary:
 	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_theme_stylebox_override("background", _box(Color("09131c"), Color.TRANSPARENT, 0, 3, 0))
+	bar.add_theme_stylebox_override("background", _box(Color("e2dacb"), Color.TRANSPARENT, 0, 3, 0))
 	row.add_child(bar)
 	# Price as tier chips: a coloured square and the points still missing.
 	var chips := {}
@@ -279,19 +279,19 @@ func refresh(sim: RefCounted) -> void:
 		if tech_id in sim.completed_researches:
 			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", TEAL)
-			_style(view, Color("16302f"), TEAL, 1)
+			_style(view, Color("e3efe9"), TEAL, 1)
 		elif sim.active_research == tech_id:
 			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", GOLD)
-			_style(view, Color("2a2a1f"), GOLD, 2)
+			_style(view, Color("f3e6cc"), GOLD, 2)
 		elif sim.can_research(tech_id):
 			button.disabled = false
 			view.name_lbl.add_theme_color_override("font_color", INK)
-			_style(view, Color("162938"), Color("3d6178"), 1)
+			_style(view, Color("ece6da"), Color("b9ae97"), 1)
 		else:
 			button.disabled = true
 			view.name_lbl.add_theme_color_override("font_color", MUTED)
-			_style(view, Color("101c26"), Color("22394a"), 1)
+			_style(view, Color("e9e4da"), Color("d9d1c1"), 1)
 		# Locked cards stay opaque so the connectors behind them do not show through.
 		button.self_modulate.a = 1.0
 		button.mouse_default_cursor_shape = Control.CURSOR_ARROW if button.disabled else Control.CURSOR_POINTING_HAND
@@ -307,6 +307,6 @@ func refresh(sim: RefCounted) -> void:
 			"from": from.position + Vector2(NODE.x, NODE.y * 0.5),
 			"to": to.position + Vector2(0, NODE.y * 0.5),
 			"bend_x": from.position.x + NODE.x + 6.0 + (track % 4) * 3.0,
-			"color": Color(TEAL, 0.55) if edge.from_id in sim.completed_researches else Color("3d6178", 0.35),
+			"color": Color(TEAL, 0.55) if edge.from_id in sim.completed_researches else Color("b9ae97", 0.35),
 		})
 	tree.queue_redraw()

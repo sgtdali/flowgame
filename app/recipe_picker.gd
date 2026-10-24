@@ -5,9 +5,9 @@ extends PanelContainer
 signal recipe_selected(id: String, recipe_id: String)
 
 const Icons = preload("res://app/icons.gd")
-const INK := Color("dce9ef")
-const MUTED := Color("8ca5b6")
-const TEAL := Color("61d8bb")
+const INK := Color("3d3a33")
+const MUTED := Color("7a7466")
+const TEAL := Color("4f9a8a")
 
 var target_id := ""
 var tiles: Dictionary = {}
@@ -28,7 +28,7 @@ func _box(background: Color, border: Color, width: int = 1, pad: int = 12) -> St
 func build() -> void:
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_theme_stylebox_override("panel", _box(Color(0.02, 0.05, 0.08, 0.5), Color.TRANSPARENT, 0, 0))
+	add_theme_stylebox_override("panel", _box(Color(0.24, 0.2, 0.14, 0.22), Color.TRANSPARENT, 0, 0))
 	# Clicking the dimmed backdrop closes the screen.
 	gui_input.connect(func(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed:
@@ -37,7 +37,7 @@ func build() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
 	var dialog := PanelContainer.new()
-	dialog.add_theme_stylebox_override("panel", _box(Color("0f1d28"), Color("30495b"), 2, 14))
+	dialog.add_theme_stylebox_override("panel", _box(Color("f6f2ea"), Color("b9ae97"), 2, 14))
 	center.add_child(dialog)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
@@ -47,7 +47,7 @@ func build() -> void:
 	_title.add_theme_color_override("font_color", INK)
 	box.add_child(_title)
 	var grid_panel := PanelContainer.new()
-	grid_panel.add_theme_stylebox_override("panel", _box(Color("09131c"), Color("1c3142"), 1, 6))
+	grid_panel.add_theme_stylebox_override("panel", _box(Color("e2dacb"), Color("cfc6b3"), 1, 6))
 	box.add_child(grid_panel)
 	_grid = GridContainer.new()
 	_grid.columns = 6
@@ -80,9 +80,9 @@ func show_machine(sim: RefCounted, id: String) -> void:
 		tile.tooltip_text = str(recipe.get("name", r_id)) if unlocked else "Kilitli: %s" % sim.unlock_tech_for_recipe(r_id)
 		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if unlocked else Control.CURSOR_FORBIDDEN
 		for state in ["normal", "disabled", "focus"]:
-			tile.add_theme_stylebox_override(state, _box(Color("2a2a1f") if current else Color("162938"), Color("efb65a") if current else Color("2b475c"), 2 if current else 1, 4))
-		tile.add_theme_stylebox_override("hover", _box(Color("213b4d"), TEAL, 2, 4))
-		tile.add_theme_stylebox_override("pressed", _box(Color("295258"), TEAL, 2, 4))
+			tile.add_theme_stylebox_override(state, _box(Color("f3e6cc") if current else Color("ece6da"), Color("b98330") if current else Color("cfc6b3"), 2 if current else 1, 4))
+		tile.add_theme_stylebox_override("hover", _box(Color("e8dfcc"), TEAL, 2, 4))
+		tile.add_theme_stylebox_override("pressed", _box(Color("ddd2bb"), TEAL, 2, 4))
 		tile.modulate.a = 1.0 if unlocked else 0.4
 		var slot := Icons.Slot.new(Icons.product(sim, product), int(recipe.outputs[product]))
 		slot.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

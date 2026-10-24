@@ -4,19 +4,17 @@ const Simulation = preload("res://sim/production_sim.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const FlowGraph = preload("res://app/flow_graph.gd")
 const InventoryBar = preload("res://app/inventory_bar.gd")
-const InventoryWindow = preload("res://app/inventory_window.gd")
 const CraftScreen = preload("res://app/craft_screen.gd")
 const MachineMenu = preload("res://app/machine_menu.gd")
 const RecipePicker = preload("res://app/recipe_picker.gd")
 const ResearchPanel = preload("res://app/research_panel.gd")
-const INK := Color("dce9ef")
-const MUTED := Color("7f99aa")
-const TEAL := Color("61d8bb")
-const GOLD := Color("efb65a")
+const INK := Color("3d3a33")
+const MUTED := Color("7a7466")
+const TEAL := Color("4f9a8a")
+const GOLD := Color("b98330")
 var sim := Simulation.new()
 var graph: GraphEdit
 var inventory_bar: InventoryBar
-var inventory_window: InventoryWindow
 var craft_screen: CraftScreen
 var machine_menu: MachineMenu
 var recipe_picker: RecipePicker
@@ -47,12 +45,27 @@ func _build_theme() -> void:
 	var skin := Theme.new()
 	skin.default_font_size = 14
 	skin.set_color("font_color", "Label", INK)
-	skin.set_color("font_color", "Button", INK)
-	skin.set_stylebox("normal", "Button", _box(Color("162836"), Color("294356"), 6, 10, 6))
-	skin.set_stylebox("hover", "Button", _box(Color("213b4d"), TEAL, 6, 10, 6))
-	skin.set_stylebox("pressed", "Button", _box(Color("295258"), TEAL, 6, 10, 6))
-	skin.set_stylebox("disabled", "Button", _box(Color("101c26"), Color("1b2d3b"), 6, 10, 6))
-	skin.set_stylebox("background", "ProgressBar", _box(Color("09131c"), Color.TRANSPARENT, 3, 0, 0))
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+		skin.set_color(state, "Button", INK)
+	skin.set_color("font_disabled_color", "Button", MUTED)
+	skin.set_stylebox("panel", "TooltipPanel", _box(Color("f6f2ea"), Color("b9ae97"), 4, 8, 5))
+	skin.set_color("font_color", "TooltipLabel", INK)
+	skin.set_stylebox("panel", "PopupMenu", _box(Color("f6f2ea"), Color("b9ae97"), 6, 6, 6))
+	skin.set_stylebox("hover", "PopupMenu", _box(Color("e8dfcc"), Color.TRANSPARENT, 4, 6, 4))
+	skin.set_color("font_color", "PopupMenu", INK)
+	skin.set_color("font_hover_color", "PopupMenu", INK)
+	skin.set_color("font_disabled_color", "PopupMenu", MUTED)
+	skin.set_color("font_separator_color", "PopupMenu", MUTED)
+	for bar in ["HScrollBar", "VScrollBar"]:
+		skin.set_stylebox("scroll", bar, _box(Color("e2dacb"), Color.TRANSPARENT, 4, 3, 3))
+		skin.set_stylebox("grabber", bar, _box(Color("c4b9a3"), Color.TRANSPARENT, 4, 3, 3))
+		skin.set_stylebox("grabber_highlight", bar, _box(Color("a89d88"), Color.TRANSPARENT, 4, 3, 3))
+		skin.set_stylebox("grabber_pressed", bar, _box(Color("8f846f"), Color.TRANSPARENT, 4, 3, 3))
+	skin.set_stylebox("normal", "Button", _box(Color("f3eee4"), Color("cfc6b3"), 6, 10, 6))
+	skin.set_stylebox("hover", "Button", _box(Color("e8dfcc"), TEAL, 6, 10, 6))
+	skin.set_stylebox("pressed", "Button", _box(Color("ddd2bb"), TEAL, 6, 10, 6))
+	skin.set_stylebox("disabled", "Button", _box(Color("e9e4da"), Color("ddd6c7"), 6, 10, 6))
+	skin.set_stylebox("background", "ProgressBar", _box(Color("e2dacb"), Color.TRANSPARENT, 3, 0, 0))
 	skin.set_stylebox("fill", "ProgressBar", _box(TEAL, Color.TRANSPARENT, 3, 0, 0))
 	theme = skin
 
@@ -85,7 +98,7 @@ func _button(text: String, action: Callable, parent: Node) -> Button:
 
 func _build_ui() -> void:
 	var backdrop := ColorRect.new()
-	backdrop.color = Color("081119")
+	backdrop.color = Color("e7e1d4")
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(backdrop)
 	var layout := VBoxContainer.new()
@@ -94,7 +107,7 @@ func _build_ui() -> void:
 	add_child(layout)
 	# Tek satırlı sade oyun HUD çubuğu
 	var header := PanelContainer.new()
-	header.add_theme_stylebox_override("panel", _box(Color("0f1d29"), Color("1e3446"), 0, 14, 8))
+	header.add_theme_stylebox_override("panel", _box(Color("efe9dd"), Color("cfc6b3"), 0, 14, 8))
 	layout.add_child(header)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
@@ -133,9 +146,9 @@ func _build_ui() -> void:
 	graph.snapping_enabled = true
 	graph.snapping_distance = 20
 	graph.get_menu_hbox().visible = false
-	graph.add_theme_stylebox_override("panel", _box(Color("09131c"), Color.TRANSPARENT, 0, 0, 0))
-	graph.add_theme_color_override("grid_minor", Color("10202c"))
-	graph.add_theme_color_override("grid_major", Color("183040"))
+	graph.add_theme_stylebox_override("panel", _box(Color("e2dacb"), Color.TRANSPARENT, 0, 0, 0))
+	graph.add_theme_color_override("grid_minor", Color("ddd6c7"))
+	graph.add_theme_color_override("grid_major", Color("d2c9b6"))
 	graph.connection_request.connect(_connect_cards)
 	graph.disconnection_request.connect(_disconnect_cards)
 	graph.delete_nodes_request.connect(_delete_cards)
@@ -154,15 +167,12 @@ func _build_ui() -> void:
 	inventory_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	inventory_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	inventory_bar.machine_requested.connect(_add_at_view)
-	inventory_bar.craft_screen_requested.connect(func() -> void:
-		inventory_window.hide()
-		craft_screen.toggle())
 	inventory_bar.inventory_requested.connect(_toggle_inventory)
 	inventory_bar.craft_cancelled.connect(_cancel_craft)
 	inventory_bar.pin_requested.connect(_pin)
 	inventory_bar.unpin_requested.connect(_unpin)
 	inventory_bar.is_blocked = func() -> bool:
-		return craft_screen.visible or inventory_window.visible or research_panel.visible or recipe_picker.visible
+		return craft_screen.visible or research_panel.visible or recipe_picker.visible
 	machine_menu = MachineMenu.new()
 	add_child(machine_menu)
 	machine_menu.toggle_requested.connect(_toggle_machine)
@@ -174,7 +184,7 @@ func _build_ui() -> void:
 	machine_menu.supplier_selected.connect(_spawn_supplier)
 	# Tek satırlı ince alt durum çubuğu
 	var footer := PanelContainer.new()
-	footer.add_theme_stylebox_override("panel", _box(Color("0f1d29"), Color("1e3446"), 0, 14, 5))
+	footer.add_theme_stylebox_override("panel", _box(Color("efe9dd"), Color("cfc6b3"), 0, 14, 5))
 	layout.add_child(footer)
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 16)
@@ -184,7 +194,7 @@ func _build_ui() -> void:
 	var foot_spacer := Control.new()
 	foot_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(foot_spacer)
-	message = _label("C: üret · I: envanter · 1-0: hızlı erişim · Çıkışa tıkla: envantere al · Sağ tık: makine menüsü", 12, MUTED)
+	message = _label("I / C: envanter ve üretim · 1-0: hızlı erişim · Çıkışa tıkla: envantere al · Sağ tık: makine menüsü", 12, MUTED)
 	bottom.add_child(message)
 	recipe_picker = RecipePicker.new()
 	add_child(recipe_picker)
@@ -201,12 +211,9 @@ func _build_ui() -> void:
 	craft_screen.build(sim)
 	craft_screen.craft_requested.connect(_craft)
 	craft_screen.craft_cancelled.connect(_cancel_craft)
-	inventory_window = InventoryWindow.new()
-	add_child(inventory_window)
-	inventory_window.build(sim)
-	inventory_window.machine_requested.connect(_add_at_view)
-	inventory_window.pin_requested.connect(_pin)
-	inventory_window.unpin_requested.connect(_unpin)
+	craft_screen.machine_requested.connect(_add_at_view)
+	craft_screen.pin_requested.connect(_pin)
+	craft_screen.unpin_requested.connect(_unpin)
 
 func _toggle_research_panel() -> void:
 	research_panel.visible = not research_panel.visible
@@ -266,8 +273,7 @@ func _craft(type: String, id: String, count: int) -> void:
 		message.text = "Üretilemez: malzeme eksik, kilitli ya da sınıra ulaşıldı."
 
 func _toggle_inventory() -> void:
-	craft_screen.hide()
-	inventory_window.toggle()
+	craft_screen.toggle()
 
 func _pin(key: String, slot: int) -> void:
 	if not sim.pin(key, slot):
@@ -577,7 +583,6 @@ func _refresh() -> void:
 	]
 	research_panel.refresh(sim)
 	inventory_bar.refresh(sim)
-	inventory_window.refresh(sim)
 	craft_screen.refresh(sim)
 
 func _save_game() -> void:
@@ -641,11 +646,15 @@ func _smoke_test() -> void:
 	sim.inventory["steel_rod"] = 4
 	sim.inventory["steel_plate"] = int(sim.inventory.get("steel_plate", 0)) + 6
 	craft_screen.toggle()
-	craft_screen.open_category(3)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	assert(craft_screen.tiles["machine:machine_shop"].is_visible_in_tree() and not craft_screen.tiles["machine:iron_mine"].is_visible_in_tree())
-	await _smoke_click(craft_screen.tiles["machine:machine_shop"].get_global_rect().get_center())
+	# The window lists every item: carried ones with their count, the rest dimmed.
+	assert(craft_screen.items.has("product:founding_core") and craft_screen.items.has("product:steel_plate"))
+	assert(craft_screen.items["product:founding_core"]._slot.modulate.a < 1.0 and craft_screen.items["product:steel_plate"]._slot.modulate.a == 1.0)
+	# Pig iron comes only from the smelter: the window says so instead of offering ÜRET.
+	craft_screen.select("product:pig_iron")
+	assert(not craft_screen.craft_button.visible and not craft_screen._reason.text.is_empty())
+	await _smoke_click(craft_screen.items["machine:machine_shop"].get_global_rect().get_center())
 	assert(craft_screen.selected == "machine:machine_shop" and not craft_screen.craft_button.disabled)
 	await _smoke_click(craft_screen.craft_button.get_global_rect().get_center())
 	_refresh()
@@ -692,17 +701,17 @@ func _smoke_test() -> void:
 	_toggle_inventory()
 	await get_tree().process_frame
 	await get_tree().process_frame
-	assert(inventory_window.visible and inventory_window.items.has("product:steel_plate"))
+	assert(craft_screen.visible)
 	if DisplayServer.get_name() != "headless":
 		get_viewport().get_texture().get_image().save_png("res://artifacts/inventory-window.png")
-	inventory_window.quick_slots[9].on_drop.call(9, "product:steel_plate")
+	craft_screen.quick_slots[9].on_drop.call(9, "product:steel_plate")
 	assert(sim.hotbar[9] == "product:steel_plate" and inventory_bar.slots[9].key == "product:steel_plate", "Sürüklenen öğe hızlı erişime sabitlenmeli")
-	inventory_window._toggle_pin("product:steel_plate")
+	craft_screen._toggle_pin("product:steel_plate")
 	assert(not ("product:steel_plate" in sim.hotbar), "Sağ tık sabitlenmiş öğeyi çıkarmalı")
-	inventory_window._toggle_pin("product:steel_plate")
+	craft_screen._toggle_pin("product:steel_plate")
 	assert("product:steel_plate" in sim.hotbar, "Sağ tık öğeyi ilk boş yuvaya sabitlemeli")
 	_toggle_inventory()
-	assert(not inventory_window.visible)
+	assert(not craft_screen.visible)
 	_toggle_research_panel()
 	assert(research_panel.visible)
 	_select_research("DM-01")
@@ -717,7 +726,6 @@ func _smoke_test() -> void:
 	assert(cards.size() == 8 and sim.machine_inventory.get("machine_shop", 0) == 1, "Kaldırılan makine envantere dönmeli")
 	# The demo already has the one iron mine allowed, so it cannot be crafted or placed again.
 	craft_screen.toggle()
-	craft_screen.open_category(0)
 	craft_screen.select("machine:iron_mine")
 	assert(craft_screen.craft_button.disabled)
 	craft_screen.hide()

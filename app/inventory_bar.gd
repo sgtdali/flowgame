@@ -1,12 +1,10 @@
 extends VBoxContainer
-## Bottom quick-use bar: the hammer opens the craft screen, the crate opens the inventory
-## window, then ten fixed slots the player pins items to. Slots share the inventory's counts
+## Bottom quick-use bar: the crate opens the inventory and crafting window, then ten fixed slots the player pins items to. Slots share the inventory's counts
 ## and stay put when empty. Clicking a machine (or pressing its number, 1-9 then 0) places
 ## it; right click unpins; dropping an item from the inventory window pins it there.
 ## The hand-craft queue sits above it; clicking a queued job cancels it and returns its materials.
 
 signal machine_requested(kind: String)
-signal craft_screen_requested()
 signal inventory_requested()
 signal craft_cancelled(index: int)
 signal pin_requested(key: String, slot: int)
@@ -16,10 +14,9 @@ const Icons = preload("res://app/icons.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const CraftScreen = preload("res://app/craft_screen.gd")
 const InventorySlot = preload("res://app/inventory_slot.gd")
-const TEAL := Color("61d8bb")
+const TEAL := Color("4f9a8a")
 const INVENTORY_ICON := 6
 
-var craft_button: Button
 var inventory_button: Button
 ## Quick-use slots, index 0-9 (keys 1-9, 0).
 var slots: Array[InventorySlot] = []
@@ -39,10 +36,10 @@ func _box(background: Color, border: Color, pad: int, radius: int = 6) -> StyleB
 	return style
 
 func _style(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", _box(Color("12222e"), Color("294356"), 4))
-	button.add_theme_stylebox_override("hover", _box(Color("213b4d"), TEAL, 4))
-	button.add_theme_stylebox_override("pressed", _box(Color("295258"), TEAL, 4))
-	button.add_theme_stylebox_override("disabled", _box(Color("0d1a24"), Color("1c3142"), 4))
+	button.add_theme_stylebox_override("normal", _box(Color("ece6da"), Color("cfc6b3"), 4))
+	button.add_theme_stylebox_override("hover", _box(Color("e8dfcc"), TEAL, 4))
+	button.add_theme_stylebox_override("pressed", _box(Color("ddd2bb"), TEAL, 4))
+	button.add_theme_stylebox_override("disabled", _box(Color("e4ddd0"), Color("cfc6b3"), 4))
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 func _icon_button(icon_index: int, tip: String) -> Button:
@@ -68,15 +65,12 @@ func build() -> void:
 	add_child(_queue_row)
 	var bar := PanelContainer.new()
 	bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	bar.add_theme_stylebox_override("panel", _box(Color("0d1a24e6"), Color("1c3142"), 6, 8))
+	bar.add_theme_stylebox_override("panel", _box(Color("e4ddd0e6"), Color("cfc6b3"), 6, 8))
 	add_child(bar)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	bar.add_child(row)
-	craft_button = _icon_button(CraftScreen.CRAFT_ICON, "Üret (C)")
-	craft_button.pressed.connect(func() -> void: craft_screen_requested.emit())
-	row.add_child(craft_button)
-	inventory_button = _icon_button(INVENTORY_ICON, "Envanter (I)")
+	inventory_button = _icon_button(INVENTORY_ICON, "Envanter ve üretim (I, C)")
 	inventory_button.pressed.connect(func() -> void: inventory_requested.emit())
 	row.add_child(inventory_button)
 	row.add_child(VSeparator.new())
@@ -120,10 +114,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		index = key.keycode - KEY_1
 	elif key.keycode == KEY_0:
 		index = 9
-	elif key.keycode == KEY_I:
-		inventory_requested.emit()
-		get_viewport().set_input_as_handled()
-		return
 	if index >= 0:
 		_use(index)
 		get_viewport().set_input_as_handled()

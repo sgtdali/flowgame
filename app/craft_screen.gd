@@ -1,65 +1,71 @@
 extends PanelContainer
-## Hand crafting screen (style A: dark frame, amber accents). Category tabs along
-## the top; the selected category lists its machines and the products its hand-craftable
-## machines make. Clicking a tile shows it on the right: picture, description, recipe with
-## what you carry (red when short), time and the ÜRET button (shift: five). Below sit the
-## craft queue (× cancels and refunds) and what you carry.
-## C opens and closes it, 1-7 switch category, Esc closes.
+## Inventory and crafting window (style A: dark frame, amber accents), opened with I or C.
+## Left: every machine and product in the game. What you carry shows its count; what you do
+## not have is dimmed, and a padlock marks what research has not opened yet. Clicking an
+## item shows on the right how it is made: picture, recipe with what you carry (red when
+## short), time and the ÜRET button (shift: five). Products a machine makes, not the hand,
+## name that machine instead. Double-clicking a carried machine places it.
+## Below sit the craft queue (× cancels and refunds) and the quick-use bar's ten slots; drag
+## an item onto a slot, right click it, or press 1-9, 0 while hovering it to pin it there.
+## I, C or Esc closes it.
 
 signal craft_requested(type: String, id: String, count: int)
 signal craft_cancelled(index: int)
+signal machine_requested(kind: String)
+signal pin_requested(key: String, slot: int)
+signal unpin_requested(slot: int)
 
 const Icons = preload("res://app/icons.gd")
+const InventorySlot = preload("res://app/inventory_slot.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const ICONS := preload("res://app/art/ui/category_icons.png")
-const FRAME := preload("res://app/art/ui/panel_frame.png")
-const INK := Color("e8e4dc")
-const MUTED := Color("8d949b")
-const AMBER := Color("f2a33a")
-const RED := Color("e0634b")
-const PANEL := Color("16191c")
-const TILE := Color("23272c")
-const EDGE := Color("363d45")
+const INK := Color("3d3a33")
+const MUTED := Color("7a7466")
+const AMBER := Color("b98330")
+const RED := Color("b5452f")
+const PANEL := Color("f6f2ea")
+const EDGE := Color("cfc6b3")
 ## Order matches the icon strip (art_src/araclar/kategori_ikonlari.py); the hammer after
-## the last category is the craft button's symbol.
+## the last category is the craft button's symbol. The machine list follows this order.
 const CATEGORIES := [
 	{"name": "Hammadde", "tab": "Hammadde", "machines": ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry"]},
 	{"name": "Metalürji", "tab": "Metalürji", "machines": ["smelter"]},
 	{"name": "Şekillendirme", "tab": "Şekillendirme", "machines": ["rolling_mill", "press", "foundry"]},
 	{"name": "Talaşlı imalat", "tab": "Talaşlı", "machines": ["machine_shop"]},
 	{"name": "Montaj", "tab": "Montaj", "machines": ["machine_factory", "wire_winder", "mechanical_assembly", "electrical_assembly", "electronics_assembly", "robotics_assembly"]},
-	{"name": "Araştırma ve hedefler", "tab": "Araştırma", "machines": ["lab_1", "lab_2", "lab_3", "module_plant", "project_hub", "scrap_disposal"]},
+	{"name": "Araştırma ve hedefler", "tab": "Araştırma", "machines": ["lab_1", "lab_2", "lab_3", "lab_4", "module_plant", "project_hub", "scrap_disposal"]},
 	{"name": "Depo", "tab": "Depo", "machines": ["storage"]},
 ]
 const CRAFT_ICON := 7
-const TAB_SIZE := Vector2(100, 62)
-const TILE_SIZE := Vector2(96, 104)
-const COLUMNS := 4
+const COLUMNS := 10
+const SLOT := 48
+const USES_SHOWN := 14
 
-var category_buttons: Array[Button] = []
-## "machine:<kind>" or "recipe:<id>" -> tile button
-var tiles: Dictionary = {}
-var open_index := 0
+## "machine:<kind>" or "product:<id>" -> slot in the left grids
+var items: Dictionary = {}
+## The window's copy of the quick-use bar, index 0-9.
+var quick_slots: Array[InventorySlot] = []
+## Inventory key shown on the craft side.
 var selected := ""
 var craft_button: Button
+var place_button: Button
 ## One per queued job: {bar, time, cancel}
 var queue_slots: Array[Dictionary] = []
 var _sim: RefCounted
-var _pages: Array[GridContainer] = []
-var _scroll: ScrollContainer
+var _hover := ""
 var _title: Label
+var _count: Label
 var _picture: TextureRect
 var _description: Label
 var _recipe: HBoxContainer
 var _time: Label
 var _reason: Label
+var _uses_title: Label
+var _uses: HFlowContainer
 var _queue_title: Label
 var _queue_row: HBoxContainer
 ## Starts unequal to any real queue so the first refresh builds the row.
 var _queue_keys: Array = [null]
-var _carried: HFlowContainer
-var _carried_keys: Array = []
-var _carried_slots: Array[Icons.Slot] = []
 
 static func icon(index: int) -> AtlasTexture:
 	var atlas := AtlasTexture.new()
@@ -83,20 +89,9 @@ func _box(background: Color, border: Color, width: int = 1, pad: int = 12, radiu
 	style.set_content_margin_all(pad)
 	return style
 
-## Window frame and background: 9-slice of art_src/ui/menu_cerceve/zemin_ve_kenarlik.png,
-## drawn in LibreSprite at the window's real size. The top corners' bevel reaches 16 px in.
-func _frame() -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = FRAME
-	style.set_texture_margin_all(16)
-	style.set_content_margin_all(6)
-	return style
-
-func _style(button: Button, active: bool) -> void:
-	for state in ["normal", "disabled", "focus"]:
-		button.add_theme_stylebox_override(state, _box(Color("2a2722") if active else TILE, AMBER if active else EDGE, 2 if active else 1, 4))
-	button.add_theme_stylebox_override("hover", _box(Color("2c3036"), AMBER if active else AMBER.darkened(0.35), 2 if active else 1, 4))
-	button.add_theme_stylebox_override("pressed", _box(Color("332e26"), AMBER, 2, 4))
+## Window frame and background: a light paper sheet with a darker rim.
+func _frame() -> StyleBoxFlat:
+	return _box(Color("f0eadf"), Color("b9ae97"), 2, 6, 8)
 
 func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
@@ -109,7 +104,7 @@ func build(sim: RefCounted) -> void:
 	_sim = sim
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_theme_stylebox_override("panel", _box(Color(0.02, 0.03, 0.04, 0.55), Color.TRANSPARENT, 0, 0, 0))
+	add_theme_stylebox_override("panel", _box(Color(0.24, 0.2, 0.14, 0.22), Color.TRANSPARENT, 0, 0, 0))
 	gui_input.connect(func(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed:
 			hide())
@@ -118,161 +113,127 @@ func build(sim: RefCounted) -> void:
 	add_child(center)
 	var frame := PanelContainer.new()
 	frame.add_theme_stylebox_override("panel", _frame())
-	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	center.add_child(frame)
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 14)
 	frame.add_child(margin)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
+	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
-	_build_tabs(box)
+	var header := HBoxContainer.new()
+	box.add_child(header)
+	header.add_child(_label("Envanter ve Üretim", 18, INK))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(spacer)
+	var hint := _label("Tıkla: tarif · Çift tık: makineyi yerleştir · Sürükle, sağ tıkla ya da üstündeyken 1-0: hızlı erişime sabitle", 11, MUTED)
+	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(hint)
 	var middle := HBoxContainer.new()
 	middle.add_theme_constant_override("separation", 10)
 	box.add_child(middle)
-	_build_tiles(middle)
+	_build_items(middle)
 	_build_details(middle)
 	_build_queue(box)
-	_build_carried(box)
-	open_category(0)
+	_build_quick(box)
+	select(items.keys()[0])
 
-func _build_tabs(box: VBoxContainer) -> void:
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 4)
-	box.add_child(tabs)
-	for i in range(CATEGORIES.size()):
-		var button := Button.new()
-		button.custom_minimum_size = TAB_SIZE
-		button.tooltip_text = "%s (%d)" % [CATEGORIES[i].name, i + 1]
-		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		button.pressed.connect(open_category.bind(i))
-		var content := VBoxContainer.new()
-		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.alignment = BoxContainer.ALIGNMENT_CENTER
-		content.add_theme_constant_override("separation", 2)
-		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		button.add_child(content)
-		var picture := TextureRect.new()
-		picture.texture = icon(i)
-		picture.custom_minimum_size = Vector2(32, 32)
-		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(picture)
-		var name_label := _label(str(CATEGORIES[i].tab), 12, INK)
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.name = "Name"
-		content.add_child(name_label)
-		tabs.add_child(button)
-		category_buttons.append(button)
-
-func _build_tiles(middle: HBoxContainer) -> void:
+## Machines in category order, then products by tier, each tier in catalog order.
+func _build_items(middle: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _box(PANEL, Color("2c3238"), 1, 8))
+	panel.add_theme_stylebox_override("panel", _box(PANEL, Color("cfc6b3"), 1, 8))
 	middle.add_child(panel)
-	_scroll = ScrollContainer.new()
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.custom_minimum_size = Vector2(COLUMNS * TILE_SIZE.x + (COLUMNS - 1) * 6 + 2, 2 * TILE_SIZE.y + 6)
-	panel.add_child(_scroll)
-	var handmade: Array = _sim.handcraft_recipes()
-	var pages := VBoxContainer.new()
-	_scroll.add_child(pages)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(COLUMNS * SLOT + (COLUMNS - 1) * 4 + 14, 410)
+	panel.add_child(scroll)
+	var lists := VBoxContainer.new()
+	lists.add_theme_constant_override("separation", 6)
+	scroll.add_child(lists)
+	lists.add_child(_label("Makineler", 12, MUTED))
+	var machines := _grid()
+	lists.add_child(machines)
+	var kinds: Array = []
 	for category in CATEGORIES:
-		var page := GridContainer.new()
-		page.columns = COLUMNS
-		page.add_theme_constant_override("h_separation", 6)
-		page.add_theme_constant_override("v_separation", 6)
-		pages.add_child(page)
-		_pages.append(page)
 		for kind in category.machines:
-			_tile(page, "machine", str(kind))
-		for kind in category.machines:
-			var spec: Dictionary = _sim.catalog.machines[kind]
-			for r_id in spec.get("recipes", [spec.recipe]):
-				if str(r_id) in handmade and not tiles.has("recipe:" + str(r_id)):
-					_tile(page, "recipe", str(r_id))
+			if _sim.catalog.machines.has(kind):
+				kinds.append(str(kind))
+	for kind in _sim.catalog.machines:
+		if not (str(kind) in kinds):
+			kinds.append(str(kind))
+	for kind in kinds:
+		_item(machines, "machine:" + kind)
+	lists.add_child(_label("Ürünler", 12, MUTED))
+	var products := _grid()
+	lists.add_child(products)
+	var tiers: Dictionary = {}
+	for product in _sim.catalog.products:
+		if _sim.machine_of_item(str(product)).is_empty():
+			var tier := int(_sim.catalog.products[product].get("tier", 0))
+			if not tiers.has(tier):
+				tiers[tier] = []
+			tiers[tier].append(str(product))
+	var order: Array = tiers.keys()
+	order.sort()
+	for tier in order:
+		for product in tiers[tier]:
+			_item(products, "product:" + str(product))
 
-func _picture_for(type: String, id: String) -> Texture2D:
-	if type == "machine":
-		return Icons.machine(SpriteMachineCard.art_path(id))
-	return Icons.product(_sim, _output_of(id))
+func _grid() -> GridContainer:
+	var grid := GridContainer.new()
+	grid.columns = COLUMNS
+	grid.add_theme_constant_override("h_separation", 4)
+	grid.add_theme_constant_override("v_separation", 4)
+	return grid
 
-func _output_of(recipe_id: String) -> String:
-	return str(_sim.catalog.recipes[recipe_id].outputs.keys()[0])
-
-func _tile(page: GridContainer, type: String, id: String) -> void:
-	var tile := Button.new()
-	tile.custom_minimum_size = TILE_SIZE
-	tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_style(tile, false)
-	var content := VBoxContainer.new()
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.alignment = BoxContainer.ALIGNMENT_CENTER
-	content.add_theme_constant_override("separation", 4)
-	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	content.offset_left = 4
-	content.offset_right = -4
-	tile.add_child(content)
-	var picture := TextureRect.new()
-	picture.name = "Picture"
-	picture.texture = _picture_for(type, id)
-	picture.custom_minimum_size = Vector2(64, 64)
-	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if type == "machine" else CanvasItem.TEXTURE_FILTER_NEAREST
-	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(picture)
-	var name_label := _label(_name(type, id), 11, INK)
-	name_label.name = "Name"
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	name_label.custom_minimum_size.x = TILE_SIZE.x - 8
-	content.add_child(name_label)
-	if type == "recipe":
-		var amount := int(_sim.catalog.recipes[id].outputs[_output_of(id)])
-		if amount > 1:
-			var badge := _label("×%d" % amount, 11, AMBER)
-			badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-			badge.offset_left = -30
-			badge.offset_right = -6
-			badge.offset_top = 4
-			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			tile.add_child(badge)
-	var lock := Padlock.new()
-	lock.name = "Lock"
-	lock.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	lock.offset_bottom = -22
-	lock.visible = false
-	tile.add_child(lock)
-	var key := "%s:%s" % [type, id]
-	tile.pressed.connect(select.bind(key))
-	page.add_child(tile)
-	tiles[key] = tile
+func _item(grid: GridContainer, key: String) -> void:
+	var slot := InventorySlot.new(SLOT)
+	slot.set_item(_sim, key)
+	slot.pressed.connect(select.bind(key))
+	slot.gui_input.connect(func(event: InputEvent) -> void:
+		var click := event as InputEventMouseButton
+		if click == null or not click.pressed:
+			return
+		if click.button_index == MOUSE_BUTTON_RIGHT:
+			_toggle_pin(key)
+			accept_event()
+		elif click.button_index == MOUSE_BUTTON_LEFT and click.double_click:
+			_place(key)
+			accept_event())
+	slot.mouse_entered.connect(func() -> void: _hover = key)
+	slot.mouse_exited.connect(func() -> void: _hover = "")
+	grid.add_child(slot)
+	items[key] = slot
 
 func _build_details(middle: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.custom_minimum_size.x = 290
-	panel.add_theme_stylebox_override("panel", _box(PANEL, Color("2c3238"), 1, 12))
+	panel.custom_minimum_size.x = 320
+	panel.add_theme_stylebox_override("panel", _box(PANEL, Color("cfc6b3"), 1, 12))
 	middle.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	panel.add_child(box)
+	var title_row := HBoxContainer.new()
+	box.add_child(title_row)
 	_title = _label("", 18, INK)
-	box.add_child(_title)
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title_row.add_child(_title)
+	_count = _label("", 13, AMBER)
+	_count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	title_row.add_child(_count)
 	_picture = TextureRect.new()
-	_picture.custom_minimum_size = Vector2(0, 96)
+	_picture.custom_minimum_size = Vector2(0, 88)
 	_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	box.add_child(_picture)
 	_description = _label("", 12, MUTED)
 	_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_description.custom_minimum_size = Vector2(266, 32)
+	_description.custom_minimum_size = Vector2(296, 32)
 	box.add_child(_description)
 	var recipe_panel := PanelContainer.new()
-	recipe_panel.add_theme_stylebox_override("panel", _box(Color("1f2327"), Color("2c3238"), 1, 8))
+	recipe_panel.add_theme_stylebox_override("panel", _box(Color("ece6da"), Color("cfc6b3"), 1, 8))
 	box.add_child(recipe_panel)
 	var recipe_box := VBoxContainer.new()
 	recipe_box.add_theme_constant_override("separation", 4)
@@ -283,32 +244,47 @@ func _build_details(middle: HBoxContainer) -> void:
 	recipe_box.add_child(_recipe)
 	_time = _label("", 12, INK)
 	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_time.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	recipe_box.add_child(_time)
+	_uses_title = _label("Kullanıldığı yerler", 12, MUTED)
+	box.add_child(_uses_title)
+	_uses = HFlowContainer.new()
+	_uses.add_theme_constant_override("h_separation", 4)
+	_uses.add_theme_constant_override("v_separation", 4)
+	box.add_child(_uses)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(spacer)
-	craft_button = Button.new()
-	craft_button.text = "ÜRET"
-	craft_button.custom_minimum_size.y = 40
+	craft_button = _action_button("ÜRET", AMBER, Color("d9a659"), Color("c99442"), Color("a3722a"))
 	craft_button.tooltip_text = "Tıkla: 1 adet · Shift+tık: 5 adet"
-	craft_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	craft_button.add_theme_font_size_override("font_size", 16)
-	craft_button.add_theme_color_override("font_color", Color("1d1a14"))
-	craft_button.add_theme_color_override("font_hover_color", Color("1d1a14"))
-	craft_button.add_theme_color_override("font_pressed_color", Color("1d1a14"))
-	craft_button.add_theme_color_override("font_disabled_color", Color("6d747b"))
-	craft_button.add_theme_stylebox_override("normal", _box(AMBER, Color("ffc46e"), 1, 6))
-	craft_button.add_theme_stylebox_override("hover", _box(Color("ffb550"), Color("ffd99a"), 1, 6))
-	craft_button.add_theme_stylebox_override("pressed", _box(Color("d98a24"), Color("ffc46e"), 1, 6))
-	craft_button.add_theme_stylebox_override("disabled", _box(Color("2b2f34"), EDGE, 1, 6))
-	craft_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	craft_button.pressed.connect(func() -> void:
-		var parts := selected.split(":")
-		craft_requested.emit(parts[0], parts[1], 5 if Input.is_key_pressed(KEY_SHIFT) else 1))
+		var craft := _craft_target()
+		if not craft.is_empty():
+			craft_requested.emit(craft[0], craft[1], 5 if Input.is_key_pressed(KEY_SHIFT) else 1))
 	box.add_child(craft_button)
+	place_button = _action_button("YERLEŞTİR", Color("4f9a8a"), Color("7bb8ab"), Color("67a99c"), Color("43867a"))
+	place_button.pressed.connect(func() -> void: _place(selected))
+	box.add_child(place_button)
 	_reason = _label("", 11, RED)
 	_reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_reason)
+
+func _action_button(text: String, fill: Color, border: Color, hover: Color, pressed: Color) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size.y = 36
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 15)
+	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
+		button.add_theme_color_override(state, Color("1d1a14"))
+	button.add_theme_color_override("font_disabled_color", Color("a89d88"))
+	button.add_theme_stylebox_override("normal", _box(fill, border, 1, 6))
+	button.add_theme_stylebox_override("hover", _box(hover, border.lightened(0.3), 1, 6))
+	button.add_theme_stylebox_override("pressed", _box(pressed, border, 1, 6))
+	button.add_theme_stylebox_override("disabled", _box(Color("e4ddd0"), EDGE, 1, 6))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	return button
 
 func _build_queue(box: VBoxContainer) -> void:
 	_queue_title = _label("", 13, INK)
@@ -318,41 +294,49 @@ func _build_queue(box: VBoxContainer) -> void:
 	_queue_row.custom_minimum_size.y = 52
 	box.add_child(_queue_row)
 
-func _build_carried(box: VBoxContainer) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	box.add_child(row)
-	var title := _label("Envanter", 13, INK)
-	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(title)
-	_carried = HFlowContainer.new()
-	_carried.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_carried.add_theme_constant_override("h_separation", 4)
-	_carried.add_theme_constant_override("v_separation", 4)
-	row.add_child(_carried)
+func _build_quick(box: VBoxContainer) -> void:
+	box.add_child(_label("Hızlı erişim (alt çubuk)", 13, INK))
+	var quick := HBoxContainer.new()
+	quick.add_theme_constant_override("separation", 4)
+	box.add_child(quick)
+	for i in range(10):
+		var slot := InventorySlot.new(SLOT)
+		slot.show_number(i)
+		slot.on_drop = func(index: int, key: String) -> void: pin_requested.emit(key, index)
+		slot.pressed.connect(func() -> void:
+			if not slot.key.is_empty():
+				select(slot.key))
+		slot.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and not slot.key.is_empty():
+				unpin_requested.emit(i)
+				accept_event())
+		slot.mouse_entered.connect(func() -> void: _hover = slot.key)
+		slot.mouse_exited.connect(func() -> void: _hover = "")
+		quick.add_child(slot)
+		quick_slots.append(slot)
 
-func open_category(index: int) -> void:
-	open_index = index
-	for i in range(_pages.size()):
-		_pages[i].visible = i == index
-		_style(category_buttons[i], i == index)
-		var name_label: Label = category_buttons[i].find_child("Name", true, false)
-		name_label.add_theme_color_override("font_color", AMBER if i == index else INK)
-	_scroll.scroll_vertical = 0
-	if _pages[index].get_child_count() > 0:
-		for key in tiles:
-			if tiles[key] == _pages[index].get_child(0):
-				select(str(key))
-				break
+## While an item is dragged, the dimmed backdrop lets it through so it can be dropped on a
+## machine card's input behind the window; the window itself still takes drops.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_BEGIN:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	elif what == NOTIFICATION_DRAG_END:
+		mouse_filter = Control.MOUSE_FILTER_STOP
 
 func select(key: String) -> void:
+	if not items.has(key):
+		return
+	if items.has(selected):
+		items[selected].selected = false
+		items[selected].queue_redraw()
 	selected = key
-	for tile_key in tiles:
-		_style(tiles[tile_key], tile_key == key)
+	items[key].selected = true
+	items[key].queue_redraw()
 	_show_details()
 
 func toggle() -> void:
 	visible = not visible
+	_hover = ""
 	if visible:
 		refresh(_sim)
 
@@ -360,27 +344,56 @@ func refresh(sim: RefCounted) -> void:
 	_sim = sim
 	if not visible:
 		return
-	for key in tiles:
-		var parts: PackedStringArray = str(key).split(":")
-		var tile: Button = tiles[key]
-		var unlocked: bool = sim.is_craft_unlocked(parts[0], parts[1])
-		var ready: bool = sim.can_craft(parts[0], parts[1])
-		tile.get_node("Lock").visible = not unlocked
-		tile.find_child("Picture", true, false).modulate.a = 1.0 if ready else (0.5 if unlocked else 0.18)
-		var name_label: Label = tile.find_child("Name", true, false)
-		name_label.add_theme_color_override("font_color", INK if unlocked else MUTED)
-		tile.tooltip_text = _name(parts[0], parts[1])
-		var blocker := _blocker(parts[0], parts[1])
-		if not blocker.is_empty():
-			tile.tooltip_text += "\n" + blocker
+	for key in items:
+		var slot: InventorySlot = items[key]
+		slot.pinned = key in sim.hotbar
+		slot.locked = not _is_open(str(key))
+		slot.set_item(sim, str(key))
+	for i in range(quick_slots.size()):
+		quick_slots[i].set_item(sim, sim.hotbar[i])
 	_show_details()
 	_refresh_queue(sim)
-	_refresh_carried(sim)
 
-func _name(type: String, id: String) -> String:
-	return str(_sim.catalog.machines[id].name) if type == "machine" else str(_sim.catalog.recipes[id].get("name", id))
+## A machine is open once researched; a product once some machine may make it.
+func _is_open(key: String) -> bool:
+	var parts := key.split(":")
+	if parts[0] == "machine":
+		return _sim.is_machine_unlocked(parts[1])
+	for producer in _producers(parts[1]):
+		if producer.unlocked:
+			return true
+	return false
 
-## Why a tile cannot be crafted right now, or "" when it can.
+## Recipes that make `product`, hand-craftable ones first; machine items are left out.
+func _producers(product: String) -> Array:
+	var hand: Array = []
+	var other: Array = []
+	for producer in _sim.producers_for(product):
+		if not _sim.catalog.recipes[producer.recipe].has("builds"):
+			(hand if _sim.catalog.machines[producer.kind].get("handcraft", false) else other).append(producer)
+	return hand + other
+
+## [type, id] the ÜRET button crafts for the selection, or [] when the hand cannot make it.
+func _craft_target() -> Array:
+	var parts := selected.split(":")
+	if parts[0] == "machine":
+		return ["machine", parts[1]]
+	var producers := _producers(parts[1])
+	if not producers.is_empty() and _sim.catalog.machines[producers[0].kind].get("handcraft", false):
+		return ["recipe", str(producers[0].recipe)]
+	return []
+
+func _name(key: String) -> String:
+	var parts := key.split(":")
+	return str(_sim.catalog.machines[parts[1]].name) if parts[0] == "machine" else _sim.product_name(parts[1])
+
+func _picture_for(key: String) -> Texture2D:
+	var parts := key.split(":")
+	if parts[0] == "machine":
+		return Icons.machine(SpriteMachineCard.art_path(parts[1]))
+	return Icons.product(_sim, parts[1])
+
+## Why the selection cannot be hand crafted right now, or "" when it can.
 func _blocker(type: String, id: String) -> String:
 	if not _sim.is_craft_unlocked(type, id):
 		var tech: String = _sim.unlock_tech_for_machine(id) if type == "machine" else _sim.unlock_tech_for_recipe(id)
@@ -391,24 +404,43 @@ func _blocker(type: String, id: String) -> String:
 		return "Malzeme eksik"
 	return ""
 
-## Selected tile: picture, description, recipe with what you carry (red when short), time.
+## Selected item: picture, description, recipe with what you carry (red when short), time,
+## and what it goes into.
 func _show_details() -> void:
-	for child in _recipe.get_children():
-		child.queue_free()
+	for row in [_recipe, _uses]:
+		for child in row.get_children():
+			child.queue_free()
 	if selected.is_empty():
 		return
 	var parts := selected.split(":")
-	var type := parts[0]
+	var is_machine := parts[0] == "machine"
 	var id := parts[1]
-	_title.text = _name(type, id)
-	_picture.texture = _picture_for(type, id)
-	_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if type == "machine" else CanvasItem.TEXTURE_FILTER_NEAREST
-	if type == "machine":
+	_title.text = _name(selected)
+	_count.text = "Envanterde: %d" % _sim.carried_count(selected)
+	_picture.texture = _picture_for(selected)
+	_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if is_machine else CanvasItem.TEXTURE_FILTER_NEAREST
+	place_button.visible = is_machine and _sim.carried_count(selected) > 0
+	place_button.disabled = is_machine and not _sim.can_place(id)
+	var craft := _craft_target()
+	var producers: Array = [] if is_machine else _producers(id)
+	if is_machine:
 		_description.text = str(_sim.catalog.machines[id].get("description", ""))
+	elif producers.is_empty():
+		_description.text = "Hiçbir makine üretmiyor."
 	else:
-		var product := _output_of(id)
-		_description.text = "Elde %d× %s üretir." % [int(_sim.catalog.recipes[id].outputs[product]), _sim.product_name(product)]
-	var inputs: Dictionary = _sim.craft_inputs(type, id)
+		var makers: PackedStringArray = []
+		for producer in producers:
+			if not (producer.machine_name in makers):
+				makers.append(producer.machine_name)
+		_description.text = "%s: %s" % ["Elde ya da makinede üretilir" if not craft.is_empty() else "Makinede üretilir", ", ".join(makers)]
+	var recipe_id := ""
+	var inputs: Dictionary = {}
+	if is_machine:
+		inputs = _sim.craft_inputs("machine", id)
+	elif not producers.is_empty():
+		recipe_id = str(producers[0].recipe)
+		inputs = _sim.catalog.recipes[recipe_id].inputs
+	_recipe.get_parent().get_parent().visible = is_machine or not producers.is_empty()
 	for product in inputs:
 		var have := int(_sim.inventory.get(product, 0))
 		var need := int(inputs[product])
@@ -421,22 +453,71 @@ func _show_details() -> void:
 		amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		column.add_child(amount)
 		_recipe.add_child(column)
+	if inputs.is_empty() and not is_machine:
+		var raw := _label("Hammadde", 12, MUTED)
+		raw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_recipe.add_child(raw)
 	var arrow := _label("→", 20, MUTED)
 	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_recipe.add_child(arrow)
 	var result: Icons.Slot
-	if type == "machine":
-		result = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(id)), 1)
+	if is_machine:
+		result = Icons.Slot.new(_picture_for(selected), 1)
 		result.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	else:
-		result = Icons.Slot.new(Icons.product(_sim, _output_of(id)), int(_sim.catalog.recipes[id].outputs[_output_of(id)]))
+		result = Icons.Slot.new(_picture_for(selected), int(producers[0].output_amount) if not producers.is_empty() else 1)
 	result.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_recipe.add_child(result)
-	_time.text = "Süre: %.1f sn" % (_sim.craft_work(type, id) / _sim.hand_speed)
-	var blocker := _blocker(type, id)
+	if not craft.is_empty():
+		_time.text = "Elle üretim: %.1f sn" %(_sim.craft_work(craft[0], craft[1]) / _sim.hand_speed)
+	elif not recipe_id.is_empty():
+		_time.text = "%s · %s" % [producers[0].machine_name, producers[0].recipe_name]
+	else:
+		_time.text = ""
+	_show_uses(id if not is_machine else "")
+	craft_button.visible = not craft.is_empty()
+	var blocker := _blocker(craft[0], craft[1]) if not craft.is_empty() else ""
+	if craft.is_empty() and not producers.is_empty():
+		blocker = "Elde yapılamaz: makinede üretilir." if producers[0].unlocked else "Kilitli: %s" % _tech_name(str(producers[0].unlock_tech))
 	craft_button.disabled = not blocker.is_empty()
 	craft_button.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN if craft_button.disabled else Control.CURSOR_POINTING_HAND
 	_reason.text = blocker
+
+func _tech_name(tech: String) -> String:
+	return str(_sim.catalog.researches[tech].name) if _sim.catalog.researches.has(tech) else "?"
+
+## Products and machines that take `product`, as clickable icons.
+func _show_uses(product: String) -> void:
+	var uses: Array = []
+	if not product.is_empty():
+		for r_id in _sim.catalog.recipes:
+			var spec: Dictionary = _sim.catalog.recipes[r_id]
+			if spec.has("builds") or not spec.inputs.has(product):
+				continue
+			for output in spec.outputs:
+				var key := "product:" + str(output)
+				if output != "metal_scrap" and items.has(key) and not (key in uses):
+					uses.append(key)
+				break
+		for kind in _sim.catalog.machines:
+			if _sim.catalog.machines[kind].get("build_cost", {}).has(product):
+				uses.append("machine:" + str(kind))
+	_uses_title.visible = not uses.is_empty()
+	_uses.visible = not uses.is_empty()
+	for i in range(mini(uses.size(), USES_SHOWN)):
+		var key: String = uses[i]
+		var button := Button.new()
+		button.flat = true
+		button.custom_minimum_size = Vector2(30, 30)
+		button.icon = _picture_for(key)
+		button.expand_icon = true
+		button.tooltip_text = _name(key)
+		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if key.begins_with("machine:") else CanvasItem.TEXTURE_FILTER_NEAREST
+		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		button.pressed.connect(select.bind(key))
+		_uses.add_child(button)
+	if uses.size() > USES_SHOWN:
+		_uses.add_child(_label("+%d" % (uses.size() - USES_SHOWN), 12, MUTED))
 
 func _refresh_queue(sim: RefCounted) -> void:
 	_queue_title.text = "Üretim sırası (%d)" % sim.craft_queue.size()
@@ -465,7 +546,7 @@ func _queue_card(sim: RefCounted, index: int) -> Control:
 	var job: Dictionary = sim.craft_queue[index]
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(160, 50)
-	card.add_theme_stylebox_override("panel", _box(PANEL, Color("2c3238"), 1, 6))
+	card.add_theme_stylebox_override("panel", _box(PANEL, Color("cfc6b3"), 1, 6))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	card.add_child(row)
@@ -475,9 +556,11 @@ func _queue_card(sim: RefCounted, index: int) -> Control:
 	if type == "machine":
 		slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(id)), 1)
 		slot.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		slot.tooltip_text = str(sim.catalog.machines[id].name)
 	else:
-		slot = Icons.Slot.new(Icons.product(sim, _output_of(id)), int(sim.catalog.recipes[id].outputs[_output_of(id)]))
-	slot.tooltip_text = _name(type, id)
+		var output := str(sim.catalog.recipes[id].outputs.keys()[0])
+		slot = Icons.Slot.new(Icons.product(sim, output), int(sim.catalog.recipes[id].outputs[output]))
+		slot.tooltip_text = str(sim.catalog.recipes[id].get("name", id))
 	slot.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(slot)
 	var middle := VBoxContainer.new()
@@ -489,8 +572,8 @@ func _queue_card(sim: RefCounted, index: int) -> Control:
 	bar.max_value = 1.0
 	bar.step = 0.0
 	bar.custom_minimum_size = Vector2(70, 6)
-	bar.add_theme_stylebox_override("background", _box(Color("2b2f34"), Color.TRANSPARENT, 0, 0, 2))
-	bar.add_theme_stylebox_override("fill", _box(Color("4fc39a"), Color.TRANSPARENT, 0, 0, 2))
+	bar.add_theme_stylebox_override("background", _box(Color("e4ddd0"), Color.TRANSPARENT, 0, 0, 2))
+	bar.add_theme_stylebox_override("fill", _box(Color("4f9a8a"), Color.TRANSPARENT, 0, 0, 2))
 	middle.add_child(bar)
 	var time := _label("", 12, INK)
 	middle.add_child(time)
@@ -508,56 +591,38 @@ func _queue_card(sim: RefCounted, index: int) -> Control:
 	queue_slots.append({"bar": bar, "time": time, "cancel": cancel})
 	return card
 
-func _refresh_carried(sim: RefCounted) -> void:
-	var keys: Array = []
-	for product in sim.catalog.products:
-		if int(sim.inventory.get(product, 0)) > 0:
-			keys.append(str(product))
-	if keys != _carried_keys:
-		_carried_keys = keys
-		_carried_slots.clear()
-		for child in _carried.get_children():
-			child.queue_free()
-		for product in keys:
-			var cell := PanelContainer.new()
-			cell.add_theme_stylebox_override("panel", _box(TILE, EDGE, 1, 2))
-			var slot := Icons.Slot.new(Icons.product(sim, product), 1)
-			slot.name = "Slot"
-			slot.show_one = true
-			slot.custom_minimum_size = Vector2(40, 36)
-			slot.tooltip_text = sim.product_name(product)
-			slot.mouse_filter = Control.MOUSE_FILTER_PASS
-			cell.add_child(slot)
-			_carried.add_child(cell)
-			_carried_slots.append(slot)
-	for i in range(_carried_slots.size()):
-		var slot: Icons.Slot = _carried_slots[i]
-		slot.count = int(sim.inventory.get(keys[i], 0))
-		slot.queue_redraw()
+func _toggle_pin(key: String) -> void:
+	var index: int = _sim.hotbar.find(key)
+	if index >= 0:
+		unpin_requested.emit(index)
+	else:
+		pin_requested.emit(key, -1)
+
+func _place(key: String) -> void:
+	if key.begins_with("machine:") and _sim.can_place(key.trim_prefix("machine:")):
+		hide()
+		machine_requested.emit(key.trim_prefix("machine:"))
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
-	if key.keycode == KEY_C:
+	if key.keycode == KEY_C or key.keycode == KEY_I:
 		toggle()
 		get_viewport().set_input_as_handled()
-	elif not visible:
 		return
-	elif key.keycode == KEY_ESCAPE:
+	if not visible:
+		return
+	if key.keycode == KEY_ESCAPE:
 		hide()
 		get_viewport().set_input_as_handled()
-	elif key.keycode >= KEY_1 and key.keycode < KEY_1 + CATEGORIES.size():
-		open_category(key.keycode - KEY_1)
+		return
+	var index := -1
+	if key.keycode >= KEY_1 and key.keycode <= KEY_9:
+		index = key.keycode - KEY_1
+	elif key.keycode == KEY_0:
+		index = 9
+	if index >= 0:
+		if not _hover.is_empty():
+			pin_requested.emit(_hover, index)
 		get_viewport().set_input_as_handled()
-
-## Padlock drawn over a locked tile.
-class Padlock extends Control:
-	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	func _draw() -> void:
-		var c := size * 0.5
-		draw_arc(c + Vector2(0, -4), 7, PI, TAU, 16, Color("9aa1a8"), 3)
-		draw_rect(Rect2(c + Vector2(-11, -4), Vector2(22, 17)), Color("9aa1a8"))
-		draw_rect(Rect2(c + Vector2(-2, 1), Vector2(4, 7)), Color("23272c"))
