@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: oneri
-guncelleme: 2026-10-23
+guncelleme: 2026-10-24
 ---
 # Arayüz ve büyük ağ yönetimi
 
@@ -14,8 +14,8 @@ Oyuncu büyük bir üretim ağında ne olduğunu, neyin eksik kaldığını ve h
 Aşağıdakiler çalışan prototipte var. Onaylı kural olanlar karar kimliğiyle işaretli; diğerleri uygulama seçimidir.
 
 - **Reçete ekranı** (K-009): aynı girdili makinelerde ürün seçimi, girdileriyle birlikte.
-- **Üretim ekranı (C)** (K-011): kategoriler, seçili öğenin tarifi ve süresi, ÜRET düğmesi, üretim sırası. Görünüm, kullanıcının Codex taslakları arasından seçtiği "A" tarzıdır.
-- **Envanter penceresi (I) ve 10 yuvalı hızlı erişim** (K-012): bkz. [[Tasarım/Envanter ve El Üretimi]].
+- **Envanter ve üretim penceresi (I ya da C)** (K-026, K-028, K-029): oyundaki bütün öğeler ve akış haritası düzeninde seçilen öğenin girdileri, tarifi ve kullanıldığı yerler; 10 yuvalı hızlı erişim (K-012). Ayrıntılar [[Tasarım/Envanter ve El Üretimi]].
+- **Görünüm** (K-027, K-030): aydınlık Kum taşı paleti (bej tuval, kâğıt rengi kartlar, petrol yeşili ve bakır vurgu); bütün metinler İngilizce; başlıklarda Pixelify Sans, metinde Nunito; envanter penceresinde perçinli kenar, başlık bandı ve ızgaralı harita zemini.
 - **Kart üstü göstergeler:** giriş/çıkış tamponları, çevrim ilerlemesi, durdurma; çıkışa tıklayınca envantere alma (K-011).
 - **Kart menüsü (sağ tık):** reçete, durdur/çalıştır, hız, envantere al, kaldır.
 - **Araştırma paneli:** kademeli ağaç ve puan depoları (K-008).

@@ -1,7 +1,7 @@
 ---
 tur: karar-defteri
 durum: etkin
-guncelleme: 2026-10-23
+guncelleme: 2026-10-24
 ---
 # Karar defteri
 
@@ -149,6 +149,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** “bu alttaki inentory hızlı kullanım için olsun ve sabit 10 ürün alıyor olsun. esas inventory başka açılan bir pencere olsun o geniş olsun. oyuncu istedğini altta hızlıya alabiliyor olsun. yani ikisi aynı inventory i paylaşacak ama oyuncu istediğini alta sabitleyebiliyor olacak ölye düşün. birde inventory açma tuşu koyman lazım tabi”
 - **Sınır:** Kullanıcının seçmediği, prototipte asistanın koyduğu ayrıntılar: açma tuşu I; yuvalar 1-9 ve 0 tuşlarıyla kullanılır (makine yerleştirir); sabitleme sürükle-bırak, sağ tık ya da pencerede öğenin üstündeyken numara tuşuyla yapılır; sayısı sıfıra inen öğe yuvasında soluk kalır; yeni gelen öğe boş yuva varsa ilk boş yuvaya kendiliğinden girer; başlangıç kiti çubuğa dizilir. Bunlar değiştirilebilir.
 - **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+- **Değişiklik:** 2. madde K-026 ile değişti: envanterin tamamı ile el üretimi artık tek penceredir (I ya da C). Diğer maddeler geçerli.
 
 ## K-013 — Oyun boş tuvalle başlar
 
@@ -298,6 +299,56 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** “oyunumuzda sadece toplam 9 tane mi araştırma var. bunun en az 40 50 falan olması lazım”; araştırma türleri önerisine “Anlastik devam et”; 63 araştırmalık tabloya “Tablo uygun”.
 - **Sınır:** Bedeller, etki oranları ve Laboratuvar 4'ün girdileri ilk tahmindir. Araştırmaların tam listesi [[Tasarım/Teknoloji Ağacı]] notundadır.
 - **Asıl not:** [[Tasarım/Teknoloji Ağacı]].
+
+## K-026 — Envanter ve el üretimi tek pencerede
+
+- **Durum:** Onaylı; K-012'nin 2. maddesinin yerine geçer.
+- **Tarih:** 2026-10-24.
+- **Karar:** Envanter penceresi ile üretim ekranı birleşir. Sol tarafta oyundaki bütün öğeler durur: elde olanlar adediyle, olmayanlar soluk görünür; böylece oyuncu bütün öğeleri ve nasıl yapıldıklarını buradan görür. Sağ tarafta seçilen öğe üretilir. I ve C aynı pencereyi açar.
+- **Kaynak:** “tamam şimdi bu inventory ile craft ekranını birleştirebiliriz bence 2 bölümlü olur sol tarafta envanter olur. orda tüm itemlar olur var olanlar kaç adet olduğu ile beraber görünür var olmayanlar opaklığı düşük şekilde görünür hem böylece oyuncu tüm itemler ve nasıl craft edildiğini rdan görür. sağ tarafta craft etme olur basınca craft edilir.”
+- **Sınır:** Asistan seçimleri: kategori sekmeleri kalktı; araştırılmamış öğelerde asma kilit; makine çift tıkla yerleştirilir; "Kullanıldığı yerler" listesi; alt çubuktaki iki düğme tek düğmeye indi. Pencerenin düzeni K-028 ile akış haritası oldu.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-027 — Aydınlık arayüz paleti: Kum taşı
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-24.
+- **Karar:** Koyu mavi tema bırakılır; arayüz aydınlık ama cart olmayan bir paletle boyanır. Oyun içinde karşılaştırılan üç paletten A seçildi: bej tuval, kâğıt rengi kart ve paneller, petrol yeşili ve bakır vurgu.
+- **Kaynak:** “Oyundaki bu karanlik mavi teami icimi bayiyor daha boyle aydinlik ama cart olmayan tenk paleti lazim bize pempe falan gibi cart renkler olmaz tabi ama boyle koyu karanlik da olmamali”; “Once basit bir menu icin 3 unude uygulayip yan yana gorselini ver bana goreyim”; karşılaştırmadan sonra “A olsun”.
+- **Sınır:** Renk tonları asistan seçimidir. Makine çizimleri değişmedi; Zincir Editörü (oyun dışı araç) koyu kaldı.
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
+
+## K-028 — Envanter penceresi akış haritası düzeninde
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-24.
+- **Karar:**
+  1. Codex'e ürettirilen dört alternatiften D (akış haritası) uygulanır: seçilen öğe ortada, girdileri solda, kullanıldığı yerler sağda durur ve çizgilerle bağlanır.
+  2. Kullanıldığı yerler 6 karta kadar olduğu gibi gösterilir. Fazlası kaydırılır; kaydırma serbest değildir, kartlar birer adım kayar ve çizgiler görünen kartlara gider.
+- **Kaynak:** “şimdi bizim envantör menüsü var ya bunun screenshotunu çekip codex e cli üzerinden ver … ondan 1 görsel içerisinde 4 alternatif içerecek şekilde görsel oluşturmasını iste”; “D alternatifini (akış haritası) oyuna uygula”; “bence orası 6 ürüne kadar normal göstersin. görseldeki gibi yani. bir önceki gibi. 6 üründen fazla ise aşağı kaydırmalı olsun kaydırmada free olmasın flow oklarına gelecek şekilde step step aşağı kaysın”.
+- **Sınır:** Makineleri ayrı bir simge bloğunda toplayan ara deneme “yok böyle olmadı” ile geri alındı. Fare tekerleği ve ok düğmeleri, aralık göstergesi ("3-8 / 17") ve 5 sütunlu sol liste asistan seçimidir. Konsept görseli `art_src/konsept/` altındadır.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-029 — Elle ve makinede aynı iş miktarı, simgeyle gösterilir
+
+- **Durum:** Onaylı; K-005'teki üretim modelinin arayüzdeki karşılığı.
+- **Tarih:** 2026-10-24.
+- **Karar:** Üretimde elle ve makinede ayrımı yapılmaz. Her reçetenin kendine ait sabit bir iş gereksinimi vardır; el ve makineler yalnızca iş güçleriyle ayrılır. Pencere bu sayıyı yazıyla değil uygun bir simgeyle gösterir.
+- **Kaynak:** “bu üretiminde elle üretim makine üretim diye bir farkı olmaması lazım. zaten makinelerin craft gücü var. elle üretiminde bir kraft gücü var. yani recipelerin craft gereksinimin yazması lazım ve bu ellede olsa makinede olsa sabit bir değer her ürünün kendisi için”; “gereken iş gibi text ile anlatmayalım bunu da iconla alatalım uygun bir icon ile”.
+- **Sınır:** Simge, oyunda üretimi temsil eden çekiçtir (asistan seçimi). Bazı reçetelerin el ile yapılamaması (K-011 sınırı) değişmedi.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-030 — Oyun İngilizce; font ve pencere malzemesi
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-24.
+- **Karar:**
+  1. Oyundaki bütün metinler İngilizcedir.
+  2. Font seçimi asistana bırakıldı.
+  3. Envanter penceresine malzeme hissi verilir ve araştırılmamış makineler birbirinden ayırt edilir; önce gösterilip sonra onaylandı.
+- **Kaynak:** Arayüz eleştirisine “1. herşey ingilizce olacak. 2. bunu sen çöz. 3 için bişi yapma şu an. 4 ve 5 için 1 ve 2 yi yaptıktan sonra 1 ve 2 ve mevcut yapıyı bozmadan yapıp bana göster önce.”; fontların indirilmesine “Evet, Pixelify Sans ve Nunito fontlarını indir ve uygula”; gösterimden sonra “4 ve 5 kalsın, hepsini commit push yap”.
+- **Sınır:** Asistan seçimleri: başlıklarda Pixelify Sans, metinde Nunito (ikisi de OFL, `app/fonts`); perçinli pencere kenarı, başlık bandı ve ızgaralı harita zemini; kilitli makinelerde yer tutucu çizim yerine kategori simgesi. Araştırma kodları (DM, MK…), Zincir Editörü ve tasarım belgeleri Türkçe kaldı. Kart hiyerarşisinin sadeleştirilmesi ertelendi.
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
 
 ## Henüz karar olmayan yönler
 

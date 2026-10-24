@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-23
+guncelleme: 2026-10-24
 ---
 # Envanter ve el üretimi
 
@@ -25,7 +25,13 @@ Envanter, makineleri kendiliğinden besleyen bir depo değildir: makineler ürü
 - Envanterin tamamı ayrı açılan, geniş bir penceredir ve bir tuşla açılır.
 - İki görünüm aynı envanteri paylaşır; oyuncu istediği öğeyi alttaki hızlı erişime sabitler.
 
-K-012, K-011'in "ekranın altı envanterdir" maddesinin yerine geçti.
+K-012, K-011'in "ekranın altı envanterdir" maddesinin yerine geçti. Ayrı envanter penceresi K-026 ile üretim ekranıyla birleşti.
+
+### Envanter ve üretim tek pencere — K-026, K-028, K-029
+
+- Envanter ve el üretimi tek penceredir. Solda oyundaki bütün öğeler durur: elde olanlar adediyle, olmayanlar soluk. Sağda seçilen öğe üretilir (K-026).
+- Pencere bir akış haritasıdır: seçilen öğe ortada, girdileri solda, kullanıldığı yerler sağda, aralarında çizgiler. Kullanıldığı yerler 6 karta kadar tam görünür; fazlası birer kart adımla kayar ve çizgiler görünen kartlara gider (K-028).
+- Elle ve makinede üretim arasında fark gösterilmez: her reçetenin sabit iş gereksinimi vardır, el ve makineler yalnızca iş gücünde ayrılır. Bu sayı simgeyle gösterilir (K-029).
 
 ### Boş başlangıç — K-013
 
@@ -39,7 +45,7 @@ Oyuncu envanterdeki bir ürünü, uygunsa bir makine kartının girişine bırak
 
 Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir. Maden sınırı araştırmayla artar: her maden için II ve III araştırmaları sınırı birer artırır (K-025).
 
-Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|K-010]], [[Yönetim/Karar Defteri#K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi|K-011]], [[Yönetim/Karar Defteri#K-012 — Hızlı erişim çubuğu ve envanter penceresi|K-012]].
+Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|K-010]], [[Yönetim/Karar Defteri#K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi|K-011]], [[Yönetim/Karar Defteri#K-012 — Hızlı erişim çubuğu ve envanter penceresi|K-012]], [[Yönetim/Karar Defteri#K-026 — Envanter ve el üretimi tek pencerede|K-026]], [[Yönetim/Karar Defteri#K-028 — Envanter penceresi akış haritası düzeninde|K-028]], [[Yönetim/Karar Defteri#K-029 — Elle ve makinede aynı iş miktarı, simgeyle gösterilir|K-029]].
 
 ## Prototipteki karşılığı (ilk deneme, dengelenmemiş)
 
@@ -55,11 +61,10 @@ Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|
 | Makineye koyma | Hızlı erişimden ya da envanter penceresinden ürünü giriş kutusuna sürükle-bırak; varsayılan girişe sığdığı kadar, Shift ile 1 adet. Normal giriş yalnızca kendi ürününü, otomatik makinenin genel girişi reçetesi olan her ürünü, depo her ürünü alır. Envanter penceresi açıkken sürüklenen ürün arkadaki karta bırakılabilir. |
 | Envanter yuvası | Envanterin yuva veya ağırlık sınırı yoktur. |
 | Hızlı erişim | 10 yuva, 1–9 ve 0 tuşları. Makine yuvası tıklanınca ya da numarasına basılınca makine yerleştirilir. Sayısı sıfıra inen öğe yuvasında soluk kalır. Yeni gelen öğe boş yuva varsa ilk boş yuvaya kendiliğinden girer; oyuncunun çıkardığı öğe kendiliğinden geri gelmez. |
-| Envanter penceresi | I ile açılır. Sabitleme: hızlı erişim yuvasına sürükleme, sağ tık ya da öğenin üstündeyken numara tuşu. |
-| Üretim ekranı | C ile açılır; kategoriler, seçili öğenin tarifi, ÜRET düğmesi (Shift: 5 adet), üretim sırası ve envanter satırı. |
+| Envanter ve üretim penceresi | I ya da C ile açılır (oyunda "Inventory and Crafting"). Solda 23 makine ve 55 ürün; başlıklarda elde olan/toplam sayısı, araştırılmamış öğede asma kilit, araştırılmamış makinede çizim yerine kategori simgesi. Ortada seçilen öğe: resim, envanterdeki adet, üreten makine, tarif, çekiç simgesiyle iş miktarı, CRAFT (Shift: 5 adet) ve elde makine varsa PLACE. Solda girdi kartları (elde/gereken, eksikse kırmızı; hammaddede çıkaran maden), sağda kullanıldığı ürün ve makine kartları. Her karta tıklamak o öğeyi ortaya getirir. Altta üretim sırası ve hızlı erişimin kopyası. Sabitleme: hızlı erişim yuvasına sürükleme, sağ tık ya da öğenin üstündeyken numara tuşu; makine çift tıkla yerleştirilir. |
 | Kayıt | Envanter, kurulmamış makineler, üretim sırası ve hızlı erişim kayda girer (kayıt sürümü 4). |
 
-Bu satırların hiçbiri kullanıcı kararı değildir; I tuşu, otomatik yuvaya girme ve el ile yapılabilen reçete listesi asistanın prototip seçimidir.
+Bu satırlar, kararlara dayanan maddeler dışında kullanıcı kararı değildir; I ve C tuşları, otomatik yuvaya girme ve el ile yapılabilen reçete listesi asistanın prototip seçimidir.
 
 ## Açık kalanlar
 

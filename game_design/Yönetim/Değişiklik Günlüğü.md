@@ -1,7 +1,7 @@
 ---
 tur: degisiklik-gunlugu
 durum: etkin
-guncelleme: 2026-10-23
+guncelleme: 2026-10-24
 ---
 # Değişiklik günlüğü
 
@@ -119,3 +119,14 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - Zincir Editörü'ne reçete tablosu görünümü eklendi (araç; oyun kuralı değil).
 - [[Tasarım/Teknoloji Ağacı]] 63 araştırmayla veriden yeniden yazıldı; eski ağaç tarihsel özet olarak kaldı. [[Tasarım/Ürün ve Üretim Ağı]] yeni makine adlarıyla yeniden üretildi. Güncellenen notlar: [[Tasarım/Makine Kartları]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Araştırma Ekonomisi]], [[Tasarım/Prosesler Kalite ve Yan Ürünler]], [[01 - Güncel Tasarım]], [[00 - Başlangıç]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]], ana pano; `README.md`.
 - Bütün testler ve pencereli smoke testi geçti.
+
+## 2026-10-24 — Envanter penceresi, aydınlık palet ve İngilizce arayüz
+
+- K-026: Envanter ile el üretimi tek pencerede birleşti; oyundaki bütün öğeler görünür, olmayanlar soluk. K-012'ye değişiklik notu eklendi.
+- K-027: Koyu mavi tema yerine aydınlık Kum taşı paleti; üç palet oyun içinde yan yana karşılaştırılıp A seçildi.
+- K-028: Codex'ten alınan dört alternatiften D (akış haritası) uygulandı; kullanıldığı yerler 6 kart, fazlası adım adım kayar.
+- K-029: Elle ve makinede aynı iş miktarı; tarif kutusunda süre yerine iş miktarı çekiç simgesiyle.
+- K-030: Oyunun bütün metinleri ve araştırma adları İngilizce; Pixelify Sans ve Nunito fontları; pencereye perçinli kenar, başlık bandı ve ızgaralı harita zemini; kilitli makinelerde kategori simgesi.
+- Prototipte ayrıca: Godot editörünün geri yazdığı eski `machine_card.tscn` yeniden silindi.
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], ana pano; `README.md`.
+- Bütün testler ve pencereli smoke testi geçti; ekran görüntüleri incelendi. Fiziksel fareyle oyun içi deneme yapılmadı.

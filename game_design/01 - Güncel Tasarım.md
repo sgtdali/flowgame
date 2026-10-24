@@ -1,7 +1,7 @@
 ---
 tur: tasarim-ozeti
 durum: karma
-guncelleme: 2026-10-23
+guncelleme: 2026-10-24
 ---
 # Güncel tasarım
 
@@ -43,7 +43,9 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **Hammadde sınırlıdır (K-010):** Madenler oyun başında birer adet kurulabilir.
 
-**Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Oyun boş tuvalle başlar (K-013). Oyuncu envanterdeki ürünü uygun bir makinenin girişine elle koyabilir; ağa bağlı olmayan makine de böyle çalışır (K-014). Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
+**Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Oyun boş tuvalle başlar (K-013). Oyuncu envanterdeki ürünü uygun bir makinenin girişine elle koyabilir; ağa bağlı olmayan makine de böyle çalışır (K-014). Envanter ve el üretimi tek penceredir; pencere seçilen öğeyi girdileri ve kullanıldığı yerlerle bir akış haritasında gösterir, reçetenin iş miktarı elle de makinede de aynıdır (K-026, K-028, K-029). Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
+
+**Görünüm ve dil (K-027, K-030):** Arayüz aydınlık Kum taşı paletindedir (bej tuval, kâğıt rengi kartlar, petrol yeşili ve bakır vurgu). Oyundaki bütün metinler İngilizcedir; başlıklarda Pixelify Sans, metinde Nunito kullanılır. Ayrıntılar [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]] notundadır.
 
 ## Üzerinde çalışılan yön
 
