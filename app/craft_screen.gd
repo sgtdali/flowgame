@@ -9,7 +9,8 @@ extends PanelContainer
 ## carried machine places it.
 ## Below sit the craft queue (× cancels and refunds) and the quick-use bar's ten slots; drag
 ## an item onto a slot, right click it, or press 1-9, 0 while hovering it to pin it there.
-## I, C or Esc closes it.
+## The window has a fixed size; the queue holds up to five different items. I, C, Esc or the
+## × in the corner closes it.
 
 signal craft_requested(type: String, id: String, count: int)
 signal craft_cancelled(index: int)
@@ -40,6 +41,9 @@ const CATEGORIES := [
 ]
 const CRAFT_ICON := 7
 const COLUMNS := 5
+const SIZE := Vector2(1120, 720)
+## The item card keeps one height so the map does not jump between items.
+const CENTER_HEIGHT := 430
 const SLOT := 48
 const USES_SHOWN := 6
 const TEAL := Color("4f9a8a")
@@ -133,7 +137,9 @@ func build(sim: RefCounted) -> void:
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
+	# Fixed size, so the window stays put whatever is selected or queued.
 	var frame := WorkshopFrame.new()
+	frame.custom_minimum_size = SIZE
 	frame.add_theme_stylebox_override("panel", _frame())
 	center.add_child(frame)
 	var margin := MarginContainer.new()
@@ -152,7 +158,21 @@ func build(sim: RefCounted) -> void:
 	var hint := _label("Click: recipe · Double-click: place machine · Drag, right-click or hover and press 1-0: pin to quick bar", 11, MUTED)
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	header.add_child(hint)
+	var close := Button.new()
+	close.text = "×"
+	close.flat = true
+	close.focus_mode = Control.FOCUS_NONE
+	close.tooltip_text = "Close (Esc)"
+	close.custom_minimum_size = Vector2(28, 28)
+	close.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	close.add_theme_font_size_override("font_size", 22)
+	close.add_theme_color_override("font_color", MUTED)
+	close.add_theme_color_override("font_hover_color", RED)
+	close.add_theme_color_override("font_pressed_color", RED)
+	close.pressed.connect(hide)
+	header.add_child(close)
 	var middle := HBoxContainer.new()
+	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.add_theme_constant_override("separation", 10)
 	box.add_child(middle)
 	_build_items(middle)
@@ -239,14 +259,16 @@ func _item(grid: GridContainer, key: String) -> void:
 ## Flow map: inputs | item card | uses, with room between the columns for the links.
 func _build_flow(middle: HBoxContainer) -> void:
 	var panel := Blueprint.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", _box(PANEL, EDGE, 1, 12))
 	middle.add_child(panel)
 	_flow = FlowMap.new()
+	_flow.alignment = BoxContainer.ALIGNMENT_CENTER
 	_flow.add_theme_constant_override("separation", 40)
 	panel.add_child(_flow)
 	_inputs = _column(_flow, "Inputs")
 	_center = PanelContainer.new()
-	_center.custom_minimum_size = Vector2(300, 0)
+	_center.custom_minimum_size = Vector2(300, CENTER_HEIGHT)
 	_center.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_center.add_theme_stylebox_override("panel", _box(CARD, TEAL, 2, 12, 6))
 	_center.item_rect_changed.connect(_flow.queue_redraw)
@@ -264,13 +286,14 @@ func _build_flow(middle: HBoxContainer) -> void:
 	_count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	title_row.add_child(_count)
 	_picture = TextureRect.new()
-	_picture.custom_minimum_size = Vector2(0, 80)
+	_picture.custom_minimum_size = Vector2(0, 64)
 	_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	box.add_child(_picture)
 	_description = _label("", 12, MUTED)
 	_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_description.custom_minimum_size = Vector2(272, 32)
+	_description.max_lines_visible = 3
 	box.add_child(_description)
 	var recipe_panel := PanelContainer.new()
 	recipe_panel.add_theme_stylebox_override("panel", _box(Color("ece6da"), EDGE, 1, 8))
@@ -281,7 +304,7 @@ func _build_flow(middle: HBoxContainer) -> void:
 	recipe_box.add_child(_label("Recipe", 12, MUTED))
 	_recipe = HBoxContainer.new()
 	_recipe.alignment = BoxContainer.ALIGNMENT_CENTER
-	_recipe.add_theme_constant_override("separation", 8)
+	_recipe.add_theme_constant_override("separation", 4)
 	recipe_box.add_child(_recipe)
 	# Work the recipe needs: the craft hammer and a number, the same by hand or in a machine.
 	_work = HBoxContainer.new()
@@ -313,6 +336,7 @@ func _build_flow(middle: HBoxContainer) -> void:
 	_reason = _label("", 11, RED)
 	_reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_reason.max_lines_visible = 2
 	box.add_child(_reason)
 	_uses = _column(_flow, "Used in")
 	var uses_column: VBoxContainer = _uses.get_parent()
@@ -536,6 +560,8 @@ func _blocker(type: String, id: String) -> String:
 		return "Locked: %s" % (_sim.catalog.researches[tech].name if _sim.catalog.researches.has(tech) else "?")
 	if type == "machine" and _sim.build_limit(id) >= 0 and _sim.machine_total(id) >= _sim.build_limit(id):
 		return "Limit reached: at most %d" % _sim.build_limit(id)
+	if not _sim.queue_has_room(type, id):
+		return "Queue full: at most %d different items" % _sim.CRAFT_QUEUE_KINDS
 	if not _sim.can_craft(type, id):
 		return "Missing materials"
 	return ""
@@ -698,10 +724,11 @@ func _arrow_button(text: String, step: int) -> Button:
 	return button
 
 func _refresh_queue(sim: RefCounted) -> void:
-	_queue_title.text = "Crafting queue (%d)" % sim.craft_queue.size()
+	var groups: Array = sim.craft_queue_groups()
+	_queue_title.text = "Crafting queue (%d/%d)" % [groups.size(), sim.CRAFT_QUEUE_KINDS]
 	var keys: Array = []
-	for job in sim.craft_queue:
-		keys.append("%s:%s" % [job.type, job.id])
+	for group in groups:
+		keys.append("%s:%s:%d" % [group.type, group.id, group.count])
 	if keys != _queue_keys:
 		_queue_keys = keys
 		queue_slots.clear()
@@ -711,33 +738,36 @@ func _refresh_queue(sim: RefCounted) -> void:
 			var empty := _label("Queue is empty: pick an item and press CRAFT.", 12, MUTED)
 			empty.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			_queue_row.add_child(empty)
-		for i in range(sim.craft_queue.size()):
-			_queue_row.add_child(_queue_card(sim, i))
+		for group in groups:
+			_queue_row.add_child(_queue_card(sim, group))
+	# Each card: progress of the job it is on, and time until its last job is done.
 	var waited := 0.0
-	for i in range(queue_slots.size()):
-		var job: Dictionary = sim.craft_queue[i]
-		waited += float(job.remaining)
+	for i in range(mini(queue_slots.size(), groups.size())):
+		var group: Dictionary = groups[i]
+		for j in range(group.first, group.first + group.count):
+			waited += float(sim.craft_queue[j].remaining)
+		var job: Dictionary = sim.craft_queue[group.first]
 		queue_slots[i].bar.value = 1.0 - float(job.remaining) / sim.craft_work(str(job.type), str(job.id))
 		queue_slots[i].time.text = "%.1f s" % (waited / sim.hand_speed)
 
-func _queue_card(sim: RefCounted, index: int) -> Control:
-	var job: Dictionary = sim.craft_queue[index]
+## One queued item: picture with how many are coming, progress, time and × (cancels one).
+func _queue_card(sim: RefCounted, group: Dictionary) -> Control:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(160, 50)
 	card.add_theme_stylebox_override("panel", _box(PANEL, Color("cfc6b3"), 1, 6))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	card.add_child(row)
-	var type := str(job.type)
-	var id := str(job.id)
+	var type := str(group.type)
+	var id := str(group.id)
 	var slot: Icons.Slot
 	if type == "machine":
-		slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(id)), 1)
+		slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(id)), int(group.count))
 		slot.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		slot.tooltip_text = str(sim.catalog.machines[id].name)
 	else:
 		var output := str(sim.catalog.recipes[id].outputs.keys()[0])
-		slot = Icons.Slot.new(Icons.product(sim, output), int(sim.catalog.recipes[id].outputs[output]))
+		slot = Icons.Slot.new(Icons.product(sim, output), int(sim.catalog.recipes[id].outputs[output]) * int(group.count))
 		slot.tooltip_text = str(sim.catalog.recipes[id].get("name", id))
 	slot.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(slot)
@@ -758,13 +788,14 @@ func _queue_card(sim: RefCounted, index: int) -> Control:
 	var cancel := Button.new()
 	cancel.text = "×"
 	cancel.flat = true
-	cancel.tooltip_text = "Cancel (materials are returned)"
+	cancel.tooltip_text = "Cancel one (materials are returned)"
 	cancel.add_theme_font_size_override("font_size", 16)
 	cancel.add_theme_color_override("font_color", MUTED)
 	cancel.add_theme_color_override("font_hover_color", RED)
 	cancel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	cancel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	cancel.pressed.connect(func() -> void: craft_cancelled.emit(index))
+	var last := int(group.first) + int(group.count) - 1
+	cancel.pressed.connect(func() -> void: craft_cancelled.emit(last))
 	row.add_child(cancel)
 	queue_slots.append({"bar": bar, "time": time, "cancel": cancel})
 	return card

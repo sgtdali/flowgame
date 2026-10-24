@@ -36,6 +36,17 @@ func _initialize() -> void:
 	_check(sim.inventory.pig_iron == 10 and sim.craft_queue.is_empty(), "İptal edilen işin malzemesi geri gelmeli")
 	# Build limit counts carried machines too.
 	_check(not sim.enqueue_craft("machine", "copper_mine"), "Sınırı dolan maden el ile yapılmamalı")
+	# The hand queue holds at most five different items; more of a queued item joins its run.
+	for product in ["pig_iron", "steel_ingot", "iron_plate", "iron_rod", "steel_plate"]:
+		sim.inventory[product] = 50
+	for r_id in ["iron_plate", "iron_rod", "iron_pipe", "steel_plate", "steel_rod"]:
+		_check(sim.enqueue_craft("recipe", r_id), "Kuyruğa %s alınabilmeli" % r_id)
+	_check(not sim.enqueue_craft("recipe", "fastener") and not sim.can_craft("recipe", "fastener"), "Altıncı farklı öğe kuyruğa alınmamalı")
+	_check(sim.enqueue_craft("recipe", "iron_plate"), "Kuyrukta olan öğeden bir tane daha alınabilmeli")
+	var groups := sim.craft_queue_groups()
+	_check(groups.size() == 5 and groups[0].id == "iron_plate" and groups[0].count == 2 and sim.craft_queue[1].id == "iron_plate", "Aynı öğe kuyrukta kendi grubuna eklenmeli")
+	while not sim.craft_queue.is_empty():
+		sim.cancel_craft(0)
 
 	# Outputs stay on the card until taken.
 	var mine := sim.place_machine("copper_mine")

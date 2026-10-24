@@ -284,7 +284,7 @@ func _craft(type: String, id: String, count: int) -> void:
 			queued += 1
 	_refresh()
 	if queued == 0:
-		message.text = "Can't craft: missing materials, locked or at the limit."
+		message.text = "Can't craft: missing materials, locked, at the limit or the queue is full."
 
 func _toggle_inventory() -> void:
 	craft_screen.toggle()

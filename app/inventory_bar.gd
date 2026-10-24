@@ -2,7 +2,7 @@ extends VBoxContainer
 ## Bottom quick-use bar: the crate opens the inventory and crafting window, then ten fixed slots the player pins items to. Slots share the inventory's counts
 ## and stay put when empty. Clicking a machine (or pressing its number, 1-9 then 0) places
 ## it; right click unpins; dropping an item from the inventory window pins it there.
-## The hand-craft queue sits above it; clicking a queued job cancels it and returns its materials.
+## The hand-craft queue sits above it; each item is one button (how many are coming on it); clicking it cancels one and returns its materials.
 
 signal machine_requested(kind: String)
 signal inventory_requested()
@@ -119,27 +119,27 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _refresh_queue(sim: RefCounted) -> void:
+	var groups: Array = sim.craft_queue_groups()
 	var keys: Array = []
-	for job in sim.craft_queue:
-		keys.append("%s:%s" % [job.type, job.id])
+	for group in groups:
+		keys.append("%s:%s:%d" % [group.type, group.id, group.count])
 	if keys != _queue_keys:
 		_queue_keys = keys
 		queue_slots.clear()
 		for child in _queue_row.get_children():
 			child.queue_free()
-		for i in range(sim.craft_queue.size()):
-			var job: Dictionary = sim.craft_queue[i]
+		for group in groups:
 			var button := Button.new()
 			button.custom_minimum_size = Vector2(40, 40)
 			_style(button)
 			var slot: Icons.Slot
-			if job.type == "machine":
-				slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(str(job.id))), 1)
+			if group.type == "machine":
+				slot = Icons.Slot.new(Icons.machine(SpriteMachineCard.art_path(str(group.id))), int(group.count))
 				slot.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 			else:
-				var outputs: Dictionary = sim.catalog.recipes[job.id].outputs
+				var outputs: Dictionary = sim.catalog.recipes[group.id].outputs
 				var product := str(outputs.keys()[0])
-				slot = Icons.Slot.new(Icons.product(sim, product), int(outputs[product]))
+				slot = Icons.Slot.new(Icons.product(sim, product), int(outputs[product]) * int(group.count))
 			slot.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			button.add_child(slot)
 			var bar := ProgressBar.new()
@@ -154,12 +154,13 @@ func _refresh_queue(sim: RefCounted) -> void:
 			bar.offset_right = -3
 			bar.offset_bottom = -2
 			button.add_child(bar)
-			button.tooltip_text = "Click: cancel"
+			button.tooltip_text = "Click: cancel one"
 			button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			button.pressed.connect(func() -> void: craft_cancelled.emit(i))
+			var last := int(group.first) + int(group.count) - 1
+			button.pressed.connect(func() -> void: craft_cancelled.emit(last))
 			_queue_row.add_child(button)
 			queue_slots.append(button)
-	for i in range(queue_slots.size()):
-		var job: Dictionary = sim.craft_queue[i]
+	for i in range(mini(queue_slots.size(), groups.size())):
+		var job: Dictionary = sim.craft_queue[groups[i].first]
 		var bar: ProgressBar = queue_slots[i].get_node("Progress")
 		bar.value = 1.0 - float(job.remaining) / sim.craft_work(str(job.type), str(job.id))

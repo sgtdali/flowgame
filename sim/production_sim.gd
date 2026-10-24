@@ -38,6 +38,7 @@ var inventory: Dictionary = {}
 var machine_inventory: Dictionary = {}
 ## Hand crafting, front first: {"type": "machine" or "recipe", "id": kind or recipe id, "remaining": work}
 var craft_queue: Array = []
+const CRAFT_QUEUE_KINDS := 5
 ## Work units per second of hand crafting; machines are faster.
 var hand_speed := 10.0
 ## Quick-use bar: HOTBAR_SIZE pinned inventory keys ("machine:<kind>", "product:<id>" or "").
@@ -388,11 +389,33 @@ func can_craft(type: String, id: String) -> bool:
 		var limit := build_limit(id)
 		if limit >= 0 and machine_total(id) >= limit:
 			return false
+	if not queue_has_room(type, id):
+		return false
 	var inputs := craft_inputs(type, id)
 	for product in inputs:
 		if int(inventory.get(product, 0)) < int(inputs[product]):
 			return false
 	return true
+
+## The hand queue holds at most CRAFT_QUEUE_KINDS different items; more of an item already
+## queued always fits.
+func queue_has_room(type: String, id: String) -> bool:
+	var groups := craft_queue_groups()
+	for group in groups:
+		if group.type == type and group.id == id:
+			return true
+	return groups.size() < CRAFT_QUEUE_KINDS
+
+## The queue as runs of the same item: {type, id, count, first (index of its first job)}.
+func craft_queue_groups() -> Array:
+	var groups: Array = []
+	for i in range(craft_queue.size()):
+		var job: Dictionary = craft_queue[i]
+		if not groups.is_empty() and groups[-1].type == job.type and groups[-1].id == job.id:
+			groups[-1].count += 1
+		else:
+			groups.append({"type": str(job.type), "id": str(job.id), "count": 1, "first": i})
+	return groups
 
 ## Materials leave the inventory when the job is queued and come back if it is cancelled.
 func enqueue_craft(type: String, id: String) -> bool:
@@ -401,7 +424,12 @@ func enqueue_craft(type: String, id: String) -> bool:
 	var inputs := craft_inputs(type, id)
 	for product in inputs:
 		_take_items(str(product), int(inputs[product]))
-	craft_queue.append({"type": type, "id": id, "remaining": craft_work(type, id)})
+	# More of a queued item joins its run, so each item stays in one place in the queue.
+	var at := craft_queue.size()
+	for i in range(craft_queue.size()):
+		if craft_queue[i].type == type and craft_queue[i].id == id:
+			at = i + 1
+	craft_queue.insert(at, {"type": type, "id": id, "remaining": craft_work(type, id)})
 	return true
 
 func cancel_craft(index: int) -> void:
