@@ -15,7 +15,7 @@ script'ler onları yeniden üretir.
 | `urun_32/` | Elle çizilmiş 32x32 ürün simgeleri (şu an `gear.png`, pirinç dişli). |
 | `disli_stil/` | Dişli simgesi tarz denemesi: Codex'in dört seçenekli taslağı, seçilen D tarzını 32x32 çizen `disli_d_32.py` ve renk denemeleri. |
 | `craft_ekrani_stil/` | Üretim ekranı tarz denemesi: Codex'e verilen kısa tarif ve dört seçenekli taslak (seçilen: A). |
-| `ui/` | Arayüz çerçeveleri. `menu_cerceve/uretim_menusu_cerceve.ase`: üretim penceresinin gerçek boyutunda (764x628) çalışma dosyası; alttaki katman zemin ve kenarlık, üstteki kilitli katman menü içeriği referansı. Oyundaki 9-slice dokusu (`app/art/ui/panel_frame.png`, 16 px kesim payı) `zemin_ve_kenarlik.png`'den alınır. `cerceve_ham.png`: ilk, 4-5 px'lik deneme. |
+| `ui/` | Arayüz çerçeveleri. `menu_cerceve/uretim_menusu_cerceve.ase`: üretim penceresinin gerçek boyutunda (764x628) çalışma dosyası; alttaki katman zemin ve kenarlık, üstteki kilitli katman menü içeriği referansı. Oyundaki 9-slice dokusu (`app/art/ui/panel_frame.png`, 16 px kesim payı) `zemin_ve_kenarlik.png`'den alınır. `cerceve_ham.png`: ilk, 4-5 px'lik deneme. `envanter_penceresi/`: envanter penceresinin bütün LibreSprite kaynakları; hangi dosyanın oyunda neye karşılık geldiği oradaki README'de. |
 | `ergitme_firini_A/` | Güncel fırın (v3): `draw_furnace_a_v3.py`, referans görsel ve piksel hali, `.ase`, oyun sheet'i. `eski/` = v1 ve v2. |
 | `komur_makinesi/` | Ham görsel, piksel halleri, 16 renkli animasyon, `animate_komur_makinesi.py`. `eski_33renk/` = ilk 33 renkli animasyon (elle düzeltilmiş `.ase` burada). |
 | `demir_madeni_B/` | Demir madeni çizim/animasyon script'leri ve çıktıları. Fırın script'leri buradaki `draw_mine_node_b.py`'deki yardımcıları kullanır. |

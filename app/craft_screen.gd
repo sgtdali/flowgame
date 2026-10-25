@@ -43,15 +43,52 @@ const CRAFT_ICON := 7
 const COLUMNS := 5
 const SIZE := Vector2(1120, 720)
 ## The item card keeps one height so the map does not jump between items.
-const CENTER_HEIGHT := 430
+const CENTER_HEIGHT := 360
 const SLOT := 48
 const USES_SHOWN := 6
 const TEAL := Color("4f9a8a")
 const CARD := Color("fbf8f2")
+## Text on the dark header band and item list, taken from the band art's brass highlights.
+const HEADER_INK := Color("d6c4ab")
 ## Window rim, nine-sliced with 9 px corners; the body texture and header sit inside it.
 const WINDOW_FRAME := preload("res://app/art/ui/craft_window_frame.png")
 ## Flow map sheet, drawn for a 784 x 463 panel; nine-sliced to the panel's actual size.
 const FLOW_BACKGROUND := preload("res://app/art/ui/craft_flow_bg.png")
+## Crossed hammers shown left of the window title, at its 32 x 32 size.
+const TITLE_ICON := preload("res://app/art/ui/craft_title_icon.png")
+## Close button art (32 x 32): normal, hover (brighter brass) and pressed (dimmer brass).
+const CLOSE_NORMAL := preload("res://app/art/ui/close_normal.png")
+const CLOSE_HOVER := preload("res://app/art/ui/close_hover.png")
+const CLOSE_PRESSED := preload("res://app/art/ui/close_pressed.png")
+## Rim and dark fill of the inventory list, 36 x 36 art nine-sliced with 9 px corners.
+const ITEMS_FRAME := preload("res://app/art/ui/craft_items_frame.png")
+const TRAY_DIVIDER := Color("9b8d78")
+## Scroll bar of the item trays: dark track, brass grabber.
+const SCROLL_TRACK := Color("151b1f")
+const SCROLL_GRABBER := Color("d4812c")
+## Shown left of the Machines title, at its 24 x 24 size.
+const MACHINES_ICON := preload("res://app/art/ui/machines_icon.png")
+## Shown left of the Products title; scaled from its 25 x 26 art to sit in the same 24 x 24 box.
+const PRODUCTS_ICON := preload("res://app/art/ui/products_icon.png")
+## Shown left of the Quick Bar title; scaled from its 21 x 28 art to the other icons' 24 px height.
+const QUICK_ICON := preload("res://app/art/ui/quick_icon.png")
+## Input and "used in" cards on the flow map: 28 x 27 rounded bevel art, nine-sliced at 8 px.
+const FLOW_CARD := preload("res://app/art/ui/flow_card_frame.png")
+## The selected item's card on the flow map: 291 x 327 art, nine-sliced at 24 px.
+const FLOW_CENTER := preload("res://app/art/ui/flow_center_frame.png")
+## CRAFT button plates (35 x 40), nine-sliced at 10 px; disabled is a dimmed normal plate.
+const CRAFT_PLATE := preload("res://app/art/ui/craft_button.png")
+const CRAFT_PLATE_HOVER := preload("res://app/art/ui/craft_button_hover.png")
+const CRAFT_PLATE_PRESSED := preload("res://app/art/ui/craft_button_pressed.png")
+## PLACE button plates: the CRAFT plates recoloured from teal to amber, same shading.
+const PLACE_PLATE := preload("res://app/art/ui/place_button.png")
+const PLACE_PLATE_HOVER := preload("res://app/art/ui/place_button_hover.png")
+const PLACE_PLATE_PRESSED := preload("res://app/art/ui/place_button_pressed.png")
+## Recipe box: a dark title strip over a light body, both nine-sliced at 9 px.
+const RECIPE_TOP := preload("res://app/art/ui/recipe_top.png")
+const RECIPE_BOTTOM := preload("res://app/art/ui/recipe_bottom.png")
+## Title tag over the flow map's columns ("Inputs", "Used in"): 25 x 24 art, nine-sliced at 8 px.
+const FLOW_PILL := preload("res://app/art/ui/flow_pill.png")
 
 ## "machine:<kind>" or "product:<id>" -> slot in the left grids
 var items: Dictionary = {}
@@ -70,6 +107,7 @@ var _count: Label
 var _picture: TextureRect
 var _description: Label
 var _recipe: HBoxContainer
+var _recipe_panel: VBoxContainer
 var _work: HBoxContainer
 var _time: Label
 var _reason: Label
@@ -79,6 +117,7 @@ var _inputs: VBoxContainer
 var _uses: VBoxContainer
 ## First use card in view, and the item whose uses are listed.
 var _uses_offset := 0
+var _details_key := ""
 var _uses_for := ""
 var _uses_up: Button
 var _uses_down: Button
@@ -152,68 +191,79 @@ func build(sim: RefCounted) -> void:
 	frame.add_theme_stylebox_override("panel", _frame())
 	center.add_child(frame)
 	# No right margin: the flow map runs up to the window rim; the header keeps its inset below.
+	# No top margin either: the header fills the band art and centres its contents in it.
+	# Left: 3 px plus the frame's 6 px content margin leaves 4 px between the rim and the trays.
 	var margin := MarginContainer.new()
-	for side in ["left", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 14)
+	margin.add_theme_constant_override("margin_left", 3)
+	# Bottom: 3 px plus the frame's 6 px content margin leaves 4 px between the quick bar and the rim.
+	margin.add_theme_constant_override("margin_bottom", 3)
+	margin.add_theme_constant_override("margin_top", 0)
 	margin.add_theme_constant_override("margin_right", 0)
 	frame.add_child(margin)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 4)  # between the trays above and the quick bar
 	margin.add_child(box)
+	# Header and the trays below it sit closer (4 px) than the rest of the window's rows.
+	var top := VBoxContainer.new()
+	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	top.add_theme_constant_override("separation", 4)
+	box.add_child(top)
 	var header := HBoxContainer.new()
-	box.add_child(header)
-	header.add_child(_heading("Inventory and Crafting", 20, INK))
+	# Spans the band from just inside the frame's content margin down to its bottom edge.
+	header.custom_minimum_size.y = WorkshopFrame.HEADER - 6
+	top.add_child(header)
+	# Keeps the title where it was before the trays moved up to the rim (14 px window margin).
+	var lead := Control.new()
+	lead.custom_minimum_size.x = 7  # plus the row's 4 px separation
+	header.add_child(lead)
+	var icon := TextureRect.new()
+	icon.texture = TITLE_ICON
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(icon)
+	var title := _heading("Inventory and Crafting", 20, HEADER_INK)
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(title)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(spacer)
-	var hint := _label("Click: recipe · Double-click: place machine · Drag, right-click or hover and press 1-0: pin to quick bar", 11, MUTED)
-	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	header.add_child(hint)
-	var close := Button.new()
-	close.text = "×"
-	close.flat = true
+	var close := TextureButton.new()
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.texture_normal = CLOSE_NORMAL
+	close.texture_hover = CLOSE_HOVER
+	close.texture_pressed = CLOSE_PRESSED
+	close.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	close.focus_mode = Control.FOCUS_NONE
 	close.tooltip_text = "Close (Esc)"
-	close.custom_minimum_size = Vector2(28, 28)
 	close.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	close.add_theme_font_size_override("font_size", 22)
-	close.add_theme_color_override("font_color", MUTED)
-	close.add_theme_color_override("font_hover_color", RED)
-	close.add_theme_color_override("font_pressed_color", RED)
 	close.pressed.connect(hide)
 	header.add_child(close)
 	var inset := Control.new()
-	inset.custom_minimum_size.x = 15
+	inset.custom_minimum_size.x = 7
 	header.add_child(inset)
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	middle.add_theme_constant_override("separation", 10)
-	box.add_child(middle)
+	middle.add_theme_constant_override("separation", 4)
+	top.add_child(middle)
 	_build_items(middle)
-	_build_flow(middle)
-	_build_queue(box)
+	# The flow map with the crafting queue tray 2 px under it.
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_theme_constant_override("separation", 2)
+	middle.add_child(right)
+	_build_flow(right)
+	_build_queue(right)
 	_build_quick(box)
 	select(items.keys()[0])
 
-## Machines in category order, then products by tier, each tier in catalog order.
+## Machines in category order, then products by tier, each tier in catalog order; each list
+## sits in its own framed tray and scrolls on its own.
 func _build_items(middle: HBoxContainer) -> void:
-	# A recessed tray: slightly darker than the sheet, with a heavier top edge.
-	var panel := PanelContainer.new()
-	var tray := _box(Color("ece6da"), Color("c4b9a3"), 1, 8)
-	tray.border_width_top = 3
-	panel.add_theme_stylebox_override("panel", tray)
-	middle.add_child(panel)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(COLUMNS * SLOT + (COLUMNS - 1) * 4 + 14, 440)
-	panel.add_child(scroll)
-	var lists := VBoxContainer.new()
-	lists.add_theme_constant_override("separation", 6)
-	scroll.add_child(lists)
-	_machines_title = _heading("Machines", 14, MUTED)
-	lists.add_child(_machines_title)
-	var machines := _grid()
-	lists.add_child(machines)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 2)
+	middle.add_child(column)
+	_machines_title = _heading("Machines", 14, HEADER_INK)
+	var machines := _tray(column, _machines_title, MACHINES_ICON)
 	var kinds: Array = []
 	for category in CATEGORIES:
 		for kind in category.machines:
@@ -224,10 +274,8 @@ func _build_items(middle: HBoxContainer) -> void:
 			kinds.append(str(kind))
 	for kind in kinds:
 		_item(machines, "machine:" + kind)
-	_products_title = _heading("Products", 14, MUTED)
-	lists.add_child(_products_title)
-	var products := _grid()
-	lists.add_child(products)
+	_products_title = _heading("Products", 14, HEADER_INK)
+	var products := _tray(column, _products_title, PRODUCTS_ICON)
 	var tiers: Dictionary = {}
 	for product in _sim.catalog.products:
 		if _sim.machine_of_item(str(product)).is_empty():
@@ -240,6 +288,73 @@ func _build_items(middle: HBoxContainer) -> void:
 	for tier in order:
 		for product in tiers[tier]:
 			_item(products, "product:" + str(product))
+
+## A framed tray: a fixed title (with an optional icon) and divider above a scrolling item grid; returns the grid.
+func _tray(column: VBoxContainer, title: Label, icon: Texture2D = null) -> GridContainer:
+	var box := _tray_box(column)
+	box.get_parent().size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Two trays, stacked edge to edge, share the height the single list used to have (440), less one frame.
+	box.custom_minimum_size = Vector2(3 + COLUMNS * SLOT + (COLUMNS - 1) * 4 + 14, 211)
+	_tray_heading(box, title, icon)
+	# A divider under the title, inset so it stops short of the frame on both sides.
+	var inset := MarginContainer.new()
+	inset.add_theme_constant_override("margin_left", 2)
+	inset.add_theme_constant_override("margin_right", 2)
+	box.add_child(inset)
+	var divider := ColorRect.new()
+	divider.color = TRAY_DIVIDER
+	divider.custom_minimum_size.y = 2
+	inset.add_child(divider)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Content margins give the bar its width (6 px); hover and drag light the grabber up a little.
+	var bar := scroll.get_v_scroll_bar()
+	bar.add_theme_stylebox_override("scroll", _box(SCROLL_TRACK, Color.TRANSPARENT, 0, 3, 2))
+	bar.add_theme_stylebox_override("scroll_focus", _box(SCROLL_TRACK, Color.TRANSPARENT, 0, 3, 2))
+	for state in ["grabber", "grabber_highlight", "grabber_pressed"]:
+		bar.add_theme_stylebox_override(state, _box(SCROLL_GRABBER.lightened(0.0 if state == "grabber" else 0.15), Color.TRANSPARENT, 0, 3, 2))
+	box.add_child(scroll)
+	# 3 px between the frame's inner edge and the first column of slots.
+	var inset_left := MarginContainer.new()
+	inset_left.add_theme_constant_override("margin_left", 3)
+	scroll.add_child(inset_left)
+	var grid := _grid()
+	inset_left.add_child(grid)
+	return grid
+
+## The dark framed panel the item lists and the crafting queue sit in; returns its content box.
+func _tray_box(parent: Container) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	var frame := StyleBoxTexture.new()
+	frame.texture = ITEMS_FRAME
+	frame.set_texture_margin_all(9)
+	frame.set_content_margin_all(9)
+	panel.add_theme_stylebox_override("panel", frame)
+	panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	parent.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	panel.add_child(box)
+	return box
+
+## A tray's title row, padded so it sits as far from the frame's top and left as it does above the divider.
+func _tray_heading(box: VBoxContainer, title: Label, icon: Texture2D) -> void:
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_top", 6)
+	pad.add_theme_constant_override("margin_left", 6)
+	box.add_child(pad)
+	var heading := HBoxContainer.new()
+	heading.add_theme_constant_override("separation", 6)
+	pad.add_child(heading)
+	if icon != null:
+		var picture := TextureRect.new()
+		picture.texture = icon
+		picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		picture.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		heading.add_child(picture)
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heading.add_child(title)
 
 func _grid() -> GridContainer:
 	var grid := GridContainer.new()
@@ -271,9 +386,9 @@ func _item(grid: GridContainer, key: String) -> void:
 
 
 ## Flow map: inputs | item card | uses, with room between the columns for the links.
-func _build_flow(middle: HBoxContainer) -> void:
+func _build_flow(right: VBoxContainer) -> void:
 	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var sheet := StyleBoxTexture.new()
 	sheet.texture = FLOW_BACKGROUND
 	# Nine-sliced so its metal rim stays crisp now that the panel is a little wider than the art.
@@ -281,7 +396,7 @@ func _build_flow(middle: HBoxContainer) -> void:
 	sheet.set_content_margin_all(12)
 	panel.add_theme_stylebox_override("panel", sheet)
 	panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	middle.add_child(panel)
+	right.add_child(panel)
 	_flow = FlowMap.new()
 	_flow.alignment = BoxContainer.ALIGNMENT_CENTER
 	_flow.add_theme_constant_override("separation", 40)
@@ -290,7 +405,13 @@ func _build_flow(middle: HBoxContainer) -> void:
 	_center = PanelContainer.new()
 	_center.custom_minimum_size = Vector2(300, CENTER_HEIGHT)
 	_center.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_center.add_theme_stylebox_override("panel", _box(CARD, TEAL, 2, 12, 6))
+	var card_sheet := StyleBoxTexture.new()
+	card_sheet.texture = FLOW_CENTER
+	card_sheet.set_texture_margin_all(24)
+	# The art's rim is about 12 px wide; contents keep the inset they had inside the old border.
+	card_sheet.set_content_margin_all(14)
+	_center.add_theme_stylebox_override("panel", card_sheet)
+	_center.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_center.item_rect_changed.connect(_flow.queue_redraw)
 	_flow.add_child(_center)
 	var box := VBoxContainer.new()
@@ -315,13 +436,21 @@ func _build_flow(middle: HBoxContainer) -> void:
 	_description.custom_minimum_size = Vector2(272, 32)
 	_description.max_lines_visible = 3
 	box.add_child(_description)
-	var recipe_panel := PanelContainer.new()
-	recipe_panel.add_theme_stylebox_override("panel", _box(Color("ece6da"), EDGE, 1, 8))
-	box.add_child(recipe_panel)
+	_recipe_panel = VBoxContainer.new()
+	_recipe_panel.add_theme_constant_override("separation", 0)
+	box.add_child(_recipe_panel)
+	var recipe_title := PanelContainer.new()
+	recipe_title.add_theme_stylebox_override("panel", _recipe_sheet(RECIPE_TOP))
+	recipe_title.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_recipe_panel.add_child(recipe_title)
+	recipe_title.add_child(_label("Recipe", 12, HEADER_INK))
+	var recipe_body := PanelContainer.new()
+	recipe_body.add_theme_stylebox_override("panel", _recipe_sheet(RECIPE_BOTTOM))
+	recipe_body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_recipe_panel.add_child(recipe_body)
 	var recipe_box := VBoxContainer.new()
 	recipe_box.add_theme_constant_override("separation", 4)
-	recipe_panel.add_child(recipe_box)
-	recipe_box.add_child(_label("Recipe", 12, MUTED))
+	recipe_body.add_child(recipe_box)
 	_recipe = HBoxContainer.new()
 	_recipe.alignment = BoxContainer.ALIGNMENT_CENTER
 	_recipe.add_theme_constant_override("separation", 4)
@@ -345,14 +474,22 @@ func _build_flow(middle: HBoxContainer) -> void:
 	_work.add_child(_time)
 	craft_button = _action_button("CRAFT", TEAL, Color("7bb8ab"), Color("67a99c"), Color("43867a"))
 	craft_button.tooltip_text = "Click: 1 · Shift+click: 5"
+	_plate_button(craft_button, CRAFT_PLATE, CRAFT_PLATE_HOVER, CRAFT_PLATE_PRESSED)
 	craft_button.pressed.connect(func() -> void:
 		var craft := _craft_target()
 		if not craft.is_empty():
 			craft_requested.emit(craft[0], craft[1], 5 if Input.is_key_pressed(KEY_SHIFT) else 1))
-	box.add_child(craft_button)
+	# CRAFT and PLACE share a row; each fills it alone when the other is hidden.
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	box.add_child(actions)
+	craft_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions.add_child(craft_button)
 	place_button = _action_button("PLACE", AMBER, Color("d9a659"), Color("c99442"), Color("a3722a"))
+	place_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_plate_button(place_button, PLACE_PLATE, PLACE_PLATE_HOVER, PLACE_PLATE_PRESSED)
 	place_button.pressed.connect(func() -> void: _place(selected))
-	box.add_child(place_button)
+	actions.add_child(place_button)
 	_reason = _label("", 11, RED)
 	_reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -388,7 +525,12 @@ func _column(parent: Control, title: String) -> VBoxContainer:
 	parent.add_child(column)
 	var pill := PanelContainer.new()
 	pill.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	pill.add_theme_stylebox_override("panel", _box(TEAL, TEAL, 0, 0, 4))
+	var tag := StyleBoxTexture.new()
+	tag.texture = FLOW_PILL
+	tag.set_texture_margin_all(8)
+	tag.set_content_margin_all(4)
+	pill.add_theme_stylebox_override("panel", tag)
+	pill.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var pill_label := _heading(title, 13, Color("f6f2ea"))
 	pill_label.add_theme_constant_override("line_spacing", 0)
 	var pill_margin := MarginContainer.new()
@@ -412,14 +554,16 @@ func _card(key: String, line: String, line_color: Color) -> Button:
 	card.focus_mode = Control.FOCUS_NONE
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	card.tooltip_text = _name(key)
-	card.add_theme_stylebox_override("normal", _box(CARD, EDGE, 1, 0, 6))
-	card.add_theme_stylebox_override("hover", _box(Color("f3eee4"), TEAL, 1, 0, 6))
-	card.add_theme_stylebox_override("pressed", _box(Color("e8dfcc"), TEAL, 1, 0, 6))
+	card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	card.add_theme_stylebox_override("normal", _flow_card(Color.WHITE))
+	card.add_theme_stylebox_override("hover", _flow_card(Color(1.08, 1.08, 1.08)))
+	card.add_theme_stylebox_override("pressed", _flow_card(Color(0.9, 0.9, 0.9)))
+	card.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 6
-	row.offset_right = -6
+	row.offset_left = 8
+	row.offset_right = -8
 	row.add_theme_constant_override("separation", 6)
 	card.add_child(row)
 	var picture := Icons.Slot.new(_picture_for(key), 1)
@@ -441,6 +585,43 @@ func _card(key: String, line: String, line_color: Color) -> Button:
 	card.item_rect_changed.connect(_flow.queue_redraw)
 	return card
 
+func _flow_card(tint: Color) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = FLOW_CARD
+	style.set_texture_margin_all(8)
+	style.modulate_color = tint
+	return style
+
+## Dresses an action button in its hand-drawn plates; disabled is the normal plate dimmed.
+func _plate_button(button: Button, normal: Texture2D, hover: Texture2D, pressed: Texture2D) -> void:
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	button.add_theme_stylebox_override("normal", _craft_plate(normal))
+	button.add_theme_stylebox_override("hover", _craft_plate(hover))
+	button.add_theme_stylebox_override("pressed", _craft_plate(pressed))
+	button.add_theme_stylebox_override("disabled", _craft_plate(normal, Color(0.6, 0.6, 0.6, 0.7)))
+	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
+		button.add_theme_color_override(state, HEADER_INK)
+	button.add_theme_color_override("font_disabled_color", Color(HEADER_INK, 0.45))
+
+func _recipe_sheet(art: Texture2D) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = art
+	style.set_texture_margin_all(9)
+	style.content_margin_left = 9
+	style.content_margin_right = 9
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	return style
+
+func _craft_plate(plate: Texture2D, tint := Color.WHITE) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = plate
+	style.set_texture_margin_all(10)
+	# Thin content margins so the label fits the button's 36 px height.
+	style.set_content_margin_all(4)
+	style.modulate_color = tint
+	return style
+
 func _action_button(text: String, fill: Color, border: Color, hover: Color, pressed: Color) -> Button:
 	var button := Button.new()
 	button.text = text
@@ -457,19 +638,47 @@ func _action_button(text: String, fill: Color, border: Color, hover: Color, pres
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	return button
 
-func _build_queue(box: VBoxContainer) -> void:
-	_queue_title = _heading("", 14, INK)
-	box.add_child(_queue_title)
+func _build_queue(right: VBoxContainer) -> void:
+	var box := _tray_box(right)
+	_queue_title = _heading("", 14, HEADER_INK)
+	_tray_heading(box, _queue_title, MACHINES_ICON)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 6)
+	box.add_child(pad)
 	_queue_row = HBoxContainer.new()
 	_queue_row.add_theme_constant_override("separation", 6)
 	_queue_row.custom_minimum_size.y = 52
-	box.add_child(_queue_row)
+	pad.add_child(_queue_row)
 
+## The quick bar in a framed tray like the queue's: its title on the left, the ten slots after it.
 func _build_quick(box: VBoxContainer) -> void:
-	box.add_child(_heading("Quick bar", 14, INK))
+	var tray := _tray_box(box)
+	# 3 px between the slots and the frame's inner edge, above and below.
+	var gap := MarginContainer.new()
+	gap.add_theme_constant_override("margin_top", 3)
+	gap.add_theme_constant_override("margin_bottom", 3)
+	tray.add_child(gap)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 24)
+	gap.add_child(row)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 6)
+	pad.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(pad)
+	var heading := HBoxContainer.new()
+	heading.add_theme_constant_override("separation", 6)
+	pad.add_child(heading)
+	var icon := TextureRect.new()
+	icon.texture = QUICK_ICON
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heading.add_child(icon)
+	var title := _heading("Quick Bar", 14, HEADER_INK)
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heading.add_child(title)
 	var quick := HBoxContainer.new()
 	quick.add_theme_constant_override("separation", 4)
-	box.add_child(quick)
+	row.add_child(quick)
 	for i in range(10):
 		var slot := InventorySlot.new(SLOT)
 		slot.show_number(i)
@@ -531,7 +740,10 @@ func refresh(sim: RefCounted) -> void:
 		slot.set_item(sim, str(key))
 	for i in range(quick_slots.size()):
 		quick_slots[i].set_item(sim, sim.hotbar[i])
-	_show_details()
+	# Rebuilt only when what it shows changed: rebuilding every update would reset the hover
+	# state of the card under the mouse, making it flicker.
+	if _details_state() != _details_key:
+		_show_details()
 	_refresh_queue(sim)
 
 ## A machine is open once researched; a product once some machine may make it.
@@ -589,7 +801,13 @@ func _blocker(type: String, id: String) -> String:
 
 ## Selected item in the middle of the map: picture, description, recipe with what you carry
 ## (red when short), time; its inputs on the left and what it goes into on the right.
+## Everything the selected item's map depends on, to tell when it needs rebuilding.
+func _details_state() -> String:
+	return str([selected, _sim.inventory, _sim.machine_inventory, _sim.machines.size(), _sim.craft_queue_groups().size(),
+		_sim.completed_researches.size(), _sim.unlocked_machines.size(), _sim.unlocked_recipes.size(), _sim.sandbox_mode])
+
 func _show_details() -> void:
+	_details_key = _details_state()
 	for list in [_recipe, _inputs, _uses]:
 		for child in list.get_children():
 			list.remove_child(child)
@@ -624,7 +842,7 @@ func _show_details() -> void:
 	elif not producers.is_empty():
 		recipe_id = str(producers[0].recipe)
 		inputs = _sim.catalog.recipes[recipe_id].inputs
-	_recipe.get_parent().get_parent().visible = is_machine or not producers.is_empty()
+	_recipe_panel.visible = is_machine or not producers.is_empty()
 	for product in inputs:
 		var have := int(_sim.inventory.get(product, 0))
 		var need := int(inputs[product])
@@ -737,15 +955,17 @@ func _arrow_button(text: String, step: int) -> Button:
 	button.custom_minimum_size = Vector2(28, 20)
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", 12)
-	button.add_theme_color_override("font_color", TEAL)
-	button.add_theme_color_override("font_hover_color", INK)
-	button.add_theme_color_override("font_disabled_color", EDGE)
+	# Brass like the item lists' scroll bars; lighter on hover, faded at the end of the list.
+	button.add_theme_color_override("font_color", SCROLL_GRABBER)
+	button.add_theme_color_override("font_hover_color", SCROLL_GRABBER.lightened(0.15))
+	button.add_theme_color_override("font_pressed_color", SCROLL_GRABBER.darkened(0.15))
+	button.add_theme_color_override("font_disabled_color", Color(SCROLL_GRABBER, 0.3))
 	button.pressed.connect(_step_uses.bind(step))
 	return button
 
 func _refresh_queue(sim: RefCounted) -> void:
 	var groups: Array = sim.craft_queue_groups()
-	_queue_title.text = "Crafting queue (%d/%d)" % [groups.size(), sim.CRAFT_QUEUE_KINDS]
+	_queue_title.text = "Crafting Queue (%d/%d)" % [groups.size(), sim.CRAFT_QUEUE_KINDS]
 	var keys: Array = []
 	for group in groups:
 		keys.append("%s:%s:%d" % [group.type, group.id, group.count])
@@ -754,12 +974,15 @@ func _refresh_queue(sim: RefCounted) -> void:
 		queue_slots.clear()
 		for child in _queue_row.get_children():
 			child.queue_free()
-		if keys.is_empty():
-			var empty := _label("Queue is empty: pick an item and press CRAFT.", 12, MUTED)
-			empty.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			_queue_row.add_child(empty)
 		for group in groups:
 			_queue_row.add_child(_queue_card(sim, group))
+		# Free places stay as dim outlines, so cards keep one width however many are queued
+		# and an empty queue shows its five places.
+		for i in range(sim.CRAFT_QUEUE_KINDS - groups.size()):
+			var free := Panel.new()
+			free.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			free.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.18), Color(TRAY_DIVIDER, 0.35), 1, 0, 4))
+			_queue_row.add_child(free)
 	# Each card: progress of the job it is on, and time until its last job is done.
 	var waited := 0.0
 	for i in range(mini(queue_slots.size(), groups.size())):
@@ -773,8 +996,14 @@ func _refresh_queue(sim: RefCounted) -> void:
 ## One queued item: picture with how many are coming, progress, time and × (cancels one).
 func _queue_card(sim: RefCounted, group: Dictionary) -> Control:
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(160, 50)
-	card.add_theme_stylebox_override("panel", _box(PANEL, Color("cfc6b3"), 1, 6))
+	# Cards share the tray's width, narrow enough for a full queue (CRAFT_QUEUE_KINDS) to fit.
+	card.custom_minimum_size = Vector2(0, 50)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Same plate as the flow map's input and "used in" cards.
+	var plate := _flow_card(Color.WHITE)
+	plate.set_content_margin_all(8)
+	card.add_theme_stylebox_override("panel", plate)
+	card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	card.add_child(row)
@@ -799,9 +1028,9 @@ func _queue_card(sim: RefCounted, group: Dictionary) -> Control:
 	bar.show_percentage = false
 	bar.max_value = 1.0
 	bar.step = 0.0
-	bar.custom_minimum_size = Vector2(70, 6)
+	bar.custom_minimum_size = Vector2(40, 6)
 	bar.add_theme_stylebox_override("background", _box(Color("e4ddd0"), Color.TRANSPARENT, 0, 0, 2))
-	bar.add_theme_stylebox_override("fill", _box(Color("4f9a8a"), Color.TRANSPARENT, 0, 0, 2))
+	bar.add_theme_stylebox_override("fill", _box(SCROLL_GRABBER, Color.TRANSPARENT, 0, 0, 2))  # same brass as the item lists' scroll bars
 	middle.add_child(bar)
 	var time := _label("", 12, INK)
 	middle.add_child(time)
@@ -859,7 +1088,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 ## Lays out the map's three columns and draws the links: each input card to the item card,
 ## the item card to each use card.
 class FlowMap extends HBoxContainer:
-	const LINK := Color("4f9a8a")
+	## Links are 5 px wide: a 1 px core, then a 1 px blend (the average of core and edge), then a
+	## 1 px edge on each side.
+	const LINK := Color("399195")
+	const LINK_BLEND := Color("3b6669")
+	const LINK_EDGE := Color("3d3b3d")
 	var inputs: Control
 	var center: Control
 	var uses: Control
@@ -873,53 +1106,60 @@ class FlowMap extends HBoxContainer:
 		if center == null:
 			return
 		var hub := center.get_rect()
+		var links: Array = []
 		for card in inputs.get_children():
 			if card is Button and card.visible:
 				var rect := _local(card)
-				_link(Vector2(rect.end.x, rect.get_center().y), Vector2(hub.position.x, hub.get_center().y))
+				links.append(_route(Vector2(rect.end.x, rect.get_center().y), Vector2(hub.position.x, hub.get_center().y)))
 		for card in uses.get_children():
 			if card is Button and card.visible:
 				var rect := _local(card)
-				_link(Vector2(hub.end.x, hub.get_center().y), Vector2(rect.position.x, rect.get_center().y))
+				links.append(_route(Vector2(hub.end.x, hub.get_center().y), Vector2(rect.position.x, rect.get_center().y)))
+		# Every link's edges first, then every core over them, so links that share a trunk
+		# join cleanly instead of one link's edge cutting across another's core.
+		for edge in [2.0, 1.0, 0.0]:
+			for points in links:
+				_link(points, edge)
 
 	func _local(control: Control) -> Rect2:
 		return Rect2(control.global_position - global_position, control.size)
 
-	func _link(from: Vector2, to: Vector2) -> void:
-		var mid := roundf((from.x + to.x) * 0.5)
-		draw_polyline(PackedVector2Array([from, Vector2(mid, from.y), Vector2(mid, to.y), to]), LINK, 2.0)
-		draw_circle(to, 3.5, LINK)
+	## Elbow route between two points, on whole pixels.
+	func _route(from: Vector2, to: Vector2) -> Array[Vector2]:
+		var a := from.floor()
+		var b := to.floor()
+		var mid := floorf((a.x + b.x) * 0.5)
+		return [a, Vector2(mid, a.y), Vector2(mid, b.y), b]
 
-## The window's sheet: a header band under the title and rivets along the rim.
+	## One pass of a link as whole-pixel rectangles (crisp edges): edge 2 draws the 5 px
+	## outline colour, edge 1 the 3 px blend, edge 0 the 1 px core.
+	func _link(points: Array[Vector2], edge: float) -> void:
+		var color: Color = [LINK, LINK_BLEND, LINK_EDGE][int(edge)]
+		for i in range(points.size() - 1):
+			var span := Rect2(points[i], Vector2.ZERO).expand(points[i + 1])
+			draw_rect(Rect2(span.position - Vector2.ONE * edge, span.size + Vector2.ONE * (1.0 + 2.0 * edge)), color)
+		# A small square where the link meets its card.
+		var end: Vector2 = points[-1]
+		draw_rect(Rect2(end - Vector2.ONE * (1.0 + edge), Vector2.ONE * (3.0 + 2.0 * edge)), color)
+
+## The window's sheet: the body texture with a header band under the title.
 class WorkshopFrame extends PanelContainer:
-	const BAND := Color("e7e0d2")
-	const RIVET := Color("b3a78f")
-	const SHINE := Color("ddd4c2")
 	const HEADER := 50.0
 	## Width of the rim drawn by the frame style box around the body.
 	const RIM := 5.0
 	## Hand-made texture for the body, drawn at exactly its size (1114 x 714).
 	const BODY_TEXTURE := preload("res://app/art/ui/craft_body_bg.png")
+	## Header band art (24 x 28), nine-sliced with 5 px corners across the top of the body.
+	const HEADER_TEXTURE := preload("res://app/art/ui/craft_header_bg.png")
+	var _header_style: StyleBoxTexture
 
 	func _ready() -> void:
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_header_style = StyleBoxTexture.new()
+		_header_style.texture = HEADER_TEXTURE
+		_header_style.set_texture_margin_all(5)
 
 	func _draw() -> void:
 		var body := Rect2(RIM, RIM, size.x - 2 * RIM, size.y - 2 * RIM)
 		draw_texture_rect_region(BODY_TEXTURE, body, Rect2(Vector2.ZERO, body.size))
-		draw_rect(Rect2(RIM, RIM, size.x - 2 * RIM, HEADER - RIM), BAND)
-		draw_rect(Rect2(RIM, HEADER, size.x - 2 * RIM, 1), Color("cfc6b3"))
-		var xs: Array[float] = []
-		var count := maxi(int(size.x / 180.0), 1)
-		for i in range(count + 1):
-			xs.append(lerpf(12.0, size.x - 12.0, float(i) / count))
-		for x in xs:
-			for y in [10.0, size.y - 10.0]:
-				_rivet(Vector2(x, y))
-		for y in [size.y * 0.5]:
-			_rivet(Vector2(10, y))
-			_rivet(Vector2(size.x - 10, y))
-
-	func _rivet(at: Vector2) -> void:
-		draw_circle(at, 3.0, RIVET)
-		draw_circle(at + Vector2(-1, -1), 1.0, SHINE)
+		draw_style_box(_header_style, Rect2(RIM, RIM, size.x - 2 * RIM, HEADER - RIM))
