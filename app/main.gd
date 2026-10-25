@@ -3,6 +3,7 @@ extends Control
 const Simulation = preload("res://sim/production_sim.gd")
 const SpriteMachineCard = preload("res://app/sprite_machine_card.gd")
 const FlowGraph = preload("res://app/flow_graph.gd")
+const Icons = preload("res://app/icons.gd")
 const InventoryBar = preload("res://app/inventory_bar.gd")
 const CraftScreen = preload("res://app/craft_screen.gd")
 const MachineMenu = preload("res://app/machine_menu.gd")
@@ -143,7 +144,7 @@ func _build_ui() -> void:
 	_button("Center", _frame_graph, head)
 	_button("Save", _save_game, head)
 	_button("Load", _load_game, head)
-	_button("Reset", _demo, head).tooltip_text = "Restarts with an empty canvas and the starting kit."
+	_button("Reset", _demo, head).tooltip_text = "Restarts with the starting kit and an iron mine feeding a smelter."
 	var workspace := HBoxContainer.new()
 	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	workspace.add_theme_constant_override("separation", 0)
@@ -163,6 +164,7 @@ func _build_ui() -> void:
 	graph.add_theme_stylebox_override("panel", _box(Color("e2dacb"), Color.TRANSPARENT, 0, 0, 0))
 	graph.add_theme_color_override("grid_minor", Color("ddd6c7"))
 	graph.add_theme_color_override("grid_major", Color("d2c9b6"))
+	graph.link_items = _link_items
 	graph.connection_request.connect(_connect_cards)
 	graph.disconnection_request.connect(_disconnect_cards)
 	graph.delete_nodes_request.connect(_delete_cards)
@@ -497,7 +499,8 @@ func _clear_cards() -> void:
 		view.node.queue_free()
 	cards.clear()
 
-func _demo() -> void:
+## A new game: the starting kit in the inventory and an iron mine already feeding a smelter.
+func _demo(starter := true) -> void:
 	_clear_cards()
 	sim = Simulation.new()
 	last_completed_count = 0
@@ -506,12 +509,18 @@ func _demo() -> void:
 	graph.scroll_offset = Vector2.ZERO
 	graph.zoom = 1.0
 	_select_card("")
-	message.text = "The canvas is empty: craft a machine with C, then place it from the quick bar (1-0) or the inventory (I)."
+	message.text = "Craft more machines with C, then place them from the quick bar (1-0) or the inventory (I)."
+	if starter:
+		var mine := _add_card("iron_mine", Vector2(20, 20))
+		var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
+		sim.add_link(mine, smelter)
+		_sync_graph_connections()
 	_refresh()
 
 ## The old starting network: mines → two smelters (iron, steel) → two mills → press → lab 1.
-## The game starts empty; the smoke and card tests build this to have something running.
+## Built on a fresh game without the starter pair; the smoke and card tests use it.
 func build_sample_network() -> void:
+	_demo(false)
 	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
 	var coal_mine := _add_card("coal_mine", Vector2(20, 250))
 	var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
@@ -553,7 +562,38 @@ func _toggle_speed() -> void:
 	time_scale = 4.0 if time_scale == 1.0 else 1.0
 	speed_button.text = "%d×" % int(time_scale)
 
+## Sim link per drawn link ("from|port>to|port"), rebuilt with the lengths below.
+var _drawn_links := {}
+var _synced_routes := -1
+var _synced_links: Array = []
+var _synced_count := -1
+
+func _link_items(from: StringName, from_port: int, to: StringName, to_port: int) -> Array:
+	var link: Dictionary = _drawn_links.get("%s|%d>%s|%d" % [from, from_port, to, to_port], {})
+	if link.is_empty():
+		return []
+	return [Icons.small_product(sim, link.product), link.items, link.length]
+
+## Products travel the drawn line, so the sim needs each link's length on the canvas. Only
+## done when a route or the links changed.
+func _sync_link_lengths() -> void:
+	graph._update_routes()
+	if graph.route_version == _synced_routes and is_same(sim.links, _synced_links) and sim.links.size() == _synced_count:
+		return
+	_synced_routes = graph.route_version
+	_synced_links = sim.links
+	_synced_count = sim.links.size()
+	_drawn_links.clear()
+	for link in sim.links:
+		var from_port := sim.output_products(link.from).find(link.product)
+		var to_port := sim.input_products(link.to).find(link.product)
+		if from_port >= 0 and to_port >= 0 and cards.has(link.from) and cards.has(link.to):
+			_drawn_links["%s|%d>%s|%d" % [link.from, from_port, link.to, to_port]] = link
+			sim.set_link_length(link.from, link.to, link.product,
+				graph.route_length(StringName(link.from), from_port, StringName(link.to), to_port))
+
 func _process(delta: float) -> void:
+	_sync_link_lengths()
 	if not paused:
 		sim.advance(minf(delta, 0.25) * time_scale)
 	refresh_elapsed += delta
@@ -632,7 +672,7 @@ func _load_game() -> void:
 	message.text = "Save loaded."
 
 func _smoke_test() -> void:
-	assert(cards.is_empty() and sim.machines.is_empty(), "Oyun boş tuvalle başlamalı")
+	assert(cards.size() == 2 and sim.links.size() == 1, "Oyun demir madeni ve eritme fırını kurulu başlamalı")
 	if DisplayServer.get_name() != "headless":
 		await get_tree().process_frame
 		await get_tree().process_frame

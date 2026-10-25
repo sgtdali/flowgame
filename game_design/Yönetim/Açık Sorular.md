@@ -1,7 +1,7 @@
 ---
 tur: soru-listesi
 durum: etkin
-guncelleme: 2026-10-23
+guncelleme: 2026-10-26
 ---
 # Açık sorular
 
@@ -25,7 +25,7 @@ guncelleme: 2026-10-23
 | S-014 | Somut nihai proje ve ilk aşaması ne? | Uzun vadeli motivasyon | Çözüldü (K-018): Son Fabrika; beş modülden yapılan Kurucu Çekirdek |
 | S-015 | İlk prototipte hangi ürün ve hangi alternatif yöntemler denenir? | Üretimin anlamlı tercih üretmesi | Çözüldü (K-007, K-017): Tek reçete ve farklı ürün ilkesi; döküm ve talaşlı ürünler (Cast Iron vs Steel) ayrıldı |
 | S-016 | İlk 60 dakika hangi başarılar ve darboğazlardan oluşur? | Öğrenme ve ilerleme temposu | Açık |
-| S-017 | Hedef cihaz ve kabul edilebilir simülasyon/arayüz performansı ne? | Ölçek bütçesi | Açık |
+| S-017 | Hedef cihaz ve kabul edilebilir simülasyon/arayüz performansı ne? | Ölçek bütçesi | Kısmen çözüldü (K-037): 500 kartta kart oynatmak kasmamalı; bağlantı yolları buna göre hesaplanıyor. Hedef cihaz ve gerçek kartlarla ölçüm açık; ertelenen çözüm [[Tasarım/Arayüz ve Büyük Ağ Yönetimi#Ertelenen çözüm: sürüklerken seyrek hesaplama|burada]] |
 | S-018 | Giriş/çıkış tamponlarının kapasitesi ne olacak? | Akış ve stok sınırı | Açık; tamponların varlığı K-005 ile onaylı |
 | S-019 | Reçete değişimi veya çevrim iptalinde iş ve malzeme ne olur? | Oyuncu kontrolü ve stok bütünlüğü | Açık |
 | S-020 | Farklı prosesler için ayrı işleme birimleri gerekir mi? | Uyumluluk ve dengeleme | Kısmen çözüldü (K-022): montaj dört makineye ayrıldı, torna ve CNC birleşti |
@@ -35,6 +35,7 @@ guncelleme: 2026-10-23
 | S-024 | Makine üreten makineler nasıl çalışır: hangi kart hangi makineyi üretir, ne zaman açılır, çıktı nereye gider? | Otomasyona geçiş, K-020 | Çözüldü (K-024): tek Makine Fabrikası, kartta ya da bağlı depoda birikir, erken araştırma |
 | S-025 | Kurucu Çekirdek ve modüller kaç adet ister, tam bir oyun ne kadar sürer? | Final projenin zorluğu, K-018 | Açık; prototipte her modülden 4 (ilk tahmin) |
 | S-026 | Kimya modülü hangi hammaddelerle ve ne zaman eklenir? | Kurucu Çekirdek'in tamamlanması | Açık |
+| S-027 | Bağlantıların taşıma hızı ve kapasitesi ne olmalı; araştırmayla artar mı? | Akış temposu, bağlantı sayısı | Açık; prototipte 60 px/sn ve 10 px aralık (K-035, asistan seçimi) |
 
 ## Kapanan sorular
 

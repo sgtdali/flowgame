@@ -1,7 +1,7 @@
 ---
 tur: degisiklik-gunlugu
 durum: etkin
-guncelleme: 2026-10-24
+guncelleme: 2026-10-26
 ---
 # Değişiklik günlüğü
 
@@ -130,3 +130,15 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - Prototipte ayrıca: Godot editörünün geri yazdığı eski `machine_card.tscn` yeniden silindi.
 - Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], ana pano; `README.md`.
 - Bütün testler ve pencereli smoke testi geçti; ekran görüntüleri incelendi. Fiziksel fareyle oyun içi deneme yapılmadı.
+
+## 2026-10-24 – 2026-10-26 — El çizimi envanter penceresi, kurulu başlangıç, taşınan ürünler ve bağlantı yolları
+
+- K-031: Envanter penceresi sabit boyutlu ve kapatma düğmeli; büyük öğe resmi 64 px; el üretimi kuyruğu en fazla 5 farklı öğe.
+- K-032: Envanter penceresinin bütün görselleri kullanıcının LibreSprite çizimlerinden; kuyruk ve hızlı erişim kendi çerçeveli bölümlerinde, boş kuyrukta boş yuvalar. 18 kaynak dosya `art_src/ui/envanter_penceresi/` altında, oyundaki karşılıkları oradaki README'de.
+- K-033: Oyun bir Demir madeni ve bir Ergitme fırını kurulu ve bağlı başlar; K-013'e değişiklik notu eklendi.
+- K-034: Tuval bağlantıları 16 px'lik çok renkli bant; her 20 px'de ortadaki 8 px'i kesen, altındaki rengin koyusu dik çizgiler.
+- K-035: Ürünler bağlantı boyunca 8x8 simgeyle gerçekten taşınır, hedefe varınca sayılır; silinen bağlantıdaki ürünler çıkış kapasitesi kadar kaynağa döner. K-006'ya değişiklik notu eklendi.
+- K-036: Bağlantılar üst üste binmez, kesişmelerde köprü gibi geçer, kartların etrafından dolaşır.
+- K-037: Yol hesabı yerel ızgarada, yalnız etkilenen çizgiler için ve tuval koordinatında; sürüklerken seyrek hesaplama ertelendi ve [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]] notuna yazıldı. S-017 kısmen yanıtlandı.
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]]; `README.md`.
+- Bütün testler (üretimde 72 kontrol) ve pencereli smoke testi geçti; çizgi yolları dört yerleşimde ölçüldü (üst üste binme ve kart altından geçme 0). Fiziksel fareyle oyun içi deneme yapılmadı.

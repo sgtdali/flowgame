@@ -39,7 +39,7 @@ Her deney için sürüm/tarih, kullanılan veri, oyuncunun hedefi, beklenen kara
 
 ## Teknik doğrulama hedefleri
 
-Prototipte otomatik testlerle denetlenenler [[Yönetim/Uygulama Durumu#Doğrulama kanıtı — 2026-10-24]] içindedir.
+Prototipte otomatik testlerle denetlenenler [[Yönetim/Uygulama Durumu#Doğrulama kanıtı — 2026-10-26]] içindedir.
 
 - Eksik girdili deney başlamaz; girdiler birlikte tüketilir.
 - İki laboratuvar aynı stok birimini iki kez kullanamaz.

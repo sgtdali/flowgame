@@ -37,7 +37,9 @@ Giriş tamponu dolu tüketici dağıtıma katılmaz. Onun kullanamadığı pay, 
 
 Bu hızlar kesintisiz üretim ve başka taşıma kısıtı bulunmaması varsayımıyla uzun dönem örnekleridir. Tekil ürünlerin sırayla dağıtımı, kesirlerin hesabı ve eşitliğin hangi zaman aralığında korunacağı henüz belirlenmedi. Bağlantı sırası kalıcı gizli öncelik yaratmamalı; bunu sağlayan algoritma ayrıca seçilecektir.
 
-**Açık sınırlar:** Bağlantı hız/gecikmesi, bir tüketicinin birden fazla üreticiden beslenmesi ve bölgesel kapasiteyle etkileşim ayrı tasarım konularıdır. Elle öncelik veya ağırlık verme özelliği onaylanmadı. İleri otomatik dağıtım teknolojileri önceki önerilerde geçer; temel otomatik eşit dağıtım artık teknoloji açılmasını bekleyen bir yetenek değildir.
+**Taşıma — K-035:** Ürünler artık bağlantı boyunca taşınır: çıkıştan bağlantıya girer, çizgi üzerinde 8x8 simgeyle ilerler ve hedefin girişine varınca sayılır. Eşit paylaşım değişmedi; ürün, yolunun girişi boş olan tüketiciler arasında sırayla dağıtılır. Hedefin girişi doluysa ürünler yolun sonunda sıraya girer, yol dolunca kaynak bekler. Silinen bağlantıdaki ürünler kaynağın çıkışına, çıkış kapasitesine sığdığı kadar döner; kalanı kaybolur. Hız (60 px/sn) ve ürün aralığı (10 px) asistan seçimidir. Dayanak: [[Yönetim/Karar Defteri#K-035 — Ürünler bağlantı boyunca gerçekten taşınır|K-035]].
+
+**Açık sınırlar:** Bağlantının taşıma kapasitesi, bir tüketicinin birden fazla üreticiden beslenmesi ve bölgesel kapasiteyle etkileşim ayrı tasarım konularıdır. Elle öncelik veya ağırlık verme özelliği onaylanmadı. İleri otomatik dağıtım teknolojileri önceki önerilerde geçer; temel otomatik eşit dağıtım artık teknoloji açılmasını bekleyen bir yetenek değildir.
 
 Dayanak: [[Yönetim/Karar Defteri#K-006 — Otomatik eşit ürün paylaşımı|K-006]], [[Kaynaklar/02 - Bu Sohbetteki Kararlar]]. İlk Godot prototipinde çıkış başına hatırlanan adil sırayla uygulandı ve otomatik olarak doğrulandı. Çoklu kaynaklı ağ optimizasyonu ve oynanış dengesi doğrulanmadı. Kapsam: [[Yönetim/Uygulama Durumu]].
 

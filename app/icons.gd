@@ -66,6 +66,29 @@ static func product(sim: RefCounted, product_id: String) -> Texture2D:
 	_cache[product_id] = tex
 	return tex
 
+## The product icon shrunk to `size` px (averaged, not point-sampled), for products on a link.
+static func small_product(sim: RefCounted, product_id: String, size: int = 8) -> Texture2D:
+	var key := "%s@%d" % [product_id, size]
+	if _cache.has(key):
+		return _cache[key]
+	var tex := product(sim, product_id)
+	if tex == null:
+		return null
+	var img := tex.get_image()
+	img.convert(Image.FORMAT_RGBA8)
+	# Crop the padding first so the drawing itself fills the small square.
+	var used := img.get_used_rect()
+	if used.has_area():
+		var side := maxi(used.size.x, used.size.y)
+		var square := Rect2i(used.get_center() - Vector2i(side, side) / 2, Vector2i(side, side))
+		var cropped := Image.create(side, side, false, Image.FORMAT_RGBA8)
+		cropped.blit_rect(img, square, Vector2i.ZERO)
+		img = cropped
+	img.resize(size, size, Image.INTERPOLATE_TRILINEAR)
+	var small := ImageTexture.create_from_image(img)
+	_cache[key] = small
+	return small
+
 ## First frame of a machine's 128x128 artwork, for inventory and craft slots.
 static func machine(art_path: String) -> Texture2D:
 	if _cache.has(art_path):

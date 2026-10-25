@@ -1,7 +1,7 @@
 ---
 tur: karar-defteri
 durum: etkin
-guncelleme: 2026-10-24
+guncelleme: 2026-10-26
 ---
 # Karar defteri
 
@@ -74,6 +74,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Sınır:** Tekil ürün sıralaması, zaman adımı, çoklu üretici, taşıma kapasitesi ve gecikme kuralları seçilmedi. İleri öncelik araçları onaylanmadı. Karar küresel ağ optimizasyonu anlamına gelmez.
 - **Asıl not:** [[Tasarım/Ana Proje ve Ürün Dağıtımı#Onaylı otomatik eşit paylaşım — K-006]].
 - **Önceki öneriye etkisi:** Paylaşım modelinin açık olduğu anlatımı kapandı. Tarihsel 40/60/20 motor örneği temel dağıtım algoritması değildir.
+- **Değişiklik:** K-035 ile aktarım anlık olmaktan çıktı: ürün bağlantı boyunca taşınır, hedefe varınca sayılır. Eşit paylaşım aynen geçerli; payı alan tüketicinin yolunun girişi boş olmalıdır.
 
 ## K-007 — 24 ürünlük üretim ağı ve 9 araştırmalık teknoloji ağacı ilk taslağı
 
@@ -160,6 +161,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Önceki duruma etkisi:** Prototipte hazır kurulu gelen 8 kartlık başlangıç ağı kaldırıldı; bu ağ bir uygulama seçimiydi, kullanıcı kararı değildi.
 - **Sınır:** Başlangıç kiti değişmedi (20 çelik levha, 10 bağlantı elemanı, 10 çelik külçe; Bakır madeni, Kuvars ocağı, Depo). Kitin bu başlangıç için dengesi açıktır.
 - **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+- **Değişiklik:** K-033 ile değişti: oyun bir Demir madeni ve bir Ergitme fırını kurulu başlar.
 
 ## K-014 — Envanterden makine girişine elle malzeme konur
 
@@ -348,6 +350,77 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
   3. Envanter penceresine malzeme hissi verilir ve araştırılmamış makineler birbirinden ayırt edilir; önce gösterilip sonra onaylandı.
 - **Kaynak:** Arayüz eleştirisine “1. herşey ingilizce olacak. 2. bunu sen çöz. 3 için bişi yapma şu an. 4 ve 5 için 1 ve 2 yi yaptıktan sonra 1 ve 2 ve mevcut yapıyı bozmadan yapıp bana göster önce.”; fontların indirilmesine “Evet, Pixelify Sans ve Nunito fontlarını indir ve uygula”; gösterimden sonra “4 ve 5 kalsın, hepsini commit push yap”.
 - **Sınır:** Asistan seçimleri: başlıklarda Pixelify Sans, metinde Nunito (ikisi de OFL, `app/fonts`); perçinli pencere kenarı, başlık bandı ve ızgaralı harita zemini; kilitli makinelerde yer tutucu çizim yerine kategori simgesi. Araştırma kodları (DM, MK…), Zincir Editörü ve tasarım belgeleri Türkçe kaldı. Kart hiyerarşisinin sadeleştirilmesi ertelendi.
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
+
+## K-031 — Envanter penceresi sabit boyutlu; kuyruk en fazla 5 farklı öğe
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-24.
+- **Karar:**
+  1. Ortadaki büyük öğe resmi 64 px'tir.
+  2. Envanter penceresinin boyutu sabittir ve sağ üstte kapatma düğmesi vardır (asistanın önerisi onaylandı).
+  3. El üretimi kuyruğu en fazla 5 farklı öğe alır; aynı öğe kendi grubuna eklenir.
+- **Kaynak:** “bizim bu menüdeki item iconları kaç piksel yer kaplıyor” sorusundan sonra “64 yap.”; “peki bu menünün boyutu değişken mi” sorusuna verilen öneriye “evet. dediğin gibi olsun. ayrıca üretim sırasına dediğini yapmana gerek yok maks 5 farklı ürün olacak şekide sınırlayalım kuyruğu ölye çokda kuyruk ypaılamasın oyunda”.
+- **Sınır:** Asistan seçimleri: pencere 1120x720; aynı öğenin grubu kuyrukta tek kart görünür.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-032 — Envanter penceresinin elle çizilmiş görünümü
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-24 – 2026-10-25.
+- **Karar:** Envanter penceresinin bütün görselleri kullanıcının LibreSprite'ta çizdiği parçalardan yapılır: pencere çerçevesi ve zemin dokusu, başlık bandı ve ikonları, Machines ve Products bölümleri, akış alanının zemini, giriş/kullanım kartları ve etiketleri, ortadaki kart ve Recipe bölümü, CRAFT ve PLACE plakaları (normal, hover, pressed), kapatma düğmesi. Crafting Queue akış alanının altına, Quick Bar pencerenin altına kendi çerçeveli bölümlerinde taşınır; boş kuyruk yazı yerine boş yuvalar gösterir. Bütün kaynak dosyalar oyunun klasöründe tutulur.
+- **Kaynak:** Adım adım verilen yönergeler, örneğin “bg1 yi oyundaki envantor menüsünde bu bölüme oy 5x5 9 slice”; “cervece2 yi görseldeki böümün çerveesi ve bachground u yap. 9 slice 9 piksel”; “crafting queu yi bu şekilde sağdaki ekraın altına koy. ve arka planına bu produt bölümlerinin arka planından yap.”; “bu bölümde hiç craft yokken yazı yazmasın böyle boş slotlar dursun”; “craft ve place dğümeleri yan yana olsun place düğmesi olanlarda”; “şu an oyuna koyduğuz libre çalışmalarını oyunun kendi klasörü içerisinde uygun bi yere alırmısın … ama hiç atlamaman lazım”.
+- **Sınır:** Piksel aralıkları ve 9-slice payları kullanıcının tek tek verdiği değerlerdir; dosyaların oyundaki karşılıkları `art_src/ui/envanter_penceresi/README.md` içindedir. Akış haritasının içindeki 5 px'lik bağlantı çizgileri (kenar 3d3b3d, orta 399195, aradaki ton bu ikisinin ortalaması) de bu çalışmada seçildi. PLACE plakasının amber renkleri, hover ve pressed tonları asistan seçimidir.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-033 — Oyun demir madeni ve ergitme fırını kurulu başlar
+
+- **Durum:** Onaylı; K-013'ün yerine geçer.
+- **Tarih:** 2026-10-25.
+- **Karar:** Yeni oyunda tuvalde bir Demir madeni ve bir Ergitme fırını kurulu gelir; oyuncu bunları üretmek zorunda kalmaz.
+- **Kaynak:** “bide oyun başı demir ve eritme açık olsun. envanterde olsun yani direk kurabiliyim hatta bu 2 si kurulu gelsin.”
+- **Sınır:** Asistan seçimleri: madenden fırına bağlantı hazır gelir, fırın Iron Ingot yapar; Reset de aynı başlangıca döner. İkisi zaten başlangıçta açık makinelerdi. Demir madeninin kurulum sınırı 1 olduğundan envantere ayrıca maden konmadı; başlangıç kiti değişmedi.
+- **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
+
+## K-034 — Tuvaldeki bağlantı çizgilerinin görünümü
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-25.
+- **Karar:**
+  1. Bağlantılar 16 px kalınlığındadır: her iki yanda 4 px kenar (dıştan içe 0e0c0a, 1e2225, 787b80, 3d3f45), ortada 8 px (dıştan içe 52524f, 645e59, 716c61, 716b60, aynalı).
+  2. Çizgi boyunca her 20 px'de bir 2 px'lik dik çizgi vardır. Dik çizgi yalnızca ortadaki 8 px'i keser, kenarlara dokunmaz; köşelerde çizilmez.
+  3. Dik çizginin her pikseli, altına denk gelen rengin bir tık koyusudur.
+- **Kaynak:** “toplam 14 piksel olacak. 4 piksel kenarlık iki taraftandan olacak. bu 4 piksel dıştan içe : 0e0c0a, 1e2225, 787b80, 3d3f4. ortadaki 8 piksel ise dıştan içe 52524f, 645e59, 716c61, 716b60 olacak 4 4 şeklinde” (toplamın 16 px, son kenar renginin 3d3f45 olduğu soruyla netleşti); “0e0c0a bu renk ile çizgilerin dikeyine 2 piksellik izgiler arabilir misin? her 20 pikselde 1”; köşelerdeki taşmaya “bunun olmaması lazım”; “bunun 8 olması lazım yani 4 4 kenarları kesmesin”; “bunuda 8 renk yapalım bence. denk geldiği yerdekinin bi tık koyusu olsun”.
+- **Sınır:** Asistan seçimleri: “bir tık koyu” %20 koyulaştırma; çizgileri Godot yerine oyunun kendisi çizer, sürükleme önizlemesi de aynı stildedir. Envanter penceresindeki akış haritası çizgileri bundan ayrıdır (K-032).
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
+
+## K-035 — Ürünler bağlantı boyunca gerçekten taşınır
+
+- **Durum:** Onaylı; K-006'daki anlık aktarımın yerine geçer, eşit paylaşım kuralı aynen geçerli.
+- **Tarih:** 2026-10-25.
+- **Karar:**
+  1. Ürün, 8x8 görüntüsüyle çizginin ortasında kaynaktan hedefe ilerler. Hedefteki sayı ürün yolun sonuna varınca artar; bu bir animasyon değil, simülasyonun kendisidir.
+  2. Bağlantı silinince üzerindeki ürünler kaynağın çıkışına döner; çıkış kapasitesini aşan kısım kaybolur.
+- **Kaynak:** “malzemelerin bu 8 piksellik genişlikte akışını yapman lazım. yani malzemenin 8x8 piksellik görüntüsü gerçekten çizgi üzerinde aksın ve hedef node a ulaşınca ordaki sayı 1 artsın. gerçek olacak yani sırf animasyon değil”; “çıkış kapasitesinin üstündeki malzeme direk kaybolsun”.
+- **Sınır:** Asistan seçimleri: hız 60 px/sn, ürünler arası en az 10 px; yolun uzunluğu tuvaldeki çizgiden alınır; hedef doluysa ürünler yolun sonunda sıraya girer, yolun girişi doluysa kaynak yeni ürün göndermez; kaynak makine silinirse ya da reçetesi değişip ürünü artık üretmezse yoldaki ürün kaybolur; simge 32 px'lik ürün simgesinden küçültülür. Kayıt yoldaki ürünleri saklar.
+- **Asıl not:** [[Tasarım/Ana Proje ve Ürün Dağıtımı]].
+
+## K-036 — Bağlantılar üst üste binmez, kartların etrafından dolaşır
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-25.
+- **Karar:** İki bağlantı çizgisi hiçbir yerde üst üste binmez; yan yana gidebilir, dik açıyla kesişirse biri diğerinin üstünden köprü gibi geçer. Çizgiler kartların arkasından geçmez, etraflarından dolaşır.
+- **Kaynak:** “sağdan sola veya yukardan aşağıya çizilen çizgiler normalde godot editöründe üst üste biniyor. bizde bunun olamaması lazım. üstünden atlayıp köprü gibi geçebilir yanyana da gidebilir ama üstü üstüe binememsi lazım”; “Evet, çizgiler kartların arkasından da geçmesin, kartların etrafından dolaşsın.”
+- **Sınır:** Asistan seçimleri: aynı çıkıştan (ya da aynı girişe) giden bağlantılar tek bant gibi birleşebilir; çizgi kartla arasında 4 px bırakır; yol bulunamazsa (kart bir portu kapatıyorsa) basit köşeli yol çizilir.
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
+
+## K-037 — Büyük ağda yol hesabı: yerel, parça parça, tuval koordinatında
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:** 500 kartlık bir ağda bir kartı oynatmak oyunu kasmamalıdır. Önerilen dört çözümden üçü uygulanır: (1) her çizgi yalnız çevresindeki kartlarla küçük bir ızgarada hesaplanır; (2) kart oynayınca yalnız etkilenen çizgiler yeniden hesaplanır; (4) yollar tuval koordinatında saklanır, yakınlaştırma ve kaydırma yeniden hesap yaptırmaz. (3) sürüklerken seyrek hesaplama uygulanmaz, ileride gerekirse diye not edilir.
+- **Kaynak:** “bu sistemde 500 tane kart olursa ne olacak peki ? kasma olur bu 1 kartı harehet ettirdik diye”; “1 2 4 okey 3 ü yapmayalım desem performansı yeterince arttırmış olmaz mıyız?”; “tamam planın güzel anlaştık yap”; “bu soruna uygulamadığımız biz çözüm vardı ya onu bir yere not et ilerde lazım olur belki”.
+- **Sınır:** Ölçüm sade test kartlarıyla yapıldı (500 kart, 936 bağlantı: sürüklerken kare başına ortalama 11 ms, en kötü 19 ms); gerçek oyun kartlarıyla ölçülmedi. Ertelenen 3. çözüm [[Tasarım/Arayüz ve Büyük Ağ Yönetimi#Ertelenen çözüm: sürüklerken seyrek hesaplama|Arayüz ve büyük ağ yönetimi]] notundadır.
 - **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
 
 ## Henüz karar olmayan yönler

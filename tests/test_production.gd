@@ -13,6 +13,7 @@ func _initialize() -> void:
 	_build_limits()
 	_save_resume()
 	_conservation()
+	_link_travel()
 	if failures.is_empty():
 		print("PRODUCTION_TESTS_OK: %d kontrol geçti" % checks)
 		quit(0)
@@ -278,3 +279,38 @@ func _conservation() -> void:
 	sim.advance(30.0)
 	copy.advance(30.0)
 	_check(copy.machines[a].received == sim.machines[a].received and copy.machines[b].received == sim.machines[b].received, "Yükleme paylaşım sırasını sıfırlamamalı")
+
+## A link with a length carries each product along it: the target counts it only on arrival,
+## items keep LINK_GAP apart, a save keeps them and removing the link hands them back.
+func _link_travel() -> void:
+	var sim := Simulation.new()
+	sim.unlock_all()
+	var mine := sim.add_machine("iron_mine")
+	var smelter := sim.add_machine("smelter", "pig_iron")
+	sim.add_link(mine, smelter)
+	sim.set_link_length(mine, smelter, "iron_ore", 120)
+	sim.machines[mine].output["iron_ore"] = 3
+	sim.advance(0.05)
+	var link: Dictionary = sim.links[0]
+	_check(link.items.size() == 1 and sim.machines[smelter].input.iron_ore == 0, "Çıkan ürün önce yola girmeli")
+	sim.advance(0.5)
+	_check(link.items.size() == 3 and sim.machines[mine].output.iron_ore == 0, "Ürünler arka arkaya yola girmeli")
+	for i in range(link.items.size() - 1):
+		_check(int(link.items[i]) - int(link.items[i + 1]) >= sim.LINK_GAP, "Yoldaki ürünler arası en az LINK_GAP olmalı")
+	var saved := sim.snapshot()
+	var copy := Simulation.new()
+	_check(copy.restore(JSON.parse_string(JSON.stringify(saved))) and copy.links[0].items == link.items, "Kayıt yoldaki ürünleri korumalı")
+	sim.advance(120.0 / sim.LINK_SPEED + 0.2)
+	_check(int(sim.machines[smelter].input.iron_ore) + int(sim.machines[smelter].received) >= 1 and link.transferred >= 1, "Yolun sonuna gelen ürün hedefe sayılmalı")
+	var on_way: int = link.items.size()
+	var before: int = int(sim.machines[mine].output.iron_ore)
+	sim.remove_link(mine, smelter)
+	_check(int(sim.machines[mine].output.iron_ore) == before + on_way, "Silinen yoldaki ürünler kaynağa dönmeli")
+	# Only what fits in the output comes back; the rest is lost.
+	sim.add_link(mine, smelter)
+	sim.set_link_length(mine, smelter, "iron_ore", 120)
+	var cap: int = sim.capacity("iron_mine", "output")
+	sim.links[0].items = [30, 20, 10]
+	sim.machines[mine].output.iron_ore = cap - 1
+	sim.remove_link(mine, smelter)
+	_check(int(sim.machines[mine].output.iron_ore) == cap, "Geri dönen ürünler çıkış kapasitesini aşmamalı")

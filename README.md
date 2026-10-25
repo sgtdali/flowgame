@@ -1,6 +1,6 @@
 # Flowgame — Endüstriyel Üretim ve Araştırma Ağı
 
-Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-012 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
+Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-037 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
 
 ## Başlatma
 
@@ -11,7 +11,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 
 ## Oyunun başı
 
-- Tuval boştur (K-013). İlk makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit demir ve kömür madenine, ergitme fırınına ve `Laboratuvar 1`'e yeter (K-023).
+- Tuvalde bir `Demir madeni` ve ona bağlı bir `Ergitme fırını` kurulu gelir (K-033). Diğer makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit kömür madenine ve `Laboratuvar 1`'e de yeter (K-023).
 - `Laboratuvar 1` sürekli çelik levha ve bağlantı elemanı tüketip Kademe 1 puanı üretir. Puanlar depoda birikir; aktif araştırma fiyatını depodan çeker (K-008).
 - Envanterde bir başlangıç kiti vardır: demir levha, demir çubuk, çelik levha, bağlantı elemanı, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
 - Madenler oyun başında birer adet kurulabilir (K-010); maden genişletme araştırmaları sınırı artırır (K-025).
@@ -23,7 +23,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 |---|---|
 | Envanter ve üretim | **I**, **C** ya da alt çubuktaki sandık. Solda bütün öğeler (elde olanlar adediyle). Bir öğe seç: ortada tarifi, solda girdileri, sağda kullanıldığı yerler görünür; kartlara tıklayarak zincirde gezinirsin. **CRAFT** ile sıraya al (Shift: 5 adet), elindeki makineyi **PLACE** ya da çift tıkla yerleştir. El üretimi süreli bir kuyruktur; × ile iptal edilen işin malzemesi geri döner. |
 | Hızlı erişim | Alttaki 10 yuva, **1–9 ve 0** tuşları. Makine yuvası makineyi yerleştirir. Pencereden yuvaya sürükle, sağ tıkla ya da öğenin üstündeyken numara tuşuna bas: öğe o yuvaya sabitlenir. Yuvada sağ tık sabitlemeyi kaldırır. |
-| Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). |
+| Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Ürünler çizgi üzerinde taşınır ve hedefe varınca sayılır (K-035); aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). Çizgiler kartların etrafından dolaşır, üst üste binmez (K-036). Bağlantıyı silince yoldaki ürünler kaynağa döner. |
 | Reçete | Tel sarım, montaj makineleri ve Modül Tesisi gelen ürüne göre üretir. Haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve fırında sağ tık → **Choose recipe** ile reçete ekranı açılır (K-009, K-016). Seçili reçetenin girdileri boş giriş kutularında saydam görünür. |
 | Kart menüsü | Kartta sağ tık: reçete, Stop/Run, hız 20 ↔ 40 iş/sn, Take to inventory, Remove (to inventory). Laboratuvarda araştırma hedefi. |
 | Ürün alma | Karttaki çıkış kutusuna tıkla: biriken ürün envantere geçer. Depo'da giriş kutusuna tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
@@ -31,16 +31,17 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 | Üretici kurma | Bir girişin **+** düğmesi o ürünü yapan makineyi envanterden kurup bağlar. |
 | Araştırma | Üst çubuktaki araştırma düğmesi: 9 kolda 63 araştırma, kaydırılabilir ağaç. **Sandbox** bütün kilitleri ve sınırları kaldırır. |
 | Zaman | Pause/Resume, 1× ↔ 4× hız. |
-| Kayıt | Save / Load (`user://workshop.json`), Reset oyunu boş tuval ve başlangıç kitiyle yeniden başlatır. |
+| Kayıt | Save / Load (`user://workshop.json`), Reset oyunu maden–fırın başlangıcı ve başlangıç kitiyle yeniden başlatır. |
 
 ## Dosyalar
 
-- `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
+- `sim/production_sim.gd`: simülasyon — reçeteler ve çevrimler, paylaşım, bağlantıda taşıma, laboratuvar puanları, araştırma, kurulum sınırı, envanter, el üretimi, hızlı erişim, kayıt (sürüm 4).
 - `data/prototype.json`: 55 ürün (beş modül ve Kurucu Çekirdek dahil), 23 makine türü, 63 reçete, 63 araştırma (etkileriyle), 4 puan kademesi, başlangıç kiti, kurulum bedelleri.
 - `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü; **☰ Tablo** düğmesi reçeteleri süre + girdiler → çıktılar tablosu olarak gösterir.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
+- `app/flow_graph.gd`, `app/link_router.gd`: bağlantıların çizimi (bant, dik çizgiler, taşınan ürünler) ve kartların etrafından dolaşan, üst üste binmeyen yolların hesabı.
 - `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).
-- `app/craft_screen.gd`: envanter ve üretim penceresi (akış haritası). `app/inventory_bar.gd`, `app/inventory_slot.gd`: hızlı erişim çubuğu ve ortak yuva. `app/fonts/`: Pixelify Sans ve Nunito (OFL).
+- `app/craft_screen.gd`: envanter ve üretim penceresi (akış haritası). Görselleri `app/art/ui/`, LibreSprite kaynakları `art_src/ui/envanter_penceresi/`. `app/inventory_bar.gd`, `app/inventory_slot.gd`: hızlı erişim çubuğu ve ortak yuva. `app/fonts/`: Pixelify Sans ve Nunito (OFL).
 - `app/machine_menu.gd`, `app/recipe_picker.gd`, `app/research_panel.gd`: kart menüsü, reçete ekranı, araştırma paneli.
 - `app/icons.gd`, `app/art/`: ürün simgeleri ve makine görselleri. Kaynakları ve çizim kuralları `art_src/` altında (`art_src/STANDART.md`).
 - `tests/`: `test_production.gd`, `test_inventory.gd`, `test_auto_recipe.gd`, `test_chain_editor.gd`, `test_mine_visual.gd`, `test_smelter_visual.gd`.

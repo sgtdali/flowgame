@@ -13,6 +13,10 @@ const ANY_PORT_BASE := 1000
 ## Machine items made by a machine factory: product id prefix and recipe id prefix.
 const MACHINE_ITEM := "machine_item__"
 const MACHINE_RECIPE := "build__"
+## Products travel along a link with a length: canvas px per second, and the least room
+## between two items on the line (an 8 px item plus a gap). Items sit at whole px.
+const LINK_SPEED := 60.0
+const LINK_GAP := 10
 var catalog: Dictionary
 var machines: Dictionary = {}
 var links: Array = []
@@ -550,12 +554,9 @@ func set_recipe(id: String, recipe_id: String) -> bool:
 	machine.input = new_inputs
 	machine.output = new_outputs
 	machine.status = "Ready" if machine.enabled else "Stopped"
-	links = links.filter(func(link: Dictionary) -> bool:
-		if link.from == id and not new_recipe.outputs.has(link.product):
-			return false
-		if link.to == id and not new_recipe.inputs.has(link.product):
-			return false
-		return true)
+	_drop_links(func(link: Dictionary) -> bool:
+		return (link.from == id and not new_recipe.outputs.has(link.product)) \
+			or (link.to == id and not new_recipe.inputs.has(link.product)))
 	return true
 
 func clear_outputs(id: String) -> void:
@@ -713,7 +714,9 @@ func add_link(from: String, to: String, from_port: int = -1, to_port: int = -1) 
 	for link in links:
 		if link.from == from and link.to == to and link.product == product:
 			return false
-	links.append({"from": from, "to": to, "product": product, "transferred": 0})
+	# length 0 hands items over at once; the canvas sets the drawn length, see set_link_length().
+	# items: distances of the products on the way from the source, front first.
+	links.append({"from": from, "to": to, "product": product, "transferred": 0, "length": 0, "items": []})
 	if is_storage(str(machines[to].kind)) and not machines[to].input.has(product):
 		machines[to].input[product] = 0
 	_resolve_recipe(to)
@@ -739,12 +742,48 @@ func remove_link(from: String, to: String, from_port: int = -1, _to_port: int = 
 		var outs: Array = output_products(from)
 		if from_port < outs.size():
 			var product := str(outs[from_port])
-			links = links.filter(func(link: Dictionary) -> bool:
-				return not (link.from == from and link.to == to and link.product == product))
+			_drop_links(func(link: Dictionary) -> bool:
+				return link.from == from and link.to == to and link.product == product)
 			_drop_empty_storage_ports(to)
 			return
-	links = links.filter(func(link: Dictionary) -> bool: return not (link.from == from and link.to == to))
+	_drop_links(func(link: Dictionary) -> bool: return link.from == from and link.to == to)
 	_drop_empty_storage_ports(to)
+
+## Removes the links `doomed` picks; products still on the way go back to their source.
+func _drop_links(doomed: Callable) -> void:
+	var kept: Array = []
+	for link in links:
+		if not doomed.call(link):
+			kept.append(link)
+			continue
+		_return_items(link)
+	links = kept
+
+## Puts a link's products on the way back into its source's output, up to the output
+## capacity; what does not fit is lost.
+func _return_items(link: Dictionary) -> void:
+	var source: Dictionary = machines.get(link.from, {})
+	if not link.items.is_empty() and source.has("output") and source.output.has(link.product):
+		var room := capacity(str(source.kind), "output") - int(source.output[link.product])
+		source.output[link.product] += clampi(link.items.size(), 0, maxi(room, 0))
+	link.items.clear()
+
+## The drawn length of a link in canvas px. Products on the way keep their share of the route.
+func set_link_length(from: String, to: String, product: String, length: float) -> void:
+	var new_length := maxi(roundi(length), 0)
+	for link in links:
+		if link.from != from or link.to != to or link.product != product or int(link.length) == new_length:
+			continue
+		if new_length == 0:
+			_return_items(link)
+		elif int(link.length) > 0:
+			var scale := float(new_length) / float(link.length)
+			var ahead := new_length + LINK_GAP
+			for i in link.items.size():
+				# Rescaled, but never closer than LINK_GAP to the item in front.
+				ahead = mini(roundi(link.items[i] * scale), ahead - LINK_GAP)
+				link.items[i] = maxi(ahead, 0)
+		link.length = new_length
 
 ## A depot forgets products it no longer holds or receives.
 func _drop_empty_storage_ports(id: String) -> void:
@@ -759,7 +798,7 @@ func remove_machine(id: String) -> void:
 	for link in links:
 		if link.from == id:
 			fed.append(link.to)
-	links = links.filter(func(link: Dictionary) -> bool: return link.from != id and link.to != id)
+	_drop_links(func(link: Dictionary) -> bool: return link.from == id or link.to == id)
 	machines.erase(id)
 	for target in fed:
 		_drop_empty_storage_ports(target)
@@ -776,6 +815,7 @@ func advance(seconds: float) -> void:
 		accumulator = 0.0
 
 func _tick() -> void:
+	_move_links(STEP)
 	_transfer()
 	for id in machines:
 		if not is_storage(str(machines[id].kind)):
@@ -859,15 +899,43 @@ func _process_machine(id: String, delta: float) -> void:
 				research_points[tier] = int(research_points.get(tier, 0)) + int(recipe.research_points[tier])
 			machine.status = "Cycle complete"
 
+## Moves the products along the links. The front one waits at the end until the target has
+## room; the others queue behind it, LINK_GAP apart.
+func _move_links(delta: float) -> void:
+	var step := roundi(LINK_SPEED * delta)
+	for link in links:
+		if link.items.is_empty():
+			continue
+		var length := int(link.length)
+		var target: Dictionary = machines[link.to]
+		while not link.items.is_empty() and int(link.items[0]) >= length \
+				and target.input.has(link.product) \
+				and int(target.input[link.product]) < capacity(str(target.kind), "input"):
+			link.items.pop_front()
+			_deliver(link)
+		var ahead := length + LINK_GAP
+		for i in link.items.size():
+			ahead = mini(int(link.items[i]) + step, ahead - LINK_GAP)
+			link.items[i] = mini(ahead, length)
+			ahead = int(link.items[i])
+
+func _deliver(link: Dictionary) -> void:
+	var target: Dictionary = machines[link.to]
+	target.input[link.product] += 1
+	target.received += 1
+	link.transferred += 1
+
 func _transfer() -> void:
 	# K-006: Her üretici çıkışındaki her ürün kendi adil sırasıyla dağıtılır.
 	for source in machines:
 		for prod_var in output_products(source):
 			var product := str(prod_var)
 			var targets: Array = []
+			var by_target := {}
 			for link in links:
 				if link.from == source and link.product == product:
 					targets.append(link.to)
+					by_target[link.to] = link
 			targets.sort()
 			if targets.is_empty():
 				continue
@@ -878,17 +946,20 @@ func _transfer() -> void:
 				for offset in range(1, targets.size() + 1):
 					var index := (last_index + offset) % targets.size()
 					var target: String = targets[index]
-					var spec: Dictionary = catalog.machines[machines[target].kind]
 					if not machines[target].input.has(product):
 						continue
-					if int(machines[target].input[product]) >= capacity(str(machines[target].kind), "input"):
-						continue
-					machines[source].output[product] -= 1
-					machines[target].input[product] += 1
-					machines[target].received += 1
-					for link in links:
-						if link.from == source and link.to == target and link.product == product:
-							link.transferred += 1
+					var link: Dictionary = by_target[target]
+					if int(link.length) > 0:
+						# A line with a length takes the product on when its entry is clear.
+						if not link.items.is_empty() and int(link.items.back()) < LINK_GAP:
+							continue
+						machines[source].output[product] -= 1
+						link.items.append(0)
+					else:
+						if int(machines[target].input[product]) >= capacity(str(machines[target].kind), "input"):
+							continue
+						machines[source].output[product] -= 1
+						_deliver(link)
 					cursors[key] = target
 					last_index = index
 					moved = true
@@ -1070,6 +1141,13 @@ func restore(data: Dictionary) -> bool:
 			return false
 		if not is_finite(float(link.transferred)) or float(link.transferred) != floorf(float(link.transferred)):
 			return false
+		# Older saves have no length and nothing on the way.
+		var length: Variant = link.get("length", 0)
+		if not _whole_count(length) or not link.get("items", []) is Array:
+			return false
+		for at in link.get("items", []):
+			if not _whole_count(at) or float(at) > float(length):
+				return false
 	if not data.get("cursors") is Dictionary:
 		return false
 	for key in data.cursors:
@@ -1109,6 +1187,11 @@ func restore(data: Dictionary) -> bool:
 				machine[field][product] = int(machine[field][product])
 	for link in links:
 		link.transferred = int(link.transferred)
+		link.length = int(link.get("length", 0))
+		var items: Array = []
+		for at in link.get("items", []):
+			items.append(int(at))
+		link.items = items
 	cursors = data.cursors.duplicate(true)
 	unlocked_machines.clear()
 	for m_kind in data.unlocked_machines:

@@ -1,19 +1,415 @@
 extends GraphEdit
 ## Production graph with orthogonal (step) connection lines instead of bezier curves.
+## The links are drawn by LinkLayer as 16 px pixel-art bands; GraphEdit's own lines are hidden.
+## Routes go around the cards and never lie on top of each other (LinkRouter). They are kept
+## in canvas px, so zooming and scrolling only redraw them, and a moved card reroutes only
+## its own links and the ones whose line it now covers or used to cover.
 
 ## Horizontal run out of an output port / into an input port before the first bend.
 const STUB := 20.0
+## Link bands from the outer edge to the center line, 1 px each; mirrored for 16 px total.
+const LINK_BANDS: Array[Color] = [Color("0e0c0a"), Color("1e2225"), Color("787b80"), Color("3d3f45"),
+	Color("52524f"), Color("645e59"), Color("716c61"), Color("716b60")]
+const LINE_WIDTH := 16.0
+## Cross ticks over the link: TICK px wide, one every TICK_STEP px along its length.
+const TICK := 2.0
+## Ticks cross only the center bands (from this band inward), each pixel a step darker
+## than the band it covers.
+const TICK_FIRST_BAND := 4
+const TICK_DARKEN := 0.2
+const TICK_STEP := 20.0
+## Products on the way are drawn ITEM_SIZE px square, on the 8 px center of the line.
+const ITEM_SIZE := 8.0
+## Room left between a line's edge and a card it passes, in px.
+const CARD_CLEARANCE := 4.0
+## A link is routed inside the box around its ends grown by these margins, tried in turn
+## until a route fits; only the cards in that box count.
+const REGION_MARGINS: Array[float] = [80.0, 320.0, 1280.0]
+## Cards are looked up in square buckets of this many canvas px.
+const BUCKET := 256.0
+const LinkRouter = preload("res://app/link_router.gd")
+
+## Products on the way, given by the owner: (from, from_port, to, to_port) ->
+## [8 px icon, item distances from the source, link length], both in canvas px; [] for none.
+var link_items: Callable
+## Goes up whenever a route changes, so the owner knows when to read the lengths again.
+var route_version := 0
+## How many links the last update rerouted (for measuring).
+var last_rerouted := 0
+var _drag_node := StringName()
+var _drag_port := -1
+var _drag_output := true
+## link key -> {key, from_end, to_end, conn, points (canvas px), box, group}
+var _routes := {}
+## Route keys in drawing order.
+var _order: Array = []
+## card name -> [instance id, wall rect in canvas px]
+var _cards := {}
+## bucket cell -> {card name: true} / {route key: true} for walls / route boxes touching it
+var _buckets := {}
+var _route_buckets := {}
+## The link list as last taken apart: its hash, link key -> connection, card -> link keys.
+var _conns_hash := 0
+var _links := {}
+var _card_links := {}
+var _router := LinkRouter.new()
+var _routed_frame := -1
+
+func _ready() -> void:
+	# GraphEdit's own lines are hidden: the link layer and the drag preview Line2D on its top layer.
+	for child in get_children(true):
+		if child.name == &"_connection_layer":
+			(child as CanvasItem).visible = false
+		for line in child.get_children(true):
+			if line is Line2D:
+				(line as Line2D).self_modulate = Color.TRANSPARENT
+	connection_drag_started.connect(func(node: StringName, port: int, is_output: bool) -> void:
+		_drag_node = node
+		_drag_port = port
+		_drag_output = is_output)
+	connection_drag_ended.connect(func() -> void: _drag_node = StringName())
+	# Internal front: above the grid, below the cards.
+	add_child(LinkLayer.new(), false, Node.INTERNAL_MODE_FRONT)
 
 func _get_connection_line(from_position: Vector2, to_position: Vector2) -> PackedVector2Array:
-	var stub := STUB * zoom
-	if to_position.x - from_position.x >= stub * 2.0:
-		# Forward link: out, one vertical step at the midpoint, in.
-		var mid_x := roundf((from_position.x + to_position.x) * 0.5)
-		return PackedVector2Array([from_position, Vector2(mid_x, from_position.y),
-			Vector2(mid_x, to_position.y), to_position])
-	# Backward link: leave right, cross over at mid height, enter from the left.
-	var mid_y := roundf((from_position.y + to_position.y) * 0.5)
-	var out_x := from_position.x + stub
-	var in_x := to_position.x - stub
-	return PackedVector2Array([from_position, Vector2(out_x, from_position.y), Vector2(out_x, mid_y),
-		Vector2(in_x, mid_y), Vector2(in_x, to_position.y), to_position])
+	return _step_route(from_position, to_position, STUB * zoom)
+
+## The plain route without avoiding anything: out, one vertical step, in; a backward link
+## leaves right, crosses over at mid height and enters from the left.
+static func _step_route(a: Vector2, b: Vector2, stub: float) -> PackedVector2Array:
+	if b.x - a.x >= stub * 2.0:
+		var mid_x := roundf((a.x + b.x) * 0.5)
+		return PackedVector2Array([a, Vector2(mid_x, a.y), Vector2(mid_x, b.y), b])
+	var mid_y := roundf((a.y + b.y) * 0.5)
+	return PackedVector2Array([a, Vector2(a.x + stub, a.y), Vector2(a.x + stub, mid_y),
+		Vector2(b.x - stub, mid_y), Vector2(b.x - stub, b.y), b])
+
+## Screen position of a card's port, or null when the card is gone.
+func _port(node: StringName, port: int, output: bool) -> Variant:
+	var card := get_node_or_null(NodePath(String(node))) as GraphNode
+	if card == null:
+		return null
+	var local := card.get_output_port_position(port) if output else card.get_input_port_position(port)
+	return card.position + local * zoom
+
+## Canvas position of a card's port, or null when the card is gone.
+func _canvas_port(node: StringName, port: int, output: bool) -> Variant:
+	var card := get_node_or_null(NodePath(String(node))) as GraphNode
+	if card == null:
+		return null
+	return card.position_offset + (card.get_output_port_position(port) if output else card.get_input_port_position(port))
+
+## Length of the link's route in canvas px, or 0 when it has none.
+func route_length(from: StringName, from_port: int, to: StringName, to_port: int) -> float:
+	_update_routes()
+	var route: Dictionary = _routes.get(_key(from, from_port, to, to_port), {})
+	return _length(route.points) if not route.is_empty() else 0.0
+
+static func _key(from: StringName, from_port: int, to: StringName, to_port: int) -> String:
+	return "%s|%d>%s|%d" % [from, from_port, to, to_port]
+
+static func _length(points: PackedVector2Array) -> float:
+	var total := 0.0
+	for i in range(points.size() - 1):
+		total += points[i].distance_to(points[i + 1])
+	return total
+
+## Brings the routes up to date, once per frame. Reroutes new links, links of cards that
+## moved, came or went (or were rebuilt), and links whose line a moved card covers now or
+## covered before; the other routes stay as they are.
+func _update_routes() -> void:
+	var frame := Engine.get_process_frames()
+	if frame == _routed_frame:
+		return
+	_routed_frame = frame
+	var moved: Array[Rect2] = []
+	var moved_cards := {}
+	var seen := {}
+	for child in get_children():
+		if not (child is GraphNode and child.visible):
+			continue
+		var name := String(child.name)
+		seen[name] = true
+		var wall := Rect2(child.position_offset, child.size).grow(LINE_WIDTH * 0.5 + CARD_CLEARANCE)
+		var known: Array = _cards.get(name, [])
+		if known.is_empty() or known[0] != child.get_instance_id() or known[1] != wall:
+			if not known.is_empty():
+				moved.append(known[1])
+				_unfile(_buckets, known[1], name)
+			moved.append(wall)
+			moved_cards[name] = true
+			_cards[name] = [child.get_instance_id(), wall]
+			_file(_buckets, wall, name)
+	if seen.size() != _cards.size():
+		for name in _cards.keys():
+			if not seen.has(name):
+				moved.append(_cards[name][1])
+				moved_cards[name] = true
+				_unfile(_buckets, _cards[name][1], name)
+				_cards.erase(name)
+	var dirty := {}
+	# The link list is read every frame but only taken apart when it changed.
+	var conns := get_connection_list()
+	var links_changed := conns.hash() != _conns_hash
+	if links_changed:
+		_conns_hash = conns.hash()
+		_links.clear()
+		_card_links.clear()
+		for conn in conns:
+			var key := _key(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			_links[key] = conn
+			for card in [String(conn.from_node), String(conn.to_node)]:
+				if not _card_links.has(card):
+					_card_links[card] = []
+				_card_links[card].append(key)
+			if not _routes.has(key):
+				dirty[key] = true
+		for key in _routes.keys():
+			if not _links.has(key):
+				_drop_route(key)
+	for name in moved_cards:
+		for key in _card_links.get(name, []):
+			dirty[key] = true
+	# Lines a moved card now covers or used to cover.
+	for wall in moved:
+		for cell in _cells(wall):
+			for key in _route_buckets.get(cell, {}):
+				if not dirty.has(key) and wall.intersects(_routes[key].box) and _crosses(_routes[key].points, wall):
+					dirty[key] = true
+	if dirty.is_empty() and not links_changed:
+		return
+	var keys := dirty.keys()
+	keys.sort()
+	last_rerouted = keys.size()
+	# Free the old lines first, then route one by one; each avoids the ones placed before it.
+	var groups := {}
+	for key in keys:
+		groups[key] = _routes.get(key, {}).get("group", key)
+		_drop_route(key)
+	for key in keys:
+		var conn: Dictionary = _links[key]
+		var a: Variant = _canvas_port(conn.from_node, conn.from_port, true)
+		var b: Variant = _canvas_port(conn.to_node, conn.to_port, false)
+		if a == null or b == null:
+			continue
+		var route := {"key": key, "conn": conn, "group": groups[key],
+			"from_end": "%s|%d" % [conn.from_node, conn.from_port],
+			"to_end": "%s|%d" % [conn.to_node, conn.to_port]}
+		route.points = _route_one(route, a, b)
+		var box := Rect2(route.points[0], Vector2.ZERO)
+		for p in route.points:
+			box = box.expand(p)
+		route.box = box.grow(LINE_WIDTH)
+		_routes[key] = route
+		_file(_route_buckets, route.box, key)
+	if links_changed:
+		_regroup()
+	route_version += 1
+
+func _drop_route(key: String) -> void:
+	if _routes.has(key):
+		_unfile(_route_buckets, _routes[key].box, key)
+		_routes.erase(key)
+
+## Buckets: cell -> {name: true} for everything whose box touches the cell.
+static func _file(buckets: Dictionary, box: Rect2, name: String) -> void:
+	for cell in _cells(box):
+		if not buckets.has(cell):
+			buckets[cell] = {}
+		buckets[cell][name] = true
+
+static func _unfile(buckets: Dictionary, box: Rect2, name: String) -> void:
+	for cell in _cells(box):
+		if buckets.has(cell):
+			buckets[cell].erase(name)
+
+## Drops every route and cache, so the next update routes everything from scratch.
+func forget_routes() -> void:
+	_routes.clear()
+	_order.clear()
+	_cards.clear()
+	_buckets.clear()
+	_route_buckets.clear()
+	_links.clear()
+	_card_links.clear()
+	_conns_hash = 0
+	_routed_frame = -1
+
+## Whether a route's line runs through a card wall; running along its edge does not count.
+static func _crosses(points: PackedVector2Array, wall: Rect2) -> bool:
+	var inside := wall.grow(-0.5)
+	for i in range(points.size() - 1):
+		if inside.intersects(Rect2(points[i], Vector2.ZERO).expand(points[i + 1]), true):
+			return true
+	return false
+
+static func _cells(box: Rect2) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for y in range(floori(box.position.y / BUCKET), floori(box.end.y / BUCKET) + 1):
+		for x in range(floori(box.position.x / BUCKET), floori(box.end.x / BUCKET) + 1):
+			cells.append(Vector2i(x, y))
+	return cells
+
+func _route_one(route: Dictionary, a: Vector2, b: Vector2) -> PackedVector2Array:
+	var ends := Rect2(a, Vector2.ZERO).expand(b).expand(a + Vector2(STUB, 0)).expand(b - Vector2(STUB, 0))
+	for margin in REGION_MARGINS:
+		var region := ends.grow(margin)
+		var walls: Array[Rect2] = []
+		var met := {}
+		for cell in _cells(region):
+			for name in _buckets.get(cell, []):
+				if not met.has(name):
+					met[name] = true
+					var wall: Rect2 = _cards[name][1]
+					if wall.intersects(region):
+						walls.append(wall)
+		# Lines of other links in the region; links sharing a port may share runs.
+		var runs: Array = []
+		met.clear()
+		for cell in _cells(region):
+			for key in _route_buckets.get(cell, {}):
+				if met.has(key):
+					continue
+				met[key] = true
+				var other: Dictionary = _routes[key]
+				if other.from_end == route.from_end or other.to_end == route.to_end or not other.box.intersects(region):
+					continue
+				for i in range(other.points.size() - 1):
+					runs.append([other.points[i], other.points[i + 1]])
+		var points := _router.route(a, b, walls, runs, region, LINE_WIDTH, STUB)
+		if not points.is_empty():
+			return points
+	# No way around (a card covers the port): the plain route.
+	return _step_route(a, b, STUB)
+
+## Links that share an output or an input port form one group, drawn as one merged belt.
+func _regroup() -> void:
+	_order = _routes.keys()
+	_order.sort()
+	var parent := {}
+	var owner_of := {}
+	for key in _order:
+		parent[key] = key
+		for end in [_routes[key].from_end, "in:" + _routes[key].to_end]:
+			if owner_of.has(end):
+				parent[_root(parent, key)] = _root(parent, owner_of[end])
+			else:
+				owner_of[end] = key
+	for key in _order:
+		_routes[key].group = _root(parent, key)
+
+static func _root(parent: Dictionary, key: String) -> String:
+	while parent[key] != key:
+		key = parent[key]
+	return key
+
+## Visible routes on screen, grouped for drawing: [[group, [points...], [cargo...]], ...];
+## the drag preview last. Cargo entries are [points, icon, item distances, link length].
+func _visible_groups() -> Array:
+	_update_routes()
+	var view := Rect2(scroll_offset / zoom, size / zoom).grow(LINE_WIDTH)
+	var by_group := {}
+	var order: Array = []
+	for key in _order:
+		var route: Dictionary = _routes.get(key, {})
+		if route.is_empty() or not route.box.intersects(view):
+			continue
+		if not by_group.has(route.group):
+			var fresh: Array[PackedVector2Array] = []
+			by_group[route.group] = [route.group, fresh, []]
+			order.append(route.group)
+		var points := PackedVector2Array()
+		for p in route.points:
+			points.append(p * zoom - scroll_offset)
+		by_group[route.group][1].append(points)
+		if link_items.is_valid():
+			var conn: Dictionary = route.conn
+			var info: Array = link_items.call(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			if not info.is_empty() and not info[1].is_empty() and int(info[2]) > 0:
+				by_group[route.group][2].append([points, info[0], info[1], info[2]])
+	var groups: Array = []
+	for group in order:
+		groups.append(by_group[group])
+	if _drag_node != StringName():
+		var end: Variant = _port(_drag_node, _drag_port, _drag_output)
+		if end != null:
+			var mouse := get_local_mouse_position()
+			var line := _get_connection_line(end, mouse) if _drag_output else _get_connection_line(mouse, end)
+			var preview: Array[PackedVector2Array] = [line]
+			groups.append(["", preview, []])
+	return groups
+
+class LinkLayer extends Control:
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		var graph := get_parent() as GraphEdit
+		# Group by group, each one whole: a later group crosses over the earlier ones like a
+		# bridge, its outline drawn over them. Inside a group the belts merge.
+		for entry in graph._visible_groups():
+			var links: Array[PackedVector2Array] = entry[1]
+			_draw_belts(graph, links)
+			_draw_ticks(graph, links)
+			_draw_items(graph, entry[2])
+
+	## Band by band across the group's links, so its T-junctions merge cleanly.
+	func _draw_belts(graph: GraphEdit, links: Array[PackedVector2Array]) -> void:
+		for band in LINK_BANDS.size():
+			var half := maxf(roundf((LINK_BANDS.size() - band) * graph.zoom), 1.0)
+			for points in links:
+				for i in range(points.size() - 1):
+					var span := Rect2(points[i].round(), Vector2.ZERO).expand(points[i + 1].round())
+					draw_rect(span.grow(half), LINK_BANDS[band])
+
+	func _draw_ticks(graph: GraphEdit, links: Array[PackedVector2Array]) -> void:
+		var outer := maxf(roundf((LINK_BANDS.size() - TICK_FIRST_BAND) * graph.zoom), 1.0)
+		var tick := maxf(roundf(TICK * graph.zoom), 1.0)
+		var step := TICK_STEP * graph.zoom
+		for points in links:
+			# Distance walked along the whole link, so the spacing carries over the bends.
+			var walked := 0.0
+			for i in range(points.size() - 1):
+				var a := points[i].round()
+				var b := points[i + 1].round()
+				var length := a.distance_to(b)
+				var along := (b - a) / maxf(length, 1.0)
+				var across := Vector2(absf(along.y), absf(along.x))
+				var d := ceilf(walked / step) * step - walked
+				# No ticks in a bend's square: keep clear of corners by the link's half width.
+				var clear := outer + tick
+				var lo := clear if i > 0 else 0.0
+				var hi := length - clear if i + 2 < points.size() else length
+				while d <= length and length > 0.0:
+					if walked + d > 0.0 and d >= lo and d <= hi:
+						var at := (a + along * d).round()
+						var lead := Vector2(absf(along.x), absf(along.y)) * tick
+						for band in range(TICK_FIRST_BAND, LINK_BANDS.size()):
+							var reach := maxf(roundf((LINK_BANDS.size() - band) * graph.zoom), 1.0)
+							draw_rect(Rect2(at - across * reach - lead * 0.5, across * reach * 2.0 + lead),
+								LINK_BANDS[band].darkened(TICK_DARKEN))
+					d += step
+				walked += length
+
+	## Products ride on the center of the line, placed by their share of the route.
+	func _draw_items(graph: GraphEdit, cargo: Array) -> void:
+		var size := maxf(roundf(ITEM_SIZE * graph.zoom), 1.0)
+		for entry in cargo:
+			var points: PackedVector2Array = entry[0]
+			var total: float = graph._length(points)
+			for at in entry[2]:
+				var spot := _along(points, total * float(at) / float(entry[3]))
+				draw_texture_rect(entry[1], Rect2((spot - Vector2.ONE * size * 0.5).round(), Vector2.ONE * size), false)
+
+	## The point `distance` px along the route.
+	func _along(points: PackedVector2Array, distance: float) -> Vector2:
+		for i in range(points.size() - 1):
+			var span := points[i].distance_to(points[i + 1])
+			if distance <= span:
+				return points[i].move_toward(points[i + 1], distance)
+			distance -= span
+		return points[points.size() - 1]
