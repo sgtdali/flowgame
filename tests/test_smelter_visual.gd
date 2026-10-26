@@ -23,11 +23,11 @@ func _run() -> void:
 	assert(card.get_input_port_type(0) == main.sim.product_port_type("iron_ore"))
 	
 	assert(card.get_output_port_type(0) == main.sim.product_port_type("pig_iron"))
-	# Two port rows split the 128px artwork: ports at 32 and 96 from its top.
+	# One port row each side spans the 256px artwork: ports at its vertical centre.
 	var top: float = card.get_node("PortRow_0").position.y
-	assert(absf(card.get_input_port_position(0).y - (64 + top)) < 0.6)
+	assert(absf(card.get_input_port_position(0).y - (128 + top)) < 0.6)
 	
-	assert(absf(card.get_output_port_position(0).y - (64 + top)) < 0.6)
+	assert(absf(card.get_output_port_position(0).y - (128 + top)) < 0.6)
 	for recipe in ["copper_ingot", "insulator", "pig_iron"]:
 		main._change_machine_recipe(id, recipe)
 		await process_frame

@@ -1,5 +1,5 @@
 extends GraphNode
-## Standard illustrated machine card (art_src/STANDART.md): inputs left, 128x128 animated
+## Standard illustrated machine card (art_src/STANDART.md): inputs left, 256x256 animated
 ## artwork centre, outputs right, cycle bar below. Nothing is drawn outside the card.
 
 signal recipe_changed(card_id: String, recipe_id: String)
@@ -11,13 +11,14 @@ signal take_requested(card_id: String, product: String)
 signal deposit_requested(card_id: String, product: String)
 
 const Icons = preload("res://app/icons.gd")
-## kind -> 512x384 sheet (4x3 frames of 128x128). Add a line here for each new machine;
-## machines not listed use their still placeholder from app/art/placeholder.
+## kind -> sheet of 4x3 frames (frame size = sheet width / 4). Add a line here for each new
+## machine; machines not listed use their still placeholder from app/art/placeholder.
+## Art smaller than ART (the old 128 px sheets) is scaled up by a whole factor.
 const SHEETS := {
 	"iron_mine": "res://app/art/iron_mine_b/iron_mine_sheet.png",
-	"smelter": "res://app/art/smelter_a/smelter_sheet.png",
+	"smelter": "res://app/art/smelter_b/smelter_sheet.png",
 }
-const ART := 128.0
+const ART := 256.0
 const PLACEHOLDER := "res://app/art/placeholder/%s.png"
 const SIDE := 64.0
 const INK := Color("3d3a33")
@@ -147,6 +148,8 @@ var target_icon: TextureRect
 var target_label: Label
 var _machine_enabled := true
 var _frame_count := 1
+## Frame size in the sheet (px); drawn at ART.
+var _frame_px := ART
 var _storage := false
 
 func _box(background: Color, border: Color, pad_x: int, pad_y: int, radius: int = 8) -> StyleBoxFlat:
@@ -246,8 +249,10 @@ func _build(accent: Color) -> void:
 	pause_btn.visible = not _storage
 	_atlas = AtlasTexture.new()
 	_atlas.atlas = load(art_path(kind))
-	_frame_count = maxi(1, int(_atlas.atlas.get_width() / ART) * int(_atlas.atlas.get_height() / ART))
-	_atlas.region = Rect2(0, 0, ART, ART)
+	var sheet := _atlas.atlas
+	_frame_px = sheet.get_width() / 4.0 if SHEETS.has(kind) else float(sheet.get_width())
+	_frame_count = maxi(1, int(sheet.get_width() / _frame_px) * int(sheet.get_height() / _frame_px))
+	_atlas.region = Rect2(0, 0, _frame_px, _frame_px)
 	art = TextureRect.new()
 	art.name = "Art"
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -494,4 +499,4 @@ func _process(delta: float) -> void:
 
 func _set_frame(frame: int) -> void:
 	animation_frame = frame
-	_atlas.region = Rect2(Vector2(frame % 4, floori(frame / 4.0)) * ART, Vector2(ART, ART))
+	_atlas.region = Rect2(Vector2(frame % 4, floori(frame / 4.0)) * _frame_px, Vector2(_frame_px, _frame_px))

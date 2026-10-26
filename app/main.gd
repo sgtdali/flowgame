@@ -335,7 +335,7 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 		return
 	var target_node: GraphNode = cards[target_id].node
 	var in_idx := sim.input_products(target_id).find(product)
-	var base_pos := target_node.position_offset + Vector2(-320, maxi(in_idx, 0) * 230 - 40)
+	var base_pos := target_node.position_offset + Vector2(-500, maxi(in_idx, 0) * 360 - 40)
 	# Çakışma varsa dikey kaydır
 	for attempt in range(8):
 		var clash := false
@@ -345,7 +345,7 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 				break
 		if not clash:
 			break
-		base_pos += Vector2(0, 230)
+		base_pos += Vector2(0, 360)
 	var supplier_id := _add_card(supplier_kind, base_pos, sim.place_machine(supplier_kind, supplier_recipe))
 	var out_port := sim.output_products(supplier_id).find(product)
 	var in_port := sim.input_products(target_id).find(product)
@@ -512,7 +512,7 @@ func _demo(starter := true) -> void:
 	message.text = "Craft more machines with C, then place them from the quick bar (1-0) or the inventory (I)."
 	if starter:
 		var mine := _add_card("iron_mine", Vector2(20, 20))
-		var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
+		var smelter := _add_card("smelter", Vector2(500, 20), "", "pig_iron")
 		sim.add_link(mine, smelter)
 		_sync_graph_connections()
 	_refresh()
@@ -522,13 +522,13 @@ func _demo(starter := true) -> void:
 func build_sample_network() -> void:
 	_demo(false)
 	var iron_mine := _add_card("iron_mine", Vector2(20, 20))
-	var coal_mine := _add_card("coal_mine", Vector2(20, 250))
-	var smelter := _add_card("smelter", Vector2(340, 20), "", "pig_iron")
-	var steel_furnace := _add_card("smelter", Vector2(340, 250), "", "steel_ingot")
-	var mill_plate := _add_card("rolling_mill", Vector2(660, 20), "", "steel_plate")
-	var mill_rod := _add_card("rolling_mill", Vector2(660, 250), "", "steel_rod")
-	var press := _add_card("press", Vector2(660, 480), "", "fastener")
-	var lab := _add_card("lab_1", Vector2(980, 250))
+	var coal_mine := _add_card("coal_mine", Vector2(20, 380))
+	var smelter := _add_card("smelter", Vector2(500, 20), "", "pig_iron")
+	var steel_furnace := _add_card("smelter", Vector2(500, 380), "", "steel_ingot")
+	var mill_plate := _add_card("rolling_mill", Vector2(980, 20), "", "steel_plate")
+	var mill_rod := _add_card("rolling_mill", Vector2(980, 380), "", "steel_rod")
+	var press := _add_card("press", Vector2(980, 740), "", "fastener")
+	var lab := _add_card("lab_1", Vector2(1460, 380))
 	sim.add_link(iron_mine, smelter)
 	sim.add_link(coal_mine, smelter)
 	sim.add_link(coal_mine, steel_furnace)
