@@ -16,6 +16,7 @@ const Icons = preload("res://app/icons.gd")
 ## Art smaller than ART (the old 128 px sheets) is scaled up by a whole factor.
 const SHEETS := {
 	"iron_mine": "res://app/art/iron_mine_c/iron_mine_sheet.png",
+	"copper_mine": "res://app/art/copper_mine_a/copper_mine_sheet.png",
 	"smelter": "res://app/art/smelter_b/smelter_sheet.png",
 }
 const ART := 256.0
