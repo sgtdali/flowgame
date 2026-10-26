@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: karma
-guncelleme: 2026-10-23
+guncelleme: 2026-10-26
 ---
 # Makine kartları
 
@@ -115,6 +115,16 @@ Giriş ve çıkış portları reçeteye göre ürün akışını gösterir. Bu m
 - Makinenin ne ürettiği çıktı kutusunda değil, ayrı bir yerde görünür; prototipte kart başlığında, adın sağında.
 
 Prototipte ayrıca: dolu tamponda kutu çerçevesi altın rengi; çevrim çubuğu ve durdurma düğmesi; çıkış kutusuna tıklamak ürünü envantere alır; envanterden giriş kutusuna ürün bırakılabilir (K-014); girişin "+" düğmesi o ürünün üreticisini kurup bağlar. Kutu boyutu, renkler ve başlık yerleşimi uygulama seçimidir; tablodaki "Öneri" durumlarını onaylamaz.
+
+### Kart görünümü — K-038 – K-042
+
+- **Görsel 256 px (K-038):** Kart 416 px genişliğindedir: solda ve sağda 80 px'lik port sütunları, ortada 256x256 makine görseli. Port satırları görselin yüksekliğini eşit böler.
+- **Durum çemberi (K-039):** Her port kartın kenarına ortalı 24x24 px'lik bir çemberdir. Turuncu: bağlı değil. Yeşil: bağlı ve akış yolunda. Kırmızı: bağlı ama parça alamıyor (giriş için makine bu girdiyi bekliyor, çıkış için çıkış tamponu dolu).
+- **Kutular (K-040):** Malzeme kutuları çemberin bittiği yerden 2 px boşlukla başlar.
+- **Çerçeve (K-041):** Kartın tamamı tek çerçevededir, koyu başlık şeridi çerçevenin içinde ve kenarına dayalıdır. Şu anki görsel envanter penceresinden ödünçtür; kullanıcı kart için ayrı çerçeve çizecek.
+- **Makine görselleri (K-042):** Ergitme fırını, Demir madeni ve Bakır madeni kullanıcının çizimleridir; 256 px'e sığdırılır ve 1 px siyah çizgiyle çevrelenir. Fırında alev, madenlerde tünele girip çıkan vagon hareket eder. Yeni görseller kullanıcı onaylamadan oyuna konmaz.
+
+Dayanak: [[Yönetim/Karar Defteri#K-038 — Kartlardaki makine görseli 256 px|K-038]], [[Yönetim/Karar Defteri#K-039 — Bağlantı noktası durumunu renkle gösterir|K-039]], [[Yönetim/Karar Defteri#K-040 — Malzeme kutuları bağlantı çemberinin 2 px içinde|K-040]], [[Yönetim/Karar Defteri#K-041 — Kart tek çerçevede, başlık çerçevenin içinde|K-041]], [[Yönetim/Karar Defteri#K-042 — Kullanıcı çizimi makine görselleri ve hareketleri|K-042]]. Ölçü ve çizim kuralları `art_src/STANDART.md` içindedir.
 
 ## Kurulum bedeli ve sınırı — K-010, K-011
 

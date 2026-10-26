@@ -142,3 +142,13 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-037: Yol hesabı yerel ızgarada, yalnız etkilenen çizgiler için ve tuval koordinatında; sürüklerken seyrek hesaplama ertelendi ve [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]] notuna yazıldı. S-017 kısmen yanıtlandı.
 - Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[Tasarım/Ana Proje ve Ürün Dağıtımı]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]]; `README.md`.
 - Bütün testler (üretimde 72 kontrol) ve pencereli smoke testi geçti; çizgi yolları dört yerleşimde ölçüldü (üst üste binme ve kart altından geçme 0). Fiziksel fareyle oyun içi deneme yapılmadı.
+
+## 2026-10-26 — Makine kartlarının görünümü ve kullanıcı çizimi makineler
+
+- K-038: Kartlardaki makine görseli 128'den 256 px'e çıktı; eski görseller 2 kat büyütülerek gösteriliyor.
+- K-039: Portlar 24x24 durum çemberi: turuncu bağlı değil, yeşil akış var, kırmızı bağlı ama parça alamıyor.
+- K-040: Malzeme kutuları çemberin 2 px içinde; kart 416 px genişliğinde.
+- K-041: Kartın tamamı tek çerçevede, başlık içinde; görsel geçici, kullanıcı ayrı çizecek (S-028).
+- K-042: Ergitme fırını (alevli), Demir madeni ve Bakır madeni (vagonlu, fenerli) kullanıcı çizimlerinden; yeni görseller onaysız oyuna konmaz. S-029 eklendi.
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Makine Kartları]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]]; `art_src/STANDART.md`, `README.md`.
+- Bütün testler ve pencereli smoke testi geçti; ekran görüntüleri incelendi. Fiziksel fareyle oyun içi deneme yapılmadı.

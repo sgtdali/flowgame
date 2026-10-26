@@ -36,6 +36,8 @@ guncelleme: 2026-10-26
 | S-025 | Kurucu Çekirdek ve modüller kaç adet ister, tam bir oyun ne kadar sürer? | Final projenin zorluğu, K-018 | Açık; prototipte her modülden 4 (ilk tahmin) |
 | S-026 | Kimya modülü hangi hammaddelerle ve ne zaman eklenir? | Kurucu Çekirdek'in tamamlanması | Açık |
 | S-027 | Bağlantıların taşıma hızı ve kapasitesi ne olmalı; araştırmayla artar mı? | Akış temposu, bağlantı sayısı | Açık; prototipte 60 px/sn ve 10 px aralık (K-035, asistan seçimi) |
+| S-028 | Makine kartının kendi çerçevesi nasıl olacak? | Kartın görünümü, K-041 | Açık; kullanıcı çizecek, şimdilik envanter penceresinin çerçevesi kullanılıyor |
+| S-029 | Diğer makinelerin 256 px'lik görselleri ne zaman ve nasıl çizilecek? | Kartların tutarlı görünümü, K-038 | Açık; 20 makine 128 px yer tutucunun büyütülmüşüyle duruyor |
 
 ## Kapanan sorular
 

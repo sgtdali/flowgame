@@ -423,6 +423,57 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Sınır:** Ölçüm sade test kartlarıyla yapıldı (500 kart, 936 bağlantı: sürüklerken kare başına ortalama 11 ms, en kötü 19 ms); gerçek oyun kartlarıyla ölçülmedi. Ertelenen 3. çözüm [[Tasarım/Arayüz ve Büyük Ağ Yönetimi#Ertelenen çözüm: sürüklerken seyrek hesaplama|Arayüz ve büyük ağ yönetimi]] notundadır.
 - **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
 
+## K-038 — Kartlardaki makine görseli 256 px
+
+- **Durum:** Onaylı; kart standardındaki 128 px'in yerine geçer.
+- **Tarih:** 2026-10-26.
+- **Karar:** Makine kartındaki görsel alanı 256x256 px'tir.
+- **Kaynak:** “128 küçük kaldı bu iş için ya bi büğü ne olabilir?”; seçenekler anlatıldıktan sonra “256 deneyelim birde”; denemeden sonra “256 kalsın, commit ve push yap.”
+- **Sınır:** Asistan seçimleri: 128 px'lik eski görseller tam 2 kat büyütülerek gösterilir (yer tutucular yeniden çizilmedi); kart sheet'inin kare boyutu sheet genişliği / 4'tür, satır sayısı serbesttir. Başlangıçtaki ve örnek ağdaki kart aralıkları büyütüldü (yatay 480, dikey 360 px). Kart büyüklüğünün oynanışa etkisi (aynı ekranda daha az kart) denenmedi.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-039 — Bağlantı noktası durumunu renkle gösterir
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:**
+  1. Kartın her giriş ve çıkış portu 24x24 px'lik bir çemberdir: dıştan içe 1 px siyah, siyaha doğru koyulaşan iki bej halka, 2 px f3eee4 halka ve ortada durum rengi.
+  2. Üç durum vardır: bağlı değil turuncu; bağlı ve akış yolunda yeşil; bağlı ama parça alamıyor kırmızı.
+- **Kaynak:** “siyak ile 24x24 çember çiz 1 piksel”; “içe doğru bej rengini tonları ile 1 piksel koyu 1 piksek daha açık sonra beya olacak şekilde”; “beyaz yerine f3eee4 bunu yap ve siyaha doğru bu renk koyulaşarak gitsin”; “f3eee4 bu renk 2 piksel çapda dursun kalan orta bölümü … bağlı ve parça alamıyorsa kırmızı, bağlı ve akış okeyse yeşil bağlı değilken turuncu olsun”; köşeli görünüme önerilen düzeltmeler için “tamam a b yap bakalım”; “4. durum yokmuş 3 yeterli oyuna koy bakalım”.
+- **Sınır:** Asistan seçimleri: renkler (turuncu e8902f, yeşil 6aa84f, kırmızı d0523f, halkalar a89c86 ve d6cdbd), halkaların merkezden uzaklığa göre çizilmesi ve ara tonlar; kırmızının anlamı: giriş için makine bu girdiyi bekliyor ve tamponda yeterli yok, çıkış için çıkış tamponu dolu. Çember kartın kenarına ortalanır ve kartın üstünde çizilir. Çevrimler arasında kısa süre kırmızıya dönebilir; bekletme eklenmedi.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-040 — Malzeme kutuları bağlantı çemberinin 2 px içinde
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:** Kartın giriş ve çıkış kutuları bağlantı çemberinin bittiği yerden 2 px boşlukla başlar.
+- **Kaynak:** “bu kartlardaki malzeme alanlarını koyduğumuz yuvarlarklarla sınır olacak şekilde ayarlayalim ama aralarında da 2 piksel boşluk olsun”.
+- **Sınır:** Asistan seçimi: “+” düğmesine yer kalsın diye kartın yan sütunları 64'ten 80 px'e çıktı; kart 416 px genişliğindedir.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-041 — Kart tek çerçevede, başlık çerçevenin içinde
+
+- **Durum:** Onaylı yön; görsel geçici, kullanıcı kart için ayrı çerçeve çizecek.
+- **Tarih:** 2026-10-26.
+- **Karar:** Kartın tamamı tek bir çerçevenin içindedir; koyu başlık şeridi çerçevenin içinde durur ve çerçevenin kenarına dayanır.
+- **Kaynak:** “ana akıştaki node larada bu bölümdeki kenarlığı koyalım. ana akıştaki başıklara da recipe deki başlık kenarlığını koyalım”; “böyle değil node çerçevesi komple çerçeve olcak. başlık onun bi içinde olacak”; “bu bölümde üst ve sağ solda bej renkler kaldı. başığın buraya dayanması lazım”; sonuçtan sonra “bu olmuyor bunu ayrıca çizmem lazım sanırım”.
+- **Sınır:** Şu anki görseller envanter penceresinden ödünçtür (`flow_center_frame.png`, `recipe_top.png`); başlık şeridi üst köşe vidalarını örter. Kullanıcı için kartın ölçüleriyle 416x327 px'lik bir şablon hazırlandı (Downloads'ta `node_frame_sablon.png`). Seçili kartta çerçevenin dışına teal çizgi asistan seçimidir.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-042 — Kullanıcı çizimi makine görselleri ve hareketleri
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:**
+  1. Ergitme fırını, Demir madeni ve Bakır madeni kullanıcının çizimlerinden yapılır; çizim 256 px'e sığdırılır, ortalanır ve çevresine 1 px siyah çizgi çekilir.
+  2. Fırında yalnız ağızdaki alev hareket eder. Demir madeninde girişteki vagon tünele girip çıkar.
+  3. Bakır madeni, Demir madeninin kopyasında yalnız cevher renklerinin bakıra çevrilmesidir; kayalar boyanmaz.
+  4. Yeni görseller kullanıcı onaylamadan oyuna konmaz.
+- **Kaynak:** “bunu nasıl yapcaz” sorusundan sonra “Küçült, 128'e sığdır” (sonra K-038 ile 256); “görünüyü ortala librede”; “bütün çevreyi 1 piksel siyah ile dolan”; “buna animasyon ekleyebilir misi? sadece göbekteki aleve versen yeterli”; “iron_mine daki backgorund olan beyaz lara silerek gerçek backgroynd yap”; “256'lık dosyada çalışmak (önerim): bunu yap”; “buna inmasyon yap girişteki cart içeri dışarı yapsın”; “oyuna hemen koyma bi okey diyelim önce”; “iron mine ın 256 lık olanını librede çoğaltıp sadece ilgili renkleri değiştirerek becerebilir misin”; kayalara eklenen bakırdan sonra “son yaptıklarını geri al üst sağ boya olmasın”; “256 256 döndür çevreyi siyah olsun animasyonu yap oyuna koy”.
+- **Sınır:** Asistan seçimleri: Lanczos küçültme; fırın alevinin 12, madenlerin 32 karelik döngüsü (10 FPS); vagon tünele girerken küçülür, kararır ve sağdaki direğin arkasına geçer, arkasında kalan zemin raylar boyunca uzatılarak dolduruldu; madenlerde fenerlerin titremesi; bakır tonları. Kaynak çizimler henüz `art_src` altına alınmadı.
+- **Asıl not:** [[Tasarım/Makine Kartları]].
+
 ## Henüz karar olmayan yönler
 
 | Konu | Kanıt düzeyi | Ayrıntı |

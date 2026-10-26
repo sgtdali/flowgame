@@ -1,6 +1,6 @@
 # Flowgame — Endüstriyel Üretim ve Araştırma Ağı
 
-Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-037 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
+Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-042 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
 
 ## Başlatma
 
@@ -23,7 +23,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 |---|---|
 | Envanter ve üretim | **I**, **C** ya da alt çubuktaki sandık. Solda bütün öğeler (elde olanlar adediyle). Bir öğe seç: ortada tarifi, solda girdileri, sağda kullanıldığı yerler görünür; kartlara tıklayarak zincirde gezinirsin. **CRAFT** ile sıraya al (Shift: 5 adet), elindeki makineyi **PLACE** ya da çift tıkla yerleştir. El üretimi süreli bir kuyruktur; × ile iptal edilen işin malzemesi geri döner. |
 | Hızlı erişim | Alttaki 10 yuva, **1–9 ve 0** tuşları. Makine yuvası makineyi yerleştirir. Pencereden yuvaya sürükle, sağ tıkla ya da öğenin üstündeyken numara tuşuna bas: öğe o yuvaya sabitlenir. Yuvada sağ tık sabitlemeyi kaldırır. |
-| Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Ürünler çizgi üzerinde taşınır ve hedefe varınca sayılır (K-035); aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). Çizgiler kartların etrafından dolaşır, üst üste binmez (K-036). Bağlantıyı silince yoldaki ürünler kaynağa döner. |
+| Bağlantı | Bir çıkış portundan aynı ürünün giriş portuna sürükle. Port çemberi turuncuysa bağlı değil, yeşilse akış var, kırmızıysa bağlı ama parça gelmiyor ya da çıkış dolu (K-039). Ürünler çizgi üzerinde taşınır ve hedefe varınca sayılır (K-035); aynı ürünü kabul eden tüketiciler eşit pay alır (K-006). Çizgiler kartların etrafından dolaşır, üst üste binmez (K-036). Bağlantıyı silince yoldaki ürünler kaynağa döner. |
 | Reçete | Tel sarım, montaj makineleri ve Modül Tesisi gelen ürüne göre üretir. Haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve fırında sağ tık → **Choose recipe** ile reçete ekranı açılır (K-009, K-016). Seçili reçetenin girdileri boş giriş kutularında saydam görünür. |
 | Kart menüsü | Kartta sağ tık: reçete, Stop/Run, hız 20 ↔ 40 iş/sn, Take to inventory, Remove (to inventory). Laboratuvarda araştırma hedefi. |
 | Ürün alma | Karttaki çıkış kutusuna tıkla: biriken ürün envantere geçer. Depo'da giriş kutusuna tıkla. Üretim envantere kendiliğinden geçmez (K-011). |
@@ -40,7 +40,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 - `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü; **☰ Tablo** düğmesi reçeteleri süre + girdiler → çıktılar tablosu olarak gösterir.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
 - `app/flow_graph.gd`, `app/link_router.gd`: bağlantıların çizimi (bant, dik çizgiler, taşınan ürünler) ve kartların etrafından dolaşan, üst üste binmeyen yolların hesabı.
-- `app/sprite_machine_card.gd`: makine kartı (görsel, göstergeler, portlar).
+- `app/sprite_machine_card.gd`: makine kartı (416 px; 256 px görsel, durum renkli bağlantı çemberleri, göstergeler). Kullanıcı çizimi makineler `app/art/smelter_b/`, `iron_mine_c/`, `copper_mine_a/`.
 - `app/craft_screen.gd`: envanter ve üretim penceresi (akış haritası). Görselleri `app/art/ui/`, LibreSprite kaynakları `art_src/ui/envanter_penceresi/`. `app/inventory_bar.gd`, `app/inventory_slot.gd`: hızlı erişim çubuğu ve ortak yuva. `app/fonts/`: Pixelify Sans ve Nunito (OFL).
 - `app/machine_menu.gd`, `app/recipe_picker.gd`, `app/research_panel.gd`: kart menüsü, reçete ekranı, araştırma paneli.
 - `app/icons.gd`, `app/art/`: ürün simgeleri ve makine görselleri. Kaynakları ve çizim kuralları `art_src/` altında (`art_src/STANDART.md`).
