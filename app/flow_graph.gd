@@ -73,11 +73,12 @@ var _river_bank_right := PackedVector2Array()
 var _river_along := PackedFloat32Array()
 var _river_half := PackedFloat32Array()
 var _river_water: Texture2D = preload("res://app/art/map/river_water.png")
-var _river_sand: Texture2D = preload("res://app/art/map/river_sand.png")
+## The bank strip runs along the river like the water: its top row lies on the water's edge,
+## its bottom row is the outer edge (ragged, transparent), so it is as wide as it is tall.
+var _river_bank: Texture2D = preload("res://app/art/map/river_bank.png")
 ## Water drifts down the river at this many canvas px per second.
 const RIVER_FLOW := 24.0
 const RIVER_EDGE := Color("3f5f63")
-const RIVER_BANK_EDGE := Color("b9a77f")
 ## Trees and bushes: [[texture, top-left corner in canvas px], ...], sorted by their foot so
 ## the nearer one covers the farther.
 var decor: Array = []
@@ -117,8 +118,8 @@ func _place_map_corners() -> void:
 	_map_corners[0].position_offset = map_rect.position
 	_map_corners[1].position_offset = map_rect.end - Vector2.ONE
 
-## Takes the river's center line ([x, y, water half width, left bank, right bank] per point)
-## and works out its edges once; drawing only moves them to the screen.
+## Takes the river's center line ([x, y, water half width] per point) and works out its edges
+## once; drawing only moves them to the screen. The banks are as wide as the bank strip.
 func set_river(points: Array) -> void:
 	for array in [_river_water_left, _river_water_right, _river_bank_left, _river_bank_right]:
 		array.clear()
@@ -135,8 +136,9 @@ func set_river(points: Array) -> void:
 		var half := float(points[i][2])
 		_river_water_left.append(here + normal * half)
 		_river_water_right.append(here - normal * half)
-		_river_bank_left.append(here + normal * (half + float(points[i][3])))
-		_river_bank_right.append(here - normal * (half + float(points[i][4])))
+		var bank := float(_river_bank.get_height())
+		_river_bank_left.append(here + normal * (half + bank))
+		_river_bank_right.append(here - normal * (half + bank))
 		_river_along.append(along)
 		_river_half.append(half)
 
@@ -431,8 +433,8 @@ class MapLayer extends Control:
 		_flow += delta * RIVER_FLOW
 		queue_redraw()
 
-	## Sand on both banks (textured in canvas space), the water textured along the river and
-	## drifting with it, and dark lines along the water's edges.
+	## The bank strip on both sides and the water, both laid along the river (the water drifting
+	## with it), and dark lines along the water's edges.
 	func _draw_river(graph: GraphEdit, view: Rect2) -> void:
 		var count: int = graph._river_along.size()
 		if count < 2:
@@ -440,10 +442,10 @@ class MapLayer extends Control:
 		var zoom: float = graph.zoom
 		var shift: Vector2 = graph.scroll_offset
 		var water_size: Vector2 = graph._river_water.get_size()
-		var sand_size: Vector2 = graph._river_sand.get_size()
+		var bank_length: float = graph._river_bank.get_width()
 		var white := PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE])
 		var edge_width := maxf(1.0, 2.0 * zoom)
-		# All edges to the screen at once; the sand keeps its canvas positions for its texture.
+		# All edges to the screen at once.
 		var to_screen := Transform2D(0.0, Vector2(zoom, zoom), 0.0, -shift)
 		var water_left: PackedVector2Array = to_screen * graph._river_water_left
 		var water_right: PackedVector2Array = to_screen * graph._river_water_right
@@ -454,24 +456,20 @@ class MapLayer extends Control:
 			var box := Rect2(bank_left[i], Vector2.ZERO).expand(bank_left[i + 1]).expand(bank_right[i]).expand(bank_right[i + 1])
 			if box.intersects(view):
 				visible.append(i)
-		# One pass per texture so the quads batch: both banks, then the water, then the edges.
-		var sand_uv: PackedVector2Array
+		# One pass per texture so the quads batch: both banks, then the water, then its edges.
 		for i in visible:
-			sand_uv = PackedVector2Array([graph._river_bank_left[i], graph._river_bank_left[i + 1],
-				graph._river_water_left[i + 1], graph._river_water_left[i]])
-			draw_primitive(PackedVector2Array([bank_left[i], bank_left[i + 1], water_left[i + 1], water_left[i]]), white,
-				Transform2D.IDENTITY.scaled(Vector2.ONE / sand_size) * sand_uv, graph._river_sand)
-			sand_uv = PackedVector2Array([graph._river_water_right[i], graph._river_water_right[i + 1],
-				graph._river_bank_right[i + 1], graph._river_bank_right[i]])
-			draw_primitive(PackedVector2Array([water_right[i], water_right[i + 1], bank_right[i + 1], bank_right[i]]), white,
-				Transform2D.IDENTITY.scaled(Vector2.ONE / sand_size) * sand_uv, graph._river_sand)
+			var b1: float = graph._river_along[i] / bank_length
+			var b2: float = graph._river_along[i + 1] / bank_length
+			var bank_uv := PackedVector2Array([Vector2(b1, 0), Vector2(b2, 0), Vector2(b2, 1), Vector2(b1, 1)])
+			draw_primitive(PackedVector2Array([water_left[i], water_left[i + 1], bank_left[i + 1], bank_left[i]]), white, bank_uv, graph._river_bank)
+			draw_primitive(PackedVector2Array([water_right[i], water_right[i + 1], bank_right[i + 1], bank_right[i]]), white, bank_uv, graph._river_bank)
 		for i in visible:
 			var u1: float = (graph._river_along[i] - _flow) / water_size.x
 			var u2: float = (graph._river_along[i + 1] - _flow) / water_size.x
 			draw_primitive(PackedVector2Array([water_left[i], water_left[i + 1], water_right[i + 1], water_right[i]]), white,
 				PackedVector2Array([Vector2(u1, 0), Vector2(u2, 0), Vector2(u2, graph._river_half[i + 1] * 2.0 / water_size.y),
 					Vector2(u1, graph._river_half[i] * 2.0 / water_size.y)]), graph._river_water)
-		for edge in [[water_left, RIVER_EDGE], [water_right, RIVER_EDGE], [bank_left, RIVER_BANK_EDGE], [bank_right, RIVER_BANK_EDGE]]:
+		for edge in [[water_left, RIVER_EDGE], [water_right, RIVER_EDGE]]:
 			var points: PackedVector2Array = edge[0]
 			var line := PackedVector2Array()
 			for k in range(visible.size()):

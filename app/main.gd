@@ -520,8 +520,6 @@ func _show_map() -> void:
 	var hill: Texture2D = load("res://app/art/map/hill.png")
 	for at in sim.hills:
 		decor.append([hill, at])
-	for rock in sim.river_rocks:
-		decor.append([load("res://app/art/map/river_rock_%s.png" % rock[2]), Vector2(rock[0], rock[1])])
 	graph.set_river(sim.river)
 	decor.sort_custom(func(a: Array, b: Array) -> bool:
 		return a[1].y + a[0].get_height() < b[1].y + b[0].get_height())

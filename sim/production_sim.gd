@@ -30,10 +30,9 @@ var trees := PackedVector2Array()
 var tree_sizes := PackedByteArray()
 var bushes := PackedVector2Array()
 var hills := PackedVector2Array()
-## The river's center line, every ~40 px: [x, y, water half width, left bank, right bank] in
-## canvas px, and the rocks on its banks: [x, y, variant letter]. Only drawn, like the trees.
+## The river's center line, every ~40 px: [x, y, water half width] in canvas px. Only drawn,
+## like the trees.
 var river: Array = []
-var river_rocks: Array = []
 var machines: Dictionary = {}
 var links: Array = []
 var cursors: Dictionary = {}
@@ -120,7 +119,6 @@ func _load_map() -> void:
 	for h in data.get("hills", []):
 		hills.append(Vector2(h[0], h[1]))
 	river = data.get("river", [])
-	river_rocks = data.get("river_rocks", [])
 
 ## Whether this machine kind is built on deposits (the mines).
 func uses_deposits(kind: String) -> bool:

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://brima5q4gyxuh"
-path="res://.godot/imported/river_rock_d.png-6cfeddbda61e6ecc9b9162c4b71a2679.ctex"
+uid="uid://bovh48bu8hnj5"
+path="res://.godot/imported/river_bank.png-a55bb50a26f21d598b4468e02a3cb39c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://app/art/map/river_rock_d.png"
-dest_files=["res://.godot/imported/river_rock_d.png-6cfeddbda61e6ecc9b9162c4b71a2679.ctex"]
+source_file="res://app/art/map/river_bank.png"
+dest_files=["res://.godot/imported/river_bank.png-a55bb50a26f21d598b4468e02a3cb39c.ctex"]
 
 [params]
 
