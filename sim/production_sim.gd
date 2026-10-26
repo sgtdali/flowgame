@@ -737,6 +737,12 @@ func is_input_linked(id: String, product: String) -> bool:
 			return true
 	return false
 
+func is_output_linked(id: String, product: String) -> bool:
+	for link in links:
+		if link.from == id and link.product == product:
+			return true
+	return false
+
 func remove_link(from: String, to: String, from_port: int = -1, _to_port: int = -1) -> void:
 	if from_port >= 0 and machines.has(from):
 		var outs: Array = output_products(from)

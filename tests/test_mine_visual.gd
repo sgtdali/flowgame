@@ -22,7 +22,7 @@ func _run() -> void:
 	# One output row spans the artwork, so the port sits at the art's vertical centre.
 	var art_top: float = card.get_node("PortRow_0").position.y
 	assert(absf(card.get_output_port_position(0).y - (art_top + 128.0)) < 0.6)
-	assert(card.size.x == 384.0 and card.art.size == Vector2(256, 256))
+	assert(card.size.x == 416.0 and card.art.size == Vector2(256, 256))
 	# Verify selecting and dragging the illustrated body still reaches GraphEdit.
 	var before_drag: Vector2 = card.position_offset
 	var press_pos: Vector2 = card.get_global_rect().position + Vector2(80, 75)

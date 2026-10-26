@@ -15,23 +15,33 @@ const Icons = preload("res://app/icons.gd")
 ## machine; machines not listed use their still placeholder from app/art/placeholder.
 ## Art smaller than ART (the old 128 px sheets) is scaled up by a whole factor.
 const SHEETS := {
-	"iron_mine": "res://app/art/iron_mine_b/iron_mine_sheet.png",
+	"iron_mine": "res://app/art/iron_mine_c/iron_mine_sheet.png",
 	"smelter": "res://app/art/smelter_b/smelter_sheet.png",
 }
 const ART := 256.0
 const PLACEHOLDER := "res://app/art/placeholder/%s.png"
-const SIDE := 64.0
+## Port connectors, 24x24 each: not linked (orange), linked and flowing (green), linked but
+## stuck (red: an input that is not getting parts, an output that cannot send).
+const PORT_SHEET := preload("res://app/art/ui/port_states.png")
+enum Port { OPEN, OK, STUCK }
+static var _port_icons: Array[AtlasTexture] = []
+const SIDE := 80.0
 const INK := Color("3d3a33")
 const MUTED := Color("7a7466")
 const TEAL := Color("4f9a8a")
 const GOLD := Color("b98330")
-const PLATE := Color("f3eee4")
-const HEADER := Color("e9e2d3")
-const EDGE := Color("c4b9a3")
-const RIVET := Color("b3a78f")
-const FRAME := 2
 ## Port slot size on the card (px).
 const SLOT := 40.0
+const BODY_FRAME := preload("res://app/art/ui/flow_center_frame.png")
+const RECIPE_TOP := preload("res://app/art/ui/recipe_top.png")
+const HEADER_INK := Color("d6c4ab")
+## Width of the frame's teal rim (px): the header strip sits right against it.
+const RIM := 5.0
+## Space kept clear of the frame's bottom corner screws (px).
+const SCREWS := 14.0
+## Connector radius (half of the 24 px icon) and the gap between it and the slot (px).
+const PORT_RADIUS := 12.0
+const PORT_GAP := 2.0
 
 ## One port column cell: a framed slot holding what the buffer has. Empty at zero; otherwise
 ## the product icon with the count in the corner (gold when the buffer is full).
@@ -63,10 +73,12 @@ class PortGauge extends Control:
 	func _drop_data(_at_position: Vector2, data: Variant) -> void:
 		on_deposit.call(str(data.inventory_key).trim_prefix("product:"))
 
-	## Framed slot, SLOT px square (smaller in crowded rows), set against the card's outer edge.
+	## Framed slot, SLOT px square (smaller in crowded rows), PORT_GAP px inside the connector
+	## that sits on the card's outer edge.
 	func slot_rect() -> Rect2:
 		var side := clampf(minf(size.y - 4.0, SLOT), 24.0, SLOT)
-		var x := size.x - 2.0 - side if mirrored else 2.0
+		var inset := PORT_RADIUS + PORT_GAP
+		var x := size.x - inset - side if mirrored else inset
 		return Rect2(x, roundf((size.y - side) * 0.5), side, side)
 
 	func _draw() -> void:
@@ -147,6 +159,12 @@ var header_icon: TextureRect
 var target_icon: TextureRect
 var target_label: Label
 var _machine_enabled := true
+## product -> [slot, Port] for the inputs (left) and outputs (right).
+var _in_ports: Dictionary = {}
+var _out_ports: Dictionary = {}
+var _port_layer: Control
+var _frame_style := _texture_box(BODY_FRAME, 24)
+var _header_style := _texture_box(RECIPE_TOP, 9)
 var _frame_count := 1
 ## Frame size in the sheet (px); drawn at ART.
 var _frame_px := ART
@@ -164,45 +182,43 @@ func _box(background: Color, border: Color, pad_x: int, pad_y: int, radius: int 
 	style.content_margin_bottom = pad_y
 	return style
 
-## Riveted steel plate: the header and body share one square-cornered frame; the header
-## is a darker band with the machine colour as a thin line under it.
-func _plate(background: Color, border: Color, header: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background
-	style.border_color = border
-	style.set_border_width_all(FRAME)
+## Empty boxes that only space the content: the frame and the header strip are drawn in
+## _draw so the whole card sits in one frame with the header inside it. Body rows run edge
+## to edge so the connectors sit on the rim.
+func _plate(header: bool) -> StyleBoxEmpty:
+	var style := StyleBoxEmpty.new()
 	if header:
-		style.border_width_bottom = 0
-		style.corner_radius_top_left = 3
-		style.corner_radius_top_right = 3
-		style.content_margin_left = 8
-		style.content_margin_right = 4
-		style.content_margin_top = 4
-		style.content_margin_bottom = 6
+		style.content_margin_left = RIM + 10
+		style.content_margin_right = RIM + 6
+		style.content_margin_top = RIM + 5
+		style.content_margin_bottom = 5
 	else:
-		style.border_width_top = 0
-		# Rows run edge to edge (the rim overlaps them) so the card stays 256 wide.
-		style.content_margin_left = 0
-		style.content_margin_right = 0
-		style.corner_radius_bottom_left = 3
-		style.corner_radius_bottom_right = 3
-		style.content_margin_top = 4
-		style.content_margin_bottom = 6
+		style.content_margin_top = 6
+		style.content_margin_bottom = SCREWS
+	return style
+
+static func _texture_box(texture: Texture2D, margin: int) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.set_texture_margin_all(margin)
 	return style
 
 func _build(accent: Color) -> void:
 	accent_color = accent
 	custom_minimum_size.x = ART + SIDE * 2
 	add_theme_constant_override("separation", 0)
-	add_theme_stylebox_override("panel", _plate(PLATE, EDGE, false))
-	add_theme_stylebox_override("panel_selected", _plate(PLATE, TEAL, false))
-	add_theme_stylebox_override("titlebar", _plate(HEADER, EDGE, true))
-	add_theme_stylebox_override("titlebar_selected", _plate(HEADER, TEAL, true))
-	add_theme_color_override("title_color", INK)
+	add_theme_stylebox_override("panel", _plate(false))
+	add_theme_stylebox_override("panel_selected", _plate(false))
+	add_theme_stylebox_override("titlebar", _plate(true))
+	add_theme_stylebox_override("titlebar_selected", _plate(true))
+	add_theme_color_override("title_color", HEADER_INK)
+	node_selected.connect(queue_redraw)
+	node_deselected.connect(queue_redraw)
 	var title_label := get_titlebar_hbox().get_child(0) as Label
 	if title_label != null:
 		title_label.add_theme_font_size_override("font_size", 14)
 		title_label.theme_type_variation = "Heading"
+		title_label.add_theme_color_override("font_color", HEADER_INK)
 	header_icon = TextureRect.new()
 	header_icon.custom_minimum_size = Vector2(16, 16)
 	header_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
@@ -290,7 +306,7 @@ func set_header_icon(texture: Texture2D) -> void:
 
 ## Pixel pause bars while running, a play triangle while stopped.
 func _draw_toggle() -> void:
-	var color := TEAL if pause_btn.is_hovered() else INK
+	var color := TEAL if pause_btn.is_hovered() else HEADER_INK
 	var c := (pause_btn.size * 0.5).floor()
 	if _machine_enabled:
 		pause_btn.draw_rect(Rect2(c + Vector2(-4, -5), Vector2(3, 10)), color)
@@ -298,17 +314,14 @@ func _draw_toggle() -> void:
 	else:
 		pause_btn.draw_colored_polygon(PackedVector2Array([c + Vector2(-3, -5), c + Vector2(4, 0), c + Vector2(-3, 5)]), color)
 
-## Accent line under the header and rivets in the plate corners.
+## The inventory window's item card frame (teal rim, brass corner screws) around the whole
+## card, the dark title strip of its Recipe box inside it, and a teal outline when selected.
 func _draw() -> void:
+	draw_style_box(_frame_style, Rect2(Vector2.ZERO, size))
 	var header_h := get_theme_stylebox("titlebar").get_minimum_size().y + get_titlebar_hbox().size.y
-	draw_rect(Rect2(FRAME, header_h - 2, size.x - FRAME * 2, 2), accent_color)
-	draw_rect(Rect2(FRAME, FRAME, size.x - FRAME * 2, 1), HEADER.lightened(0.12))
-	# Dark outline just outside the rim so the plate stands off the grid.
-	draw_rect(Rect2(-1, -1, size.x + 2, size.y + 2), Color("b9ae97"), false, 1.0)
-	for corner in [Vector2(5, header_h + 4), Vector2(size.x - 8, header_h + 4), Vector2(5, size.y - 8), Vector2(size.x - 8, size.y - 8)]:
-		draw_rect(Rect2(corner, Vector2(3, 3)), RIVET)
-		draw_rect(Rect2(corner, Vector2(1, 1)), RIVET.lightened(0.35))
-		draw_rect(Rect2(corner + Vector2(2, 2), Vector2(1, 1)), PLATE.darkened(0.4))
+	draw_style_box(_header_style, Rect2(RIM, RIM, size.x - RIM * 2, header_h - RIM))
+	if selected:
+		draw_rect(Rect2(-2, -2, size.x + 4, size.y + 4), TEAL, false, 2.0)
 
 static func art_path(machine_kind: String) -> String:
 	return SHEETS.get(machine_kind, PLACEHOLDER % machine_kind)
@@ -341,17 +354,30 @@ func setup_from_sim(sim: RefCounted, id: String) -> void:
 			input_gauges[str(ins[i])] = _gauge(row, sim, str(ins[i]), false)
 		if has_out:
 			output_gauges[str(outs[i])] = _gauge(row, sim, str(outs[i]), true)
-		set_slot(i, has_in, sim.port_type(id, str(ins[i])) if has_in else 0,
-			sim.product_color(str(ins[i])) if has_in else Color.WHITE,
-			has_out, sim.port_type(id, str(outs[i])) if has_out else 0,
-			sim.product_color(str(outs[i])) if has_out else Color.WHITE)
+		# GraphNode's own port dot sits under the rows; the connectors are drawn on top instead.
+		set_slot(i, has_in, sim.port_type(id, str(ins[i])) if has_in else 0, Color.TRANSPARENT,
+			has_out, sim.port_type(id, str(outs[i])) if has_out else 0, Color.TRANSPARENT)
+		if has_in:
+			_in_ports[str(ins[i])] = [i, -1]
+		if has_out:
+			_out_ports[str(outs[i])] = [i, -1]
 	get_node("PortRow_0").add_child(art)
+	_port_layer = Control.new()
+	_port_layer.name = "PortLayer"
+	_port_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_port_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_port_layer.draw.connect(_draw_ports)
+	add_child(_port_layer, false, Node.INTERNAL_MODE_BACK)
+	_port_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var footer := HBoxContainer.new()
 	footer.name = "Footer"
 	footer.custom_minimum_size = Vector2(ART + SIDE * 2, 18)
 	footer.add_theme_constant_override("separation", 8)
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(footer)
+	var pad_start := Control.new()
+	pad_start.custom_minimum_size.x = 4
+	footer.add_child(pad_start)
 	status_icon = StatusIcon.new()
 	status_icon.custom_minimum_size = Vector2(18, 18)
 	status_icon.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -372,9 +398,50 @@ func setup_from_sim(sim: RefCounted, id: String) -> void:
 	rate_label.add_theme_color_override("font_color", MUTED)
 	footer.add_child(rate_label)
 	var pad_end := Control.new()
-	pad_end.custom_minimum_size.x = 2
+	# Keeps the footer clear of the frame's corner screws.
+	pad_end.custom_minimum_size.x = 12
 	footer.add_child(pad_end)
 	update_from_sim(sim, id)
+
+static func port_icon(state: int) -> AtlasTexture:
+	if _port_icons.is_empty():
+		for i in range(3):
+			var icon := AtlasTexture.new()
+			icon.atlas = PORT_SHEET
+			icon.region = Rect2(i * 24, 0, 24, 24)
+			_port_icons.append(icon)
+	return _port_icons[state]
+
+## Colours each connector by its link: orange when nothing is linked, red when the link is
+## stuck (an input the machine is waiting for, an output it cannot empty), else green.
+func _show_ports(sim: RefCounted, id: String, machine: Dictionary, recipe: Dictionary) -> void:
+	var waiting: bool = not _storage and bool(machine.enabled) and not bool(machine.running)
+	for product in _in_ports:
+		var state := Port.OPEN
+		if sim.is_input_linked(id, product):
+			var short := int(machine.input.get(product, 0)) < int(recipe.inputs.get(product, 1))
+			state = Port.STUCK if waiting and short else Port.OK
+		_set_port(_in_ports[product], state)
+	for product in _out_ports:
+		var state := Port.OPEN
+		if sim.is_output_linked(id, product):
+			state = Port.STUCK if str(machine.status) == "Output buffer full" else Port.OK
+		_set_port(_out_ports[product], state)
+
+func _set_port(port: Array, state: int) -> void:
+	if port[1] == state:
+		return
+	port[1] = state
+	_port_layer.queue_redraw()
+
+## Inputs and outputs fill the slots from the top, so a port's slot is also its port index.
+func _draw_ports() -> void:
+	for port in _in_ports.values():
+		if port[1] >= 0:
+			_port_layer.draw_texture(port_icon(port[1]), (get_input_port_position(port[0]) - Vector2(12, 12)).round())
+	for port in _out_ports.values():
+		if port[1] >= 0:
+			_port_layer.draw_texture(port_icon(port[1]), (get_output_port_position(port[0]) - Vector2(12, 12)).round())
 
 func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> PortGauge:
 	var gauge := PortGauge.new()
@@ -406,7 +473,7 @@ func _gauge(row: Control, sim: RefCounted, product: String, is_output: bool) -> 
 		add.text = "+"
 		add.flat = true
 		# Beside the slot, between it and the artwork.
-		add.position = Vector2(SLOT + 1.0, row.custom_minimum_size.y * 0.5 - 11)
+		add.position = Vector2(PORT_RADIUS + PORT_GAP + SLOT + 1.0, row.custom_minimum_size.y * 0.5 - 11)
 		add.size = Vector2(22, 22)
 		add.add_theme_font_size_override("font_size", 20)
 		add.add_theme_color_override("font_color", TEAL)
@@ -462,6 +529,7 @@ func update_from_sim(sim: RefCounted, id: String) -> void:
 		gauge.tooltip_text = "%s %d/%d\nClick: take to inventory" % [sim.product_name(output), gauge.count, gauge.capacity]
 		details.append(gauge.tooltip_text)
 		gauge.queue_redraw()
+	_show_ports(sim, id, machine, recipe)
 	if _storage:
 		var stored := 0
 		for product_id in machine.input:
