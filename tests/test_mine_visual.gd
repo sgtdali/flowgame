@@ -25,6 +25,8 @@ func _run() -> void:
 	assert(card.size.x == 416.0 and card.art.size == Vector2(256, 256))
 	# Verify selecting and dragging the illustrated body still reaches GraphEdit.
 	var before_drag: Vector2 = card.position_offset
+	var drags := [0]
+	main.graph.begin_node_move.connect(func() -> void: drags[0] += 1)
 	var press_pos: Vector2 = card.get_global_rect().position + Vector2(80, 75)
 	var motion := InputEventMouseMotion.new()
 	motion.position = press_pos
@@ -50,7 +52,9 @@ func _run() -> void:
 	up.pressed = false
 	root.push_input(up, true)
 	await process_frame
-	assert(card.selected and card.position_offset != before_drag, "Artwork must remain selectable and draggable")
+	# A mine dropped off another deposit settles back on its own.
+	assert(card.selected and drags[0] == 1, "Artwork must remain selectable and draggable")
+	assert(card.position_offset == before_drag, "A mine must stay on its deposit")
 	var start_frame: int = card.animation_frame
 	await create_timer(0.25).timeout
 	assert(card.animation_frame != start_frame, "Working mine must animate")

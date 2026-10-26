@@ -18,6 +18,22 @@ const MACHINE_RECIPE := "build__"
 const LINK_SPEED := 60.0
 const LINK_GAP := 10
 var catalog: Dictionary
+## The bounded map (data/map.json): its rect in canvas px and the ore deposits. A mine stands
+## only on a free deposit of its kind, one per deposit, so the deposits are its build limit.
+var map_rect := Rect2()
+var deposit_size := Vector2()
+## deposit id -> {"kind": mine kind, "rect": Rect2 in canvas px}
+var deposits: Dictionary = {}
+## Trees, bushes and rocky hills on the map, top-left corners in canvas px; only drawn, they block nothing.
+var trees := PackedVector2Array()
+## Each tree's size: 0 small, 1 normal, 2 large.
+var tree_sizes := PackedByteArray()
+var bushes := PackedVector2Array()
+var hills := PackedVector2Array()
+## The river's center line, every ~40 px: [x, y, water half width, left bank, right bank] in
+## canvas px, and the rocks on its banks: [x, y, variant letter]. Only drawn, like the trees.
+var river: Array = []
+var river_rocks: Array = []
 var machines: Dictionary = {}
 var links: Array = []
 var cursors: Dictionary = {}
@@ -54,6 +70,7 @@ var hotbar: Array = []
 
 func _init() -> void:
 	catalog = JSON.parse_string(FileAccess.get_file_as_string("res://data/prototype.json"))
+	_load_map()
 	_add_machine_recipes()
 	hand_speed = float(catalog.get("hand_speed", hand_speed))
 	var kit: Dictionary = catalog.get("starting_inventory", {})
@@ -88,6 +105,59 @@ func _init() -> void:
 		# recipes take different inputs.
 		mode = str(catalog.machines[kind].get("recipe_mode", mode))
 		recipe_modes[str(kind)] = mode
+
+func _load_map() -> void:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/map.json"))
+	map_rect = Rect2(data.rect[0], data.rect[1], data.rect[2], data.rect[3])
+	deposit_size = Vector2(data.deposit_size[0], data.deposit_size[1])
+	for d in data.deposits:
+		deposits[str(d.id)] = {"kind": str(d.kind), "rect": Rect2(Vector2(d.pos[0], d.pos[1]), deposit_size)}
+	for t in data.get("trees", []):
+		trees.append(Vector2(t[0], t[1]))
+		tree_sizes.append(int(t[2]) if t.size() > 2 else 1)
+	for b in data.get("bushes", []):
+		bushes.append(Vector2(b[0], b[1]))
+	for h in data.get("hills", []):
+		hills.append(Vector2(h[0], h[1]))
+	river = data.get("river", [])
+	river_rocks = data.get("river_rocks", [])
+
+## Whether this machine kind is built on deposits (the mines).
+func uses_deposits(kind: String) -> bool:
+	for d in deposits.values():
+		if d.kind == kind:
+			return true
+	return false
+
+## The machine standing on deposit `deposit_id`, or "".
+func deposit_owner(deposit_id: String) -> String:
+	for id in machines:
+		if str(machines[id].get("deposit", "")) == deposit_id:
+			return id
+	return ""
+
+## Free deposits for `kind`, nearest to `near` (canvas px) first.
+func free_deposits(kind: String, near := Vector2.ZERO) -> Array:
+	var taken := {}
+	for machine in machines.values():
+		taken[str(machine.get("deposit", ""))] = true
+	var free: Array = []
+	for d_id in deposits:
+		if deposits[d_id].kind == kind and not taken.has(d_id):
+			free.append(d_id)
+	free.sort_custom(func(a: String, b: String) -> bool:
+		return deposits[a].rect.get_center().distance_squared_to(near) < deposits[b].rect.get_center().distance_squared_to(near))
+	return free
+
+## Moves a mine to another free deposit of its kind.
+func move_to_deposit(id: String, deposit_id: String) -> bool:
+	if not machines.has(id) or not deposits.has(deposit_id) or deposits[deposit_id].kind != machines[id].kind:
+		return false
+	var owner := deposit_owner(deposit_id)
+	if not owner.is_empty() and owner != id:
+		return false
+	machines[id].deposit = deposit_id
+	return true
 
 ## Machines that build machines ("builds_machines" in the catalog) get one recipe per
 ## machine kind: its build cost in, one machine item out. The item is a product of its own
@@ -201,8 +271,15 @@ func port_signature(id: String) -> String:
 func is_machine_unlocked(kind: String) -> bool:
 	return sandbox_mode or kind in unlocked_machines
 
-## How many of this kind may stand at once; -1 means no limit. Research raises it.
+## How many of this kind may stand at once; -1 means no limit. Mines: one per deposit, also
+## in sandbox mode. Research raises the other limits.
 func build_limit(kind: String) -> int:
+	if uses_deposits(kind):
+		var count := 0
+		for d in deposits.values():
+			if d.kind == kind:
+				count += 1
+		return count
 	if sandbox_mode:
 		return -1
 	var limit := int(catalog.machines[kind].get("build_limit", -1))
@@ -309,11 +386,11 @@ func deposit(id: String, product: String, count: int = -1) -> int:
 func can_place(kind: String) -> bool:
 	return can_build(kind) and (sandbox_mode or int(machine_inventory.get(kind, 0)) > 0)
 
-## Puts a carried machine on the canvas.
-func place_machine(kind: String, recipe_override: String = "") -> String:
+## Puts a carried machine on the canvas; a mine on `deposit_id` (or the first free deposit).
+func place_machine(kind: String, recipe_override: String = "", deposit_id: String = "") -> String:
 	if not can_place(kind):
 		return ""
-	var id := add_machine(kind, recipe_override)
+	var id := add_machine(kind, recipe_override, deposit_id)
 	if not id.is_empty() and not sandbox_mode:
 		machine_inventory[kind] = int(machine_inventory[kind]) - 1
 		if int(machine_inventory[kind]) <= 0:
@@ -504,12 +581,18 @@ func research_fraction(tech_id: String) -> float:
 func is_lab(kind: String) -> bool:
 	return catalog.recipes[catalog.machines[kind].recipe].has("research_points")
 
-func add_machine(kind: String, recipe_override: String = "") -> String:
+func add_machine(kind: String, recipe_override: String = "", deposit_id: String = "") -> String:
 	if not catalog.machines.has(kind):
 		return ""
 	var limit := build_limit(kind)
 	if limit >= 0 and built_count(kind) >= limit:
 		return ""
+	if uses_deposits(kind):
+		var free := free_deposits(kind)
+		if deposit_id.is_empty() and not free.is_empty():
+			deposit_id = free[0]
+		if not deposit_id in free:
+			return ""
 	var id := "machine_%d" % next_id
 	next_id += 1
 	var spec: Dictionary = catalog.machines[kind]
@@ -529,6 +612,8 @@ func add_machine(kind: String, recipe_override: String = "") -> String:
 		"input": inputs, "output": outputs, "completed": 0,
 		"received": 0, "status": "Ready", "position": [0.0, 0.0]
 	}
+	if not deposit_id.is_empty():
+		machines[id].deposit = deposit_id
 	return id
 
 func set_recipe(id: String, recipe_id: String) -> bool:
@@ -1016,6 +1101,32 @@ func unpin(slot: int) -> void:
 	if slot >= 0 and slot < HOTBAR_SIZE:
 		hotbar[slot] = ""
 
+## After loading: every mine keeps its saved deposit when that is valid, others (saves from
+## before the map) take the free deposit nearest to their position. Other machines have none.
+func _settle_deposits() -> bool:
+	var ids := machines.keys()
+	ids.sort()
+	var taken := {}
+	var homeless: Array = []
+	for id in ids:
+		var machine: Dictionary = machines[id]
+		var d_id := str(machine.get("deposit", ""))
+		machine.erase("deposit")
+		if not uses_deposits(str(machine.kind)):
+			continue
+		if deposits.has(d_id) and deposits[d_id].kind == machine.kind and not taken.has(d_id):
+			machine.deposit = d_id
+			taken[d_id] = true
+		else:
+			homeless.append(id)
+	for id in homeless:
+		var machine: Dictionary = machines[id]
+		var free := free_deposits(str(machine.kind), Vector2(machine.position[0], machine.position[1]))
+		if free.is_empty():
+			return false
+		machine.deposit = free[0]
+	return true
+
 func snapshot() -> Dictionary:
 	return {
 		"version": 4,
@@ -1183,6 +1294,8 @@ func restore(data: Dictionary) -> bool:
 		if not _whole_count(data.research_points[tier]):
 			return false
 	machines = data.machines.duplicate(true)
+	if not _settle_deposits():
+		return false
 	links = data.links.duplicate(true)
 	for machine in machines.values():
 		machine.completed = int(machine.completed)

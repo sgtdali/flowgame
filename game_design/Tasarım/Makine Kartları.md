@@ -128,7 +128,7 @@ Dayanak: [[Yönetim/Karar Defteri#K-038 — Kartlardaki makine görseli 256 px|K
 
 ## Kurulum bedeli ve sınırı — K-010, K-011
 
-Makineler malzemeyle üretilir ve oyuncunun envanterinden tuvale yerleştirilir; kaldırılan makine envantere döner (K-011). Madenler oyun başında birer adet kurulabilir; her makine türü bir kurulum sınırı taşıyabilir (K-010). Ayrıntılar ve prototipteki bedeller: [[Tasarım/Envanter ve El Üretimi]].
+Makineler malzemeyle üretilir ve oyuncunun envanterinden tuvale yerleştirilir; kaldırılan makine envantere döner (K-011). Madenler haritadaki kendi dağlarına kurulur, her dağa bir maden (K-043, K-044; önceden oyun başında birer adet); her makine türü bir kurulum sınırı taşıyabilir (K-010). Ayrıntılar ve prototipteki bedeller: [[Tasarım/Envanter ve El Üretimi]].
 
 **Depo kartı (prototip):** Bağlanan her ürün için ayrı giriş açan, ürünü işlemeden biriktiren kart. Oyuncu içindekini envantere alır. Depo K-011'in "depodan da alınır" maddesine dayanır; kapasitesi (ürün başına 100) ilk denemedir.
 

@@ -25,6 +25,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Alternatif:** Fiziksel makine binalarının coğrafi yerleşimini ana oynanış yapmak.
 - **Gerekçe:** Kullanıcının ifade ettiği görsel çalışma ve üretim kurma biçimi.
 - **Sınır:** Canvas konumunun ekonomik konumdan ayrılması henüz öneri modelidir.
+- **Değişiklik (2026-10-26):** K-043 ile tuval sınırlı bir haritaya dönüştü; kartlar yine serbestçe yerleşir ve bağlanır.
 - **Asıl not:** [[Tasarım/Makine Kartları]].
 
 ## K-003 — Kartlar makine olacak
@@ -122,6 +123,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** “hammedde kaynakalrının sınırsız olması oyunun balansını yapmayı imkansız hale getiriyor. madenler 1 er adet kurulabilmeli en azından oyun başında”.
 - **Gerekçe:** Sınırsız hammadde dengelemeyi imkânsız kılıyor.
 - **Açık:** Sınırın sonradan araştırmalarla artırılması kullanıcının “belki” dediği bir yöndü; K-025 ile maden genişletme araştırmaları onaylandı. Serbest modda (tümünü aç) sınır uygulanmaz.
+- **Değişiklik (2026-10-26):** K-043 ve K-044 ile madenlerin sınırını haritadaki yataklar belirler: her yatağa bir maden, her kaynaktan 3 yatak. Tür başına “birer adet” sınırı kalktı; yatak sınırı serbest modda da geçerlidir.
 - **Asıl not:** [[Tasarım/Envanter ve El Üretimi]].
 
 ## K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi
@@ -296,7 +298,7 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Karar:**
   1. Araştırma sayısı en az 40–50 olur; onaylanan taslak 9 kolda 63 araştırmadır: Demir ve hidrolik (DM), Çelik ve mekanik (MK), Bakır ve elektrik (EL), Kuvars ve elektronik (EK), Otomasyon ve final (OT), Altyapı ve laboratuvar (AL), Maden genişletme (MD), Verim (VR), Kapasite (LJ).
   2. Açılış araştırmaları bir ya da iki ürün açar; kollar birbirini ön koşul olarak ister (K-019).
-  3. Maden sınırı araştırmayla artar (her maden için II ve III); hız ve kapasite araştırmaları değer değiştirir.
+  3. Maden sınırı araştırmayla artar (her maden için II ve III); hız ve kapasite araştırmaları değer değiştirir. **Değişiklik (2026-10-26):** K-043 ile maden sınırını yataklar belirlediği için maden genişletme araştırmaları geçici olarak madeni %25 hızlandırır; yeni işlevi açık (S-031).
   4. Dördüncü puan kademesi (K4) ve onu üreten Laboratuvar 4 eklenir.
 - **Kaynak:** “oyunumuzda sadece toplam 9 tane mi araştırma var. bunun en az 40 50 falan olması lazım”; araştırma türleri önerisine “Anlastik devam et”; 63 araştırmalık tabloya “Tablo uygun”.
 - **Sınır:** Bedeller, etki oranları ve Laboratuvar 4'ün girdileri ilk tahmindir. Araştırmaların tam listesi [[Tasarım/Teknoloji Ağacı]] notundadır.
@@ -473,6 +475,40 @@ Kimlikler kalıcıdır. Kaynak metnin konuşma tarihleri bilinmiyor; aktarım ta
 - **Kaynak:** “bunu nasıl yapcaz” sorusundan sonra “Küçült, 128'e sığdır” (sonra K-038 ile 256); “görünüyü ortala librede”; “bütün çevreyi 1 piksel siyah ile dolan”; “buna animasyon ekleyebilir misi? sadece göbekteki aleve versen yeterli”; “iron_mine daki backgorund olan beyaz lara silerek gerçek backgroynd yap”; “256'lık dosyada çalışmak (önerim): bunu yap”; “buna inmasyon yap girişteki cart içeri dışarı yapsın”; “oyuna hemen koyma bi okey diyelim önce”; “iron mine ın 256 lık olanını librede çoğaltıp sadece ilgili renkleri değiştirerek becerebilir misin”; kayalara eklenen bakırdan sonra “son yaptıklarını geri al üst sağ boya olmasın”; “256 256 döndür çevreyi siyah olsun animasyonu yap oyuna koy”.
 - **Sınır:** Asistan seçimleri: Lanczos küçültme; fırın alevinin 12, madenlerin 32 karelik döngüsü (10 FPS); vagon tünele girerken küçülür, kararır ve sağdaki direğin arkasına geçer, arkasında kalan zemin raylar boyunca uzatılarak dolduruldu; madenlerde fenerlerin titremesi; bakır tonları. Kaynak çizimler henüz `art_src` altına alınmadı.
 - **Asıl not:** [[Tasarım/Makine Kartları]].
+
+## K-043 — Sınırlı harita ve kaynak yatakları
+
+- **Durum:** Onaylı yön; ayrıntılar ilk taslak.
+- **Tarih:** 2026-10-26.
+- **Karar:**
+  1. Sonsuz tuval, 500–600 kartın sığacağı büyüklükte sınırlı bir haritaya dönüşür.
+  2. Haritada kaynak yatakları vardır; madenler yalnızca kendi türlerinin boş bir yatağına kurulur, her yatağa bir maden. Kaç maden kurulabileceğini yatak sayısı belirler.
+  3. Mesafe bilerek bedelsizdir; taşıma oyuncunun işi olmaz (konveyör, hat planlama yok). Yatakların konumu yerleşimi kendiliğinden şekillendirir.
+  4. Haritanın araştırmayla genişlemesi ileride değerlendirilir; arazi engelleri (nehir, dağ gibi geçilmez yerler) düşünülmüyor.
+- **Kaynak:** “bu sonsuz canvas var ya. bunu bir map e dönüştürsek 500 600 kart yerleşcek şekilde büyütmek m”; seçeneklere “esas 1 numarayı düşünüyorum. 2 de iyi fikirmiş belki sora değerlendiririz 3 ü düşünmüyorum.”; mesafe bedeline “1 önemli değil yani mesefa aslında önemli değil olacak yine ama yatakların konumları zaten belirleyici olacak. çünkü konveyörleri de işin için katınca zaten dandik bir factorio ya doğru gidecek taşıma işini oyuncuya vermeyerek mekanikler kurma düşüncem var şu an .2. önerinde doğru. diğerlerine yaptıkça bakcaz artık”; “tamam hepsini yap bi görelim sonra gerekli yerleri revize ederiz”.
+- **Sınır:** Asistan seçimleri: harita 20.000×12.000 px; yeni maden görünümün ortasına en yakın boş yatağa kurulur ve görünüm oraya kayar; sürüklenen maden aynı türün boş yatağına bırakılırsa taşınır, yoksa kendi yatağına döner; kartlar haritanın dışına çıkamaz; en fazla %8'e uzaklaşılır, mini harita açıktır; yataklar tükenmez; kayıtta her madenin yatağı saklanır, eski kayıtlardaki madenler en yakın boş yatağa yerleşir. Diğer makinelerin yatakların üstüne kurulması engellenmedi.
+- **Asıl not:** [[Tasarım/Bölgeler ve Lojistik]].
+
+## K-044 — Her maden ayrı bir dağda: 4 kaynak × 3 dağ
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:** Yataklar dağ olarak çizilir ve her maden ayrı bir dağdadır. Dört kaynaktan (demir, kömür, bakır, kuvars) üçer tane, toplam 12 dağ vardır; dağlar birbirine yakın değildir.
+- **Kaynak:** “tamamdır şimdi bunu oyuna koy bakalım bu dağ madenleri temsil edecek. yani her maden ayrı bir dağda olacak bu arada şu an çok maden var. 4 kaynak 3 taneden 12 maden olacak yani 12 dağ olacak. ve bunlarda birbirine yağın olmasın”.
+- **Sınır:** Dağ görseli kullanıcının `dag2` çizimidir (pembe zemini betikle temizlendi, 647×504 px); 12 dağın hepsi aynı görseli kullanır. Asistan seçimleri: dağların yerleri (en yakın iki dağ arası 3.054 px), dağın altında cevher renginde, simgeli ve adlı etiket, başlangıçtaki demir madeninin ilk demir dağında olması.
+- **Asıl not:** [[Tasarım/Bölgeler ve Lojistik]].
+
+## K-045 — Harita süsleri: orman, tepe ve nehir
+
+- **Durum:** Onaylı.
+- **Tarih:** 2026-10-26.
+- **Karar:**
+  1. Haritada ormanlar vardır: kullanıcının ağacı rastgele küçük, normal ya da büyük; çalılar ormanların içinde. Kullanıcının `dag3` çizimi süs tepesi olarak dağıtılır.
+  2. Haritayı bir nehir geçer. Nehir, kullanıcının nehir çiziminden çıkarılan su dokusu ve kayalarla oyunda bir yol boyunca kurulur; resim olduğu gibi tekrarlanmaz.
+  3. Süsler (ağaç, çalı, tepe, nehir) hiçbir şeyi engellemez.
+- **Kaynak:** Ağaç için “36 renge düşür”, “opaklığı 100 yap. sonra bunu oyundaki haritaya koy”, “çalı sayısını arttır agaçlarıda random büyük küçük normal yap.”; çalı için “ormanların içinde olsun bu”; tepe için seçeneklerden “Süs tepesi”; nehir için seçeneklere “valla sen bu 2 yi yap sana helal olsun”.
+- **Sınır:** Asistan seçimleri: ağaç boyları %70 / %100 / %135 (aynı 36 renk); 288 ağaç ve 922 çalının yerleri; 28 tepe; nehrin yolu ve genişliği, kum dokusu (kullanıcı çiziminden değil, asistanın çizdiği bej doku), su dokusunun akması, kıyıdaki 45 kaya. Nehrin engel olup olmayacağı sorulmadı; şimdilik süs (S-030). Görsellerdeki pembe zeminin betikle temizlenmesi, kullanıcının “dag2 de arka plan daha pembemsi belki ayıt etmek senin için daha kolay olur” önerisiyle başladı.
+- **Asıl not:** [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]].
 
 ## Henüz karar olmayan yönler
 

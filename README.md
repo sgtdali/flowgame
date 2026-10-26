@@ -1,6 +1,6 @@
 # Flowgame — Endüstriyel Üretim ve Araştırma Ağı
 
-Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-042 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
+Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sınırlı bir harita üzerinde makine kartlarını bağlar; ürünler otomatik eşit paylaşılır, laboratuvarlar araştırma puanı üretir, makineler malzemeyle üretilip envanterden yerleştirilir. Uygulanan kararlar K-002 – K-045 tasarım vault'unda (`game_design/Yönetim/Karar Defteri.md`), ne çalıştığı ve nasıl test edildiği `game_design/Yönetim/Uygulama Durumu.md` içindedir.
 
 ## Başlatma
 
@@ -14,7 +14,7 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 - Tuvalde bir `Demir madeni` ve ona bağlı bir `Ergitme fırını` kurulu gelir (K-033). Diğer makineleri **C** ile üretip hızlı erişimden ya da envanterden yerleştirirsin. Kit kömür madenine ve `Laboratuvar 1`'e de yeter (K-023).
 - `Laboratuvar 1` sürekli çelik levha ve bağlantı elemanı tüketip Kademe 1 puanı üretir. Puanlar depoda birikir; aktif araştırma fiyatını depodan çeker (K-008).
 - Envanterde bir başlangıç kiti vardır: demir levha, demir çubuk, çelik levha, bağlantı elemanı, `Bakır madeni`, `Kuvars ocağı` ve `Depo`.
-- Madenler oyun başında birer adet kurulabilir (K-010); maden genişletme araştırmaları sınırı artırır (K-025).
+- Harita 20.000×12.000 px; her kaynaktan 3, toplam 12 dağ var. Maden yalnız kendi türünün boş dağına kurulur, en yakın boş dağa oturur (K-043, K-044). Ormanlar, tepeler ve nehir süstür (K-045).
 - `Makine Fabrikası` (AL-01) makineleri kurulum bedelinden üretir; çıktıyı karttan ya da bağlı depodan alırsın (K-024).
 
 ## Kontroller
@@ -39,7 +39,8 @@ Godot 4.7.2 ile üretim ve araştırma prototipi. Oyuncu sonsuz bir tuval üzeri
 - `data/prototype.json`: 55 ürün (beş modül ve Kurucu Çekirdek dahil), 23 makine türü, 63 reçete, 63 araştırma (etkileriyle), 4 puan kademesi, başlangıç kiti, kurulum bedelleri.
 - `app/chain_editor.gd`, `app/chain_editor.tscn`, `ZincirEditoru.cmd`: üretim zinciri ve reçete node editörü; **☰ Tablo** düğmesi reçeteleri süre + girdiler → çıktılar tablosu olarak gösterir.
 - `app/main.gd`: tuval, üst çubuk, pencerelerin bağlanması, smoke testi.
-- `app/flow_graph.gd`, `app/link_router.gd`: bağlantıların çizimi (bant, dik çizgiler, taşınan ürünler) ve kartların etrafından dolaşan, üst üste binmeyen yolların hesabı.
+- `app/flow_graph.gd`, `app/link_router.gd`: bağlantıların çizimi (bant, dik çizgiler, taşınan ürünler) ve kartların etrafından dolaşan, üst üste binmeyen yolların hesabı; haritanın, dağların, süslerin ve nehrin çizimi.
+- `data/map.json`: harita sınırı, 12 dağ (yatak), ağaçlar, çalılar, tepeler, nehrin yolu ve kıyı kayaları. Görseller `app/art/map/`.
 - `app/sprite_machine_card.gd`: makine kartı (416 px; 256 px görsel, durum renkli bağlantı çemberleri, göstergeler). Kullanıcı çizimi makineler `app/art/smelter_b/`, `iron_mine_c/`, `copper_mine_a/`.
 - `app/craft_screen.gd`: envanter ve üretim penceresi (akış haritası). Görselleri `app/art/ui/`, LibreSprite kaynakları `art_src/ui/envanter_penceresi/`. `app/inventory_bar.gd`, `app/inventory_slot.gd`: hızlı erişim çubuğu ve ortak yuva. `app/fonts/`: Pixelify Sans ve Nunito (OFL).
 - `app/machine_menu.gd`, `app/recipe_picker.gd`, `app/research_panel.gd`: kart menüsü, reçete ekranı, araştırma paneli.

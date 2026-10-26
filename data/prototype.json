@@ -1139,12 +1139,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["iron_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Iron Mine build limit +1."
+      "description": "Iron Mine speed +25%."
     },
     "MD-02": {
       "name": "MD-02: Coal Mine II",
@@ -1155,12 +1155,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["coal_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Coal Mine build limit +1."
+      "description": "Coal Mine speed +25%."
     },
     "MD-03": {
       "name": "MD-03: Copper Mine II",
@@ -1171,12 +1171,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["copper_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Copper Mine build limit +1."
+      "description": "Copper Mine speed +25%."
     },
     "MD-04": {
       "name": "MD-04: Quartz Quarry II",
@@ -1187,12 +1187,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["quartz_quarry"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Quartz Quarry build limit +1."
+      "description": "Quartz Quarry speed +25%."
     },
     "MD-05": {
       "name": "MD-05: Iron Mine III",
@@ -1203,12 +1203,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["iron_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Iron Mine build limit +1."
+      "description": "Iron Mine speed +25%."
     },
     "MD-06": {
       "name": "MD-06: Coal Mine III",
@@ -1219,12 +1219,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["coal_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Coal Mine build limit +1."
+      "description": "Coal Mine speed +25%."
     },
     "MD-07": {
       "name": "MD-07: Copper Mine III",
@@ -1235,12 +1235,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["copper_mine"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Copper Mine build limit +1."
+      "description": "Copper Mine speed +25%."
     },
     "MD-08": {
       "name": "MD-08: Quartz Quarry III",
@@ -1251,12 +1251,12 @@
       "unlock_recipes": [],
       "effects": [
         {
-          "type": "build_limit",
+          "type": "speed",
           "machines": ["quartz_quarry"],
-          "add": 1
+          "add": 0.25
         }
       ],
-      "description": "Quartz Quarry build limit +1."
+      "description": "Quartz Quarry speed +25%."
     },
     "VR-01": {
       "name": "VR-01: Dexterity",

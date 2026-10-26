@@ -157,7 +157,10 @@ func _build_ui() -> void:
 	graph = FlowGraph.new()
 	graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	graph.right_disconnects = true
-	graph.minimap_enabled = false
+	# The map is large; the minimap shows where the view is and the zoom goes far out.
+	graph.minimap_enabled = true
+	graph.minimap_size = Vector2(250, 150)
+	graph.zoom_min = 0.08
 	graph.snapping_enabled = true
 	graph.snapping_distance = 20
 	graph.get_menu_hbox().visible = false
@@ -168,6 +171,7 @@ func _build_ui() -> void:
 	graph.connection_request.connect(_connect_cards)
 	graph.disconnection_request.connect(_disconnect_cards)
 	graph.delete_nodes_request.connect(_delete_cards)
+	graph.end_node_move.connect(_settle_moved_cards)
 	graph.node_selected.connect(func(node: Node) -> void: _show_selection(str(node.name)))
 	graph.node_deselected.connect(func(_node: Node) -> void: _sync_selection.call_deferred())
 	canvas.add_child(graph)
@@ -311,10 +315,18 @@ func _add_at_view_with_recipe(kind: String, recipe_id: String) -> void:
 	if not sim.is_machine_unlocked(kind):
 		message.text = "This machine is still locked."
 		return
+	var view_center := (graph.scroll_offset + graph.size * 0.5) / graph.zoom
+	var deposit := ""
+	if sim.uses_deposits(kind):
+		var free := sim.free_deposits(kind, view_center)
+		if free.is_empty():
+			message.text = "Every %s deposit already has a mine." % _ore_name(kind)
+			return
+		deposit = free[0]
 	if not sim.can_build(kind):
 		message.text = "%s limit reached (at most %d)." % [sim.catalog.machines[kind].name, sim.build_limit(kind)]
 		return
-	var placed := sim.place_machine(kind, recipe_id)
+	var placed := sim.place_machine(kind, recipe_id, deposit)
 	if placed.is_empty():
 		message.text = "No %s in the inventory; craft one with C." % sim.catalog.machines[kind].name
 		return
@@ -323,6 +335,11 @@ func _add_at_view_with_recipe(kind: String, recipe_id: String) -> void:
 	_select_card(id)
 	_refresh()
 	message.text = "%s added." % sim.catalog.machines[kind].name
+	if not deposit.is_empty():
+		# The deposit may be off screen: bring the new mine into view.
+		var card: GraphNode = cards[id].node
+		graph.scroll_offset = (card.position_offset + Vector2(208, 160)) * graph.zoom - graph.size * 0.5
+		message.text = "%s placed on the nearest free %s deposit." % [sim.catalog.machines[kind].name, _ore_name(kind)]
 	if sim.recipe_mode(kind) == "choose" and recipe_id.is_empty():
 		recipe_picker.show_machine(sim, id)
 
@@ -346,7 +363,14 @@ func _spawn_supplier(target_id: String, product: String, supplier_kind: String, 
 		if not clash:
 			break
 		base_pos += Vector2(0, 360)
-	var supplier_id := _add_card(supplier_kind, base_pos, sim.place_machine(supplier_kind, supplier_recipe))
+	var deposit := ""
+	if sim.uses_deposits(supplier_kind):
+		var free := sim.free_deposits(supplier_kind, target_node.position_offset)
+		if free.is_empty():
+			message.text = "Every %s deposit already has a mine." % _ore_name(supplier_kind)
+			return
+		deposit = free[0]
+	var supplier_id := _add_card(supplier_kind, base_pos, sim.place_machine(supplier_kind, supplier_recipe, deposit))
 	var out_port := sim.output_products(supplier_id).find(product)
 	var in_port := sim.input_products(target_id).find(product)
 	if in_port < 0:
@@ -410,8 +434,18 @@ func _rebuild_card(id: String) -> void:
 	_add_card(sim.machines[id].kind, pos, id)
 	cards[id].node.selected = was_selected
 
+## Mines go on a deposit: an existing machine on its own, a new one on the free deposit
+## nearest to `pos`.
 func _add_card(kind: String, pos: Vector2, existing_id: String = "", recipe_override: String = "") -> String:
-	var id := existing_id if not existing_id.is_empty() else sim.add_machine(kind, recipe_override)
+	var id := existing_id
+	if id.is_empty():
+		var free := sim.free_deposits(kind, pos) if sim.uses_deposits(kind) else []
+		id = sim.add_machine(kind, recipe_override, "" if free.is_empty() else str(free[0]))
+		if id.is_empty():
+			return ""
+	var deposit := str(sim.machines[id].get("deposit", ""))
+	if not deposit.is_empty():
+		pos = _deposit_card_position(deposit)
 	sim.machines[id].position = [pos.x, pos.y]
 	var card: GraphNode = SpriteMachineCard.new()
 	card.position_offset = pos
@@ -433,6 +467,65 @@ func _add_card(kind: String, pos: Vector2, existing_id: String = "", recipe_over
 		"ports": sim.port_signature(id)
 	}
 	return id
+
+## Where a mine card sits on its deposit: centered.
+func _deposit_card_position(deposit: String) -> Vector2:
+	var area: Rect2 = sim.deposits[deposit].rect
+	return (area.position + (area.size - Vector2(SpriteMachineCard.ART + SpriteMachineCard.SIDE * 2, 327)) * 0.5).floor()
+
+## The ore a mine kind digs, for messages and deposit labels.
+func _ore_name(kind: String) -> String:
+	var recipe: Dictionary = sim.catalog.recipes[str(sim.catalog.machines[kind].recipe)]
+	return sim.product_name(str(recipe.outputs.keys()[0]))
+
+## After a drag: a mine dropped on another free deposit of its kind moves there, anywhere
+## else it goes back to its own; every card stays inside the map.
+func _settle_moved_cards() -> void:
+	for id in cards:
+		var card: GraphNode = cards[id].node
+		if not card.selected or not sim.machines.has(id):
+			continue
+		var deposit := str(sim.machines[id].get("deposit", ""))
+		if not deposit.is_empty():
+			var center := card.position_offset + card.size * 0.5
+			for d_id in sim.deposits:
+				if sim.deposits[d_id].rect.has_point(center) and sim.move_to_deposit(id, d_id):
+					deposit = d_id
+					break
+			card.position_offset = _deposit_card_position(deposit)
+		else:
+			var map := sim.map_rect
+			card.position_offset = card.position_offset.clamp(map.position, map.end - card.size)
+
+## Hands the map and its deposits to the canvas.
+func _show_map() -> void:
+	graph.map_rect = sim.map_rect
+	var areas: Array = []
+	var mountain: Texture2D = load("res://app/art/map/mountain.png")
+	for d_id in sim.deposits:
+		var kind := str(sim.deposits[d_id].kind)
+		var recipe: Dictionary = sim.catalog.recipes[str(sim.catalog.machines[kind].recipe)]
+		var ore := str(recipe.outputs.keys()[0])
+		areas.append({"rect": sim.deposits[d_id].rect, "color": sim.product_color(ore),
+			"icon": Icons.product(sim, ore), "name": sim.product_name(ore), "art": mountain})
+	graph.deposit_areas = areas
+	var decor: Array = []
+	var tree_art: Array[Texture2D] = [load("res://app/art/map/tree_small.png"),
+		load("res://app/art/map/tree.png"), load("res://app/art/map/tree_large.png")]
+	for i in range(sim.trees.size()):
+		decor.append([tree_art[sim.tree_sizes[i]], sim.trees[i]])
+	var bush: Texture2D = load("res://app/art/map/bush.png")
+	for at in sim.bushes:
+		decor.append([bush, at])
+	var hill: Texture2D = load("res://app/art/map/hill.png")
+	for at in sim.hills:
+		decor.append([hill, at])
+	for rock in sim.river_rocks:
+		decor.append([load("res://app/art/map/river_rock_%s.png" % rock[2]), Vector2(rock[0], rock[1])])
+	graph.set_river(sim.river)
+	decor.sort_custom(func(a: Array, b: Array) -> bool:
+		return a[1].y + a[0].get_height() < b[1].y + b[0].get_height())
+	graph.decor = decor
 
 func _on_card_input(event: InputEvent, id: String) -> void:
 	var click := event as InputEventMouseButton
@@ -509,6 +602,7 @@ func _demo(starter := true) -> void:
 	graph.scroll_offset = Vector2.ZERO
 	graph.zoom = 1.0
 	_select_card("")
+	_show_map()
 	message.text = "Craft more machines with C, then place them from the quick bar (1-0) or the inventory (I)."
 	if starter:
 		var mine := _add_card("iron_mine", Vector2(20, 20))
@@ -593,6 +687,7 @@ func _sync_link_lengths() -> void:
 				graph.route_length(StringName(link.from), from_port, StringName(link.to), to_port))
 
 func _process(delta: float) -> void:
+	graph.keep_in_map()
 	_sync_link_lengths()
 	if not paused:
 		sim.advance(minf(delta, 0.25) * time_scale)
@@ -660,6 +755,7 @@ func _load_game() -> void:
 	var previous_selection := selected_id
 	_clear_cards()
 	sim = restored
+	_show_map()
 	last_completed_count = sim.completed_researches.size()
 	for id in sim.machines:
 		var m: Dictionary = sim.machines[id]
@@ -778,13 +874,22 @@ func _smoke_test() -> void:
 	assert(not research_panel.visible)
 	_delete_cards([StringName(cnc_card)])
 	assert(cards.size() == 8 and sim.machine_inventory.get("machine_shop", 0) == 1, "Kaldırılan makine envantere dönmeli")
-	# The demo already has the one iron mine allowed, so it cannot be crafted or placed again.
-	craft_screen.toggle()
-	craft_screen.select("machine:iron_mine")
-	assert(craft_screen.craft_button.disabled)
-	craft_screen.hide()
+	# No iron mine is carried, so none is placed; the kit's copper mine goes on the copper
+	# deposit nearest to the view and comes back when removed.
 	_add_at_view("iron_mine")
-	assert(cards.size() == 8, "Sınırı dolan maden ikinci kez kurulmamalı")
+	assert(cards.size() == 8, "Envanterde olmayan maden kurulmamalı")
+	_add_at_view("copper_mine")
+	var copper_id := ""
+	for id in cards:
+		if sim.machines[id].kind == "copper_mine":
+			copper_id = id
+	assert(not copper_id.is_empty() and sim.machines[copper_id].get("deposit", "").begins_with("copper_"), "Bakır madeni bir bakır yatağına kurulmalı")
+	assert(cards[copper_id].node.position_offset == _deposit_card_position(sim.machines[copper_id].deposit), "Maden kartı yatağına oturmalı")
+	_delete_cards([StringName(copper_id)])
+	assert(cards.size() == 8 and sim.machine_inventory.get("copper_mine", 0) == 1, "Kaldırılan maden envantere dönmeli")
+	_frame_graph()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	# Clicking an output gauge moves what the machine made into the inventory.
 	sim.machines["machine_1"].output.iron_ore = 3
 	_refresh()
@@ -806,7 +911,7 @@ func _smoke_test() -> void:
 	machine_menu.id_pressed.emit(0)
 	machine_menu.hide()
 	assert(cards.size() == 9, "Tek tıkla pres kurulup laboratuvara bağlanmalı")
-	var press_id := "machine_10"
+	var press_id := "machine_%d" % (sim.next_id - 1)
 	assert(sim.machines[press_id].kind == "press" and sim.is_input_linked("machine_8", "fastener"))
 	assert(not sim.machine_inventory.has("press"), "+ ile kurulan pres envanterden düşmeli")
 	_delete_cards([StringName(press_id)])

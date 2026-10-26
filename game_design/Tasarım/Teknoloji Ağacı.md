@@ -13,7 +13,7 @@ Ağaç [[Yönetim/Karar Defteri#K-025 — 63 araştırmalık teknoloji ağacı|K
 
 **Puan kademeleri:** K1 Laboratuvar 1 (Steel Plate + Fastener), K2 Laboratuvar 2 (Gear + Copper Wire + Industrial Glass), K3 Laboratuvar 3 (Circuit Board + Coil + Shaft), K4 Laboratuvar 4 (Electric Motor + Microchip + Hydraulic Cylinder).
 
-**Etki araştırmaları:** Maden genişletme sınırı +1 artırır; verim araştırmaları makine ya da el üretimi hızına yüzde ekler; kapasite araştırmaları makine tamponlarını yüzdeyle, depoyu sabit miktarla büyütür. Etkiler kayda girer.
+**Etki araştırmaları:** Maden genişletme sınırı +1 artırır (2026-10-26'dan beri prototipte madeni %25 hızlandırır, çünkü sınırı dağlar belirliyor: K-043); verim araştırmaları makine ya da el üretimi hızına yüzde ekler; kapasite araştırmaları makine tamponlarını yüzdeyle, depoyu sabit miktarla büyütür. Etkiler kayda girer.
 
 ### Demir ve hidrolik (DM)
 
@@ -92,14 +92,14 @@ Ağaç [[Yönetim/Karar Defteri#K-025 — 63 araştırmalık teknoloji ağacı|K
 
 | Kod | Araştırma | Ön koşul | Bedel | Açtığı / etkisi |
 |---|---|---|---|---|
-| MD-01 | Demir Madeni II | — | 40 K1 | Demir Madeni kurulum sınırı +1. |
-| MD-02 | Kömür Madeni II | — | 40 K1 | Kömür Madeni kurulum sınırı +1. |
-| MD-03 | Bakır Madeni II | — | 40 K2 | Bakır Madeni kurulum sınırı +1. |
-| MD-04 | Kuvars Ocağı II | — | 40 K2 | Kuvars Ocağı kurulum sınırı +1. |
-| MD-05 | Demir Madeni III | MD-01 | 60 K3 | Demir Madeni kurulum sınırı +1. |
-| MD-06 | Kömür Madeni III | MD-02 | 60 K3 | Kömür Madeni kurulum sınırı +1. |
-| MD-07 | Bakır Madeni III | MD-03 | 60 K3 | Bakır Madeni kurulum sınırı +1. |
-| MD-08 | Kuvars Ocağı III | MD-04 | 60 K3 | Kuvars Ocağı kurulum sınırı +1. |
+| MD-01 | Demir Madeni II | — | 40 K1 | Demir Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-02 | Kömür Madeni II | — | 40 K1 | Kömür Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-03 | Bakır Madeni II | — | 40 K2 | Bakır Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-04 | Kuvars Ocağı II | — | 40 K2 | Kuvars Ocağı kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-05 | Demir Madeni III | MD-01 | 60 K3 | Demir Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-06 | Kömür Madeni III | MD-02 | 60 K3 | Kömür Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-07 | Bakır Madeni III | MD-03 | 60 K3 | Bakır Madeni kurulum sınırı +1 (prototipte şimdilik hız +%25). |
+| MD-08 | Kuvars Ocağı III | MD-04 | 60 K3 | Kuvars Ocağı kurulum sınırı +1 (prototipte şimdilik hız +%25). |
 
 ### Verim (VR)
 

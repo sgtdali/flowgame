@@ -34,8 +34,11 @@ func _initialize() -> void:
 	_check(sim.enqueue_craft("recipe", "iron_plate"), "Haddehane reçetesi el ile yapılabilmeli")
 	sim.cancel_craft(0)
 	_check(sim.inventory.pig_iron == 10 and sim.craft_queue.is_empty(), "İptal edilen işin malzemesi geri gelmeli")
-	# Build limit counts carried machines too.
-	_check(not sim.enqueue_craft("machine", "copper_mine"), "Sınırı dolan maden el ile yapılmamalı")
+	# Mines are limited by their deposits; carried ones count too.
+	var carried := int(sim.machine_inventory.get("copper_mine", 0))
+	sim.machine_inventory["copper_mine"] = sim.build_limit("copper_mine")
+	_check(not sim.enqueue_craft("machine", "copper_mine"), "Yatağı kalmayan maden el ile yapılmamalı")
+	sim.machine_inventory["copper_mine"] = carried
 	# The hand queue holds at most five different items; more of a queued item joins its run.
 	for product in ["pig_iron", "steel_ingot", "iron_plate", "iron_rod", "steel_plate"]:
 		sim.inventory[product] = 50
@@ -160,13 +163,14 @@ func _machine_factory() -> void:
 	var copy := Simulation.new()
 	_check(copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))), "Fabrikalı ağ kayda girmeli")
 
-## Upgrade researches change numbers instead of opening things: mine limits, machine and
-## hand speed, buffer and depot sizes. Their effects survive a save.
+## Upgrade researches change numbers instead of opening things: mine, machine and hand
+## speed, buffer and depot sizes. Their effects survive a save.
 func _research_effects() -> void:
 	var sim := Simulation.new()
-	_check(sim.build_limit("iron_mine") == 1, "Demir madeni başta 1 adet olmalı")
+	var iron := sim.add_machine("iron_mine")
+	var coal := sim.add_machine("coal_mine")
 	sim._complete_research("MD-01")
-	_check(sim.build_limit("iron_mine") == 2 and sim.build_limit("coal_mine") == 1, "Demir Madeni II yalnız demir madeni sınırını artırmalı")
+	_check(is_equal_approx(sim.effective_speed(iron), 25.0) and is_equal_approx(sim.effective_speed(coal), 20.0), "Demir Madeni II yalnız demir madenini %25 hızlandırmalı")
 	var furnace := sim.add_machine("smelter", "pig_iron")
 	_check(is_equal_approx(sim.effective_speed(furnace), 20.0), "Araştırmasız fırın hızı 20 olmalı")
 	sim._complete_research("VR-02")
@@ -180,7 +184,7 @@ func _research_effects() -> void:
 	_check(sim.capacity("smelter", "input") == 18 and sim.capacity("storage", "input") == 200, "Tampon %50, depo +100 büyümeli")
 	sim.machines[furnace].input.iron_ore = 18
 	var copy := Simulation.new()
-	_check(copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))) and copy.build_limit("iron_mine") == 2 and copy.capacity("smelter", "input") == 18, "Araştırma etkileri ve büyük tampon kayıttan dönmeli")
+	_check(copy.restore(JSON.parse_string(JSON.stringify(sim.snapshot()))) and is_equal_approx(copy.effective_speed(iron), 25.0) and copy.capacity("smelter", "input") == 18, "Araştırma etkileri ve büyük tampon kayıttan dönmeli")
 	sim._complete_research("VR-01")
 	sim.enqueue_craft("machine", "storage")
 	sim.advance(3.4)

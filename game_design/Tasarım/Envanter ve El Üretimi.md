@@ -45,7 +45,7 @@ Oyuncu envanterdeki bir ürünü, uygunsa bir makine kartının girişine bırak
 
 ### Hammadde sınırı — K-010
 
-Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. Her makine türü bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir. Maden sınırı araştırmayla artar: her maden için II ve III araştırmaları sınırı birer artırır (K-025).
+Madenler (demir, bakır, kömür, kuvars) oyun başında birer adet kurulabilir. **2026-10-26'dan beri (K-043, K-044):** sınırı haritadaki dağlar belirler; her kaynaktan 3 dağ, her dağa bir maden. Her makine türü bir kurulum sınırı taşıyabilir; sınırı olmayan makineler serbesttir. Maden sınırı araştırmayla artar: her maden için II ve III araştırmaları sınırı birer artırır (K-025).
 
 Dayanak: [[Yönetim/Karar Defteri#K-010 — Hammadde kaynakları sınırlıdır|K-010]], [[Yönetim/Karar Defteri#K-011 — Oyuncu envanteri, malzemeli kurulum ve el üretimi|K-011]], [[Yönetim/Karar Defteri#K-012 — Hızlı erişim çubuğu ve envanter penceresi|K-012]], [[Yönetim/Karar Defteri#K-026 — Envanter ve el üretimi tek pencerede|K-026]], [[Yönetim/Karar Defteri#K-028 — Envanter penceresi akış haritası düzeninde|K-028]], [[Yönetim/Karar Defteri#K-029 — Elle ve makinede aynı iş miktarı, simgeyle gösterilir|K-029]], [[Yönetim/Karar Defteri#K-031 — Envanter penceresi sabit boyutlu; kuyruk en fazla 5 farklı öğe|K-031]], [[Yönetim/Karar Defteri#K-032 — Envanter penceresinin elle çizilmiş görünümü|K-032]], [[Yönetim/Karar Defteri#K-033 — Oyun demir madeni ve ergitme fırını kurulu başlar|K-033]].
 

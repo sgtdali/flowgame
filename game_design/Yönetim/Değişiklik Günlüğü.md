@@ -152,3 +152,12 @@ Yeni kayıt biçimi: `Tarih — değişen kural; karar kimliği; etkilenen konu 
 - K-042: Ergitme fırını (alevli), Demir madeni ve Bakır madeni (vagonlu, fenerli) kullanıcı çizimlerinden; yeni görseller onaysız oyuna konmaz. S-029 eklendi.
 - Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Makine Kartları]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]]; `art_src/STANDART.md`, `README.md`.
 - Bütün testler ve pencereli smoke testi geçti; ekran görüntüleri incelendi. Fiziksel fareyle oyun içi deneme yapılmadı.
+
+## 2026-10-26 — Sınırlı harita, maden dağları ve harita süsleri
+
+- K-043: Sonsuz tuval 500–600 kart alacak sınırlı bir haritaya dönüştü; madenler kaynak yataklarına kurulur, her yatağa bir maden. Mesafe bilerek bedelsiz, taşıma oyuncunun işi değil. K-002 ve K-010'a değişiklik notu; K-025'teki maden genişletme araştırmaları geçici olarak hız veriyor.
+- K-044: Yataklar dağ: 4 kaynak × 3 = 12 dağ, birbirinden uzak; dağın altında cevher etiketi.
+- K-045: Ormanlar (üç boy ağaç, çalılar), süs tepeleri ve kullanıcının nehir çiziminden kurulan akan bir nehir; hiçbiri engel değil.
+- Açık sorular: S-030 (nehir engel mi), S-031 (maden genişletme araştırmalarının yeni işi), S-032 (harita genişlemesi), S-033 (dağların üstüne başka makine); S-021'e not.
+- Güncellenen notlar: [[Yönetim/Karar Defteri]], [[Tasarım/Bölgeler ve Lojistik]], [[Tasarım/Envanter ve El Üretimi]], [[Tasarım/Makine Kartları]], [[Tasarım/Teknoloji Ağacı]], [[Tasarım/Arayüz ve Büyük Ağ Yönetimi]], [[01 - Güncel Tasarım]], [[Yönetim/Uygulama Durumu]], [[Yönetim/Açık Sorular]]; `README.md`.
+- Bütün testler ve pencereli smoke testi geçti; harita ekran görüntüleriyle ve kare süresiyle denetlendi. Fiziksel fareyle oyun içi deneme yapılmadı.

@@ -41,7 +41,9 @@ Bu seçimlerin dayanakları [[Yönetim/Karar Defteri]] ve [[Kaynaklar/02 - Bu So
 
 **Makine kartı gösterimi (K-015):** Ürünler kartta çerçeveli kutularda adetle görünür; seçili reçetenin girdileri boş kutuda saydamdır; üretilen ürün çıktı kutusundan ayrı gösterilir.
 
-**Hammadde sınırlıdır (K-010):** Madenler oyun başında birer adet kurulabilir.
+**Hammadde sınırlıdır (K-010):** Madenler oyun başında birer adet kurulabilir. K-043 ve K-044 ile bu sınırı haritadaki dağlar belirliyor.
+
+**Harita (K-043 – K-045):** Tuval, 500–600 kart alacak büyüklükte sınırlı bir haritadır. Her kaynaktan 3, toplam 12 dağ vardır; her maden ayrı bir dağa kurulur. Mesafe bilerek bedelsizdir, taşıma oyuncunun işi değildir. Haritada ormanlar, tepeler ve bir nehir süs olarak durur, hiçbir şeyi engellemez. Ayrıntılar [[Tasarım/Bölgeler ve Lojistik]] notundadır.
 
 **Envanter, malzemeli kurulum ve el üretimi (K-011, K-012):** Oyuncu ürünleri ve kurulmamış makineleri bir envanterde taşır. Makineler malzemeyle üretilir ve envanterden tuvale yerleştirilir; kaldırılan makine envantere döner. Üretim envantere kendiliğinden geçmez; oyuncu karttaki çıktıyı veya Depo'daki ürünü isterse alır. El üretimi süreli bir kuyruktur; hammadde el ile çıkarılamaz, oyuncu başlangıç kitiyle başlar. Alttaki çubuk 10 yuvalı hızlı erişimdir; envanterin tamamı ayrı bir pencerededir ve oyuncu istediği öğeyi hızlı erişime sabitler. Oyun bir Demir madeni ve bir Ergitme fırını kurulu başlar (K-033, K-013'ün yerine). Oyuncu envanterdeki ürünü uygun bir makinenin girişine elle koyabilir; ağa bağlı olmayan makine de böyle çalışır (K-014). Envanter ve el üretimi tek penceredir; pencere seçilen öğeyi girdileri ve kullanıldığı yerlerle bir akış haritasında gösterir, reçetenin iş miktarı elle de makinede de aynıdır (K-026, K-028, K-029). Pencere sabit boyutlu, kuyruk en fazla 5 farklı öğe (K-031); bütün görselleri kullanıcının çizimleri (K-032). Ayrıntılar [[Tasarım/Envanter ve El Üretimi]] notundadır.
 
@@ -76,6 +78,6 @@ Oyuncu yalnızca daha fazla kart yerleştirerek değil, üretim yöntemini, kapa
 
 ## Yetki ve doğrulama sınırı
 
-Godot prototipi K-002 – K-042 kararlarının çoğunu uyguluyor ve otomatik testlerle (üretim, envanter, otomatik reçete, kart görselleri) ve pencereli smoke testiyle doğrulanıyor. Başlangıç ağı, sayılar, tampon boyutları, kurulum bedelleri ve tek işli kartlar geçici uygulama seçimleridir; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Oynanış dengesi ve gerçek kartlarla büyük ağ performansı doğrulanmadı. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
+Godot prototipi K-002 – K-045 kararlarının çoğunu uyguluyor ve otomatik testlerle (üretim, envanter, otomatik reçete, kart görselleri) ve pencereli smoke testiyle doğrulanıyor. Başlangıç ağı, sayılar, tampon boyutları, kurulum bedelleri ve tek işli kartlar geçici uygulama seçimleridir; yeni tasarım onayı sayılmaz. Kapsam ve kanıt [[Yönetim/Uygulama Durumu]] içinde tutulur. Oynanış dengesi ve gerçek kartlarla büyük ağ performansı doğrulanmadı. Kaynak konuşmadaki rakip oyun iddiaları güncel olarak doğrulanmamıştır. Eski Git geçmişi güncel ürün kararı kaynağı değildir.
 
 Sıradaki tartışma için [[Yönetim/Açık Sorular]]; test için [[Tasarım/Prototip ve Doğrulama]].

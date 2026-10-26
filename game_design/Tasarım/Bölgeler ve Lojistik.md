@@ -1,7 +1,7 @@
 ---
 tur: sistem
 durum: yon-olarak-olumlu
-guncelleme: 2026-10-20
+guncelleme: 2026-10-26
 ---
 # Bölgeler ve lojistik
 
@@ -10,6 +10,16 @@ guncelleme: 2026-10-20
 Kullanıcının tespiti: Factorio'da kaynak konumları ve uzak kaynaklara ulaşma ihtiyacı büyümeyi şekillendiriyor. Sonsuz canvas üzerinde ekonomik bir konum yoksa her kapasite sorunu daha fazla kart kurularak çözülebilir. Üretim yöntemleri arasında tercih yapma ihtiyacı zayıflayabilir.
 
 Bu soruna önerilen yanıt endüstriyel bölgeler ve sınırlı lojistik kapasitesidir. Kullanıcı fikri temkinli olumlu karşılamıştır; uygulanacak bölge modeli kesinleşmemiştir.
+
+## Onaylı yön: sınırlı harita ve yataklar — K-043, K-044
+
+Sonsuz tuval sınırlı bir haritaya dönüştü (K-043). Haritada kaynak yatakları vardır ve her biri bir dağdır: demir, kömür, bakır ve kuvarstan üçer, toplam 12 dağ (K-044). Maden yalnızca kendi türünün boş bir dağına kurulur, her dağa bir maden; kurulabilecek maden sayısını dağlar belirler.
+
+Mesafe bilerek bedelsizdir: taşıma oyuncunun işi değildir, konveyör ya da hat planlama yoktur. Bağlantıdaki ürünler yine yol boyunca ilerler (K-035); uzak bir dağ yalnızca ilk ürünün daha geç gelmesi demektir. Dağların konumu ağın nerede büyüyeceğini kendiliğinden belirler. Haritanın araştırmayla genişlemesi ileride değerlendirilecek; geçilmez arazi düşünülmüyor.
+
+Prototipte harita 20.000×12.000 px'tir; dağların ve süslerin yerleri `data/map.json` içindedir. Aşağıdaki bölge ve taşıma kapasitesi önerileri bu kararla uygulanmadı; tarihsel öneri olarak duruyor.
+
+Dayanak: [[Yönetim/Karar Defteri#K-043 — Sınırlı harita ve kaynak yatakları|K-043]], [[Yönetim/Karar Defteri#K-044 — Her maden ayrı bir dağda: 4 kaynak × 3 dağ|K-044]].
 
 ## Önerilen iki konum ayrımı
 

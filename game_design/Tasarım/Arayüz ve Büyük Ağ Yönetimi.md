@@ -18,6 +18,7 @@ Aşağıdakiler çalışan prototipte var. Onaylı kural olanlar karar kimliğiy
 - **Görünüm** (K-027, K-030): aydınlık Kum taşı paleti (bej tuval, kâğıt rengi kartlar, petrol yeşili ve bakır vurgu); bütün metinler İngilizce; başlıklarda Pixelify Sans, metinde Nunito; envanter penceresinin görselleri kullanıcının LibreSprite çizimleri (K-032; K-030'daki perçinler kalktı).
 - **Bağlantı çizgileri** (K-034, K-036): 16 px'lik çok renkli bant, her 20 px'de ortadaki 8 px'i kesen dik çizgiler. Çizgiler kartların etrafından dolaşır ve üst üste binmez; yan yana gidebilir, dik kesişmede biri köprü gibi üstten geçer. Aynı porttan çıkan (ya da aynı porta giren) bağlantılar tek bant gibi birleşir.
 - **Taşınan ürünler** (K-035): ürünler bağlantı boyunca 8x8 simgeyle ilerler; hedefteki sayı ürün varınca artar.
+- **Harita** (K-043 – K-045): 20.000×12.000 px'lik sınırlı harita; 12 maden dağı, altlarında cevher etiketi; ormanlar, tepeler ve akan bir nehir. En fazla %8'e uzaklaşılır, sağ altta mini harita var; görünüm haritanın dışına çıkmaz.
 - **Makine kartı** (K-038 – K-042): 256 px görsel, durum renkli bağlantı çemberleri (turuncu, yeşil, kırmızı), tek çerçeve ve içinde başlık. Ayrıntılar [[Tasarım/Makine Kartları]].
 - **Kart üstü göstergeler:** giriş/çıkış tamponları, çevrim ilerlemesi, durdurma; çıkışa tıklayınca envantere alma (K-011).
 - **Kart menüsü (sağ tık):** reçete, durdur/çalıştır, hız, envantere al, kaldır.

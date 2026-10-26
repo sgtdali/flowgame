@@ -54,6 +54,35 @@ var _links := {}
 var _card_links := {}
 var _router := LinkRouter.new()
 var _routed_frame := -1
+## The bounded map in canvas px (empty: no bounds) and its ore deposits, drawn under the links:
+## [{"rect": Rect2, "color": Color, "icon": Texture2D, "name": String, "art": Texture2D}, ...]
+var map_rect := Rect2():
+	set(value):
+		map_rect = value
+		_place_map_corners()
+var deposit_areas: Array = []
+## GraphEdit only scrolls as far as its elements reach, so two invisible ones sit in the map's
+## corners to let the view travel the whole map.
+var _map_corners: Array[GraphElement] = []
+## The river as quads along its center line, in canvas px: water edges (left, right), the
+## outer bank edges, and the distance along the river at each point.
+var _river_water_left := PackedVector2Array()
+var _river_water_right := PackedVector2Array()
+var _river_bank_left := PackedVector2Array()
+var _river_bank_right := PackedVector2Array()
+var _river_along := PackedFloat32Array()
+var _river_half := PackedFloat32Array()
+var _river_water: Texture2D = preload("res://app/art/map/river_water.png")
+var _river_sand: Texture2D = preload("res://app/art/map/river_sand.png")
+## Water drifts down the river at this many canvas px per second.
+const RIVER_FLOW := 24.0
+const RIVER_EDGE := Color("3f5f63")
+const RIVER_BANK_EDGE := Color("b9a77f")
+## Trees and bushes: [[texture, top-left corner in canvas px], ...], sorted by their foot so
+## the nearer one covers the farther.
+var decor: Array = []
+const MAP_OUTSIDE := Color("cfc6b4")
+const MAP_EDGE := Color("8a7f6a")
 
 func _ready() -> void:
 	# GraphEdit's own lines are hidden: the link layer and the drag preview Line2D on its top layer.
@@ -68,8 +97,56 @@ func _ready() -> void:
 		_drag_port = port
 		_drag_output = is_output)
 	connection_drag_ended.connect(func() -> void: _drag_node = StringName())
-	# Internal front: above the grid, below the cards.
+	# Internal front: above the grid, below the cards; the map under the links.
+	add_child(MapLayer.new(), false, Node.INTERNAL_MODE_FRONT)
 	add_child(LinkLayer.new(), false, Node.INTERNAL_MODE_FRONT)
+
+func _place_map_corners() -> void:
+	if _map_corners.is_empty():
+		for i in range(2):
+			var corner := GraphElement.new()
+			corner.name = "MapCorner%d" % i
+			corner.selectable = false
+			corner.draggable = false
+			corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			corner.custom_minimum_size = Vector2.ONE
+			corner.size = Vector2.ONE
+			corner.self_modulate = Color.TRANSPARENT
+			add_child(corner)
+			_map_corners.append(corner)
+	_map_corners[0].position_offset = map_rect.position
+	_map_corners[1].position_offset = map_rect.end - Vector2.ONE
+
+## Takes the river's center line ([x, y, water half width, left bank, right bank] per point)
+## and works out its edges once; drawing only moves them to the screen.
+func set_river(points: Array) -> void:
+	for array in [_river_water_left, _river_water_right, _river_bank_left, _river_bank_right]:
+		array.clear()
+	_river_along.clear()
+	_river_half.clear()
+	var along := 0.0
+	for i in range(points.size()):
+		var here := Vector2(points[i][0], points[i][1])
+		var ahead := Vector2(points[mini(i + 1, points.size() - 1)][0], points[mini(i + 1, points.size() - 1)][1])
+		var behind := Vector2(points[maxi(i - 1, 0)][0], points[maxi(i - 1, 0)][1])
+		var normal := (ahead - behind).orthogonal().normalized()
+		if i > 0:
+			along += here.distance_to(behind)
+		var half := float(points[i][2])
+		_river_water_left.append(here + normal * half)
+		_river_water_right.append(here - normal * half)
+		_river_bank_left.append(here + normal * (half + float(points[i][3])))
+		_river_bank_right.append(here - normal * (half + float(points[i][4])))
+		_river_along.append(along)
+		_river_half.append(half)
+
+## Keeps the middle of the view inside the map.
+func keep_in_map() -> void:
+	if map_rect.size == Vector2.ZERO:
+		return
+	var held := scroll_offset.clamp(map_rect.position * zoom - size * 0.5, map_rect.end * zoom - size * 0.5)
+	if held != scroll_offset:
+		scroll_offset = held
 
 func _get_connection_line(from_position: Vector2, to_position: Vector2) -> PackedVector2Array:
 	return _step_route(from_position, to_position, STUB * zoom)
@@ -338,6 +415,117 @@ func _visible_groups() -> Array:
 			var preview: Array[PackedVector2Array] = [line]
 			groups.append(["", preview, []])
 	return groups
+
+## The area outside the map dimmed, its edge, the deposits as mountains with their ore's
+## tag, and the trees and bushes.
+class MapLayer extends Control:
+	var _flow := 0.0
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	func _process(delta: float) -> void:
+		_flow += delta * RIVER_FLOW
+		queue_redraw()
+
+	## Sand on both banks (textured in canvas space), the water textured along the river and
+	## drifting with it, and dark lines along the water's edges.
+	func _draw_river(graph: GraphEdit, view: Rect2) -> void:
+		var count: int = graph._river_along.size()
+		if count < 2:
+			return
+		var zoom: float = graph.zoom
+		var shift: Vector2 = graph.scroll_offset
+		var water_size: Vector2 = graph._river_water.get_size()
+		var sand_size: Vector2 = graph._river_sand.get_size()
+		var white := PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE])
+		var edge_width := maxf(1.0, 2.0 * zoom)
+		# All edges to the screen at once; the sand keeps its canvas positions for its texture.
+		var to_screen := Transform2D(0.0, Vector2(zoom, zoom), 0.0, -shift)
+		var water_left: PackedVector2Array = to_screen * graph._river_water_left
+		var water_right: PackedVector2Array = to_screen * graph._river_water_right
+		var bank_left: PackedVector2Array = to_screen * graph._river_bank_left
+		var bank_right: PackedVector2Array = to_screen * graph._river_bank_right
+		var visible := PackedInt32Array()
+		for i in range(count - 1):
+			var box := Rect2(bank_left[i], Vector2.ZERO).expand(bank_left[i + 1]).expand(bank_right[i]).expand(bank_right[i + 1])
+			if box.intersects(view):
+				visible.append(i)
+		# One pass per texture so the quads batch: both banks, then the water, then the edges.
+		var sand_uv: PackedVector2Array
+		for i in visible:
+			sand_uv = PackedVector2Array([graph._river_bank_left[i], graph._river_bank_left[i + 1],
+				graph._river_water_left[i + 1], graph._river_water_left[i]])
+			draw_primitive(PackedVector2Array([bank_left[i], bank_left[i + 1], water_left[i + 1], water_left[i]]), white,
+				Transform2D.IDENTITY.scaled(Vector2.ONE / sand_size) * sand_uv, graph._river_sand)
+			sand_uv = PackedVector2Array([graph._river_water_right[i], graph._river_water_right[i + 1],
+				graph._river_bank_right[i + 1], graph._river_bank_right[i]])
+			draw_primitive(PackedVector2Array([water_right[i], water_right[i + 1], bank_right[i + 1], bank_right[i]]), white,
+				Transform2D.IDENTITY.scaled(Vector2.ONE / sand_size) * sand_uv, graph._river_sand)
+		for i in visible:
+			var u1: float = (graph._river_along[i] - _flow) / water_size.x
+			var u2: float = (graph._river_along[i + 1] - _flow) / water_size.x
+			draw_primitive(PackedVector2Array([water_left[i], water_left[i + 1], water_right[i + 1], water_right[i]]), white,
+				PackedVector2Array([Vector2(u1, 0), Vector2(u2, 0), Vector2(u2, graph._river_half[i + 1] * 2.0 / water_size.y),
+					Vector2(u1, graph._river_half[i] * 2.0 / water_size.y)]), graph._river_water)
+		for edge in [[water_left, RIVER_EDGE], [water_right, RIVER_EDGE], [bank_left, RIVER_BANK_EDGE], [bank_right, RIVER_BANK_EDGE]]:
+			var points: PackedVector2Array = edge[0]
+			var line := PackedVector2Array()
+			for k in range(visible.size()):
+				var i: int = visible[k]
+				if not line.is_empty() and visible[k - 1] != i - 1:
+					draw_polyline(line, edge[1], edge_width)
+					line.clear()
+				if line.is_empty():
+					line.append(points[i])
+				line.append(points[i + 1])
+			if line.size() > 1:
+				draw_polyline(line, edge[1], edge_width)
+
+	func _draw() -> void:
+		var graph := get_parent() as GraphEdit
+		if graph.map_rect.size == Vector2.ZERO:
+			return
+		var zoom: float = graph.zoom
+		var view := Rect2(Vector2.ZERO, size)
+		_draw_river(graph, view)
+		var map := Rect2(graph.map_rect.position * zoom - graph.scroll_offset, graph.map_rect.size * zoom)
+		# Four bands around the map (top, bottom, left, right) as [x0, y0, x1, y1], cut to the view.
+		for band in [[0.0, 0.0, size.x, map.position.y], [0.0, map.end.y, size.x, size.y],
+				[0.0, map.position.y, map.position.x, map.end.y], [map.end.x, map.position.y, size.x, map.end.y]]:
+			var top_left := Vector2(maxf(band[0], 0.0), maxf(band[1], 0.0))
+			var bottom_right := Vector2(minf(band[2], size.x), minf(band[3], size.y))
+			if bottom_right.x > top_left.x and bottom_right.y > top_left.y:
+				draw_rect(Rect2(top_left, bottom_right - top_left), MAP_OUTSIDE)
+		draw_rect(map, MAP_EDGE, false, 3.0)
+		var font := get_theme_default_font()
+		for area in graph.deposit_areas:
+			# The deposit is a mountain centered on the mine's spot, its ore named on a tag below.
+			var art: Texture2D = area.art
+			var center: Vector2 = area.rect.get_center() * zoom - graph.scroll_offset
+			var mountain := Rect2(center - art.get_size() * zoom * 0.5, art.get_size() * zoom)
+			# The tag keeps a readable size when zoomed far out, where it is what the player looks for.
+			var k := maxf(zoom, 0.35)
+			var tag := Rect2(Vector2(center.x - 110.0 * k, mountain.end.y + 8.0 * k), Vector2(220, 44) * k)
+			if not mountain.merge(tag).intersects(view):
+				continue
+			draw_texture_rect(art, mountain, false)
+			var tint: Color = area.color
+			draw_rect(tag, Color(tint, 0.9))
+			draw_rect(tag, tint.darkened(0.45), false, maxf(1.0, 3.0 * k))
+			var icon := Rect2(tag.position + Vector2(6, 6) * k, Vector2(32, 32) * k)
+			draw_texture_rect(area.icon, icon, false)
+			if zoom >= 0.4:
+				draw_string(font, Vector2(icon.end.x + 8.0 * k, tag.position.y + 29.0 * k), area.name,
+					HORIZONTAL_ALIGNMENT_LEFT, -1, int(17.0 * k), tint.darkened(0.7))
+		for item in graph.decor:
+			var texture: Texture2D = item[0]
+			var r := Rect2(item[1] * zoom - graph.scroll_offset, texture.get_size() * zoom)
+			if r.intersects(view):
+				draw_texture_rect(texture, r, false)
 
 class LinkLayer extends Control:
 	func _ready() -> void:

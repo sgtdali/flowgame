@@ -29,7 +29,8 @@ Godot 4.7.2 prototipinde 2026-10-26 itibarıyla çalışan ve test edilen kısı
 | K-018 | `Ana proje terminali` 1 `Founding Core` ister; çekirdek her modülden 4 ister (ilk tahmin). |
 | K-008 | Laboratuvar 1–4 sürekli aynı ürünleri tüketip Kademe 1–4 puanı üretir; puan depoda birikir, aktif araştırma eksiğini depodan çeker. |
 | K-009, K-016 | Tel sarım, montaj makineleri ve Modül Tesisi reçeteyi gelen ya da elle konan ürüne göre seçer, boşken tek genel girişi olur. Haddehane, pres, Tezgâh Atölyesi, dökümhane, Makine Fabrikası ve fırında (K-016) simgeli reçete ekranından ürün seçilir. |
-| K-010 | Dört maden birer adetle başlar, maden genişletme araştırmalarıyla artar; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
+| K-043 – K-045 | Sınırlı harita (20.000×12.000 px, `data/map.json`): 12 maden dağı (4 kaynak × 3), madenler yalnız kendi türünün boş dağına kurulur ve oraya oturur, sürüklenince başka boş dağa taşınır ya da geri döner; kartlar haritanın dışına çıkamaz, görünüm haritayla sınırlı, %8'e kadar uzaklaşma ve mini harita. Süsler: 288 ağaç (üç boy), 922 çalı, 28 tepe, akan su dokulu bir nehir ve kıyısında 45 kaya; hiçbiri engel değil. Godot'nun kaydırmayı kartlarla sınırlamasına karşı haritanın köşelerinde iki görünmez öğe var. |
+| K-010 | (K-043 ile değişti) Madenlerin sınırı dağ sayısıdır, serbest modda da; önceden dört maden birer adetle başlıyordu ve maden genişletme araştırmalarıyla artıyordu; sınır kurulu, envanterdeki ve üretim sırasındaki makineleri birlikte sayar. Serbest modda sınır yok. |
 | K-011 | Envanter, malzemeli makine kurulumu, karttan/depodan elle alma, süreli el üretimi kuyruğu, başlangıç kiti, Depo kartı. |
 | K-012 | Alttaki 10 yuvalı hızlı erişim çubuğu ve I ile açılan envanter penceresi; ikisi aynı envanteri paylaşır, öğeler hızlı erişime sabitlenir. |
 | K-038 – K-040 | Kart görseli 256 px, kart 416 px genişlik (yanlar 80 px); 128'lik eski görseller 2 kat büyütülür. Portlar 24x24 durum çemberi (turuncu bağlı değil, yeşil akış var, kırmızı takılı) kartın üstünde, kenara ortalı çizilir; malzeme kutuları çemberin 2 px içinde. Çıkışın bağlı olup olmadığını simülasyondaki `is_output_linked` söyler. |
@@ -58,24 +59,26 @@ Ayrıntılar: [[Tasarım/Makine Kartları]], [[Tasarım/Araştırma Ekonomisi]],
 - `Talaş bertaraf ünitesi` yer tutucudur; bertaraf için kullanıcı kararı yoktur.
 - Kurucu Çekirdek'e kadar tam bir oyun denenmedi; adetler ve süreler dengelenmedi.
 - Bağlantı hızı (60 px/sn) ve ürün aralığı (10 px) ilk denemedir; bağlantının ayrıca kapasite sınırı yok. Bölge, enerji ve para uygulanmadı.
+- Haritanın boyu, dağların, ağaçların, tepelerin ve nehrin yerleri ve nehrin kum dokusu asistan seçimidir; harita görselleri `app/art/map/` altındadır. Maden genişletme araştırmaları geçici olarak madeni %25 hızlandırır (S-031).
 - Yol bulucunun sayıları (dönüş bedeli, şerit sayısı, kart boşluğu 4 px, arama alanı payları 80/320/1280 px) asistan seçimidir. Sürüklerken seyrek hesaplama (K-037'nin ertelenen 3. maddesi) uygulanmadı.
 - Makine görsellerinden yalnız Ergitme fırını, Demir madeni ve Bakır madeni kullanıcı çizimidir; diğerleri 128 px yer tutucunun 2 kat büyütülmüşüdür. Kart ve görsel kuralları `art_src/STANDART.md` içindedir. Kart çerçevesi geçicidir (K-041); kullanıcı ayrı çizecek.
 - Fırın ve madenlerin animasyonları betikle üretildi (Lanczos küçültme, vagonun arkasındaki zemin raylar boyunca uzatıldı); kaynak çizimler (`ergitme.ase`, `iron_mine.ase` ve 256 px PNG dosyaları) henüz `art_src` altında değil.
 
 ## Kayıt
 
-Tek yuvalı yerel kayıt (`user://workshop.json`), sürüm 4: kart konumları, reçeteler, bağlantılar (uzunluğu ve yoldaki ürünlerle; eski kayıtlarda bunlar boş gelir), tamponlar, çalışan işler, paylaşım sırası, araştırma ilerlemesi ve puan depoları, envanter, kurulmamış makineler, üretim sırası ve hızlı erişim. Sürüm 3 kayıtları başlangıç kitiyle yüklenir.
+Tek yuvalı yerel kayıt (`user://workshop.json`), sürüm 4: kart konumları, madenlerin dağları (`deposit`; eski kayıtlarda en yakın boş dağa yerleşir), reçeteler, bağlantılar (uzunluğu ve yoldaki ürünlerle; eski kayıtlarda bunlar boş gelir), tamponlar, çalışan işler, paylaşım sırası, araştırma ilerlemesi ve puan depoları, envanter, kurulmamış makineler, üretim sırası ve hızlı erişim. Sürüm 3 kayıtları başlangıç kitiyle yüklenir.
 
 ## Doğrulama kanıtı — 2026-10-26
 
 - Motor: **4.7.2.stable.official**.
-- `tests/test_production.gd`: 72 kontrol — ürünlerin ve 63 araştırmanın kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü; bağlantıda taşıma (önce yola girme, aralık, kayıtta saklanma, varınca sayılma, silinince kaynağa dönme ve çıkış kapasitesi).
+- `tests/test_production.gd`: 74 kontrol (yatak sınırı, her madenin ayrı dağa oturması, dağ boşalınca yeniden kurma, başka türün dağına taşınamama, serbest modda da sınır, eski kaydın en yakın dağa yerleşmesi dahil) — ürünlerin ve 63 araştırmanın kilitlenmeden açılması, çevrim ve paylaşım, yan ürün geri kazanımı, laboratuvar puanları, kurulum sınırı, kayıt bütünlüğü; bağlantıda taşıma (önce yola girme, aralık, kayıtta saklanma, varınca sayılma, silinince kaynağa dönme ve çıkış kapasitesi).
 - `tests/test_inventory.gd`: boş başlangıcın çıkmaz olmaması (kitten Laboratuvar 1'e), makineye elle koyma, başlangıç kiti, yerleştirme, el üretimi süresi ve iptal, sınır, karttan/depodan alma, depo portları, makine kaldırma, hızlı erişim kuralları ve kayıt; Makine Fabrikası; araştırma etkileri (maden sınırı, hız, tampon, depo, el hızı) ve kayıtları.
 - `tests/test_auto_recipe.gd`: fırının ve aynı girdili makinelerin seçimli olması, reçetenin gelen ürüne göre seçilmesi (tel sarım, montaj makineleri) ve seçilen reçetenin korunması.
 - `tests/test_chain_editor.gd`: Zincir Editörü'nün veri modeli.
 - `tests/test_mine_visual.gd`, `tests/test_smelter_visual.gd`: makine kartı görselleri (256 px görsel, 416 px kart), animasyon, durdurma, hız ve port hizası. Bakır madeninin 32 karesi geçici betikle denetlendi.
-- Pencereli smoke testi (`-- --smoke-test`, son çalıştırma K-041 sonrası, geçti): kayıt/yükleme, envanter ve üretim penceresinde bütün öğelerin listelenmesi, makinede yapılan ürün için CRAFT yerine açıklama, pencereden Tezgâh Atölyesi üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, pencereden sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Smoke testi maden–fırın başlangıcını denetleyip yeni bir oyunda örnek ağı kurarak devam eder.
+- Pencereli smoke testi (`-- --smoke-test`, son çalıştırma K-045 sonrası, geçti; bakır madenini en yakın bakır dağına kurup kaldırmayı da dener): kayıt/yükleme, envanter ve üretim penceresinde bütün öğelerin listelenmesi, makinede yapılan ürün için CRAFT yerine açıklama, pencereden Tezgâh Atölyesi üretip hızlı erişimden yerleştirme, reçete ekranı ve kart menüsü, pencereden sabitleme, araştırma paneli, sınır, çıkıştan alma, "+" ile üretici kurma. Smoke testi maden–fırın başlangıcını denetleyip yeni bir oyunda örnek ağı kurarak devam eder.
 - Bağlantı yolları (geçici betikle, 2026-10-26): örnek ağ ve üç farklı yerleşimde üst üste binen çizgi ve kart altından geçen çizgi 0. 500 sade kart ve 936 bağlantıda ilk hesap 0,5 sn, kart sürüklerken kare başına ortalama 11 ms (en kötü 19 ms), değişiklik yokken 2,5 ms. Ekran görüntüleri `artifacts/` altındadır.
+- Harita performansı (geçici betikle, 2026-10-26, 2 kartlık başlangıç): kare başına normal yakınlıkta 2,1 ms, 0,3×'te 2,6 ms, bütün harita görünürken 6,9 ms.
 - Doğrulanmayanlar: fiziksel fareyle oynanış testi, denge, gerçek oyun kartlarıyla büyük ağ performansı (Godot'nun 500 kartı çizmesi ölçülmedi).
 
 ## Çalıştırma ve kaynaklar

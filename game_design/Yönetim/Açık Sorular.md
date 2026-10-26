@@ -29,7 +29,7 @@ guncelleme: 2026-10-26
 | S-018 | Giriş/çıkış tamponlarının kapasitesi ne olacak? | Akış ve stok sınırı | Açık; tamponların varlığı K-005 ile onaylı |
 | S-019 | Reçete değişimi veya çevrim iptalinde iş ve malzeme ne olur? | Oyuncu kontrolü ve stok bütünlüğü | Açık |
 | S-020 | Farklı prosesler için ayrı işleme birimleri gerekir mi? | Uyumluluk ve dengeleme | Kısmen çözüldü (K-022): montaj dört makineye ayrıldı, torna ve CNC birleşti |
-| S-021 | Kurulum sınırları (ör. maden başına 1) araştırmayla veya başka yolla artar mı? | Hammadde dengesi, uzun vadeli büyüme | Çözüldü (K-025): maden genişletme araştırmaları her maden için sınırı +1, +1 artırır |
+| S-021 | Kurulum sınırları (ör. maden başına 1) araştırmayla veya başka yolla artar mı? | Hammadde dengesi, uzun vadeli büyüme | Değişti (K-043): maden sayısını dağlar belirliyor; önceden çözüm (K-025): maden genişletme araştırmaları her maden için sınırı +1, +1 artırır |
 | S-022 | Envanterin taşıma veya yuva sınırı olacak mı? | Lojistik anlamı, Depo kartının rolü | Açık; prototipte sınır yok |
 | S-023 | Kurulum bedelleri ve el üretimi hızı nasıl dengelenir? | İlk dakikaların temposu | Açık; prototip değerleri ilk deneme |
 | S-024 | Makine üreten makineler nasıl çalışır: hangi kart hangi makineyi üretir, ne zaman açılır, çıktı nereye gider? | Otomasyona geçiş, K-020 | Çözüldü (K-024): tek Makine Fabrikası, kartta ya da bağlı depoda birikir, erken araştırma |
@@ -38,6 +38,10 @@ guncelleme: 2026-10-26
 | S-027 | Bağlantıların taşıma hızı ve kapasitesi ne olmalı; araştırmayla artar mı? | Akış temposu, bağlantı sayısı | Açık; prototipte 60 px/sn ve 10 px aralık (K-035, asistan seçimi) |
 | S-028 | Makine kartının kendi çerçevesi nasıl olacak? | Kartın görünümü, K-041 | Açık; kullanıcı çizecek, şimdilik envanter penceresinin çerçevesi kullanılıyor |
 | S-029 | Diğer makinelerin 256 px'lik görselleri ne zaman ve nasıl çizilecek? | Kartların tutarlı görünümü, K-038 | Açık; 20 makine 128 px yer tutucunun büyütülmüşüyle duruyor |
+| S-030 | Nehir kart kurmayı ya da bağlantıların geçişini engellesin mi; köprü olacak mı? | Haritanın oynanışa etkisi, K-045 | Açık; şimdilik yalnızca süs |
+| S-031 | Maden genişletme araştırmaları (MD) yeni düzende ne yapacak? | Araştırma ağacı, K-043 | Açık; geçici olarak madeni %25 hızlandırıyor |
+| S-032 | Harita araştırmayla genişleyecek mi, kapalı bölgeler açılacak mı? | Uzun vadeli ilerleme, K-043 | Açık; kullanıcı “belki sonra değerlendiririz” dedi |
+| S-033 | Diğer makineler dağların üstüne kurulabilsin mi? | Yatakların kapanması, K-043 | Açık; prototipte engellenmiyor |
 
 ## Kapanan sorular
 

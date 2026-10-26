@@ -214,19 +214,40 @@ func _research_progression() -> void:
 	_check("MK-04" in sim.completed_researches, "K1 ve K2 fiyatı dolunca MK-04 bitmeli")
 	_check(sim.links.size() == 1, "Araştırma değişince laboratuvar bağlantıları silinmemeli")
 
+## A mine stands on a free deposit of its kind, one per deposit (also in sandbox mode).
 func _build_limits() -> void:
 	var sim := Simulation.new()
+	var counts := {}
+	for d in sim.deposits.values():
+		counts[d.kind] = int(counts.get(d.kind, 0)) + 1
 	for kind in ["iron_mine", "copper_mine", "coal_mine", "quartz_quarry"]:
-		_check(sim.build_limit(kind) == 1, "%s başlangıçta 1 adetle sınırlı olmalı" % kind)
-	var mine := sim.add_machine("iron_mine")
-	_check(not mine.is_empty() and not sim.can_build("iron_mine"), "Sınır dolunca maden kurulamaz görünmeli")
-	_check(sim.add_machine("iron_mine").is_empty() and sim.built_count("iron_mine") == 1, "Sınırı dolan maden ikinci kez eklenmemeli")
+		_check(counts.get(kind, 0) > 0 and sim.build_limit(kind) == counts[kind], "%s sınırı yatak sayısı olmalı" % kind)
+	var mines: Array = []
+	for i in range(counts.iron_mine):
+		mines.append(sim.add_machine("iron_mine"))
+	var used := {}
+	for id in mines:
+		used[sim.machines[id].get("deposit", "")] = true
+	_check(not "" in mines and used.size() == counts.iron_mine and not used.has(""), "Her maden ayrı bir yatağa oturmalı")
+	_check(not sim.can_build("iron_mine") and sim.add_machine("iron_mine").is_empty(), "Yatak kalmayınca maden kurulamamalı")
 	_check(sim.build_limit("smelter") == -1 and sim.can_build("smelter"), "Sınırsız makineler etkilenmemeli")
-	sim.remove_machine(mine)
-	_check(sim.can_build("iron_mine"), "Maden silinince yeniden kurulabilmeli")
+	var freed: String = sim.machines[mines[0]].deposit
+	sim.remove_machine(mines[0])
+	_check(sim.free_deposits("iron_mine") == [freed] and sim.can_build("iron_mine"), "Maden silinince yatağı boşalmalı")
+	_check(not sim.move_to_deposit(mines[1], "coal_1") and sim.move_to_deposit(mines[1], freed), "Maden yalnız kendi türünün boş yatağına taşınmalı")
 	sim.unlock_all()
-	sim.add_machine("iron_mine")
-	_check(not sim.add_machine("iron_mine").is_empty(), "Serbest modda sınır olmamalı")
+	# One deposit is free again (mines[1] left its own).
+	_check(not sim.add_machine("iron_mine").is_empty() and sim.add_machine("iron_mine").is_empty(), "Serbest modda da yatak sınırı geçerli olmalı")
+	# Saves from before the map: a mine without a deposit takes the free one nearest to it.
+	var old := Simulation.new()
+	var near_id := old.add_machine("coal_mine")
+	var snap: Dictionary = JSON.parse_string(JSON.stringify(old.snapshot()))
+	snap.machines[near_id].erase("deposit")
+	# Next to the coal_3 deposit, away from the first one the mine took.
+	var near_coal: Vector2 = old.deposits["coal_3"].rect.position
+	snap.machines[near_id].position = [near_coal.x + 10.0, near_coal.y + 10.0]
+	var loaded := Simulation.new()
+	_check(loaded.restore(snap) and loaded.machines[near_id].deposit == "coal_3", "Yataksız eski maden en yakın boş yatağa yerleşmeli")
 
 func _save_resume() -> void:
 	var sim := Simulation.new()
